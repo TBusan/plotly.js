@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Contour Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="demo-simple">简单等值线</button>
+        <button id="demo-custom-color">自定义颜色</button>
+        <button id="demo-heatmap">热图模式</button>
+        <button id="demo-lines">线条模式</button>
+        <button id="demo-geometry-data">获取几何数据</button>
+    </div>
+    <div id="container"></div>
+    <script type="module">
+        import { 
+            demoSimpleContour, 
+            demoCustomColorScale, 
+            demoHeatmapMode, 
+            demoLinesMode,
+            demoGetContourGeometryData 
+        } from './demo.js';
+        
+        document.getElementById('demo-simple').addEventListener('click', () => {
+            clearContainer();
+            demoSimpleContour();
+        });
+        
+        document.getElementById('demo-custom-color').addEventListener('click', () => {
+            clearContainer();
+            demoCustomColorScale();
+        });
+        
+        document.getElementById('demo-heatmap').addEventListener('click', () => {
+            clearContainer();
+            demoHeatmapMode();
+        });
+        
+        document.getElementById('demo-lines').addEventListener('click', () => {
+            clearContainer();
+            demoLinesMode();
+        });
+        
+        document.getElementById('demo-geometry-data').addEventListener('click', () => {
+            clearContainer();
+            demoGetContourGeometryData();
+        });
+        
+        function clearContainer() {
+            document.getElementById('container').innerHTML = '';
+        }
+        
+        // 默认显示简单等值线
+        demoSimpleContour();
+    </script>
+</body>
+</html> 
