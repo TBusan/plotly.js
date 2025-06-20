@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>等值线生成器演示</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .canvas-container {
+      background-color: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    
+    .controls {
+      margin: 20px auto;
+      max-width: 800px;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .control-group {
+      margin-bottom: 10px;
+    }
+    
+    label {
+      display: inline-block;
+      width: 120px;
+      margin-right: 10px;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 10px 5px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    select, input {
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      width: 150px;
+    }
+    
+    #dataOutput {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      height: 200px;
+      overflow: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    
+    .canvas-label {
+      text-align: center;
+      margin-top: 5px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>等值线生成器演示</h1>
+  
+  <div class="controls">
+    <div class="control-group">
+      <label for="dataType">数据类型:</label>
+      <select id="dataType">
+        <option value="peaks">Peaks 函数</option>
+        <option value="sine">正弦波</option>
+        <option value="gaussian">高斯分布</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="coloring">填充模式:</label>
+      <select id="coloring">
+        <option value="fill">Fill (填充)</option>
+        <option value="lines">Lines (仅线条)</option>
+        <option value="heatmap">Heatmap (热力图)</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="ncontours">等值线数量:</label>
+      <input type="number" id="ncontours" min="1" max="50" value="10">
+    </div>
+    
+    <div class="control-group">
+      <label for="smoothing">平滑程度:</label>
+      <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0">
+      <span id="smoothingValue">0</span>
+    </div>
+    
+    <div class="control-group">
+      <label for="showLines">显示线条:</label>
+      <input type="checkbox" id="showLines" checked>
+    </div>
+    
+    <div class="control-group">
+      <button id="generateBtn">生成等值线</button>
+      <button id="exportDataBtn">导出几何数据</button>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="canvas-container">
+      <canvas id="originalCanvas" width="400" height="400"></canvas>
+      <div class="canvas-label">原始数据</div>
+    </div>
+    
+    <div class="canvas-container">
+      <canvas id="contourCanvas" width="400" height="400"></canvas>
+      <div class="canvas-label">等值线渲染</div>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <h3>几何数据输出</h3>
+    <pre id="dataOutput">等值线几何数据将在这里显示...</pre>
+  </div>
+  
+  <script src="contour-generator.js"></script>
+  <script>
+    // 全局变量
+    let contourGenerator;
+    let contourData;
+    let currentData;
+    let currentWidth = 50;
+    let currentHeight = 50;
+    
+    // DOM 元素
+    const originalCanvas = document.getElementById('originalCanvas');
+    const contourCanvas = document.getElementById('contourCanvas');
+    const dataOutput = document.getElementById('dataOutput');
+    const generateBtn = document.getElementById('generateBtn');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const smoothingSlider = document.getElementById('smoothing');
+    const smoothingValue = document.getElementById('smoothingValue');
+    
+    // 初始化
+    function init() {
+      // 创建等值线生成器
+      contourGenerator = new ContourGenerator({
+        workerUrl: 'contour-worker.js'
+      });
+      
+      // 生成初始数据
+      generateData('peaks');
+      
+      // 事件监听
+      generateBtn.addEventListener('click', handleGenerate);
+      exportDataBtn.addEventListener('click', handleExportData);
+      document.getElementById('dataType').addEventListener('change', handleDataTypeChange);
+      smoothingSlider.addEventListener('input', function() {
+        smoothingValue.textContent = this.value;
+      });
+    }
+    
+    // 生成数据
+    function generateData(type) {
+      currentData = new Array(currentHeight);
+      
+      for (let i = 0; i < currentHeight; i++) {
+        currentData[i] = new Array(currentWidth);
+        for (let j = 0; j < currentWidth; j++) {
+          let x = (j - currentWidth / 2) / (currentWidth / 8);
+          let y = (i - currentHeight / 2) / (currentHeight / 8);
+          
+          switch (type) {
+            case 'peaks':
+              // Peaks 函数
+              currentData[i][j] = 3 * Math.pow(1 - x, 2) * Math.exp(-Math.pow(x, 2) - Math.pow(y + 1, 2)) 
+                                - 10 * (x / 5 - Math.pow(x, 3) - Math.pow(y, 5)) * Math.exp(-Math.pow(x, 2) - Math.pow(y, 2))
+                                - 1/3 * Math.exp(-Math.pow(x + 1, 2) - Math.pow(y, 2));
+              break;
+            case 'sine':
+              // 正弦波
+              currentData[i][j] = Math.sin(x) * Math.cos(y);
+              break;
+            case 'gaussian':
+              // 高斯分布
+              currentData[i][j] = Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2)) / 2);
+              break;
+            default:
+              currentData[i][j] = 0;
+          }
+        }
+      }
+      
+      // 渲染原始数据
+      renderOriginalData();
+    }
+    
+    // 渲染原始数据
+    function renderOriginalData() {
+      const ctx = originalCanvas.getContext('2d');
+      const width = originalCanvas.width;
+      const height = originalCanvas.height;
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height);
+      
+      // 找到数据范围
+      let min = Infinity;
+      let max = -Infinity;
+      
+      for (let i = 0; i < currentHeight; i++) {
+        for (let j = 0; j < currentWidth; j++) {
+          const val = currentData[i][j];
+          if (!isNaN(val)) {
+            min = Math.min(min, val);
+            max = Math.max(max, val);
+          }
+        }
+      }
+      
+      // 绘制热力图
+      const cellWidth = width / currentWidth;
+      const cellHeight = height / currentHeight;
+      
+      for (let i = 0; i < currentHeight; i++) {
+        for (let j = 0; j < currentWidth; j++) {
+          const val = currentData[i][j];
+          const normalizedVal = (val - min) / (max - min);
+          
+          // 使用彩虹色谱
+          const color = getHeatmapColor(normalizedVal);
+          
+          ctx.fillStyle = color;
+          ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
+        }
+      }
+    }
+    
+    // 获取热力图颜色
+    function getHeatmapColor(value) {
+      // 彩虹色谱
+      const hue = (1 - value) * 240; // 从蓝色到红色
+      return `hsl(${hue}, 100%, 50%)`;
+    }
+    
+    // 处理生成按钮点击
+    function handleGenerate() {
+      const options = {
+        coloring: document.getElementById('coloring').value,
+        ncontours: parseInt(document.getElementById('ncontours').value),
+        smoothing: parseFloat(document.getElementById('smoothing').value),
+        showLines: document.getElementById('showLines').checked
+      };
+      
+      // 显示加载状态
+      contourCanvas.getContext('2d').clearRect(0, 0, contourCanvas.width, contourCanvas.height);
+      contourCanvas.getContext('2d').font = '20px Arial';
+      contourCanvas.getContext('2d').fillText('计算中...', 150, 200);
+      
+      // 生成等值线
+      contourGenerator.generateContours(currentData, currentWidth, currentHeight, options)
+        .then(result => {
+          contourData = result;
+          renderContours(result);
+        })
+        .catch(error => {
+          console.error('Error generating contours:', error);
+          contourCanvas.getContext('2d').fillText('生成失败: ' + error.message, 100, 200);
+        });
+    }
+    
+    // 渲染等值线
+    function renderContours(data) {
+      const ctx = contourCanvas.getContext('2d');
+      const width = contourCanvas.width;
+      const height = contourCanvas.height;
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height);
+      
+      // 计算缩放因子
+      const scaleX = width / (currentWidth - 1);
+      const scaleY = height / (currentHeight - 1);
+      
+      // 绘制背景
+      if (document.getElementById('coloring').value === 'heatmap') {
+        renderOriginalData();
+      }
+      
+      // 获取选项
+      const showLines = document.getElementById('showLines').checked;
+      const coloring = document.getElementById('coloring').value;
+      
+      // 绘制每个级别
+      for (let i = 0; i < data.levels.length; i++) {
+        const level = data.levels[i];
+        
+        // 设置填充颜色
+        ctx.fillStyle = level.color;
+        
+        // 绘制填充区域
+        if (coloring === 'fill' && level.fillpath && level.fillpath.length > 0) {
+          ctx.beginPath();
+          
+          // 移动到第一个点
+          const firstPt = level.fillpath[0];
+          ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
+          
+          // 添加所有点
+          for (let j = 1; j < level.fillpath.length; j++) {
+            const pt = level.fillpath[j];
+            ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
+          }
+          
+          // 闭合路径并填充
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // 绘制等值线
+        if (showLines) {
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.lineWidth = 1;
+          
+          // 绘制开口线
+          for (let j = 0; j < level.edgepaths.length; j++) {
+            const path = level.edgepaths[j];
+            
+            ctx.beginPath();
+            const firstPt = path[0];
+            ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
+            
+            for (let k = 1; k < path.length; k++) {
+              const pt = path[k];
+              ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
+            }
+            
+            ctx.stroke();
+          }
+          
+          // 绘制闭合线
+          for (let j = 0; j < level.paths.length; j++) {
+            const path = level.paths[j];
+            
+            ctx.beginPath();
+            const firstPt = path[0];
+            ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
+            
+            for (let k = 1; k < path.length; k++) {
+              const pt = path[k];
+              ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
+            }
+            
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    
+    // 处理导出数据按钮点击
+    function handleExportData() {
+      if (!contourData) {
+        dataOutput.textContent = '请先生成等值线数据';
+        return;
+      }
+      
+      // 格式化输出
+      const formattedData = {
+        levels: contourData.levels.map(level => ({
+          level: level.level,
+          paths: level.paths.length,
+          edgepaths: level.edgepaths.length,
+          hasFillpath: !!level.fillpath
+        })),
+        perimeter: contourData.perimeter
+      };
+      
+      // 显示数据
+      dataOutput.textContent = JSON.stringify(formattedData, null, 2);
+    }
+    
+    // 处理数据类型变更
+    function handleDataTypeChange(e) {
+      generateData(e.target.value);
+    }
+    
+    // 初始化
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html> 
