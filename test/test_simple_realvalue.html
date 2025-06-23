@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Real Value Colorscale Test</title>
+  <script src="../dist/plotly.js"></script>
+</head>
+<body>
+  <div id="graph" style="width:800px;height:400px;"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var data = [
+        {
+          type: "contour",
+          z: [[10,30,50,70,90,110,130,150,170,190],
+              [20,40,60,80,100,120,140,160,180,200],
+              [30,50,70,90,110,130,150,170,190,210],
+              [40,60,80,100,120,140,160,180,200,220],
+              [50,70,90,110,130,150,170,190,210,230]],
+          colorscale: [[0,"blue"], [50,"green"], [100,"yellow"], [150,"red"], [200,"purple"]],
+          useRealValue: true,
+          contours: {
+            start: 0,
+            end: 200, 
+            size: 25,
+            coloring: "lines"
+          },
+          line: {width: 2}
+        }
+      ];
+
+      var layout = {
+        title: "Real Value Colorscale Test - Lines"
+      };
+
+      Plotly.newPlot('graph', data, layout);
+    });
+  </script>
+</body>
+</html> 

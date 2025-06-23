@@ -20,12 +20,17 @@ class ContourGenerator {
       coloring: 'fill',
       showLines: true,
       connectGaps: false,
-      workerUrl: './contour-worker.js'
+      workerUrl: './contour-worker.js',
+      useImprovedPathHandling: true, // 是否使用改进的路径处理算法
+      ncontours: 10,
+      fillOpacity: 0.7,
+      zsmooth: true
     }, options);
     
     this._worker = null;
     this._callbacks = {};
     this._callbackId = 0;
+    this._workerInitialized = false;
     
     // 初始化 Worker
     this._initWorker();
@@ -37,7 +42,7 @@ class ContourGenerator {
    */
   _initWorker() {
     if (typeof Worker === 'undefined') {
-      console.warn('Web Worker is not supported in this environment');
+      console.error('Web Worker is not supported in this environment');
       return;
     }
     
@@ -47,6 +52,7 @@ class ContourGenerator {
       // 设置消息处理
       this._worker.onmessage = (e) => {
         const { id, status, result, error } = e.data;
+        console.log('Worker message received:', e.data);
         
         // 查找回调
         if (id && this._callbacks[id]) {
@@ -65,9 +71,14 @@ class ContourGenerator {
       
       this._worker.onerror = (error) => {
         console.error('Worker error:', error);
+        this._workerInitialized = false;
       };
+      
+      this._workerInitialized = true;
+      console.log('Worker initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Web Worker:', error);
+      this._workerInitialized = false;
     }
   }
   
@@ -79,8 +90,8 @@ class ContourGenerator {
    */
   _postMessage(data) {
     return new Promise((resolve, reject) => {
-      if (!this._worker) {
-        reject(new Error('Worker not initialized'));
+      if (!this._worker || !this._workerInitialized) {
+        reject(new Error('Worker not initialized or not available'));
         return;
       }
       
@@ -91,7 +102,13 @@ class ContourGenerator {
       this._callbacks[id] = { resolve, reject };
       
       // 发送消息
-      this._worker.postMessage(Object.assign({ id }, data));
+      try {
+        console.log('Posting message to worker:', Object.assign({ id }, data));
+        this._worker.postMessage(Object.assign({ id }, data));
+      } catch (error) {
+        delete this._callbacks[id];
+        reject(new Error('Failed to send message to worker: ' + error.message));
+      }
     });
   }
   
@@ -121,9 +138,77 @@ class ContourGenerator {
         smoothing: mergedOptions.smoothing,
         coloring: mergedOptions.coloring,
         showLines: mergedOptions.showLines,
-        connectGaps: mergedOptions.connectGaps
+        connectGaps: mergedOptions.connectGaps,
+        useImprovedPathHandling: mergedOptions.useImprovedPathHandling,
+        ncontours: mergedOptions.ncontours || 10,
+        fillOpacity: mergedOptions.fillOpacity || 0.7,
+        zsmooth: mergedOptions.zsmooth !== undefined ? mergedOptions.zsmooth : true
       }
+    }).then(result => {
+      // 预处理结果（如需比较不同算法的结果）
+      return this._processResult(result, mergedOptions);
     });
+  }
+  
+  /**
+   * 处理生成的等值线结果
+   * @param {Object} result 等值线结果
+   * @param {Object} options 选项
+   * @returns {Object} 处理后的结果
+   * @private
+   */
+  _processResult(result, options) {
+    // 如果需要原始结果（用于比较算法），可以在这里处理
+    if (options.includeOriginalAlgorithm && !options.useImprovedPathHandling) {
+      // 标记为原始算法结果
+      result.algorithmType = 'original';
+    } else {
+      // 标记为改进算法结果
+      result.algorithmType = 'improved';
+    }
+    
+    // 确保统计信息存在
+    if (!result.stats) {
+      result.stats = this._calculateStats(result);
+    }
+    
+    return result;
+  }
+  
+  /**
+   * 计算等值线结果的统计信息
+   * @param {Object} result 等值线结果
+   * @returns {Object} 统计信息
+   * @private
+   */
+  _calculateStats(result) {
+    const stats = {
+      levelCount: result.levels.length,
+      totalPaths: 0,
+      totalEdgePaths: 0,
+      totalPoints: 0
+    };
+    
+    // 计算路径数量和点的总数
+    if (result.levels) {
+      result.levels.forEach(level => {
+        if (level.paths) {
+          stats.totalPaths += level.paths.length;
+          level.paths.forEach(path => {
+            stats.totalPoints += path.length;
+          });
+        }
+        
+        if (level.edgepaths) {
+          stats.totalEdgePaths += level.edgepaths.length;
+          level.edgepaths.forEach(path => {
+            stats.totalPoints += path.length;
+          });
+        }
+      });
+    }
+    
+    return stats;
   }
   
   /**
@@ -208,6 +293,64 @@ class ContourGenerator {
       [0.75, 'rgb(255, 255, 0)'],
       [1, 'rgb(255, 0, 0)']
     ];
+  }
+  
+  /**
+   * 创建自定义颜色映射
+   * @param {Array<string>} colors 颜色数组
+   * @returns {Array<Array<number|string>>} 颜色映射
+   */
+  createColorScale(colors) {
+    if (!Array.isArray(colors) || colors.length < 2) {
+      return this._defaultColorScale();
+    }
+    
+    return colors.map((color, index) => {
+      return [index / (colors.length - 1), color];
+    });
+  }
+  
+  /**
+   * 创建等距的颜色映射
+   * @param {Array<number>} values 值数组
+   * @param {Array<string>} colors 颜色数组
+   * @returns {Array<Array<number|string>>} 颜色映射
+   */
+  createValueColorScale(values, colors) {
+    if (!Array.isArray(values) || !Array.isArray(colors) || 
+        values.length !== colors.length || values.length < 2) {
+      return this._defaultColorScale();
+    }
+    
+    // 找到最大和最小值
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    
+    // 创建映射
+    return values.map((val, index) => {
+      const normalizedValue = (val - min) / range;
+      return [normalizedValue, colors[index]];
+    });
+  }
+  
+  /**
+   * 生成默认等值线配置
+   * @param {Object} options 额外选项
+   * @returns {Object} 配置对象
+   */
+  createDefaultOptions(options = {}) {
+    return Object.assign({
+      smoothing: 0.5,
+      coloring: 'fill',
+      showLines: true,
+      connectGaps: false,
+      useImprovedPathHandling: true,
+      ncontours: 10,
+      colorScale: this._defaultColorScale(),
+      fillOpacity: 0.7,
+      zsmooth: true
+    }, options);
   }
   
   /**

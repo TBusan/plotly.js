@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fill Mode Real Value Colorscale Test</title>
+  <script src="../dist/plotly.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .color-sample {
+      display: flex;
+      margin: 10px 0;
+    }
+    .color-box {
+      width: 50px;
+      height: 30px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Real Value Colorscale Tests</h2>
+    <div id="graph" style="width:800px;height:600px;"></div>
+    
+    <h3>Color Reference</h3>
+    <div class="color-sample">
+      <div class="color-box" style="background-color: rgb(255,30,236);"></div>
+      <span>0: rgb(255,30,236) - Bright Pink</span>
+    </div>
+    <div class="color-sample">
+      <div class="color-box" style="background-color: rgb(30,255,103);"></div>
+      <span>50: rgb(30,255,103) - Bright Green</span>
+    </div>
+    <div class="color-sample">
+      <div class="color-box" style="background-color: rgb(30,255,250);"></div>
+      <span>100: rgb(30,255,250) - Cyan</span>
+    </div>
+    <div class="color-sample">
+      <div class="color-box" style="background-color: rgb(255,0,0);"></div>
+      <span>150: rgb(255,0,0) - Red</span>
+    </div>
+    <div class="color-sample">
+      <div class="color-box" style="background-color: rgb(30,255,51);"></div>
+      <span>200: rgb(30,255,51) - Light Green</span>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var data = [
+        {
+          type: "contour",
+          z: [[10,30,50,70,90,110,130,150,170,190],
+              [20,40,60,80,100,120,140,160,180,200],
+              [30,50,70,90,110,130,150,170,190,210],
+              [40,60,80,100,120,140,160,180,200,220],
+              [50,70,90,110,130,150,170,190,210,230]],
+          colorscale: [[0,"rgb(255,30,236)"], [50,"rgb(30,255,103)"], [100,"rgb(30,255,250)"], [150,"rgb(255,0,0)"], [200,"rgb(30,255,51)"]],
+          useRealValue: true,
+          contours: {
+            start: 0,
+            end: 200, 
+            size: 50,  // 使用更大的间隔，使颜色更明显
+            coloring: "fill"
+          },
+          xaxis: "x1",
+          yaxis: "y1",
+          name: "Fill Mode with useRealValue"
+        },
+        {
+          type: "contour",
+          z: [[10,30,50,70,90,110,130,150,170,190],
+              [20,40,60,80,100,120,140,160,180,200],
+              [30,50,70,90,110,130,150,170,190,210],
+              [40,60,80,100,120,140,160,180,200,220],
+              [50,70,90,110,130,150,170,190,210,230]],
+          colorscale: [[0,"rgb(255,30,236)"], [50,"rgb(30,255,103)"], [100,"rgb(30,255,250)"], [150,"rgb(255,0,0)"], [200,"rgb(30,255,51)"]],
+          useRealValue: true,
+          contours: {
+            start: 0,
+            end: 200,
+            size: 50,  // 使用更大的间隔，使颜色更明显
+            coloring: "lines"
+          },
+          line: {width: 4},  // 使线条更粗
+          xaxis: "x2",
+          yaxis: "y2",
+          name: "Lines Mode with useRealValue"
+        }
+      ];
+
+      var layout = {
+        grid: {rows: 1, columns: 2, pattern: "independent"},
+        annotations: [
+          {text: "Fill Mode with useRealValue", x: 0.2, y: 0.95, xref: "paper", yref: "paper", showarrow: false},
+          {text: "Lines Mode with useRealValue", x: 0.8, y: 0.95, xref: "paper", yref: "paper", showarrow: false}
+        ]
+      };
+
+      Plotly.newPlot('graph', data, layout);
+    });
+  </script>
+</body>
+</html> 

@@ -95,6 +95,52 @@
       margin-top: 5px;
       font-weight: bold;
     }
+    
+    .status-bar {
+      background-color: #f8f8f8;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    
+    .success {
+      color: green;
+    }
+    
+    .comparison-toggle {
+      margin-top: 10px;
+      text-align: center;
+    }
+    
+    .toggle-btn {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      text-align: center;
+      display: inline-block;
+      font-size: 14px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    
+    .toggle-btn.active {
+      background-color: #0b7dda;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .toggle-btn:hover {
+      background-color: #0b7dda;
+    }
   </style>
 </head>
 <body>
@@ -136,8 +182,15 @@
     </div>
     
     <div class="control-group">
+      <label for="showComparison">对比模式:</label>
+      <input type="checkbox" id="showComparison">
+    </div>
+    
+    <div class="control-group">
       <button id="generateBtn">生成等值线</button>
       <button id="exportDataBtn">导出几何数据</button>
+      <button id="checkFilesBtn">检查文件</button>
+      <button id="clearLogsBtn">清除日志</button>
     </div>
   </div>
   
@@ -147,9 +200,13 @@
       <div class="canvas-label">原始数据</div>
     </div>
     
-    <div class="canvas-container">
+    <div class="canvas-container" id="contourContainer">
       <canvas id="contourCanvas" width="400" height="400"></canvas>
       <div class="canvas-label">等值线渲染</div>
+      <div class="comparison-toggle" id="comparisonToggle" style="display: none;">
+        <button class="toggle-btn active" data-mode="improved">改进后</button>
+        <button class="toggle-btn" data-mode="original">原始版本</button>
+      </div>
     </div>
   </div>
   
@@ -158,7 +215,16 @@
     <pre id="dataOutput">等值线几何数据将在这里显示...</pre>
   </div>
   
-  <script src="contour-generator.js"></script>
+  <div class="status-bar" id="statusBar">
+    正在加载...
+  </div>
+  
+  <script>
+    // 检查脚本是否正确加载
+    document.getElementById('statusBar').textContent = '正在加载脚本...';
+  </script>
+  
+  <script src="contour-generator.js" onerror="scriptLoadError('contour-generator.js')"></script>
   <script>
     // 全局变量
     let contourGenerator;
@@ -166,6 +232,7 @@
     let currentData;
     let currentWidth = 50;
     let currentHeight = 50;
+    let workerUrl = './contour-worker.js';
     
     // DOM 元素
     const originalCanvas = document.getElementById('originalCanvas');
@@ -173,113 +240,205 @@
     const dataOutput = document.getElementById('dataOutput');
     const generateBtn = document.getElementById('generateBtn');
     const exportDataBtn = document.getElementById('exportDataBtn');
+    const checkFilesBtn = document.getElementById('checkFilesBtn');
     const smoothingSlider = document.getElementById('smoothing');
     const smoothingValue = document.getElementById('smoothingValue');
+    const statusBar = document.getElementById('statusBar');
+    
+    // 脚本加载错误处理
+    function scriptLoadError(scriptName) {
+      showError(`无法加载脚本: ${scriptName}`);
+      statusBar.innerHTML = `<span class="error">脚本加载失败: ${scriptName}</span>`;
+    }
     
     // 初始化
-    function init() {
-      // 创建等值线生成器
-      contourGenerator = new ContourGenerator({
-        workerUrl: 'contour-worker.js'
-      });
+    function initGenerator() {
+      try {
+        // 创建等值线生成器实例
+        contourGenerator = new ContourGenerator({
+          workerUrl: workerUrl
+        });
+        
+        document.getElementById('statusBar').textContent = '生成器初始化成功。';
+        console.log('Contour generator initialized');
+        
+        // 激活所有按钮
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('exportDataBtn').disabled = false;
+      } catch (error) {
+        document.getElementById('statusBar').textContent = '生成器初始化失败: ' + error.message;
+        document.getElementById('statusBar').classList.add('error');
+        console.error('Failed to initialize contour generator:', error);
+      }
+    }
+    
+    // 检查文件是否存在
+    function checkFiles() {
+      statusBar.textContent = '正在检查文件...';
       
-      // 生成初始数据
-      generateData('peaks');
+      // 检查 contour-worker.js
+      fetch(workerUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(text => {
+          if (text.length > 0) {
+            statusBar.innerHTML = `<span class="success">Worker 文件加载成功! 大小: ${text.length} 字节</span>`;
+          } else {
+            statusBar.innerHTML = '<span class="error">Worker 文件内容为空!</span>';
+          }
+        })
+        .catch(error => {
+          statusBar.innerHTML = `<span class="error">Worker 文件加载失败: ${error.message}</span>`;
+          console.error('File check error:', error);
+        });
+    }
+    
+    // 测试 Worker 是否正确加载
+    function testWorker() {
+      // 显示状态
+      dataOutput.textContent = '正在检查 Worker 是否可用...';
+      statusBar.textContent = `正在测试 Worker (${workerUrl})...`;
       
-      // 事件监听
-      generateBtn.addEventListener('click', handleGenerate);
-      exportDataBtn.addEventListener('click', handleExportData);
-      document.getElementById('dataType').addEventListener('change', handleDataTypeChange);
-      smoothingSlider.addEventListener('input', function() {
-        smoothingValue.textContent = this.value;
-      });
+      // 创建一个小型测试数据
+      const testData = [
+        [1, 2],
+        [3, 4]
+      ];
+      
+      // 尝试生成一个简单的等值线
+      contourGenerator.generateContours(testData, 2, 2, { ncontours: 1 })
+        .then(() => {
+          dataOutput.textContent = 'Worker 加载成功，系统就绪！';
+          statusBar.innerHTML = '<span class="success">Worker 测试成功，系统就绪!</span>';
+          console.log('Worker test successful');
+        })
+        .catch(error => {
+          showError('Worker 加载失败: ' + error.message);
+          statusBar.innerHTML = `<span class="error">Worker 测试失败: ${error.message}</span>`;
+          console.error('Worker test failed:', error);
+          generateBtn.disabled = true;
+        });
+    }
+    
+    // 显示错误信息
+    function showError(message) {
+      dataOutput.textContent = '错误: ' + message;
+      dataOutput.style.color = 'red';
+      
+      // 在画布上也显示错误
+      const ctx = contourCanvas.getContext('2d');
+      ctx.clearRect(0, 0, contourCanvas.width, contourCanvas.height);
+      ctx.font = '16px Arial';
+      ctx.fillStyle = 'red';
+      ctx.fillText(message, 20, 200);
+    }
+    
+    // 更新数据预览
+    function updateDataPreview() {
+      const dataType = document.getElementById('dataType').value;
+      
+      // 根据所选类型生成数据
+      const data = generateData(dataType);
+      
+      // 绘制原始数据
+      drawOriginalData(data);
+      
+      // 更新当前数据
+      currentData = data;
+      
+      // 更新状态
+      document.getElementById('statusBar').textContent = `数据类型: ${dataType}, 尺寸: ${currentWidth}x${currentHeight}`;
     }
     
     // 生成数据
     function generateData(type) {
-      currentData = new Array(currentHeight);
+      let data = new Array(currentHeight);
       
       for (let i = 0; i < currentHeight; i++) {
-        currentData[i] = new Array(currentWidth);
+        data[i] = new Array(currentWidth);
         for (let j = 0; j < currentWidth; j++) {
-          let x = (j - currentWidth / 2) / (currentWidth / 8);
-          let y = (i - currentHeight / 2) / (currentHeight / 8);
+          // 归一化坐标 (-1, 1)
+          const x = (j / (currentWidth - 1)) * 4 - 2;
+          const y = (i / (currentHeight - 1)) * 4 - 2;
           
+          // 根据类型生成不同的数据
           switch (type) {
             case 'peaks':
-              // Peaks 函数
-              currentData[i][j] = 3 * Math.pow(1 - x, 2) * Math.exp(-Math.pow(x, 2) - Math.pow(y + 1, 2)) 
-                                - 10 * (x / 5 - Math.pow(x, 3) - Math.pow(y, 5)) * Math.exp(-Math.pow(x, 2) - Math.pow(y, 2))
-                                - 1/3 * Math.exp(-Math.pow(x + 1, 2) - Math.pow(y, 2));
+              // Matlab peaks函数
+              data[i][j] = 3 * Math.pow(1 - x, 2) * Math.exp(-Math.pow(x, 2) - Math.pow(y + 1, 2)) 
+                         - 10 * (x / 5 - Math.pow(x, 3) - Math.pow(y, 5)) * Math.exp(-Math.pow(x, 2) - Math.pow(y, 2))
+                         - 1/3 * Math.exp(-Math.pow(x + 1, 2) - Math.pow(y, 2));
               break;
+              
             case 'sine':
               // 正弦波
-              currentData[i][j] = Math.sin(x) * Math.cos(y);
+              data[i][j] = Math.sin(3 * x) * Math.cos(3 * y);
               break;
+              
             case 'gaussian':
               // 高斯分布
-              currentData[i][j] = Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2)) / 2);
+              data[i][j] = Math.exp(-Math.pow(x, 2) - Math.pow(y, 2));
               break;
+              
             default:
-              currentData[i][j] = 0;
+              data[i][j] = Math.random() * 2 - 1;
           }
         }
       }
       
-      // 渲染原始数据
-      renderOriginalData();
+      return data;
     }
     
-    // 渲染原始数据
-    function renderOriginalData() {
-      const ctx = originalCanvas.getContext('2d');
-      const width = originalCanvas.width;
-      const height = originalCanvas.height;
+    // 绘制原始数据
+    function drawOriginalData(data) {
+      const canvas = document.getElementById('originalCanvas');
+      const ctx = canvas.getContext('2d');
       
-      // 清空画布
-      ctx.clearRect(0, 0, width, height);
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // 找到数据范围
+      // 计算颜色范围
       let min = Infinity;
       let max = -Infinity;
       
-      for (let i = 0; i < currentHeight; i++) {
-        for (let j = 0; j < currentWidth; j++) {
-          const val = currentData[i][j];
-          if (!isNaN(val)) {
-            min = Math.min(min, val);
-            max = Math.max(max, val);
-          }
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          min = Math.min(min, data[i][j]);
+          max = Math.max(max, data[i][j]);
         }
       }
       
-      // 绘制热力图
-      const cellWidth = width / currentWidth;
-      const cellHeight = height / currentHeight;
+      // 绘制数据点
+      const cellWidth = canvas.width / currentWidth;
+      const cellHeight = canvas.height / currentHeight;
       
       for (let i = 0; i < currentHeight; i++) {
         for (let j = 0; j < currentWidth; j++) {
-          const val = currentData[i][j];
-          const normalizedVal = (val - min) / (max - min);
+          const value = (data[i][j] - min) / (max - min); // 归一化到 [0, 1]
           
-          // 使用彩虹色谱
-          const color = getHeatmapColor(normalizedVal);
+          // 使用热力图颜色方案
+          const r = Math.floor(255 * Math.min(1, 2 * value));
+          const g = Math.floor(255 * Math.min(1, 2 - 2 * Math.abs(value - 0.5)));
+          const b = Math.floor(255 * Math.min(1, 2 * (1 - value)));
           
-          ctx.fillStyle = color;
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
           ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
         }
       }
     }
     
-    // 获取热力图颜色
-    function getHeatmapColor(value) {
-      // 彩虹色谱
-      const hue = (1 - value) * 240; // 从蓝色到红色
-      return `hsl(${hue}, 100%, 50%)`;
-    }
-    
-    // 处理生成按钮点击
-    function handleGenerate() {
+    // 生成等值线
+    function generateContours() {
+      if (!contourGenerator) {
+        document.getElementById('statusBar').textContent = '错误: 等值线生成器未初始化';
+        return;
+      }
+      
+      // 获取配置
       const options = {
         coloring: document.getElementById('coloring').value,
         ncontours: parseInt(document.getElementById('ncontours').value),
@@ -287,141 +446,336 @@
         showLines: document.getElementById('showLines').checked
       };
       
-      // 显示加载状态
-      contourCanvas.getContext('2d').clearRect(0, 0, contourCanvas.width, contourCanvas.height);
-      contourCanvas.getContext('2d').font = '20px Arial';
-      contourCanvas.getContext('2d').fillText('计算中...', 150, 200);
+      // 更新状态
+      document.getElementById('statusBar').textContent = '正在生成等值线...';
       
       // 生成等值线
       contourGenerator.generateContours(currentData, currentWidth, currentHeight, options)
         .then(result => {
+          // 保存结果
           contourData = result;
-          renderContours(result);
+          
+          // 绘制等值线
+          drawContours(result);
+          
+          // 更新状态
+          document.getElementById('statusBar').textContent = `等值线生成成功: ${result.levels.length}个级别`;
+          document.getElementById('statusBar').classList.remove('error');
+          document.getElementById('statusBar').classList.add('success');
         })
         .catch(error => {
-          console.error('Error generating contours:', error);
-          contourCanvas.getContext('2d').fillText('生成失败: ' + error.message, 100, 200);
+          // 显示错误
+          document.getElementById('statusBar').textContent = `错误: ${error.message}`;
+          document.getElementById('statusBar').classList.add('error');
+          console.error('Contour generation error:', error);
         });
     }
     
-    // 渲染等值线
-    function renderContours(data) {
-      const ctx = contourCanvas.getContext('2d');
-      const width = contourCanvas.width;
-      const height = contourCanvas.height;
-      
-      // 清空画布
-      ctx.clearRect(0, 0, width, height);
-      
-      // 计算缩放因子
-      const scaleX = width / (currentWidth - 1);
-      const scaleY = height / (currentHeight - 1);
-      
-      // 绘制背景
-      if (document.getElementById('coloring').value === 'heatmap') {
-        renderOriginalData();
-      }
-      
-      // 获取选项
-      const showLines = document.getElementById('showLines').checked;
-      const coloring = document.getElementById('coloring').value;
-      
-      // 绘制每个级别
-      for (let i = 0; i < data.levels.length; i++) {
-        const level = data.levels[i];
-        
-        // 设置填充颜色
-        ctx.fillStyle = level.color;
-        
-        // 绘制填充区域
-        if (coloring === 'fill' && level.fillpath && level.fillpath.length > 0) {
-          ctx.beginPath();
-          
-          // 移动到第一个点
-          const firstPt = level.fillpath[0];
-          ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
-          
-          // 添加所有点
-          for (let j = 1; j < level.fillpath.length; j++) {
-            const pt = level.fillpath[j];
-            ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
-          }
-          
-          // 闭合路径并填充
-          ctx.closePath();
-          ctx.fill();
-        }
-        
-        // 绘制等值线
-        if (showLines) {
-          ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-          ctx.lineWidth = 1;
-          
-          // 绘制开口线
-          for (let j = 0; j < level.edgepaths.length; j++) {
-            const path = level.edgepaths[j];
-            
-            ctx.beginPath();
-            const firstPt = path[0];
-            ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
-            
-            for (let k = 1; k < path.length; k++) {
-              const pt = path[k];
-              ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
-            }
-            
-            ctx.stroke();
-          }
-          
-          // 绘制闭合线
-          for (let j = 0; j < level.paths.length; j++) {
-            const path = level.paths[j];
-            
-            ctx.beginPath();
-            const firstPt = path[0];
-            ctx.moveTo(firstPt[0] * scaleX, firstPt[1] * scaleY);
-            
-            for (let k = 1; k < path.length; k++) {
-              const pt = path[k];
-              ctx.lineTo(pt[0] * scaleX, pt[1] * scaleY);
-            }
-            
-            ctx.closePath();
-            ctx.stroke();
-          }
-        }
-      }
-    }
-    
-    // 处理导出数据按钮点击
-    function handleExportData() {
+    // 导出等值线数据
+    function exportContourData() {
       if (!contourData) {
-        dataOutput.textContent = '请先生成等值线数据';
+        document.getElementById('statusBar').textContent = '请先生成等值线';
         return;
       }
       
       // 格式化输出
-      const formattedData = {
-        levels: contourData.levels.map(level => ({
-          level: level.level,
-          paths: level.paths.length,
-          edgepaths: level.edgepaths.length,
-          hasFillpath: !!level.fillpath
-        })),
-        perimeter: contourData.perimeter
-      };
+      const output = JSON.stringify(contourData, null, 2);
       
       // 显示数据
-      dataOutput.textContent = JSON.stringify(formattedData, null, 2);
+      document.getElementById('dataOutput').textContent = output;
     }
     
-    // 处理数据类型变更
-    function handleDataTypeChange(e) {
-      generateData(e.target.value);
+    // 检查文件
+    function checkFiles() {
+      const files = ['contour-worker.js', 'contour-generator.js'];
+      const statusBar = document.getElementById('statusBar');
+      
+      statusBar.textContent = '检查文件...';
+      
+      // 逐个检查文件
+      Promise.all(files.map(file => 
+        fetch(file)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`${file}: ${response.status} ${response.statusText}`);
+            }
+            return `${file}: OK`;
+          })
+          .catch(error => `${file}: 错误 - ${error.message}`)
+      ))
+      .then(results => {
+        // 显示结果
+        statusBar.innerHTML = results.join('<br>');
+      })
+      .catch(error => {
+        statusBar.textContent = `检查错误: ${error.message}`;
+      });
     }
     
-    // 初始化
-    window.addEventListener('load', init);
+    // 清除日志
+    function clearLogs() {
+      document.getElementById('dataOutput').textContent = '等值线几何数据将在这里显示...';
+    }
+    
+    // 页面加载后初始化
+    window.addEventListener('load', function() {
+      // 初始化状态栏
+      document.getElementById('statusBar').textContent = '就绪。';
+      
+      // 获取当前路径
+      const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+      
+      // 设置 Worker URL
+      workerUrl = new URL('./contour-worker.js', currentPath).href;
+      
+      // 初始化生成器
+      initGenerator();
+      
+      // 添加事件监听器
+      document.getElementById('generateBtn').addEventListener('click', generateContours);
+      document.getElementById('exportDataBtn').addEventListener('click', exportContourData);
+      document.getElementById('checkFilesBtn').addEventListener('click', checkFiles);
+      document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+      document.getElementById('dataType').addEventListener('change', updateDataPreview);
+      document.getElementById('showComparison').addEventListener('change', toggleComparisonMode);
+      
+      // 初始化平滑值显示
+      document.getElementById('smoothing').addEventListener('input', function() {
+        document.getElementById('smoothingValue').textContent = this.value;
+      });
+      
+      // 初始化对比按钮事件
+      setupComparisonToggle();
+      
+      // 生成初始数据预览
+      updateDataPreview();
+    });
+    
+    // 设置对比模式开关
+    function toggleComparisonMode() {
+      const showComparison = document.getElementById('showComparison').checked;
+      document.getElementById('comparisonToggle').style.display = showComparison ? 'block' : 'none';
+      
+      if (contourData) {
+        drawContours(contourData);
+      }
+    }
+    
+    // 设置对比按钮
+    function setupComparisonToggle() {
+      const toggleButtons = document.querySelectorAll('.toggle-btn');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          // 激活当前按钮，取消其他按钮的激活状态
+          toggleButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          
+          // 重绘轮廓
+          if (contourData) {
+            drawContours(contourData);
+          }
+        });
+      });
+    }
+    
+    // 获取当前活动的对比模式
+    function getCurrentComparisonMode() {
+      const activeButton = document.querySelector('.toggle-btn.active');
+      return activeButton ? activeButton.dataset.mode : 'improved';
+    }
+    
+    // 应用对比模式的渲染
+    function applyComparisonMode(ctx, contourData) {
+      const mode = getCurrentComparisonMode();
+      
+      if (mode === 'original') {
+        // 原始版本 - 禁用平滑和改进的边界处理
+        return {
+          smoothing: 0,
+          useImprovedBoundaries: false
+        };
+      } else {
+        // 改进版本 - 使用当前设置
+        return {
+          smoothing: parseFloat(document.getElementById('smoothing').value),
+          useImprovedBoundaries: true
+        };
+      }
+    }
+    
+    // 绘制等值线
+    function drawContours(data) {
+      const canvas = document.getElementById('contourCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 确定是否为对比模式
+      const isComparisonMode = document.getElementById('showComparison').checked;
+      const renderSettings = isComparisonMode ? applyComparisonMode(ctx, data) : {
+        smoothing: parseFloat(document.getElementById('smoothing').value),
+        useImprovedBoundaries: true
+      };
+      
+      // 绘制每个等级的等值线
+      data.levels.forEach(level => {
+        // 设置颜色
+        ctx.fillStyle = level.color;
+        ctx.strokeStyle = level.color;
+        ctx.lineWidth = 1;
+        
+        // 绘制填充区域
+        if (document.getElementById('coloring').value === 'fill' && level.fillpath && level.fillpath.length) {
+          ctx.beginPath();
+          
+          // 遍历填充路径点
+          let isFirstSegment = true;
+          for (let i = 0; i < level.fillpath.length; i++) {
+            const pt = level.fillpath[i];
+            
+            // 检查是否是路径分隔符 (null)
+            if (pt === null) {
+              // 结束当前路径并开始新路径
+              if (!isFirstSegment) ctx.fill();
+              ctx.beginPath();
+              isFirstSegment = true;
+              continue;
+            }
+            
+            // 绘制点
+            const x = pt[0] / currentWidth * canvas.width;
+            const y = (1 - pt[1] / currentHeight) * canvas.height;
+            
+            if (isFirstSegment) {
+              ctx.moveTo(x, y);
+              isFirstSegment = false;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          
+          ctx.fill();
+        }
+        
+        // 绘制线条
+        if (document.getElementById('showLines').checked) {
+          // 绘制闭合路径
+          level.paths.forEach(path => {
+            if (path.length < 2) return;
+            
+            // 平滑路径 (如果启用)
+            let renderPath = [...path]; // 复制以避免修改原始数据
+            if (renderSettings.smoothing > 0) {
+              smoothPath(renderPath, renderSettings.smoothing);
+            }
+            
+            ctx.beginPath();
+            for (let i = 0; i < renderPath.length; i++) {
+              const pt = renderPath[i];
+              const x = pt[0] / currentWidth * canvas.width;
+              const y = (1 - pt[1] / currentHeight) * canvas.height;
+              
+              if (i === 0) {
+                ctx.moveTo(x, y);
+              } else {
+                ctx.lineTo(x, y);
+              }
+            }
+            ctx.stroke();
+          });
+          
+          // 绘制开放路径
+          level.edgepaths.forEach(path => {
+            if (path.length < 2) return;
+            
+            // 平滑路径 (如果启用)
+            let renderPath = [...path]; // 复制以避免修改原始数据
+            if (renderSettings.smoothing > 0) {
+              smoothPath(renderPath, renderSettings.smoothing);
+            }
+            
+            ctx.beginPath();
+            for (let i = 0; i < renderPath.length; i++) {
+              const pt = renderPath[i];
+              const x = pt[0] / currentWidth * canvas.width;
+              const y = (1 - pt[1] / currentHeight) * canvas.height;
+              
+              if (i === 0) {
+                ctx.moveTo(x, y);
+              } else {
+                ctx.lineTo(x, y);
+              }
+            }
+            ctx.stroke();
+          });
+        }
+      });
+    }
+    
+    // 路径平滑函数 (与worker中相同，用于前端渲染)
+    function smoothPath(pts, smoothing) {
+      if (!smoothing || smoothing <= 0 || pts.length < 3) return;
+      
+      const isClosed = equalPts(pts[0], pts[pts.length-1], 0.001, 0.001);
+      
+      // 过滤太近的点来减少锯齿
+      const xtol = 0.005;
+      const ytol = 0.005;
+      let i = 1;
+      while (i < pts.length - 1) {
+        if (equalPts(pts[i], pts[i+1], xtol, ytol)) {
+          pts.splice(i, 1);
+        } else {
+          i++;
+        }
+      }
+      
+      // 改进的平滑算法 - 结合Chaikin平滑和张力参数
+      const iterations = Math.max(1, Math.round(smoothing * 2));
+      const tensionFactor = 0.75 - smoothing * 0.25;
+      
+      for (let iter = 0; iter < iterations; iter++) {
+        const n = pts.length;
+        const newPts = [];
+        
+        const startIdx = isClosed ? 0 : 0;
+        const endIdx = isClosed ? n : n - 1;
+        
+        if (!isClosed) newPts.push([pts[0][0], pts[0][1]]);
+        
+        for (let i = startIdx; i < endIdx; i++) {
+          const p0 = pts[i];
+          const p1 = pts[(i + 1) % n];
+          
+          newPts.push([
+            p0[0] * tensionFactor + p1[0] * (1 - tensionFactor),
+            p0[1] * tensionFactor + p1[1] * (1 - tensionFactor)
+          ]);
+          
+          if (i < endIdx - 1 || isClosed) {
+            newPts.push([
+              p0[0] * (1 - tensionFactor) + p1[0] * tensionFactor,
+              p0[1] * (1 - tensionFactor) + p1[1] * tensionFactor
+            ]);
+          }
+        }
+        
+        if (!isClosed) newPts.push([pts[n-1][0], pts[n-1][1]]);
+        else if (newPts.length > 0) newPts.push([newPts[0][0], newPts[0][1]]);
+        
+        pts.length = 0;
+        for (let i = 0; i < newPts.length; i++) {
+          pts.push(newPts[i]);
+        }
+      }
+    }
+    
+    // 辅助函数：判断两点是否接近
+    function equalPts(pt1, pt2, xtol, ytol) {
+      return Math.abs(pt1[0] - pt2[0]) < xtol && 
+             Math.abs(pt1[1] - pt2[1]) < ytol;
+    }
   </script>
 </body>
 </html> 

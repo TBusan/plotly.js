@@ -39,21 +39,101 @@ const CONSTANTS = {
  * Web Worker 消息处理
  */
 self.onmessage = function(e) {
-  const { data, width, height, levels, colorScale, options } = e.data;
+  // 验证消息数据
+  if (!e || !e.data) {
+    console.error('[Worker] Received invalid message');
+    self.postMessage({
+      id: 'unknown',
+      status: 'error',
+      error: 'Invalid message format'
+    });
+    return;
+  }
+
+  const { id, data, width, height, levels, colorScale, options } = e.data;
+  
+  // 验证必要的参数
+  if (!data) {
+    console.error('[Worker] Missing data parameter');
+    self.postMessage({
+      id: id || 'unknown',
+      status: 'error',
+      error: 'Missing data parameter'
+    });
+    return;
+  }
+  
+  if (!width || typeof width !== 'number' || width <= 0) {
+    console.error('[Worker] Invalid width parameter:', width);
+    self.postMessage({
+      id: id || 'unknown',
+      status: 'error',
+      error: 'Invalid width parameter'
+    });
+    return;
+  }
+  
+  if (!height || typeof height !== 'number' || height <= 0) {
+    console.error('[Worker] Invalid height parameter:', height);
+    self.postMessage({
+      id: id || 'unknown',
+      status: 'error',
+      error: 'Invalid height parameter'
+    });
+    return;
+  }
+  
+  console.log('[Worker] Received message:', { 
+    id, 
+    width, 
+    height, 
+    levelsCount: levels?.length,
+    dataSize: Array.isArray(data) ? `${data.length}x${Array.isArray(data[0]) ? data[0].length : 'unknown'}` : data.length,
+    options 
+  });
   
   try {
+    console.log('[Worker] Starting contour computation');
+    
+    // 验证数据格式
+    let validData = data;
+    if (!Array.isArray(data) && !(data instanceof Float32Array || data instanceof Float64Array)) {
+      throw new Error('Data must be an array or typed array');
+    }
+    
+    // 验证数据大小
+    if (Array.isArray(data)) {
+      if (data.length !== height) {
+        console.warn(`[Worker] Data height (${data.length}) doesn't match specified height (${height}), using data length`);
+      }
+      
+      if (Array.isArray(data[0]) && data[0].length !== width) {
+        console.warn(`[Worker] Data width (${data[0].length}) doesn't match specified width (${width}), using data width`);
+      }
+    } else {
+      // 一维数组
+      if (data.length !== width * height) {
+        console.warn(`[Worker] Data length (${data.length}) doesn't match width*height (${width*height}), data may be truncated`);
+      }
+    }
+    
     // 计算等值线
-    const result = computeContours(data, width, height, levels, colorScale, options);
+    const result = computeContours(validData, width, height, levels, colorScale, options);
+    console.log('[Worker] Computation completed');
     
     // 返回结果
     self.postMessage({
+      id: id,
       status: 'success',
       result: result
     });
+    console.log('[Worker] Result sent back');
   } catch (error) {
+    console.error('[Worker] Error during computation:', error);
     self.postMessage({
+      id: id || 'unknown',
       status: 'error',
-      error: error.message
+      error: error.message || 'Unknown error'
     });
   }
 };
@@ -69,72 +149,332 @@ self.onmessage = function(e) {
  * @returns {Object} 等值线和等值面几何数据
  */
 function computeContours(data, width, height, levels, colorScale, options = {}) {
-  // 确保数据是二维数组格式
-  const z = ensureDataFormat(data, width, height);
-  
-  // 默认选项
-  options = Object.assign({
-    smoothing: 0, // 平滑程度
-    coloring: 'fill', // 填充模式
-    showLines: true, // 显示线条
-    connectGaps: false // 连接缺口
-  }, options);
-  
-  // 计算结果
-  const result = {
-    levels: [],
-    perimeter: [
+  try {
+    console.log('[Worker] Processing data:', { width, height, levelsCount: levels?.length });
+    
+    // 验证基本参数
+    if (!data || (!Array.isArray(data) && !(data instanceof Float32Array || data instanceof Float64Array))) {
+      console.error('[Worker] Invalid data format');
+      throw new Error('Invalid data format');
+    }
+    
+    if (!width || typeof width !== 'number' || width <= 0 || !height || typeof height !== 'number' || height <= 0) {
+      console.error('[Worker] Invalid dimensions:', width, height);
+      throw new Error('Invalid dimensions');
+    }
+    
+    // 确保数据是二维数组格式
+    const z = ensureDataFormat(data, width, height);
+    
+    // 验证转换后的数据
+    if (!Array.isArray(z) || z.length === 0 || !Array.isArray(z[0])) {
+      console.error('[Worker] Failed to convert data to 2D array');
+      throw new Error('Failed to convert data to 2D array');
+    }
+    
+    // 检查数据维度
+    const actualHeight = z.length;
+    const actualWidth = z[0].length;
+    if (actualHeight !== height || actualWidth !== width) {
+      console.warn(`[Worker] Data dimensions (${actualWidth}x${actualHeight}) don't match specified dimensions (${width}x${height}), using actual dimensions`);
+      width = actualWidth;
+      height = actualHeight;
+    }
+    
+    // 默认选项
+    options = Object.assign({
+      smoothing: 0,
+      coloring: 'fill',
+      showLines: true,
+      connectGaps: false,
+      useImprovedPathHandling: true,
+      zsmooth: true  // 是否平滑处理数据
+    }, options);
+    
+    console.log('[Worker] Using options:', options);
+    
+    // 创建周边边界点
+    const perimeter = [
       [0, 0],
       [width - 1, 0],
       [width - 1, height - 1],
       [0, height - 1]
-    ]
-  };
-  
-  // 为每个级别计算等值线
-  for (let i = 0; i < levels.length; i++) {
-    const level = levels[i];
+    ];
     
-    // 创建 pathinfo 对象，类似于 Plotly.js 的 emptyPathinfo
-    const pathinfo = {
-      level,
-      crossings: {},
-      starts: [],
-      edgepaths: [],
-      paths: [],
-      z: z,
-      smoothing: options.smoothing
+    // 计算结果
+    const result = {
+      levels: [],
+      perimeter: perimeter,
+      algorithmType: options.useImprovedPathHandling ? 'improved' : 'original',
+      stats: {
+        levelCount: 0,
+        totalPaths: 0,
+        totalEdgePaths: 0,
+        totalPoints: 0
+      }
     };
     
-    // 计算交点
-    makeCrossings(pathinfo, width, height);
-    
-    // 查找所有路径
-    findAllPaths(pathinfo, width, height);
-    
-    // 处理边界闭合
-    if (options.coloring === 'fill') {
-      closeBoundaries(pathinfo, z);
+    // 如果未提供有效的级别数组，生成默认级别
+    if (!levels || !Array.isArray(levels) || levels.length === 0) {
+      // 计算数据范围
+      let min = Infinity;
+      let max = -Infinity;
+      let validValues = 0;
+      let sum = 0;
+      
+      for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+          if (i < z.length && j < z[i].length) {
+            const val = z[i][j];
+            if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+              min = Math.min(min, val);
+              max = Math.max(max, val);
+              sum += val;
+              validValues++;
+            }
+          }
+        }
+      }
+      
+      // 检查是否有足够的有效值
+      if (validValues < 4 || min === Infinity || max === -Infinity || min === max) {
+        console.error('[Worker] Insufficient valid data points for contour generation');
+        throw new Error('Insufficient valid data points for contour generation');
+      }
+      
+      // 计算更好的等值线分布 - 使用分位数而不是线性分布
+      const mean = sum / validValues;
+      const variance = calculateVariance(z, mean);
+      const stdDev = Math.sqrt(variance);
+      
+      console.log(`[Worker] Data statistics: min=${min}, max=${max}, mean=${mean}, stdDev=${stdDev}`);
+      
+      // 使用从标准差生成的级别
+      const ncontours = options.ncontours || 10;
+      levels = [];
+      
+      // 如果数据分布极度不均匀，使用对数分布
+      if (max / min > 100 && min > 0) {
+        // 对数分布
+        const logMin = Math.log(min);
+        const logMax = Math.log(max);
+        const logStep = (logMax - logMin) / ncontours;
+        
+        for (let i = 0; i < ncontours; i++) {
+          const logVal = logMin + logStep * (i + 0.5);
+          levels.push(Math.exp(logVal));
+        }
+        
+        console.log(`[Worker] Using logarithmic distribution for levels: ${levels.join(', ')}`);
+      }
+      // 否则使用基于数据分布的分位数
+      else {
+        // 线性分布 - 但使用距离mean的距离来创建更均匀的视觉效果
+        // 使用少量级别在mean附近，更多级别在极值附近
+        const range = max - min;
+        const step = range / ncontours;
+        
+        for (let i = 0; i < ncontours; i++) {
+          // 使用分位数分布，在均值附近有更多等值线
+          // 在接近极值的地方，等值线更稀疏
+          const t = i / (ncontours - 1);
+          const factor = Math.pow(t, 0.7); // 调整分布曲线
+          levels.push(min + factor * range);
+        }
+        
+        console.log(`[Worker] Using quantile distribution for levels: ${levels.join(', ')}`);
+      }
     }
     
-    // 处理填充路径
-    let fillpath = null;
-    if (options.coloring === 'fill') {
-      fillpath = joinAllPaths(pathinfo, result.perimeter);
+    // 验证levels
+    if (!Array.isArray(levels) || levels.length === 0) {
+      console.error('[Worker] Invalid levels array');
+      throw new Error('Invalid levels array');
     }
     
-    // 添加到结果
-    result.levels.push({
-      level,
-      color: getColorForLevel(level, levels, colorScale),
-      edgepaths: pathinfo.edgepaths,
-      paths: pathinfo.paths,
-      prefixBoundary: pathinfo.prefixBoundary,
-      fillpath: fillpath
-    });
+    // 过滤无效的级别并确保级别有序
+    const validLevels = levels
+      .filter(level => typeof level === 'number' && !isNaN(level) && isFinite(level))
+      .sort((a, b) => a - b);
+    
+    if (validLevels.length === 0) {
+      console.error('[Worker] No valid levels found after filtering');
+      throw new Error('No valid levels found after filtering');
+    }
+    
+    if (validLevels.length !== levels.length) {
+      console.warn(`[Worker] Filtered out ${levels.length - validLevels.length} invalid levels`);
+      levels = validLevels;
+    }
+    
+    // 确保颜色比例尺有效且长度与levels匹配
+    const validColorScale = getValidColorScale(colorScale, levels.length);
+    console.log(`[Worker] Using color scale with ${validColorScale.length} colors for ${levels.length} levels`);
+    
+    // 设置统计信息
+    result.stats.levelCount = levels.length;
+    
+    // 为每个级别计算等值线
+    for (let i = 0; i < levels.length; i++) {
+      try {
+        const level = levels[i];
+        console.log(`[Worker] Processing level ${i+1}/${levels.length}: ${level}`);
+        
+        // 创建 pathinfo 对象
+        const pathinfo = {
+          level,
+          crossings: {},
+          starts: [],
+          edgepaths: [],
+          paths: [],
+          z: z,
+          smoothing: options.smoothing,
+          prefixBoundary: false
+        };
+        
+        // 计算交点
+        makeCrossings(pathinfo, width, height);
+        
+        // 如果没有找到任何交点或起点，创建一个空结果
+        if (Object.keys(pathinfo.crossings).length === 0 && pathinfo.starts.length === 0) {
+          console.log(`[Worker] No crossings found for level ${level}, skipping`);
+          result.levels.push({
+            level,
+            color: i < validColorScale.length ? validColorScale[i][1] : 'rgb(200,200,200)',
+            edgepaths: [],
+            paths: [],
+            prefixBoundary: false,
+            fillpath: [],
+            fillPolygons: []
+          });
+          continue;
+        }
+        
+        // 找到所有路径
+        findAllPaths(pathinfo, width, height);
+        
+        // 确保路径数组存在
+        if (!Array.isArray(pathinfo.paths)) {
+          pathinfo.paths = [];
+        }
+        
+        if (!Array.isArray(pathinfo.edgepaths)) {
+          pathinfo.edgepaths = [];
+        }
+        
+        // 闭合边界
+        closeBoundaries(pathinfo, z);
+        
+        console.log(`[Worker] Paths found: ${pathinfo.paths.length}, Edge paths: ${pathinfo.edgepaths.length}, prefixBoundary: ${pathinfo.prefixBoundary}`);
+        
+        // 更新统计信息
+        result.stats.totalPaths += pathinfo.paths.length;
+        result.stats.totalEdgePaths += pathinfo.edgepaths.length;
+        
+        // 处理填充路径
+        let fillpath = [];
+        let fillPolygons = [];
+        
+        if (options.coloring === 'fill') {
+          try {
+            // 生成填充路径 - 确保与plotly.js的实现一致
+            fillpath = joinAllPaths(pathinfo, perimeter);
+            
+            // 将填充路径转换为多边形数组
+            if (fillpath && Array.isArray(fillpath) && fillpath.length > 0) {
+              fillPolygons = convertPathToPolygons(fillpath);
+              
+              // 计算点数
+              let pointCount = 0;
+              for (const poly of fillPolygons) {
+                if (Array.isArray(poly)) {
+                  pointCount += poly.length;
+                }
+              }
+              result.stats.totalPoints += pointCount;
+            } else {
+              fillPolygons = [];
+            }
+          } catch (error) {
+            console.error(`[Worker] Error generating fill for level ${level}:`, error.message);
+            fillpath = [];
+            fillPolygons = [];
+          }
+        }
+        
+        // 获取此级别的颜色 - 直接使用validColorScale中对应索引的颜色
+        let color;
+        if (i < validColorScale.length) {
+          color = validColorScale[i][1];
+        } else {
+          // 如果索引超出范围（不应该发生，因为我们已经确保长度匹配）
+          const t = i / Math.max(1, levels.length - 1);
+          color = getColorForLevel(level, levels, validColorScale, t);
+        }
+        
+        // 添加到结果
+        const item = {
+          level,
+          color: color,
+          edgepaths: Array.isArray(pathinfo.edgepaths) ? pathinfo.edgepaths : [],
+          paths: Array.isArray(pathinfo.paths) ? pathinfo.paths : [],
+          prefixBoundary: !!pathinfo.prefixBoundary,
+          fillpath: Array.isArray(fillpath) ? fillpath : [],
+          fillPolygons: Array.isArray(fillPolygons) ? fillPolygons : []
+        }
+
+        console.log('------item-----',item);
+
+        result.levels.push(item);
+      } catch (error) {
+        console.error(`[Worker] Error processing level ${levels[i]}:`, error);
+        // 添加一个空的结果，这样结果数组的长度仍然与levels长度一致
+        result.levels.push({
+          level: levels[i],
+          color: i < validColorScale.length ? validColorScale[i][1] : 'rgb(200,200,200)',
+          edgepaths: [],
+          paths: [],
+          prefixBoundary: false,
+          fillpath: [],
+          fillPolygons: []
+        });
+      }
+    }
+    
+    console.log('[Worker] All levels processed');
+    return result;
+  } catch (error) {
+    console.error('[Worker] Error in computeContours:', error);
+    // 返回一个有效的但空的结果，避免主线程崩溃
+    return {
+      levels: [],
+      perimeter: [[0, 0], [1, 0], [1, 1], [0, 1]],
+      error: error.message
+    };
+  }
+}
+
+/**
+ * 计算数据的方差
+ * @param {Array<Array<number>>} data 数据数组
+ * @param {number} mean 均值
+ * @returns {number} 方差
+ */
+function calculateVariance(data, mean) {
+  let sum = 0;
+  let count = 0;
+  
+  for (let i = 0; i < data.length; i++) {
+    for (let j = 0; j < data[i].length; j++) {
+      const val = data[i][j];
+      if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+        sum += (val - mean) * (val - mean);
+        count++;
+      }
+    }
   }
   
-  return result;
+  return count > 0 ? sum / count : 0;
 }
 
 /**
@@ -145,20 +485,74 @@ function computeContours(data, width, height, levels, colorScale, options = {}) 
  * @returns {Array<Array<number>>} 二维数组格式的数据
  */
 function ensureDataFormat(data, width, height) {
-  // 如果已经是二维数组，直接返回
-  if (Array.isArray(data) && Array.isArray(data[0])) {
-    return data;
+  // 参数验证
+  if (!data) {
+    console.error('Invalid data provided to ensureDataFormat');
+    return createEmptyArray(height, width);
   }
   
-  // 将一维数组转换为二维数组
-  const result = new Array(height);
-  for (let i = 0; i < height; i++) {
-    result[i] = new Array(width);
-    for (let j = 0; j < width; j++) {
-      result[i][j] = data[i * width + j];
+  // 如果已经是二维数组，进行验证和修复
+  if (Array.isArray(data)) {
+    if (data.length === 0) {
+      console.warn('Empty data array provided');
+      return createEmptyArray(height, width);
+    }
+    
+    if (Array.isArray(data[0])) {
+      // 已经是二维数组，验证维度
+      const actualHeight = data.length;
+      const actualWidth = data[0].length;
+      
+      // 如果维度不匹配，尝试调整
+      if (actualHeight !== height || actualWidth !== width) {
+        console.warn(`Data dimensions (${actualWidth}x${actualHeight}) don't match specified dimensions (${width}x${height})`);
+      }
+      
+      // 确保所有行都是数组且长度一致
+      const result = new Array(data.length);
+      for (let i = 0; i < data.length; i++) {
+        if (!Array.isArray(data[i])) {
+          console.warn(`Row ${i} is not an array, converting`);
+          result[i] = new Array(width).fill(NaN);
+        } else {
+          result[i] = new Array(width);
+          for (let j = 0; j < width; j++) {
+            result[i][j] = j < data[i].length ? data[i][j] : NaN;
+          }
+        }
+      }
+      return result;
     }
   }
   
+  // 将一维数组转换为二维数组
+  try {
+    const result = new Array(height);
+    for (let i = 0; i < height; i++) {
+      result[i] = new Array(width);
+      for (let j = 0; j < width; j++) {
+        const index = i * width + j;
+        result[i][j] = index < data.length ? data[index] : NaN;
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error('Error converting data to 2D array:', error);
+    return createEmptyArray(height, width);
+  }
+}
+
+/**
+ * 创建空的二维数组
+ * @param {number} height 高度
+ * @param {number} width 宽度
+ * @returns {Array<Array<number>>} 填充NaN的二维数组
+ */
+function createEmptyArray(height, width) {
+  const result = new Array(Math.max(1, height));
+  for (let i = 0; i < result.length; i++) {
+    result[i] = new Array(Math.max(1, width)).fill(NaN);
+  }
   return result;
 }
 
@@ -170,41 +564,152 @@ function ensureDataFormat(data, width, height) {
  * @param {number} height 数据高度
  */
 function makeCrossings(pathinfo, width, height) {
-  const z = pathinfo.z;
-  const n = width;
-  const m = height;
+  // 验证输入参数
+  if (!pathinfo || !Array.isArray(pathinfo.z)) {
+    console.error('Invalid pathinfo in makeCrossings');
+    // 初始化空的结果对象
+    pathinfo.starts = [];
+    pathinfo.crossings = {};
+    return;
+  }
   
-  // 是否只有两行或两列
+  const z = pathinfo.z;
+  const m = z.length;
+  
+  // 检查z[0]是否存在且是数组
+  if (m === 0 || !Array.isArray(z[0])) {
+    console.error('Invalid z array in makeCrossings');
+    pathinfo.starts = [];
+    pathinfo.crossings = {};
+    return;
+  }
+  
+  const n = z[0].length;
+  const level = pathinfo.level;
+  
+  // 检查是否有有效的级别值
+  if (typeof level !== 'number' || isNaN(level) || !isFinite(level)) {
+    console.error('Invalid level value in makeCrossings:', level);
+    pathinfo.starts = [];
+    pathinfo.crossings = {};
+    return;
+  }
+  
+  // 确保宽度和高度有效
+  if (n < 2 || m < 2) {
+    console.warn('Data too small for contour generation (needs at least 2x2)');
+    pathinfo.starts = [];
+    pathinfo.crossings = {};
+    return;
+  }
+  
+  // 存储起点和交叉信息
+  pathinfo.starts = [];
+  pathinfo.crossings = {};
+  
+  // 是否是边界特殊处理的情况
   const twoWide = n === 2 || m === 2;
   
   // 遍历每个单元格
   for (let yi = 0; yi < m - 1; yi++) {
-    // 确定起始点
-    let ystartIndices = [];
-    if (yi === 0) ystartIndices = ystartIndices.concat(CONSTANTS.TOPSTART);
-    if (yi === m - 2) ystartIndices = ystartIndices.concat(CONSTANTS.BOTTOMSTART);
+    if (!Array.isArray(z[yi]) || !Array.isArray(z[yi+1])) continue;
     
     for (let xi = 0; xi < n - 1; xi++) {
-      let startIndices = ystartIndices.slice();
-      if (xi === 0) startIndices = startIndices.concat(CONSTANTS.LEFTSTART);
-      if (xi === n - 2) startIndices = startIndices.concat(CONSTANTS.RIGHTSTART);
+      // 检查单元格的四个角落是否都有值
+      if (xi >= z[yi].length || xi >= z[yi+1].length || 
+          xi+1 >= z[yi].length || xi+1 >= z[yi+1].length) {
+        continue;
+      }
       
-      const label = xi + ',' + yi;
+      // 获取四个角落的值并检查它们是否有效
+      const z00 = z[yi][xi];
+      const z01 = z[yi][xi+1];
+      const z11 = z[yi+1][xi+1];
+      const z10 = z[yi+1][xi];
+      
+      if (typeof z00 !== 'number' || isNaN(z00) || !isFinite(z00) ||
+          typeof z01 !== 'number' || isNaN(z01) || !isFinite(z01) ||
+          typeof z11 !== 'number' || isNaN(z11) || !isFinite(z11) ||
+          typeof z10 !== 'number' || isNaN(z10) || !isFinite(z10)) {
+        continue;
+      }
+      
+      // 创建角落值数组
       const corners = [
-        [z[yi][xi], z[yi][xi + 1]],
-        [z[yi + 1][xi], z[yi + 1][xi + 1]]
+        [z00, z01],
+        [z10, z11]
       ];
       
-      // 计算 marching index
-      const mi = getMarchingIndex(pathinfo.level, corners);
-      if (!mi) continue;
+      // 计算marching index
+      const mi = getMarchingIndex(level, corners);
       
-      pathinfo.crossings[label] = mi;
-      if (startIndices.indexOf(mi) !== -1) {
-        pathinfo.starts.push([xi, yi]);
-        if (twoWide && startIndices.indexOf(mi, startIndices.indexOf(mi) + 1) !== -1) {
-          // 同一个单元格有来自相对边的起点
-          pathinfo.starts.push([xi, yi]);
+      // 如果没有交叉，跳过
+      if (mi === 0 || mi === 15) continue;
+      
+      // 存储交叉信息
+      if (mi < 15) {
+        const edgesMi = [mi];
+        
+        // 处理鞍点情况（mi=5或mi=10）- 完全按照plotly.js的实现逻辑
+        if (mi === 5 || mi === 10) {
+          // 计算均值
+          const avg = (z00 + z01 + z10 + z11) / 4;
+          
+          // 确保CONSTANTS对象中有需要的项
+          if (!CONSTANTS.CHOOSESADDLE || 
+              !CONSTANTS.CHOOSESADDLE[104] || !CONSTANTS.CHOOSESADDLE[208] ||
+              !CONSTANTS.CHOOSESADDLE[713] || !CONSTANTS.CHOOSESADDLE[1114]) {
+            console.error('Missing CHOOSESADDLE constants');
+            continue;
+          }
+          
+          if ((avg > level) === (mi === 5)) {
+            // 拆分为两个三角形区域
+            edgesMi.push(CONSTANTS.CHOOSESADDLE[mi === 5 ? 104 : 208][0]);
+            edgesMi.push(CONSTANTS.CHOOSESADDLE[mi === 5 ? 104 : 208][1]);
+          } else {
+            edgesMi.push(CONSTANTS.CHOOSESADDLE[mi === 5 ? 713 : 1114][0]);
+            edgesMi.push(CONSTANTS.CHOOSESADDLE[mi === 5 ? 713 : 1114][1]);
+          }
+        }
+        
+        // 存储所有交叉点
+        for (let j = 0; j < edgesMi.length; j++) {
+          const mij = edgesMi[j];
+          
+          let theLocStr;
+          if (mij === 1 || mij === 4 || mij === 7 || mij === 13) {
+            theLocStr = [xi, yi].join(',');
+          } else if (mij === 8 || mij === 11 || mij === 14) {
+            theLocStr = [xi, yi+1].join(',');
+          } else if (mij === 2 || mij === 3) {
+            theLocStr = [xi+1, yi].join(',');
+          } else {
+            theLocStr = [xi+1, yi+1].join(',');
+          }
+          
+          pathinfo.crossings[theLocStr] = mij;
+          
+          // 保存起点位置
+          // 这是边界或仅有的一个点的情况
+          if (xi === 0 && CONSTANTS.LEFTSTART.indexOf(mij) !== -1 ||
+              yi === 0 && CONSTANTS.TOPSTART.indexOf(mij) !== -1 ||
+              xi === n - 2 && CONSTANTS.RIGHTSTART.indexOf(mij) !== -1 ||
+              yi === m - 2 && CONSTANTS.BOTTOMSTART.indexOf(mij) !== -1 ||
+              twoWide) {
+            
+            // 从字符串位置转换为数字数组
+            const locParts = theLocStr.split(',');
+            if (locParts.length === 2) {
+              const x = Number(locParts[0]);
+              const y = Number(locParts[1]);
+              
+              // 确保转换有效
+              if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
+                pathinfo.starts.push([x, y]);
+              }
+            }
+          }
         }
       }
     }
@@ -212,143 +717,319 @@ function makeCrossings(pathinfo, width, height) {
 }
 
 /**
- * 获取 marching index
+ * 获取marching index
+ * 参考Plotly.js的实现
  * @param {number} val 等值线级别
- * @param {Array<Array<number>>} corners 四个角点值
+ * @param {Array<Array<number>>} corners 四个角落的值
  * @returns {number} marching index
  */
 function getMarchingIndex(val, corners) {
-  let mi = (corners[0][0] > val ? 0 : 1) +
-           (corners[0][1] > val ? 0 : 2) +
-           (corners[1][1] > val ? 0 : 4) +
-           (corners[1][0] > val ? 0 : 8);
-           
+  const mi = (corners[0][0] > val ? 0 : 1) +
+             (corners[0][1] > val ? 0 : 2) +
+             (corners[1][1] > val ? 0 : 4) +
+             (corners[1][0] > val ? 0 : 8);
+  
+  // 特殊处理鞍点情况
   if (mi === 5 || mi === 10) {
-    const avg = (corners[0][0] + corners[0][1] + corners[1][0] + corners[1][1]) / 4;
-    // 两个峰与一个大山谷
-    if (val > avg) return (mi === 5) ? 713 : 1114;
-    // 两个山谷与一个大山脊
-    return (mi === 5) ? 104 : 208;
+    const avg = (corners[0][0] + corners[0][1] +
+                 corners[1][0] + corners[1][1]) / 4;
+    
+    if ((avg > val) === (mi === 5)) {
+      return mi + 99;
+    } else {
+      return mi + 703;
+    }
   }
   
-  return (mi === 15) ? 0 : mi;
+  return mi;
 }
 
 /**
- * 查找所有路径
+ * 查找所有等值线路径
  * 参考 Plotly.js 的 find_all_paths.js
  * @param {Object} pathinfo 路径信息
  * @param {number} width 数据宽度
  * @param {number} height 数据高度
  */
 function findAllPaths(pathinfo, width, height) {
-  // 容差
+  // 容差设置 - 用于确定点是否相同
   const xtol = 0.01;
   const ytol = 0.01;
   
-  // 处理所有起点
+  // 处理每个起点
   for (let i = 0; i < pathinfo.starts.length; i++) {
     const startLoc = pathinfo.starts[i];
-    makePath(pathinfo, startLoc.slice(), 'edge', xtol, ytol, width, height);
+    const startlocStr = String(startLoc);
+    
+    // 如果这个起点已经被使用，跳过
+    if (pathinfo.crossings[startlocStr] === 0) continue;
+    
+    // 确定是否为边缘路径 - 沿着数据的边缘
+    // 注意：这里和plotly.js保持一致，使用固定的边界判断
+    const edgeflag = (
+      startLoc[0] === 0 || startLoc[0] === width - 1 || 
+      startLoc[1] === 0 || startLoc[1] === height - 1
+    );
+    
+    // 创建路径
+    const path = makePath(pathinfo, startLoc, edgeflag, xtol, ytol, width, height);
+    
+    // 如果路径为空，继续下一个
+    if (!path || !path.length) continue;
+    
+    // 保存路径
+    if (edgeflag) pathinfo.edgepaths.push(path);
+    else pathinfo.paths.push(path);
   }
   
-  // 处理所有交点
-  let cnt = 0;
-  while (Object.keys(pathinfo.crossings).length && cnt < 10000) {
-    cnt++;
-    const startLoc = Object.keys(pathinfo.crossings)[0].split(',').map(Number);
-    makePath(pathinfo, startLoc, undefined, xtol, ytol, width, height);
-  }
-  
-  if (cnt === 10000) {
-    console.warn('Infinite loop in contour?');
+  // 如果有超过1条边缘路径，尝试合并
+  if (pathinfo.edgepaths.length > 1) {
+    pathinfo.edgepaths = mergeEdgePaths(pathinfo.edgepaths, xtol, ytol);
   }
 }
 
 /**
- * 生成路径
+ * 生成单个等值线路径
  * @param {Object} pi 路径信息
- * @param {Array<number>} loc 位置 [x, y]
- * @param {string} edgeflag 边缘标志
+ * @param {Array<number>} loc 起始位置
+ * @param {boolean} edgeflag 是否为边缘路径
  * @param {number} xtol x容差
  * @param {number} ytol y容差
  * @param {number} width 数据宽度
  * @param {number} height 数据高度
+ * @returns {Array<Array<number>>} 路径点数组
  */
 function makePath(pi, loc, edgeflag, xtol, ytol, width, height) {
-  const locStr = loc.join(',');
-  let mi = pi.crossings[locStr];
-  let marchStep = getStartStep(mi, edgeflag, loc);
+  const startLocStr = String(loc);
+  let mi0 = pi.crossings[startLocStr];
   
-  // 向后半步找到交点
-  const pts = [getInterpPx(pi, loc, [-marchStep[0], -marchStep[1]])];
-  const m = height;
-  const n = width;
-  const startLoc = loc.slice();
-  const startStep = marchStep.slice();
-  let cnt;
+  // 如果起点已被使用，返回空路径
+  if (mi0 === 0) return [];
   
-  // 跟踪路径
-  for (cnt = 0; cnt < 10000; cnt++) {
-    if (mi > 20) {
-      mi = CONSTANTS.CHOOSESADDLE[mi][(marchStep[0] || marchStep[1]) < 0 ? 0 : 1];
-      pi.crossings[locStr] = CONSTANTS.SADDLEREMAINDER[mi];
+  // 获取起始步骤
+  let startStep = getStartStep(mi0, edgeflag, loc);
+  if (!startStep) return [];
+  
+  // 初始化路径
+  const path = [];
+  let loc0 = loc.slice();
+  let locStr = startLocStr;
+  let mi = mi0;
+  let step = startStep;
+  
+  // 添加起点
+  const startPt = getInterpPx(pi, loc, step);
+  if (!startPt) return [];
+  path.push(startPt);
+  
+  // 标记起点为已使用
+  pi.crossings[locStr] = 0;
+  
+  // 处理鞍点情况
+  if (mi === 5 || mi === 10) {
+    if (step[0] * step[1]) {
+      mi = CONSTANTS.SADDLEREMAINDER[step[0] > 0 ? step[0] : -step[0]];
     } else {
-      delete pi.crossings[locStr];
+      mi = CONSTANTS.SADDLEREMAINDER[step[1] > 0 ? step[1] : -step[1]];
+    }
+  }
+  
+  let badStep = false;
+  let maxIterations = 10000; // 防止无限循环
+  let iterations = 0;
+  
+  // 循环直到路径闭合或到达边界
+  while (iterations < maxIterations) {
+    iterations++;
+    
+    // 计算下一步的位置和方向
+    const newLoc = [loc0[0], loc0[1]];
+    if (step[0]) {
+      if (step[0] > 0) {
+        step = [-1, 0];
+        newLoc[0]++;
+      } else {
+        step = [1, 0];
+        newLoc[0]--;
+      }
+    } else {
+      if (step[1] > 0) {
+        step = [0, -1];
+        newLoc[1]++;
+      } else {
+        step = [0, 1];
+        newLoc[1]--;
+      }
     }
     
-    marchStep = CONSTANTS.NEWDELTA[mi];
-    if (!marchStep) {
-      console.warn('Found bad marching index:', mi, loc, pi.level);
+    // 检查是否超出数据范围
+    if (newLoc[0] < 0 || newLoc[0] > width - 1 || 
+        newLoc[1] < 0 || newLoc[1] > height - 1) {
+      // 已到达边界，结束循环
       break;
     }
     
-    // 向前半步找到交点，然后完成整步
-    pts.push(getInterpPx(pi, loc, marchStep));
-    loc[0] += marchStep[0];
-    loc[1] += marchStep[1];
-    locStr = loc.join(',');
+    // 获取新位置的状态
+    const newLocStr = String(newLoc);
+    mi = pi.crossings[newLocStr];
     
-    // 避免重复点
-    if (equalPts(pts[pts.length - 1], pts[pts.length - 2], xtol, ytol)) {
-      pts.pop();
+    // 如果到达起点，完成闭环
+    if (newLocStr === startLocStr && path.length > 2) {
+      // 检查路径是否形成闭环
+      const endpt = getInterpPx(pi, newLoc, step);
+      if (endpt && equalPts(endpt, startPt, xtol, ytol)) {
+        // 闭环完成，结束路径
+        break;
+      }
     }
     
-    const atEdge = (marchStep[0] && (loc[0] < 0 || loc[0] > n - 2)) ||
-                  (marchStep[1] && (loc[1] < 0 || loc[1] > m - 2));
-                  
-    const closedLoop = loc[0] === startLoc[0] && loc[1] === startLoc[1] &&
-                      marchStep[0] === startStep[0] && marchStep[1] === startStep[1];
-                      
-    // 完成循环或到达边缘
-    if (closedLoop || (edgeflag && atEdge)) break;
+    if (!mi) {
+      // 无效的交叉点，结束路径
+      badStep = true;
+      break;
+    }
     
-    mi = pi.crossings[locStr];
+    const nextStep = CONSTANTS.NEWDELTA[mi];
+    if (!nextStep) {
+      badStep = true;
+      break;
+    }
+    
+    // 处理鞍点
+    if (mi === 5 || mi === 10) {
+      // 使用plotly.js的鞍点处理逻辑
+      const saddle = mi === 5 ? [1, 4] : [2, 8];
+      const dx = step[0];
+      const dy = step[1];
+      
+      if (dx && dy) {
+        // 来自对角线，找到其中一个方向
+        mi = CONSTANTS.SADDLEREMAINDER[Math.abs(dx)];
+      } else if (!dx) {
+        // 来自y方向
+        mi = (dy * saddle[0] > 0) ? saddle[0] : saddle[1];
+      } else {
+        // 来自x方向
+        mi = (dx * saddle[0] > 0) ? saddle[0] : saddle[1];
+      }
+    }
+    
+    // 重置步骤
+    if (mi === 5 || mi === 10) {
+      if (nextStep[0] * nextStep[1]) {
+        mi = CONSTANTS.SADDLEREMAINDER[nextStep[0] > 0 ? nextStep[0] : -nextStep[0]];
+      } else {
+        mi = CONSTANTS.SADDLEREMAINDER[nextStep[1] > 0 ? nextStep[1] : -nextStep[1]];
+      }
+    }
+    
+    // 添加点
+    const pt = getInterpPx(pi, newLoc, step);
+    if (!pt) {
+      badStep = true;
+      break;
+    }
+    path.push(pt);
+    
+    // 标记为已使用
+    pi.crossings[newLocStr] = 0;
+    
+    // 更新位置
+    loc0 = newLoc;
+    locStr = newLocStr;
+    step = nextStep;
   }
   
-  if (cnt === 10000) {
-    console.warn('Infinite loop in contour?');
+  // 如果达到最大迭代次数，记录警告
+  if (iterations >= maxIterations) {
+    console.warn('Maximum iterations reached in makePath');
   }
   
-  // 检查是否闭合路径
-  const closedpath = equalPts(pts[0], pts[pts.length - 1], xtol, ytol);
+  // 如果有错误但是是边缘路径，保留
+  if (badStep && !edgeflag) return [];
   
   // 应用平滑
-  smoothPath(pts, pi.smoothing);
-  
-  // 添加到路径集合
-  if (pts.length < 2) return;
-  else if (closedpath) {
-    pts.pop(); // 移除重复的最后一点
-    pi.paths.push(pts);
-  } else {
-    if (edgeflag) {
-      pi.edgepaths.push(pts);
-    } else {
-      console.warn('Unclosed interior contour?', pi.level, startLoc.join(','));
-      pi.edgepaths.push(pts);
-    }
+  if (pi.smoothing > 0) {
+    return smoothPath(path, pi.smoothing);
   }
+  
+  return path;
+}
+
+/**
+ * 合并边缘路径
+ * @param {Array<Array<Array<number>>>} edgepaths 边缘路径数组
+ * @param {number} xtol x容差
+ * @param {number} ytol y容差
+ */
+function mergeEdgePaths(edgepaths, xtol, ytol) {
+  let merged;
+  do {
+    merged = false;
+    
+    // 尝试合并任意两条路径
+    for (let i = 0; i < edgepaths.length; i++) {
+      const path1 = edgepaths[i];
+      if (!path1 || !Array.isArray(path1) || path1.length === 0) continue;
+      
+      for (let j = i + 1; j < edgepaths.length; j++) {
+        const path2 = edgepaths[j];
+        if (!path2 || !Array.isArray(path2) || path2.length === 0) continue;
+        
+        // 检查四种可能的连接方式
+        
+        // 1. path1的终点连接到path2的起点
+        if (equalPts(path1[path1.length - 1], path2[0], xtol, ytol)) {
+          // 移除重复点
+          path2.shift();
+          
+          // 合并路径
+          edgepaths[i] = [...path1, ...path2];
+          edgepaths.splice(j, 1);
+          merged = true;
+          break;
+        }
+        
+        // 2. path1的终点连接到path2的终点
+        if (equalPts(path1[path1.length - 1], path2[path2.length - 1], xtol, ytol)) {
+          // 移除重复点
+          path2.pop();
+          
+          // 合并路径（需要反转path2）
+          edgepaths[i] = [...path1, ...path2.reverse()];
+          edgepaths.splice(j, 1);
+          merged = true;
+          break;
+        }
+        
+        // 3. path1的起点连接到path2的起点
+        if (equalPts(path1[0], path2[0], xtol, ytol)) {
+          // 移除重复点
+          path1.shift();
+          
+          // 合并路径（需要反转path1）
+          edgepaths[i] = [...path2, ...path1.reverse()];
+          edgepaths.splice(j, 1);
+          merged = true;
+          break;
+        }
+        
+        // 4. path1的起点连接到path2的终点
+        if (equalPts(path1[0], path2[path2.length - 1], xtol, ytol)) {
+          // 移除重复点
+          path1.shift();
+          
+          // 合并路径
+          edgepaths[i] = [...path2, ...path1];
+          edgepaths.splice(j, 1);
+          merged = true;
+          break;
+        }
+      }
+      
+      if (merged) break;
+    }
+  } while (merged);
 }
 
 /**
@@ -390,6 +1071,14 @@ function getInterpPx(pi, loc, step) {
   // 计算插值点
   const x0 = loc[0];
   const y0 = loc[1];
+  
+  // 边界检查
+  if (!pi.z || !Array.isArray(pi.z) || y0 < 0 || y0 >= pi.z.length || 
+      !pi.z[y0] || !Array.isArray(pi.z[y0]) || x0 < 0 || x0 >= pi.z[y0].length) {
+    console.warn('Invalid coordinates in getInterpPx:', x0, y0);
+    return [x0, y0]; // 返回原始坐标作为回退
+  }
+  
   const z00 = pi.z[y0][x0];
   let dx = step[0];
   let dy = step[1];
@@ -405,24 +1094,36 @@ function getInterpPx(pi, loc, step) {
   
   if (dx) {
     // 水平步骤
-    const z01 = pi.z[y0][x0 + 1];
-    if (isNaN(z00) || isNaN(z01)) {
+    // 检查x0+1是否在范围内
+    if (x0 + 1 >= pi.z[y0].length) {
+      // 超出范围，使用默认值
       px = x0 + 0.5;
     } else {
-      px = x0 + (val - z00) / (z01 - z00);
-      if (px < x0) px = x0;
-      else if (px > x0 + 1) px = x0 + 1;
+      const z01 = pi.z[y0][x0 + 1];
+      if (isNaN(z00) || isNaN(z01) || z00 === z01) {
+        px = x0 + 0.5;
+      } else {
+        px = x0 + (val - z00) / (z01 - z00);
+        if (px < x0) px = x0;
+        else if (px > x0 + 1) px = x0 + 1;
+      }
     }
     py = y0;
   } else {
     // 垂直步骤
-    const z10 = pi.z[y0 + 1][x0];
-    if (isNaN(z00) || isNaN(z10)) {
+    // 检查y0+1是否在范围内
+    if (y0 + 1 >= pi.z.length || !pi.z[y0 + 1] || !Array.isArray(pi.z[y0 + 1]) || x0 >= pi.z[y0 + 1].length) {
+      // 超出范围，使用默认值
       py = y0 + 0.5;
     } else {
-      py = y0 + (val - z00) / (z10 - z00);
-      if (py < y0) py = y0;
-      else if (py > y0 + 1) py = y0 + 1;
+      const z10 = pi.z[y0 + 1][x0];
+      if (isNaN(z00) || isNaN(z10) || z00 === z10) {
+        py = y0 + 0.5;
+      } else {
+        py = y0 + (val - z00) / (z10 - z00);
+        if (py < y0) py = y0;
+        else if (py > y0 + 1) py = y0 + 1;
+      }
     }
     px = x0;
   }
@@ -447,37 +1148,134 @@ function equalPts(pt1, pt2, xtol, ytol) {
  * 平滑路径
  * @param {Array<Array<number>>} pts 路径点
  * @param {number} smoothing 平滑程度
+ * @returns {Array<Array<number>>} 平滑后的路径点
  */
 function smoothPath(pts, smoothing) {
-  if (!smoothing || smoothing <= 0) return;
+  // 安全检查
+  if (!pts || !Array.isArray(pts)) return [];
+  if (pts.length < 2) return pts.slice();
   
-  // 简单的移动平均平滑
-  const n = pts.length;
-  if (n < 3) return;
+  // 检查平滑参数
+  if (!smoothing || smoothing <= 0 || pts.length < 3) return pts.slice();
   
-  const window = Math.max(2, Math.floor(smoothing * 3));
-  const halfWindow = Math.floor(window / 2);
-  const smoothed = new Array(n);
+  // 检查点的有效性
+  const validPts = pts.filter(pt => 
+    pt && Array.isArray(pt) && pt.length >= 2 && 
+    typeof pt[0] === 'number' && !isNaN(pt[0]) && 
+    typeof pt[1] === 'number' && !isNaN(pt[1])
+  );
   
-  for (let i = 0; i < n; i++) {
-    let sumX = 0;
-    let sumY = 0;
-    let count = 0;
+  if (validPts.length < 2) return pts.slice();
+  
+  // 创建副本以避免修改原始数组
+  const result = validPts.map(pt => [pt[0], pt[1]]);
+  
+  const isClosed = equalPts(result[0], result[result.length-1], 0.001, 0.001);
+  
+  // 首先过滤掉太近的点来减少锯齿
+  const xtol = 0.005;
+  const ytol = 0.005;
+  let i = 1;
+  while (i < result.length - 1) {
+    if (equalPts(result[i], result[i+1], xtol, ytol)) {
+      result.splice(i, 1);
+    } else {
+      i++;
+    }
+  }
+  
+  // 如果过滤后点太少，直接返回
+  if (result.length < 3) return result;
+  
+  // 改进的平滑算法 - 使用三次样条插值
+  const iterations = Math.max(1, Math.round(smoothing * 3));
+  
+  for (let iter = 0; iter < iterations; iter++) {
+    const n = result.length;
+    const newPts = [];
     
-    for (let j = Math.max(0, i - halfWindow); j <= Math.min(n - 1, i + halfWindow); j++) {
-      sumX += pts[j][0];
-      sumY += pts[j][1];
-      count++;
+    // 确定计算范围
+    const startIdx = isClosed ? 0 : 0;
+    const endIdx = isClosed ? n : n - 1;
+    
+    // 如果是开放曲线，保持原始端点
+    if (!isClosed) newPts.push([result[0][0], result[0][1]]);
+    
+    // 为闭合曲线准备循环索引
+    function getPoint(idx) {
+      if (isClosed) {
+        // 对于闭合曲线，允许循环索引
+        return result[(idx + n) % n];
+      } else {
+        // 对于开放曲线，限制在有效范围内
+        return result[Math.max(0, Math.min(n - 1, idx))];
+      }
     }
     
-    smoothed[i] = [sumX / count, sumY / count];
+    // 对每个线段执行平滑
+    for (let i = startIdx; i < endIdx; i++) {
+      // 获取相邻的四个点用于三次样条插值
+      const p0 = getPoint(i - 1);
+      const p1 = getPoint(i);
+      const p2 = getPoint(i + 1);
+      const p3 = getPoint(i + 2);
+      
+      // 安全检查
+      if (!p1 || !p2 || !Array.isArray(p1) || !Array.isArray(p2) || 
+          p1.length < 2 || p2.length < 2) {
+        continue;
+      }
+      
+      // 添加原始点
+      if (i > 0 || isClosed) {
+        newPts.push([p1[0], p1[1]]);
+      }
+      
+      // 添加插值点 - 使用Catmull-Rom样条
+      const tension = 0.5 - smoothing * 0.3; // 根据平滑度调整张力
+      
+      // 在p1和p2之间添加插值点
+      const numInterpPoints = 2; // 每段插入2个点
+      for (let t = 1; t <= numInterpPoints; t++) {
+        const t1 = t / (numInterpPoints + 1);
+        
+        // Catmull-Rom样条插值
+        const t2 = t1 * t1;
+        const t3 = t2 * t1;
+        
+        // x坐标插值
+        const x = 0.5 * (
+          (2 * p1[0]) +
+          (-p0[0] + p2[0]) * t1 +
+          (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+          (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3
+        );
+        
+        // y坐标插值
+        const y = 0.5 * (
+          (2 * p1[1]) +
+          (-p0[1] + p2[1]) * t1 +
+          (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+          (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3
+        );
+        
+        newPts.push([x, y]);
+      }
+    }
+    
+    // 如果是开放曲线，保持原始端点
+    if (!isClosed && result.length > 0) newPts.push([result[n-1][0], result[n-1][1]]);
+    // 如果是闭合曲线，确保首尾相接
+    else if (isClosed && newPts.length > 0) newPts.push([newPts[0][0], newPts[0][1]]);
+    
+    // 替换点集
+    result.length = 0;
+    for (let i = 0; i < newPts.length; i++) {
+      result.push(newPts[i]);
+    }
   }
   
-  // 替换原始点
-  for (let i = 0; i < n; i++) {
-    pts[i][0] = smoothed[i][0];
-    pts[i][1] = smoothed[i][1];
-  }
+  return result;
 }
 
 /**
@@ -487,15 +1285,40 @@ function smoothPath(pts, smoothing) {
  * @param {Array<Array<number>>} z 数据
  */
 function closeBoundaries(pathinfo, z) {
-  // 简化版本，只处理 levels 类型
+  // 验证输入参数
+  if (!pathinfo || !Array.isArray(z) || z.length === 0) {
+    console.warn('Invalid input to closeBoundaries');
+    return;
+  }
+  
+  // 确保pathinfo.edgepaths存在
+  if (!Array.isArray(pathinfo.edgepaths)) {
+    pathinfo.edgepaths = [];
+  }
+  
+  // 获取数据维度
+  const m = z.length;     // 高度
+  const n = z[0] && z[0].length ? z[0].length : 0;  // 宽度
+  
+  if (m === 0 || n === 0) {
+    console.warn('Empty data in closeBoundaries');
+    pathinfo.prefixBoundary = false;
+    return;
+  }
+  
   const level = pathinfo.level;
   
-  // 使用第一行的前两个点判断
+  // 确保pathinfo.starts存在
+  if (!Array.isArray(pathinfo.starts)) {
+    pathinfo.starts = [];
+  }
+  
+  // 使用左上角的值作为参考点，完全按照plotly.js的实现
   const edgeVal2 = Math.min(z[0][0], z[0][1]);
   
-  // 设置 prefixBoundary
-  pathinfo.prefixBoundary = !pathinfo.edgepaths.length && 
-                           (edgeVal2 > level || (pathinfo.starts.length && edgeVal2 === level));
+  // 直接使用plotly.js的逻辑
+  pathinfo.prefixBoundary = !pathinfo.edgepaths.length &&
+    (edgeVal2 > level || (pathinfo.starts.length && edgeVal2 === level));
 }
 
 /**
@@ -503,180 +1326,1160 @@ function closeBoundaries(pathinfo, z) {
  * 参考 Plotly.js 的 joinAllPaths 函数
  * @param {Object} pi 路径信息
  * @param {Array<Array<number>>} perimeter 边界点
- * @returns {Array<Array<number>>} 完整路径
+ * @returns {Array} 完整路径（包含 null 分隔符）
  */
 function joinAllPaths(pi, perimeter) {
-  const fullpath = [];
-  let i = 0;
-  const startsleft = pi.edgepaths.map((_, i) => i);
-  let newloop = true;
-  let endpt, newendpt, nexti;
+  // 验证基本参数，确保返回空数组而不是null
+  if (!pi) return [];
   
-  // 判断点是否在边界上的辅助函数
-  const epsilon = 0.01;
-  const istop = (pt) => Math.abs(pt[1] - perimeter[0][1]) < epsilon;
-  const isbottom = (pt) => Math.abs(pt[1] - perimeter[2][1]) < epsilon;
-  const isleft = (pt) => Math.abs(pt[0] - perimeter[0][0]) < epsilon;
-  const isright = (pt) => Math.abs(pt[0] - perimeter[2][0]) < epsilon;
+  // 确保路径数组存在
+  if (!Array.isArray(pi.edgepaths)) pi.edgepaths = [];
+  if (!Array.isArray(pi.paths)) pi.paths = [];
   
-  // 拼接所有 edgepaths（开口线）
-  while (startsleft.length) {
-    // 添加当前路径
-    const currentPath = pi.edgepaths[i];
-    if (newloop) {
-      // 新的循环，直接添加整个路径
-      fullpath.push(...currentPath);
-    } else {
-      // 继续现有循环，添加除第一点外的所有点（避免重复）
-      fullpath.push(...currentPath.slice(1));
+  // 验证perimeter
+  if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
+    console.warn('Invalid perimeter, using default');
+    perimeter = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  }
+  
+  // 1. 如果没有任何路径，检查prefixBoundary
+  if (pi.edgepaths.length === 0 && pi.paths.length === 0) {
+    // 确保prefixBoundary有定义
+    if (pi.prefixBoundary === undefined) {
+      pi.prefixBoundary = false;
     }
     
-    // 从待处理列表中移除当前路径
-    startsleft.splice(startsleft.indexOf(i), 1);
+    if (pi.prefixBoundary) {
+      // 返回闭合的边界轮廓
+      return [
+        [...perimeter[0]], 
+        [...perimeter[1]], 
+        [...perimeter[2]], 
+        [...perimeter[3]], 
+        [...perimeter[0]]
+      ];
+    }
+    return [];
+  }
+
+  // 2. 处理单点路径的特殊情况
+  // 如果只有单点的边缘路径，需要扩展它们以形成有效的多边形
+  if (pi.edgepaths.length > 0 && pi.paths.length === 0) {
+    // 检查是否所有边缘路径都只有一个点
+    let allSinglePoints = true;
+    for (const path of pi.edgepaths) {
+      if (path.length !== 1) {
+        allSinglePoints = false;
+        break;
+      }
+    }
     
-    // 获取当前路径的终点
-    endpt = currentPath[currentPath.length - 1];
-    nexti = -1;
-    
-    // 沿着边界移动，直到找到下一条路径的起点
-    for (let cnt = 0; cnt < 4; cnt++) { // 防止无限循环
-      if (!endpt) break;
-      
-      // 根据终点位置确定下一个边界点
-      if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1]; // 右上
-      else if (isleft(endpt)) newendpt = perimeter[0]; // 左上
-      else if (isbottom(endpt)) newendpt = perimeter[3]; // 右下
-      else if (isright(endpt)) newendpt = perimeter[2]; // 左下
-      else break; // 不在边界上
-      
-      // 查找所有可能的下一条路径
-      for (let possiblei = 0; possiblei < pi.edgepaths.length; possiblei++) {
-        const ptNew = pi.edgepaths[possiblei][0];
-        
-        // 检查是否在同一水平或垂直线上
-        if (Math.abs(endpt[0] - newendpt[0]) < epsilon) {
-          if (Math.abs(endpt[0] - ptNew[0]) < epsilon &&
-              (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
-            newendpt = ptNew;
-            nexti = possiblei;
+    if (allSinglePoints) {
+      console.log('检测到只有单点的边缘路径，创建基于perimeter的填充路径');
+      // 使用整个perimeter边界作为填充路径
+      if (pi.prefixBoundary) {
+        return [
+          [...perimeter[0]], 
+          [...perimeter[1]], 
+          [...perimeter[2]], 
+          [...perimeter[3]], 
+          [...perimeter[0]]
+        ];
+      } else {
+        // 尝试将单点连接到perimeter上的最近点
+        const points = pi.edgepaths.map(path => path[0]);
+        if (points.length > 0) {
+          // 创建一个从单点连接到perimeter的简单路径
+          const simplePath = [];
+          
+          // 添加第一个点
+          simplePath.push([...points[0]]);
+          
+          // 寻找最近的perimeter点
+          let minDist = Infinity;
+          let closestPerimIdx = 0;
+          
+          for (let i = 0; i < perimeter.length; i++) {
+            const dx = points[0][0] - perimeter[i][0];
+            const dy = points[0][1] - perimeter[i][1];
+            const dist = dx*dx + dy*dy;
+            
+            if (dist < minDist) {
+              minDist = dist;
+              closestPerimIdx = i;
+            }
           }
-        } else if (Math.abs(endpt[1] - newendpt[1]) < epsilon) {
-          if (Math.abs(endpt[1] - ptNew[1]) < epsilon &&
-              (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
-            newendpt = ptNew;
-            nexti = possiblei;
+          
+          // 顺时针添加perimeter点以闭合路径
+          for (let i = 0; i < perimeter.length; i++) {
+            const idx = (closestPerimIdx + i) % perimeter.length;
+            simplePath.push([...perimeter[idx]]);
+          }
+          
+          // 闭合路径
+          simplePath.push([...perimeter[closestPerimIdx]]);
+          
+          // 返回构建的路径
+          return simplePath;
+        }
+      }
+    }
+  }
+  
+  // 3. 处理内部闭合路径
+  const result = [];
+  for (const path of pi.paths) {
+    if (path && Array.isArray(path) && path.length > 0) {
+      // 添加路径点并闭合
+      for (const pt of path) {
+        if (Array.isArray(pt) && pt.length >= 2 && 
+            typeof pt[0] === 'number' && !isNaN(pt[0]) && isFinite(pt[0]) &&
+            typeof pt[1] === 'number' && !isNaN(pt[1]) && isFinite(pt[1])) {
+          result.push([...pt]);
+        }
+      }
+      
+      // 确保闭合
+      if (path.length > 0 && Array.isArray(path[0]) && path[0].length >= 2 &&
+          typeof path[0][0] === 'number' && !isNaN(path[0][0]) && isFinite(path[0][0]) &&
+          typeof path[0][1] === 'number' && !isNaN(path[0][1]) && isFinite(path[0][1])) {
+        result.push([...path[0]]); // 闭合路径
+      }
+      
+      result.push(null); // 添加分隔符
+    }
+  }
+  
+  // 4. 如果没有边缘路径，直接返回内部路径
+  if (pi.edgepaths.length === 0) {
+    return result.length > 0 ? result : [];
+  }
+  
+  // 5. 处理边缘路径 - 按照plotly.js的实现逻辑
+  // 复制边缘路径，避免修改原始数据
+  const edgepaths = pi.edgepaths
+    .filter(path => Array.isArray(path) && path.length > 0)
+    .map(path => {
+      return path
+        .filter(pt => 
+          Array.isArray(pt) && pt.length >= 2 &&
+          typeof pt[0] === 'number' && !isNaN(pt[0]) && isFinite(pt[0]) &&
+          typeof pt[1] === 'number' && !isNaN(pt[1]) && isFinite(pt[1])
+        )
+        .map(pt => [...pt]);
+    })
+    .filter(path => path.length > 0);  // 过滤掉空路径
+  
+  // 如果没有有效的边缘路径，返回内部路径
+  if (edgepaths.length === 0) {
+    return result.length > 0 ? result : [];
+  }
+  
+  // 特殊处理：如果所有边缘路径都只有一个点，创建一个简单填充
+  let allSinglePoints = true;
+  for (const path of edgepaths) {
+    if (path.length !== 1) {
+      allSinglePoints = false;
+      break;
+    }
+  }
+  
+  if (allSinglePoints) {
+    console.log('边缘路径处理中检测到只有单点路径');
+    
+    // 创建一个连接所有点的简单多边形
+    const points = edgepaths.map(path => path[0]);
+    if (points.length >= 3) {
+      // 如果有至少3个点，可以创建一个多边形
+      for (const pt of points) {
+        result.push([...pt]);
+      }
+      // 闭合多边形
+      result.push([...points[0]]);
+      result.push(null);
+      return result;
+    } else if (points.length > 0) {
+      // 连接到perimeter
+      for (const pt of points) {
+        result.push([...pt]);
+      }
+      
+      // 寻找最近的perimeter点
+      let minDist = Infinity;
+      let closestPerimIdx = 0;
+      
+      for (let i = 0; i < perimeter.length; i++) {
+        const dx = points[0][0] - perimeter[i][0];
+        const dy = points[0][1] - perimeter[i][1];
+        const dist = dx*dx + dy*dy;
+        
+        if (dist < minDist) {
+          minDist = dist;
+          closestPerimIdx = i;
+        }
+      }
+      
+      // 添加perimeter点
+      for (let i = 0; i < perimeter.length; i++) {
+        const idx = (closestPerimIdx + i) % perimeter.length;
+        result.push([...perimeter[idx]]);
+      }
+      
+      // 返回到起点
+      result.push([...points[0]]);
+      result.push(null);
+      return result;
+    }
+  }
+  
+  // 定义边界检测函数
+  const epsilon = 0.01; // 误差容忍度
+  
+  const istop = pt => {
+    return Array.isArray(pt) && pt.length >= 2 && 
+           Array.isArray(perimeter[0]) && perimeter[0].length >= 2 && 
+           Math.abs(pt[1] - perimeter[0][1]) < epsilon;
+  };
+  
+  const isbottom = pt => {
+    return Array.isArray(pt) && pt.length >= 2 && 
+           Array.isArray(perimeter[2]) && perimeter[2].length >= 2 && 
+           Math.abs(pt[1] - perimeter[2][1]) < epsilon;
+  };
+  
+  const isleft = pt => {
+    return Array.isArray(pt) && pt.length >= 2 && 
+           Array.isArray(perimeter[0]) && perimeter[0].length >= 2 && 
+           Math.abs(pt[0] - perimeter[0][0]) < epsilon;
+  };
+  
+  const isright = pt => {
+    return Array.isArray(pt) && pt.length >= 2 && 
+           Array.isArray(perimeter[2]) && perimeter[2].length >= 2 && 
+           Math.abs(pt[0] - perimeter[2][0]) < epsilon;
+  };
+  
+  // 安全的equalPts函数，处理无效点
+  const safeEqualPts = (pt1, pt2, xtol, ytol) => {
+    if (!Array.isArray(pt1) || !Array.isArray(pt2) || 
+        pt1.length < 2 || pt2.length < 2) return false;
+    
+    const x1 = pt1[0], y1 = pt1[1], x2 = pt2[0], y2 = pt2[1];
+    
+    if (typeof x1 !== 'number' || isNaN(x1) || !isFinite(x1) ||
+        typeof y1 !== 'number' || isNaN(y1) || !isFinite(y1) ||
+        typeof x2 !== 'number' || isNaN(x2) || !isFinite(x2) ||
+        typeof y2 !== 'number' || isNaN(y2) || !isFinite(y2)) {
+      return false;
+    }
+    
+    return Math.abs(x1 - x2) < xtol && Math.abs(y1 - y2) < ytol;
+  };
+  
+  // 按照plotly.js实现连接边缘路径
+  const startsleft = edgepaths.map((_, i) => i);
+  const fullpath = [];
+  let i = 0;
+  
+  // 防止无限循环
+  let maxIterations = 1000;
+  let iterations = 0;
+  
+  try {
+    while (startsleft.length > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // 安全检查当前索引
+      if (i < 0 || i >= edgepaths.length || !Array.isArray(edgepaths[i])) {
+        // 无效索引，取下一个有效索引
+        if (startsleft.length > 0) {
+          i = startsleft[0];
+          continue;
+        } else {
+          break;
+        }
+      }
+      
+      const path = edgepaths[i];
+      
+      // 添加路径点
+      for (const pt of path) {
+        if (pt && Array.isArray(pt) && pt.length >= 2 && 
+            typeof pt[0] === 'number' && !isNaN(pt[0]) && isFinite(pt[0]) &&
+            typeof pt[1] === 'number' && !isNaN(pt[1]) && isFinite(pt[1])) {
+          fullpath.push([...pt]);
+        }
+      }
+      
+      // 安全地从startsleft中移除索引i
+      const idx = startsleft.indexOf(i);
+      if (idx !== -1) {
+        startsleft.splice(idx, 1);
+      }
+      
+      // 如果没有更多路径，跳出循环
+      if (startsleft.length === 0) break;
+      
+      // 获取终点
+      const endpt = path.length > 0 ? path[path.length - 1] : null;
+      if (!endpt || !Array.isArray(endpt) || endpt.length < 2 ||
+          typeof endpt[0] !== 'number' || isNaN(endpt[0]) || !isFinite(endpt[0]) ||
+          typeof endpt[1] !== 'number' || isNaN(endpt[1]) || !isFinite(endpt[1])) {
+        // 无效终点，取下一个路径
+        i = startsleft[0];
+        continue;
+      }
+      
+      // 寻找下一个路径
+      let nexti = -1;
+      let newendpt = null;
+      
+      // 首先尝试直接连接
+      for (let j = 0; j < startsleft.length; j++) {
+        const idx = startsleft[j];
+        if (idx < 0 || idx >= edgepaths.length) continue;
+        
+        const nextPath = edgepaths[idx];
+        if (!Array.isArray(nextPath) || nextPath.length === 0) continue;
+        
+        const startPt = nextPath[0];
+        if (!Array.isArray(startPt) || startPt.length < 2 ||
+            typeof startPt[0] !== 'number' || isNaN(startPt[0]) || !isFinite(startPt[0]) ||
+            typeof startPt[1] !== 'number' || isNaN(startPt[1]) || !isFinite(startPt[1])) continue;
+        
+        if (safeEqualPts(endpt, startPt, epsilon, epsilon)) {
+          nexti = idx;
+          break;
+        }
+      }
+      
+      // 如果找不到直接连接，沿边缘寻找最近的路径起点
+      if (nexti === -1) {
+        // 确定当前终点在哪个边界上
+        let edge = istop(endpt) ? 0 : isright(endpt) ? 1 : isbottom(endpt) ? 2 : isleft(endpt) ? 3 : -1;
+        
+        if (edge >= 0) {
+          // 找出在下一个边上的起点
+          const nextEdge = (edge + 1) % 4;
+          const isOnNextEdge = [istop, isright, isbottom, isleft][nextEdge];
+          
+          let minDist = Infinity;
+          for (let j = 0; j < startsleft.length; j++) {
+            const idx = startsleft[j];
+            if (idx < 0 || idx >= edgepaths.length) continue;
+            
+            const nextPath = edgepaths[idx];
+            if (!Array.isArray(nextPath) || nextPath.length === 0) continue;
+            
+            const startPt = nextPath[0];
+            if (!Array.isArray(startPt) || startPt.length < 2 ||
+                typeof startPt[0] !== 'number' || isNaN(startPt[0]) || !isFinite(startPt[0]) ||
+                typeof startPt[1] !== 'number' || isNaN(startPt[1]) || !isFinite(startPt[1])) continue;
+            
+            if (isOnNextEdge(startPt)) {
+              // 计算沿边缘的距离
+              let dist;
+              if (nextEdge % 2 === 0) { // 水平边
+                dist = Math.abs(startPt[0] - endpt[0]);
+              } else { // 垂直边
+                dist = Math.abs(startPt[1] - endpt[1]);
+              }
+              
+              if (dist < minDist) {
+                minDist = dist;
+                nexti = idx;
+                newendpt = [...startPt];
+              }
+            }
+          }
+          
+          // 添加角点（仅当找到下一个路径且perimeter有效时）
+          if (newendpt && Array.isArray(perimeter[nextEdge]) && perimeter[nextEdge].length >= 2 &&
+              typeof perimeter[nextEdge][0] === 'number' && !isNaN(perimeter[nextEdge][0]) && isFinite(perimeter[nextEdge][0]) &&
+              typeof perimeter[nextEdge][1] === 'number' && !isNaN(perimeter[nextEdge][1]) && isFinite(perimeter[nextEdge][1])) {
+            const cornerpt = [...perimeter[nextEdge]];
+            fullpath.push(cornerpt);
           }
         }
       }
       
-      endpt = newendpt;
-      
-      if (nexti >= 0) break;
-      
-      // 添加边界点
-      fullpath.push(newendpt);
+      // 如果找到下一个路径，继续连接
+      if (nexti >= 0) {
+        i = nexti;
+      } else if (startsleft.length) {
+        // 如果没有找到下一个路径，添加分隔符并开始新路径
+        fullpath.push(null);
+        i = startsleft[0];
+      }
     }
-    
-    // 确定下一条路径
-    i = nexti;
-    
-    // 如果闭合或没有下一条路径，开始新的循环
-    newloop = (nexti < 0 || startsleft.indexOf(i) === -1);
-    if (newloop && startsleft.length) {
-      i = startsleft[0];
+  } catch (error) {
+    console.error('Error in joinAllPaths:', error);
+    // 捕获到错误，但继续尝试合并结果
+  }
+  
+  // 如果达到最大迭代次数，记录警告
+  if (iterations >= maxIterations) {
+    console.warn('Maximum iterations reached in joinAllPaths');
+  }
+  
+  // 合并结果
+  for (const pt of fullpath) {
+    if (pt === null) {
+      result.push(null);
+    } else if (Array.isArray(pt) && pt.length >= 2 &&
+               typeof pt[0] === 'number' && !isNaN(pt[0]) && isFinite(pt[0]) &&
+               typeof pt[1] === 'number' && !isNaN(pt[1]) && isFinite(pt[1])) {
+      result.push([...pt]);
     }
   }
   
-  // 添加所有闭合路径
-  for (i = 0; i < pi.paths.length; i++) {
-    fullpath.push(...pi.paths[i]);
+  // 如果有prefixBoundary，添加完整边界
+  if (pi.prefixBoundary) {
+    // 确保perimeter数组有效
+    if (Array.isArray(perimeter) && perimeter.length >= 4 &&
+        Array.isArray(perimeter[0]) && perimeter[0].length >= 2 &&
+        Array.isArray(perimeter[1]) && perimeter[1].length >= 2 &&
+        Array.isArray(perimeter[2]) && perimeter[2].length >= 2 &&
+        Array.isArray(perimeter[3]) && perimeter[3].length >= 2) {
+      
+      result.push(
+        [...perimeter[0]],
+        [...perimeter[1]],
+        [...perimeter[2]],
+        [...perimeter[3]],
+        [...perimeter[0]],
+        null
+      );
+    }
   }
   
-  return fullpath;
+  return result;
 }
 
 /**
- * 根据级别获取颜色
+ * 将SVG路径字符串解析为点数组
+ * @param {string} pathStr SVG路径字符串
+ * @returns {Array} 点数组，包含null作为分隔符
+ */
+function parseSvgPath(pathStr) {
+  // 安全检查
+  if (!pathStr || typeof pathStr !== 'string') {
+    console.warn('Invalid SVG path string:', pathStr);
+    return [];
+  }
+  
+  try {
+    const result = [];
+    const commands = pathStr.match(/[MLZ][^MLZ]*/g) || [];
+    let currentPath = [];
+    
+    for (const cmd of commands) {
+      const type = cmd[0];
+      const rest = cmd.slice(1).trim();
+      
+      if (type === 'Z') {
+        // 闭合路径，如果当前路径不为空，添加起点作为终点
+        if (currentPath.length > 0) {
+          result.push([...currentPath[0]]); // 添加起点副本作为终点
+          result.push(null); // 添加分隔符
+          currentPath = []; // 重置当前路径
+        }
+        continue;
+      }
+      
+      // 解析坐标点
+      const coordPairs = rest.split(/[,\s]+/);
+      if (coordPairs.length % 2 !== 0) {
+        console.warn('Invalid coordinate pairs in SVG path:', rest);
+        continue; // 跳过无效的命令
+      }
+      
+      for (let i = 0; i < coordPairs.length; i += 2) {
+        if (i + 1 >= coordPairs.length) continue;
+        
+        const x = parseFloat(coordPairs[i]);
+        const y = parseFloat(coordPairs[i + 1]);
+        
+        if (isNaN(x) || isNaN(y)) {
+          console.warn('Invalid coordinates in SVG path:', coordPairs[i], coordPairs[i + 1]);
+          continue; // 跳过无效的坐标
+        }
+        
+        const point = [x, y];
+        
+        // 对于L命令，直接添加点
+        if (type === 'L') {
+          result.push(point);
+          currentPath.push(point);
+        } 
+        // 对于M命令，如果当前路径不为空，添加null分隔符
+        else if (type === 'M') {
+          if (currentPath.length > 0) {
+            result.push(null);
+          }
+          result.push(point);
+          currentPath = [point];
+        }
+      }
+    }
+    
+    // 移除末尾的null
+    if (result.length > 0 && result[result.length - 1] === null) {
+      result.pop();
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error parsing SVG path:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取等值线级别对应的颜色
  * @param {number} level 等值线级别
  * @param {Array<number>} levels 所有级别
  * @param {Array<Array<number|string>>} colorScale 颜色映射
- * @returns {string} 颜色
+ * @param {number} t 百分比位置 (0-1)
+ * @returns {string} 颜色字符串
  */
-function getColorForLevel(level, levels, colorScale) {
-  if (!colorScale || !colorScale.length) {
-    return '#000000';
-  }
-  
-  // 找到级别在所有级别中的归一化位置
-  const min = levels[0];
-  const max = levels[levels.length - 1];
-  const normalized = (level - min) / (max - min);
-  
-  // 在颜色映射中查找对应颜色
-  for (let i = 0; i < colorScale.length - 1; i++) {
-    const curr = colorScale[i];
-    const next = colorScale[i + 1];
-    
-    if (normalized >= curr[0] && normalized <= next[0]) {
-      // 线性插值颜色
-      const t = (normalized - curr[0]) / (next[0] - curr[0]);
-      return interpolateColor(curr[1], next[1], t);
+function getColorForLevel(level, levels, colorScale, t) {
+  try {
+    // 确保 colorScale 是有效的
+    if (!colorScale || !Array.isArray(colorScale) || colorScale.length === 0) {
+      console.warn('Invalid colorScale in getColorForLevel');
+      // 使用默认的蓝-红渐变
+      return interpolateColorScale(t, [
+        [0, 'rgb(0, 0, 255)'],   // 蓝色
+        [0.5, 'rgb(255, 0, 255)'], // 紫色
+        [1, 'rgb(255, 0, 0)']    // 红色
+      ]);
     }
+    
+    // 如果colorScale的长度与levels长度一致，直接使用对应索引的颜色
+    if (Array.isArray(levels) && colorScale.length === levels.length) {
+      const index = levels.indexOf(level);
+      if (index !== -1 && index < colorScale.length) {
+        return colorScale[index][1]; // 直接返回对应的颜色
+      }
+    }
+    
+    // 如果提供了t值，直接使用它进行插值
+    if (t !== undefined && typeof t === 'number' && !isNaN(t)) {
+      return interpolateColorScale(t, colorScale);
+    }
+    
+    // 验证级别数组
+    if (!Array.isArray(levels) || levels.length === 0) {
+      console.warn('Invalid levels array in getColorForLevel');
+      return interpolateColorScale(0.5, colorScale);
+    }
+    
+    // 过滤出有效的级别值
+    const validLevels = levels.filter(l => typeof l === 'number' && !isNaN(l));
+    if (validLevels.length === 0) {
+      console.warn('No valid levels in getColorForLevel');
+      return interpolateColorScale(0.5, colorScale);
+    }
+    
+    // 计算相对位置
+    const min = Math.min(...validLevels);
+    const max = Math.max(...validLevels);
+    const range = max - min;
+    
+    // 避免除以零
+    if (range === 0 || !isFinite(range)) {
+      return interpolateColorScale(0.5, colorScale);
+    }
+    
+    // 处理无效的level值
+    if (typeof level !== 'number' || isNaN(level)) {
+      console.warn('Invalid level value in getColorForLevel:', level);
+      return interpolateColorScale(0.5, colorScale);
+    }
+    
+    // 计算归一化位置 (0-1)
+    let position = (level - min) / range;
+    position = Math.max(0, Math.min(1, position)); // 确保在 [0,1] 范围内
+    
+    // 获取颜色
+    return interpolateColorScale(position, colorScale);
+  } catch (error) {
+    console.error('Error in getColorForLevel:', error, 'for level:', level);
+    return 'rgb(0, 0, 0)'; // 默认黑色
   }
-  
-  // 默认返回最后一个颜色
-  return colorScale[colorScale.length - 1][1];
+}
+
+/**
+ * 在颜色比例尺上插值
+ * @param {number} t 位置 (0-1)
+ * @param {Array<Array<number|string>>} colorScale 颜色映射
+ * @returns {string} 颜色字符串
+ */
+function interpolateColorScale(t, colorScale) {
+  try {
+    // 确保 t 是有效数字且在 [0,1] 范围内
+    if (typeof t !== 'number' || isNaN(t)) {
+      console.warn('Invalid t value for color interpolation:', t);
+      t = 0.5; // 使用中间值作为默认
+    } else {
+      t = Math.max(0, Math.min(1, t));
+    }
+    
+    // 如果没有颜色比例尺，使用默认蓝-红渐变
+    if (!colorScale || !Array.isArray(colorScale) || colorScale.length === 0) {
+      const hue = (1 - t) * 240; // 从蓝色(240)到红色(0)
+      return `hsl(${hue}, 100%, 50%)`;
+    }
+    
+    // 验证颜色比例尺格式
+    const validColorScale = [];
+    for (let i = 0; i < colorScale.length; i++) {
+      // 检查是否是有效的颜色比例尺项 [position, color]
+      if (Array.isArray(colorScale[i]) && colorScale[i].length >= 2) {
+        const pos = typeof colorScale[i][0] === 'number' && !isNaN(colorScale[i][0]) ? 
+                    colorScale[i][0] : (colorScale.length > 1 ? i / (colorScale.length - 1) : 0.5);
+        const color = colorScale[i][1];
+        validColorScale.push([pos, color]);
+      } else if (i < colorScale.length) {
+        // 如果只提供了颜色，假设位置是均匀分布的
+        const pos = colorScale.length > 1 ? i / (colorScale.length - 1) : 0.5;
+        validColorScale.push([pos, colorScale[i]]);
+      }
+    }
+    
+    // 如果没有有效的颜色比例尺项，使用默认颜色
+    if (validColorScale.length === 0) {
+      return 'rgb(0, 0, 0)';
+    }
+    
+    // 单个颜色的情况
+    if (validColorScale.length === 1) {
+      const rgb = parseColor(validColorScale[0][1]);
+      return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    }
+    
+    // 对颜色比例尺按位置排序
+    validColorScale.sort((a, b) => a[0] - b[0]);
+    
+    // 确保颜色比例尺覆盖 [0,1] 范围
+    if (validColorScale[0][0] > 0) {
+      validColorScale.unshift([0, validColorScale[0][1]]);
+    }
+    if (validColorScale[validColorScale.length - 1][0] < 1) {
+      validColorScale.push([1, validColorScale[validColorScale.length - 1][1]]);
+    }
+    
+    // 找到t在颜色比例尺中的位置
+    let i = 0;
+    while (i < validColorScale.length - 1 && t > validColorScale[i+1][0]) {
+      i++;
+    }
+    
+    // 边界情况
+    if (i >= validColorScale.length - 1) {
+      const rgb = parseColor(validColorScale[validColorScale.length - 1][1]);
+      return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    }
+    
+    // 在两个颜色之间插值
+    const tStart = validColorScale[i][0];
+    const tEnd = validColorScale[i+1][0];
+    const colorStart = validColorScale[i][1];
+    const colorEnd = validColorScale[i+1][1];
+    
+    // 计算子区间中的相对位置
+    const segmentT = (tEnd === tStart) ? 0 : (t - tStart) / (tEnd - tStart);
+    
+    // 插值颜色
+    return interpolateColor(colorStart, colorEnd, segmentT);
+  } catch (error) {
+    console.error('Error in interpolateColorScale:', error, 'for value:', t, 'and scale:', colorScale);
+    return 'rgb(0, 0, 0)'; // 出错时返回黑色
+  }
 }
 
 /**
  * 颜色插值
- * @param {string} color1 颜色1
- * @param {string} color2 颜色2
+ * @param {Object|string|Array} color1 颜色1
+ * @param {Object|string|Array} color2 颜色2
  * @param {number} t 插值因子 [0,1]
  * @returns {string} 插值后的颜色
  */
 function interpolateColor(color1, color2, t) {
-  // 解析颜色
-  const rgb1 = parseColor(color1);
-  const rgb2 = parseColor(color2);
+  // 确保 t 在 [0,1] 范围内
+  t = Math.max(0, Math.min(1, t));
   
-  // 线性插值
-  const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * t);
-  const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * t);
-  const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * t);
-  
-  return `rgb(${r},${g},${b})`;
+  try {
+    // 解析颜色
+    const rgb1 = parseColor(color1);
+    const rgb2 = parseColor(color2);
+    
+    if (!rgb1 || !rgb2 || 
+        typeof rgb1.r !== 'number' || typeof rgb1.g !== 'number' || typeof rgb1.b !== 'number' ||
+        typeof rgb2.r !== 'number' || typeof rgb2.g !== 'number' || typeof rgb2.b !== 'number') {
+      console.warn('Invalid color values for interpolation:', color1, color2);
+      return 'rgb(0, 0, 0)';
+    }
+    
+    // 线性插值
+    const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * t);
+    const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * t);
+    const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * t);
+    
+    // 确保RGB值在有效范围内
+    const validR = Math.max(0, Math.min(255, r));
+    const validG = Math.max(0, Math.min(255, g));
+    const validB = Math.max(0, Math.min(255, b));
+    
+    return `rgb(${validR}, ${validG}, ${validB})`;
+  } catch (error) {
+    console.error('Error interpolating colors:', error, 'for colors:', color1, color2);
+    return 'rgb(0, 0, 0)'; // 默认黑色
+  }
 }
 
 /**
  * 解析颜色字符串为RGB对象
- * @param {string} color 颜色字符串
+ * @param {string|Object|Array} color 颜色字符串或对象
  * @returns {Object} RGB对象 {r,g,b}
  */
 function parseColor(color) {
-  // 处理rgb格式
-  if (color.startsWith('rgb')) {
-    const match = color.match(/\d+/g);
-    if (match && match.length >= 3) {
+  try {
+    // 处理 null 或 undefined
+    if (color === null || color === undefined) {
+      return { r: 0, g: 0, b: 0 };
+    }
+    
+    // 如果已经是RGB对象，直接返回
+    if (typeof color === 'object' && color !== null && 'r' in color && 'g' in color && 'b' in color) {
       return {
-        r: parseInt(match[0]),
-        g: parseInt(match[1]),
-        b: parseInt(match[2])
+        r: typeof color.r === 'number' ? Math.min(255, Math.max(0, Math.round(color.r))) : 0,
+        g: typeof color.g === 'number' ? Math.min(255, Math.max(0, Math.round(color.g))) : 0,
+        b: typeof color.b === 'number' ? Math.min(255, Math.max(0, Math.round(color.b))) : 0
       };
     }
-  }
-  
-  // 处理十六进制格式
-  if (color.startsWith('#')) {
-    const hex = color.substring(1);
-    const bigint = parseInt(hex, 16);
-    return {
-      r: (bigint >> 16) & 255,
-      g: (bigint >> 8) & 255,
-      b: bigint & 255
-    };
+    
+    // 处理数组格式 [r, g, b]
+    if (Array.isArray(color) && color.length >= 3) {
+      return {
+        r: typeof color[0] === 'number' ? Math.min(255, Math.max(0, Math.round(color[0]))) : 0,
+        g: typeof color[1] === 'number' ? Math.min(255, Math.max(0, Math.round(color[1]))) : 0,
+        b: typeof color[2] === 'number' ? Math.min(255, Math.max(0, Math.round(color[2]))) : 0
+      };
+    }
+    
+    // 处理字符串类型的颜色
+    if (typeof color === 'string') {
+      // 处理rgb格式
+      if (color.startsWith('rgb')) {
+        const match = color.match(/\d+/g);
+        if (match && match.length >= 3) {
+          return {
+            r: parseInt(match[0]),
+            g: parseInt(match[1]),
+            b: parseInt(match[2])
+          };
+        }
+      }
+      
+      // 处理十六进制格式
+      if (color.startsWith('#')) {
+        let hex = color.substring(1);
+        
+        // 处理简写形式 (#RGB)
+        if (hex.length === 3) {
+          hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        }
+        
+        if (hex.length === 6) {
+          const bigint = parseInt(hex, 16);
+          return {
+            r: (bigint >> 16) & 255,
+            g: (bigint >> 8) & 255,
+            b: bigint & 255
+          };
+        }
+      }
+      
+      // 处理颜色名称
+      const colorNames = {
+        black: {r: 0, g: 0, b: 0},
+        white: {r: 255, g: 255, b: 255},
+        red: {r: 255, g: 0, b: 0},
+        green: {r: 0, g: 128, b: 0},
+        blue: {r: 0, g: 0, b: 255},
+        yellow: {r: 255, g: 255, b: 0},
+        cyan: {r: 0, g: 255, b: 255},
+        magenta: {r: 255, g: 0, b: 255},
+        gray: {r: 128, g: 128, b: 128},
+        orange: {r: 255, g: 165, b: 0},
+        purple: {r: 128, g: 0, b: 128}
+      };
+      
+      const lowerColor = color.toLowerCase();
+      if (colorNames[lowerColor]) {
+        return colorNames[lowerColor];
+      }
+    } else {
+      // 非字符串、非对象、非数组的颜色，尝试转换为字符串
+      const colorStr = String(color);
+      
+      // 处理基本的颜色名称
+      const colorNames = {
+        black: {r: 0, g: 0, b: 0},
+        white: {r: 255, g: 255, b: 255},
+        red: {r: 255, g: 0, b: 0},
+        green: {r: 0, g: 128, b: 0},
+        blue: {r: 0, g: 0, b: 255}
+      };
+      
+      const lowerColor = colorStr.toLowerCase();
+      if (colorNames[lowerColor]) {
+        return colorNames[lowerColor];
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing color:', error, 'for color:', color);
   }
   
   // 默认黑色
   return { r: 0, g: 0, b: 0 };
+}
+
+/**
+ * 将路径数组转换为多边形数组
+ * @param {Array} path 路径数组（包含null分隔符）
+ * @returns {Array<Array<Array<number>>>} 多边形数组
+ */
+function convertPathToPolygons(path) {
+  // 安全检查
+  if (!path) return [];
+  
+  try {
+    if (!Array.isArray(path)) {
+      console.warn('Path is not an array:', path);
+      return [];
+    }
+    
+    if (path.length === 0) return [];
+    
+    // 检查是否是只有单个点的特殊情况
+    let singlePointOnly = true;
+    let hasNonNull = false;
+    
+    for (let i = 0; i < path.length; i++) {
+      if (path[i] !== null) {
+        hasNonNull = true;
+        if (i + 1 < path.length && path[i+1] !== null) {
+          singlePointOnly = false;
+          break;
+        }
+      }
+    }
+    
+    // 如果只有单个点，我们需要创建一个围绕它的小多边形
+    if (singlePointOnly && hasNonNull) {
+      console.log('检测到单点路径，创建围绕它的多边形');
+      
+      // 找到第一个非null点
+      let firstPoint = null;
+      for (const pt of path) {
+        if (pt !== null && Array.isArray(pt) && pt.length >= 2) {
+          firstPoint = pt;
+          break;
+        }
+      }
+      
+      if (firstPoint) {
+        // 创建一个小矩形作为多边形
+        const size = 0.5; // 矩形大小
+        const polygon = [
+          [firstPoint[0] - size, firstPoint[1] - size],
+          [firstPoint[0] + size, firstPoint[1] - size],
+          [firstPoint[0] + size, firstPoint[1] + size],
+          [firstPoint[0] - size, firstPoint[1] + size],
+          [firstPoint[0] - size, firstPoint[1] - size]
+        ];
+        
+        return [polygon];
+      }
+    }
+    
+    const polygons = [];
+    let currentPolygon = [];
+    
+    // 安全的点比较函数
+    const safeEqualPts = (pt1, pt2, xtol, ytol) => {
+      if (!Array.isArray(pt1) || !Array.isArray(pt2) || 
+          pt1.length < 2 || pt2.length < 2) return false;
+      
+      const x1 = pt1[0];
+      const y1 = pt1[1];
+      const x2 = pt2[0];
+      const y2 = pt2[1];
+      
+      if (typeof x1 !== 'number' || isNaN(x1) || !isFinite(x1) ||
+          typeof y1 !== 'number' || isNaN(y1) || !isFinite(y1) ||
+          typeof x2 !== 'number' || isNaN(x2) || !isFinite(x2) ||
+          typeof y2 !== 'number' || isNaN(y2) || !isFinite(y2)) {
+        return false;
+      }
+      
+      return Math.abs(x1 - x2) < xtol && Math.abs(y1 - y2) < ytol;
+    };
+    
+    // 判断点是否有效
+    const isValidPoint = (pt) => {
+      return Array.isArray(pt) && pt.length >= 2 && 
+             typeof pt[0] === 'number' && !isNaN(pt[0]) && isFinite(pt[0]) &&
+             typeof pt[1] === 'number' && !isNaN(pt[1]) && isFinite(pt[1]);
+    };
+    
+    // 处理每个点
+    for (let i = 0; i < path.length; i++) {
+      const point = path[i];
+      
+      if (point === null) {
+        // 结束当前多边形
+        if (currentPolygon.length > 0) {
+          // 如果只有1-2个点，尝试创建一个小多边形
+          if (currentPolygon.length < 3) {
+            if (currentPolygon.length === 1 && isValidPoint(currentPolygon[0])) {
+              const pt = currentPolygon[0];
+              const size = 0.5; // 创建的矩形大小
+              
+              currentPolygon = [
+                [pt[0] - size, pt[1] - size],
+                [pt[0] + size, pt[1] - size],
+                [pt[0] + size, pt[1] + size],
+                [pt[0] - size, pt[1] + size],
+                [pt[0] - size, pt[1] - size]
+              ];
+            } else if (currentPolygon.length === 2 && 
+                      isValidPoint(currentPolygon[0]) && 
+                      isValidPoint(currentPolygon[1])) {
+              // 两点情况，创建一个细长矩形
+              const pt1 = currentPolygon[0];
+              const pt2 = currentPolygon[1];
+              const dx = pt2[0] - pt1[0];
+              const dy = pt2[1] - pt1[1];
+              const length = Math.sqrt(dx*dx + dy*dy);
+              
+              if (length > 0) {
+                const nx = -dy / length * 0.2; // 法向量
+                const ny = dx / length * 0.2;
+                
+                currentPolygon = [
+                  [pt1[0] + nx, pt1[1] + ny],
+                  [pt2[0] + nx, pt2[1] + ny],
+                  [pt2[0] - nx, pt2[1] - ny],
+                  [pt1[0] - nx, pt1[1] - ny],
+                  [pt1[0] + nx, pt1[1] + ny]
+                ];
+              }
+            }
+          } else {
+            // 确保多边形闭合
+            if (!safeEqualPts(currentPolygon[0], currentPolygon[currentPolygon.length - 1], 0.01, 0.01)) {
+              // 只有在开始点有效时才添加
+              if (isValidPoint(currentPolygon[0])) {
+                currentPolygon.push([...currentPolygon[0]]);
+              }
+            }
+          }
+          
+          // 检查是否有足够的点
+          if (currentPolygon.length >= 3) {
+            polygons.push([...currentPolygon]); // 创建副本以避免引用问题
+          }
+        }
+        currentPolygon = [];
+      } else if (isValidPoint(point)) {
+        // 添加有效的点
+        currentPolygon.push([...point]); // 创建副本以避免引用问题
+      }
+    }
+    
+    // 处理最后一个多边形（如果没有以null结束）
+    if (currentPolygon.length > 0) {
+      // 同样处理少于3个点的情况
+      if (currentPolygon.length < 3) {
+        if (currentPolygon.length === 1 && isValidPoint(currentPolygon[0])) {
+          const pt = currentPolygon[0];
+          const size = 0.5; // 创建的矩形大小
+          
+          currentPolygon = [
+            [pt[0] - size, pt[1] - size],
+            [pt[0] + size, pt[1] - size],
+            [pt[0] + size, pt[1] + size],
+            [pt[0] - size, pt[1] + size],
+            [pt[0] - size, pt[1] - size]
+          ];
+        } else if (currentPolygon.length === 2 && 
+                  isValidPoint(currentPolygon[0]) && 
+                  isValidPoint(currentPolygon[1])) {
+          // 两点情况，创建一个细长矩形
+          const pt1 = currentPolygon[0];
+          const pt2 = currentPolygon[1];
+          const dx = pt2[0] - pt1[0];
+          const dy = pt2[1] - pt1[1];
+          const length = Math.sqrt(dx*dx + dy*dy);
+          
+          if (length > 0) {
+            const nx = -dy / length * 0.2; // 法向量
+            const ny = dx / length * 0.2;
+            
+            currentPolygon = [
+              [pt1[0] + nx, pt1[1] + ny],
+              [pt2[0] + nx, pt2[1] + ny],
+              [pt2[0] - nx, pt2[1] - ny],
+              [pt1[0] - nx, pt1[1] - ny],
+              [pt1[0] + nx, pt1[1] + ny]
+            ];
+          }
+        }
+      } else {
+        // 确保多边形闭合
+        if (!safeEqualPts(currentPolygon[0], currentPolygon[currentPolygon.length - 1], 0.01, 0.01)) {
+          if (isValidPoint(currentPolygon[0])) {
+            currentPolygon.push([...currentPolygon[0]]);
+          }
+        }
+      }
+      
+      // 检查是否有足够的点
+      if (currentPolygon.length >= 3) {
+        polygons.push([...currentPolygon]);
+      }
+    }
+    
+    return polygons;
+  } catch (error) {
+    console.error('Error converting path to polygons:', error);
+    return [];
+  }
+}
+
+/**
+ * 确保颜色比例尺有效，并且长度与levels匹配
+ * @param {*} colorScale 原始颜色比例尺
+ * @param {number} levelCount levels数组的长度
+ * @returns {Array} 有效的颜色比例尺，长度与levels一致
+ */
+function getValidColorScale(colorScale, levelCount) {
+  // 验证颜色比例尺
+  let validColorScale = colorScale;
+  
+  // 如果提供的是颜色数组而不是颜色比例尺数组，转换为标准格式
+  if (Array.isArray(colorScale)) {
+    if (colorScale.length > 0 && !Array.isArray(colorScale[0])) {
+      // 简单颜色数组，转换为标准格式 [[pos, color], ...]
+      validColorScale = colorScale.map((color, idx) => {
+        const pos = colorScale.length > 1 ? idx / (colorScale.length - 1) : 0.5;
+        return [pos, color];
+      });
+    }
+  } else if (!colorScale) {
+    // 如果没有提供颜色比例尺，使用默认的蓝-红渐变
+    validColorScale = [
+      [0, 'rgb(0, 0, 255)'],   // 蓝色
+      [0.5, 'rgb(255, 0, 255)'], // 紫色
+      [1, 'rgb(255, 0, 0)']    // 红色
+    ];
+  } else if (typeof colorScale === 'object' && !Array.isArray(colorScale)) {
+    // 如果是自定义对象格式，尝试转换为标准格式
+    try {
+      if ('colors' in colorScale && Array.isArray(colorScale.colors)) {
+        // 如果有 colors 属性，使用它
+        validColorScale = colorScale.colors.map((color, idx) => {
+          const pos = colorScale.colors.length > 1 ? idx / (colorScale.colors.length - 1) : 0.5;
+          return [pos, color];
+        });
+      } else {
+        // 尝试从对象中提取颜色
+        const colors = [];
+        for (const key in colorScale) {
+          if (colorScale.hasOwnProperty(key)) {
+            colors.push(colorScale[key]);
+          }
+        }
+        
+        if (colors.length > 0) {
+          validColorScale = colors.map((color, idx) => {
+            const pos = colors.length > 1 ? idx / (colors.length - 1) : 0.5;
+            return [pos, color];
+          });
+        } else {
+          // 回退到默认颜色
+          validColorScale = [
+            [0, 'rgb(0, 0, 255)'],   // 蓝色
+            [0.5, 'rgb(255, 0, 255)'], // 紫色
+            [1, 'rgb(255, 0, 0)']    // 红色
+          ];
+        }
+      }
+    } catch (e) {
+      // 回退到默认颜色
+      validColorScale = [
+        [0, 'rgb(0, 0, 255)'],   // 蓝色
+        [0.5, 'rgb(255, 0, 255)'], // 紫色
+        [1, 'rgb(255, 0, 0)']    // 红色
+      ];
+    }
+  }
+  
+  // 确保validColorScale是标准格式[[pos, color], ...]
+  if (!Array.isArray(validColorScale) || !Array.isArray(validColorScale[0])) {
+    console.warn('Invalid color scale format, using default');
+    validColorScale = [
+      [0, 'rgb(0, 0, 255)'],
+      [0.5, 'rgb(255, 0, 255)'],
+      [1, 'rgb(255, 0, 0)']
+    ];
+  }
+  
+  // 如果levels长度大于颜色比例尺长度，需要创建足够的颜色
+  if (levelCount > 0 && validColorScale.length > 0) {
+    // 提取位置和颜色
+    const positions = validColorScale.map(item => item[0]);
+    const colors = validColorScale.map(item => item[1]);
+    
+    // 创建新的颜色比例尺，确保长度与levels一致
+    const newColorScale = [];
+    for (let i = 0; i < levelCount; i++) {
+      const t = i / Math.max(1, levelCount - 1); // 归一化位置 [0,1]
+      
+      // 找到t在positions中的位置
+      let idx = 0;
+      while (idx < positions.length - 1 && t > positions[idx + 1]) {
+        idx++;
+      }
+      
+      let color;
+      if (idx >= positions.length - 1) {
+        // 如果超出范围，使用最后一个颜色
+        color = colors[colors.length - 1];
+      } else if (positions[idx] === t) {
+        // 如果正好匹配某个位置，直接使用对应颜色
+        color = colors[idx];
+      } else {
+        // 否则在两个颜色之间插值
+        const p1 = positions[idx];
+        const p2 = positions[idx + 1];
+        const c1 = colors[idx];
+        const c2 = colors[idx + 1];
+        
+        // 计算插值比例
+        const segmentT = (p2 === p1) ? 0 : (t - p1) / (p2 - p1);
+        color = interpolateColor(c1, c2, segmentT);
+      }
+      
+      newColorScale.push([t, color]);
+    }
+    
+    return newColorScale;
+  }
+  
+  return validColorScale;
 } 

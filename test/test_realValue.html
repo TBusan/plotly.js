@@ -1,0 +1,56 @@
+<html><head><title>useRealValue 参数测试</title>
+<script src='../dist/plotly.js'></script>
+<style>body{font-family:Arial; margin:20px;} pre{background:#f5f5f5; padding:10px; border-radius:5px;}</style>
+</head><body>
+<h1>useRealValue 参数测试</h1>
+<div id='plot' style='width:1000px;height:800px;'></div>
+<h2>测试说明</h2>
+<pre>
+测试useRealValue参数的影响:
+
+1. 左上图: useRealValue=true，线条模式
+   - 等值线应精确地在0,50,100,150,200处显示对应颜色
+   - 蓝色应对应0附近，绿色应对应50附近，黄色应对应100附近，红色应对应150附近，紫色应对应200附近
+
+2. 右上图: useRealValue=false (默认)，线条模式
+   - 等值线颜色应被归一化，出现渐变
+   - 蓝色应对应最低值，紫色应对应最高值
+
+3. 左下图: useRealValue=true，但数据范围偏移+100
+   - 即使数据范围变化，仍应精确使用色阶中的实际值
+   - 绿色线应接近150(50+100)，黄色线应接近200(100+100)
+
+4. 右下图: useRealValue=true，填充模式
+   - 填充区域也应根据真实数值着色
+   - 应清晰看到蓝、绿、黄、红、紫的区域边界
+
+如果useRealValue参数正确实现，四张图应显示明显不同的颜色模式。
+</pre>
+<script>
+var data = [
+   {
+      "type":"contour",
+      "z":[[10,30,50,70,90,110,130,150,170,190],[20,40,60,80,100,120,140,160,180,200],[30,50,70,90,110,130,150,170,190,210],[40,60,80,100,120,140,160,180,200,220],[50,70,90,110,130,150,170,190,210,230]],
+      "colorscale":[[0,"rgb(0,0,255)"],[0.1,"rgb(0,255,0)"],[0.2,"rgb(255,255,0)"],[0.4,"rgb(255,0,0)"],[1,"rgb(128,0,128)"]],
+      "useRealValue":true,
+      "contours":{"start":0,"end":200,"size":20,"coloring":"lines"},"line":{"width":2},"xaxis":"x","yaxis":"y"},
+   {
+      "type":"contour",
+      "z":[[10,30,50,70,90,110,130,150,170,190],[20,40,60,80,100,120,140,160,180,200],[30,50,70,90,110,130,150,170,190,210],[40,60,80,100,120,140,160,180,200,220],[50,70,90,110,130,150,170,190,210,230]],
+      "colorscale":[[0,"rgb(0,0,255)"],[0.1,"rgb(0,255,0)"],[0.2,"rgb(255,255,0)"],[0.4,"rgb(255,0,0)"],[1,"rgb(128,0,128)"]],
+      "contours":{"start":0,"end":200,"size":20,"coloring":"fill"},"line":{"width":2},"xaxis":"x2","yaxis":"y2"},
+   {
+      "type":"contour",
+      "z":[[110,130,150,170,190,210,230,250,270,290],[120,140,160,180,200,220,240,260,280,300],[130,150,170,190,210,230,250,270,290,310],[140,160,180,200,220,240,260,280,300,320],[150,170,190,210,230,250,270,290,310,330]],
+      "colorscale":[[0,"rgb(0,0,255)"],[0.1,"rgb(0,255,0)"],[0.2,"rgb(255,255,0)"],[0.4,"rgb(255,0,0)"],[1,"rgb(128,0,128)"]],
+      "useRealValue":true,
+      "contours":{"start":100,"end":300,"size":20,"coloring":"lines"},"line":{"width":2},"xaxis":"x3","yaxis":"y3"},
+   {
+      "type":"contour","z":[[10,30,50,70,90,110,130,150,170,190],[20,40,60,80,100,120,140,160,180,200],[30,50,70,90,110,130,150,170,190,210],[40,60,80,100,120,140,160,180,200,220],[50,70,90,110,130,150,170,190,210,230]],
+      "colorscale":[[0,"rgb(0,0,255)"],[0.1,"rgb(0,255,0)"],[0.2,"rgb(255,255,0)"],[0.4,"rgb(255,0,0)"],[1,"rgb(128,0,128)"]],
+      "useRealValue":true,
+      "contours":{"start":0,"end":200,"size":20,"coloring":"fill"},"xaxis":"x4","yaxis":"y4"}
+   ];
+var layout = {"title":"测试 useRealValue 参数在等值线渲染中的效果","grid":{"rows":2,"columns":2,"pattern":"independent"},"annotations":[{"text":"useRealValue: true (线模式)<br>应使用真实数值:0,50,100,150,200","showarrow":false,"x":0.5,"y":1.1,"xref":"x domain","yref":"y domain"},{"text":"useRealValue: false (线模式)<br>应将色阶归一化为0-1","showarrow":false,"x":0.5,"y":1.1,"xref":"x2 domain","yref":"y2 domain"},{"text":"useRealValue: true (线模式)<br>数据范围偏移+100","showarrow":false,"x":0.5,"y":1.1,"xref":"x3 domain","yref":"y3 domain"},{"text":"useRealValue: true (填充模式)<br>应使用真实数值","showarrow":false,"x":0.5,"y":1.1,"xref":"x4 domain","yref":"y4 domain"}],"width":1000,"height":800};
+Plotly.newPlot('plot', data, layout);
+</script></body></html>
