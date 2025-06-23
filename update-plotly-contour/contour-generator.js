@@ -24,7 +24,8 @@ class ContourGenerator {
       useImprovedPathHandling: true, // 是否使用改进的路径处理算法
       ncontours: 10,
       fillOpacity: 0.7,
-      zsmooth: true
+      zsmooth: true,
+      lineGenerationMode: 'improved' // 线条生成模式，可选 'improved' 或 'simple'
     }, options);
     
     this._worker = null;
@@ -142,7 +143,8 @@ class ContourGenerator {
         useImprovedPathHandling: mergedOptions.useImprovedPathHandling,
         ncontours: mergedOptions.ncontours || 10,
         fillOpacity: mergedOptions.fillOpacity || 0.7,
-        zsmooth: mergedOptions.zsmooth !== undefined ? mergedOptions.zsmooth : true
+        zsmooth: mergedOptions.zsmooth !== undefined ? mergedOptions.zsmooth : true,
+        lineGenerationMode: mergedOptions.lineGenerationMode || 'improved'
       }
     }).then(result => {
       // 预处理结果（如需比较不同算法的结果）

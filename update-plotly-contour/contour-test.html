@@ -167,6 +167,30 @@
       </div>
 
       <div class="control-group">
+        <label for="lineWidth">线条宽度:</label>
+        <select id="lineWidth">
+          <option value="1">细</option>
+          <option value="2" selected>中</option>
+          <option value="3">粗</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="lineStyle">线条样式:</label>
+        <select id="lineStyle">
+          <option value="solid" selected>实线</option>
+          <option value="dashed">虚线</option>
+          <option value="dotted">点线</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="fillOpacity">填充透明度:</label>
+        <input type="range" id="fillOpacity" min="0.1" max="1.0" step="0.1" value="0.7" />
+        <span id="fillOpacityValue">0.7</span>
+      </div>
+
+      <div class="control-group">
         <button id="generateBtn">生成等值线</button>
         <button id="exportDataBtn">导出几何数据</button>
       </div>
@@ -292,6 +316,9 @@
         smoothingSlider.addEventListener("input", function () {
           smoothingValue.textContent = this.value;
         });
+
+        // 初始化事件监听器
+        initEventListeners();
       });
 
       // 初始化生成器
@@ -387,6 +414,7 @@
 
         // 获取配置
         const ncontours = parseInt(document.getElementById("ncontours").value);
+        const coloringMode = document.getElementById("coloring").value;
         
         // 创建足够长度的颜色比例尺，确保与ncontours匹配
         // 使用基础颜色比例尺插值生成新的颜色比例尺
@@ -399,13 +427,16 @@
         
         // 设置默认选项
         const options = {
-          coloring: document.getElementById("coloring").value,
+          coloring: coloringMode,
           ncontours: ncontours,
           smoothing: parseFloat(document.getElementById("smoothing").value),
           showLines: document.getElementById("showLines").checked,
           colorScale: expandedColorScale,
           useImprovedPathHandling: true,  // 使用改进的路径处理
-          fillOpacity: 0.7  // 设置填充不透明度
+          fillOpacity: parseFloat(document.getElementById("fillOpacity").value),
+          lineGenerationMode: 'improved', // 使用改进的线条生成
+          lineWidth: parseInt(document.getElementById("lineWidth").value),
+          lineStyle: document.getElementById("lineStyle").value
         };
 
         // 更新状态
@@ -512,6 +543,9 @@
               smoothing: parseFloat(document.getElementById("smoothing").value),
               showLines: document.getElementById("showLines").checked,
               colorScale: expandedColorScale,
+              fillOpacity: parseFloat(document.getElementById("fillOpacity").value),
+              lineWidth: parseInt(document.getElementById("lineWidth").value),
+              lineStyle: document.getElementById("lineStyle").value
             })
             .then((result) => {
               // 格式化输出
@@ -675,8 +709,21 @@
         
         // 绘制线条（如果启用）
         if (showLines) {
-          // 使用较粗的线宽使线条更明显
-          ctx.lineWidth = 2;
+          // 获取线条样式设置
+          const lineWidth = parseInt(document.getElementById("lineWidth").value) || 2;
+          const lineStyle = document.getElementById("lineStyle").value || 'solid';
+          
+          // 设置线条宽度
+          ctx.lineWidth = lineWidth;
+          
+          // 设置线条样式
+          if (lineStyle === 'dashed') {
+            ctx.setLineDash([5, 5]);
+          } else if (lineStyle === 'dotted') {
+            ctx.setLineDash([2, 2]);
+          } else {
+            ctx.setLineDash([]); // 实线
+          }
           
           for (let i = 0; i < data.levels.length; i++) {
             const level = data.levels[i];
@@ -715,12 +762,28 @@
               level.edgepaths.forEach(drawPath);
             }
           }
+          
+          // 重置线条样式
+          ctx.setLineDash([]);
         }
         
         // 绘制仅线条模式（如果没有填充）
         if (coloringMode === "lines") {
+          // 获取线条样式设置
+          const lineWidth = parseInt(document.getElementById("lineWidth").value) || 2;
+          const lineStyle = document.getElementById("lineStyle").value || 'solid';
+          
           // 仅线条模式 - 使用更粗的线条和更明显的颜色
-          ctx.lineWidth = 2;
+          ctx.lineWidth = lineWidth;
+          
+          // 设置线条样式
+          if (lineStyle === 'dashed') {
+            ctx.setLineDash([5, 5]);
+          } else if (lineStyle === 'dotted') {
+            ctx.setLineDash([2, 2]);
+          } else {
+            ctx.setLineDash([]); // 实线
+          }
           
           for (let i = 0; i < data.levels.length; i++) {
             const level = data.levels[i];
@@ -817,9 +880,42 @@
               }
             }
           }
+          
+          // 重置线条样式
+          ctx.setLineDash([]);
         }
 
         console.log("Contour rendering complete");
+      }
+
+      // 初始化事件监听器
+      function initEventListeners() {
+        // 数据相关控件
+        document.getElementById("uploadBtn").addEventListener("click", () => {
+          document.getElementById("fileInput").click();
+        });
+        document.getElementById("fileInput").addEventListener("change", handleFileUpload);
+        document.getElementById("generateData").addEventListener("click", generateRandomData);
+        document.getElementById("generateContours").addEventListener("click", generateContours);
+        document.getElementById("exportBtn").addEventListener("click", exportContourData);
+        
+        // 调整视图
+        document.getElementById("smoothing").addEventListener("input", generateContours);
+        document.getElementById("ncontours").addEventListener("input", generateContours);
+        document.getElementById("coloring").addEventListener("change", generateContours);
+        document.getElementById("colorScheme").addEventListener("change", generateContours);
+        document.getElementById("showLines").addEventListener("change", generateContours);
+        document.getElementById("lineWidth").addEventListener("change", generateContours);
+        document.getElementById("lineStyle").addEventListener("change", generateContours);
+        
+        // 更新填充透明度显示
+        const fillOpacitySlider = document.getElementById("fillOpacity");
+        const fillOpacityValue = document.getElementById("fillOpacityValue");
+        
+        fillOpacitySlider.addEventListener("input", function() {
+          fillOpacityValue.textContent = this.value;
+          generateContours();
+        });
       }
     </script>
 
