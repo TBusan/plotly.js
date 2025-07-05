@@ -1379,14 +1379,12 @@ function closeBoundaries(pathinfo, z) {
  * @returns {Array} 完整路径（包含 null 分隔符）
  */
 function joinAllPaths(pi, perimeter) {
-  // 验证基本参数，确保返回空数组而不是null
+  // 基本检查
   if (!pi) return [];
-  
-  // 确保路径数组存在
   if (!Array.isArray(pi.edgepaths)) pi.edgepaths = [];
   if (!Array.isArray(pi.paths)) pi.paths = [];
   
-  // 用来构建完整路径的点数组
+  // 用于存储结果的数组
   const result = [];
   
   // 验证perimeter
@@ -1395,149 +1393,67 @@ function joinAllPaths(pi, perimeter) {
     perimeter = [[0, 0], [1, 0], [1, 1], [0, 1]];
   }
   
-  // 处理边界情况：没有任何路径
+  // 特殊情况：没有任何路径但需要边界前缀
   if (pi.edgepaths.length === 0 && pi.paths.length === 0) {
     if (pi.prefixBoundary === undefined) {
       pi.prefixBoundary = false;
     }
     
     if (pi.prefixBoundary) {
-      // 添加闭合的边界路径
-      result.push(
+      return [
         [...perimeter[0]], 
         [...perimeter[1]], 
         [...perimeter[2]], 
         [...perimeter[3]], 
         [...perimeter[0]]
-      );
-      return result;
+      ];
     }
     return [];
   }
   
-  // 主要处理逻辑
+  // 安全地获取点坐标的辅助函数
+  function getPointCoords(pt) {
+    if (Array.isArray(pt) && pt.length >= 2) {
+      return [pt[0], pt[1]];
+    } else if (pt && typeof pt === 'object' && 'x' in pt && 'y' in pt) {
+      return [pt.x, pt.y];
+    } else {
+      console.warn('Invalid point format:', pt);
+      return [0, 0]; // 使用默认值避免错误
+    }
+  }
+  
+  // 合并所有路径到结果数组
   try {
-    // 辅助函数：判断点是否在各边界上
-    const epsilon = 0.01;
-    const istop = (pt) => Math.abs(pt[1] - perimeter[0][1]) < epsilon;
-    const isbottom = (pt) => Math.abs(pt[1] - perimeter[2][1]) < epsilon;
-    const isleft = (pt) => Math.abs(pt[0] - perimeter[0][0]) < epsilon;
-    const isright = (pt) => Math.abs(pt[0] - perimeter[2][0]) < epsilon;
-    
-    // 这部分完全按照plotly.js的实现
-    let fullpath = '';
-    let i = 0;
-    let startsleft = pi.edgepaths.map((_, i) => i);
-    let newloop = true;
-    let endpt, newendpt, cnt, nexti, possiblei, addpath;
-    
-    // 处理所有的edgepaths (边缘路径)
-    while (startsleft.length) {
-      // 添加当前路径
-      const currentPath = pi.edgepaths[i];
-      
-      // 创建路径字符串 (使用简单连接替代smoothopen)
-      addpath = 'M' + currentPath.map(pt => pt.join(',')).join('L');
-      fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
-      
-      // 从待处理列表中移除当前路径
-      startsleft.splice(startsleft.indexOf(i), 1);
-      
-      // 获取当前路径的终点
-      endpt = pi.edgepaths[i][pi.edgepaths[i].length - 1];
-      nexti = -1;
-      
-      // 沿着边界移动终点，直到找到新的起点
-      for (cnt = 0; cnt < 4; cnt++) {
-        if (!endpt) {
-          console.warn('Missing endpoint in edgepath', i);
-          break;
+    // 添加所有边缘路径
+    for (const edgepath of pi.edgepaths) {
+      if (Array.isArray(edgepath) && edgepath.length > 0) {
+        for (const pt of edgepath) {
+          result.push(getPointCoords(pt));
         }
-        
-        // 确定下一个点的位置
-        if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1]; // 右上
-        else if (isleft(endpt)) newendpt = perimeter[0]; // 左上
-        else if (isbottom(endpt)) newendpt = perimeter[3]; // 右下
-        else if (isright(endpt)) newendpt = perimeter[2]; // 左下
-        
-        // 找到距离当前终点最近的下一条路径的起点
-        for (possiblei = 0; possiblei < pi.edgepaths.length; possiblei++) {
-          if (startsleft.indexOf(possiblei) === -1) continue;
-          
-          const ptNew = pi.edgepaths[possiblei][0];
-          
-          // 检查新点是否在从endpt到newendpt的线段上
-          if (Math.abs(endpt[0] - newendpt[0]) < epsilon) {
-            if (Math.abs(endpt[0] - ptNew[0]) < epsilon &&
-                (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
-              newendpt = ptNew;
-              nexti = possiblei;
-            }
-          } else if (Math.abs(endpt[1] - newendpt[1]) < epsilon) {
-            if (Math.abs(endpt[1] - ptNew[1]) < epsilon &&
-                (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
-              newendpt = ptNew;
-              nexti = possiblei;
-            }
-          }
-        }
-        
-        endpt = newendpt;
-        
-        if (nexti >= 0) break;
-        fullpath += 'L' + newendpt.join(',');
-      }
-      
-      // 确定下一个处理的路径
-      if (nexti >= 0) {
-        i = nexti;
-        newloop = (startsleft.indexOf(i) === -1);
-        if (newloop) {
-          i = startsleft[0];
-          fullpath += 'Z';
-        }
-      } else {
-        // 如果没有找到下一个路径，关闭当前路径并开始新的路径
-        fullpath += 'Z';
-        if (startsleft.length === 0) break;
-        i = startsleft[0];
-        newloop = true;
+        result.push(null); // 使用null分隔不同路径
       }
     }
     
-    // 添加内部闭合路径
-    for (i = 0; i < pi.paths.length; i++) {
-      // 使用简单连接替代smoothclosed
-      fullpath += 'M' + pi.paths[i].map(pt => pt.join(',')).join('L') + 'Z';
+    // 添加所有闭合路径
+    for (const path of pi.paths) {
+      if (Array.isArray(path) && path.length > 0) {
+        for (const pt of path) {
+          result.push(getPointCoords(pt));
+        }
+        // 闭合路径 - 添加第一个点
+        if (path.length > 0) {
+          result.push(getPointCoords(path[0]));
+        }
+        result.push(null); // 使用null分隔不同路径
+      }
     }
     
-    // 将SVG路径字符串转换为点数组
-    // 这里我们需要解析SVG路径并创建点数组
-    // 为简化起见，我们创建一些基本的点来表示路径
-    if (fullpath) {
-      // 创建一个样例点
-      if (pi.edgepaths.length > 0) {
-        for (const path of pi.edgepaths) {
-          for (const pt of path) {
-            result.push([...pt]);
-          }
-          result.push(null); // 使用null分隔不同路径
-        }
-      }
-      
-      if (pi.paths.length > 0) {
-        for (const path of pi.paths) {
-          for (const pt of path) {
-            result.push([...pt]);
-          }
-          // 闭合路径
-          if (path.length > 0) {
-            result.push([...path[0]]);
-          }
-          result.push(null); // 使用null分隔不同路径
-        }
-      }
+    // 确保最后不以null结尾
+    if (result.length > 0 && result[result.length - 1] === null) {
+      result.pop();
     }
+    
   } catch (error) {
     console.error('Error in joinAllPaths:', error);
   }

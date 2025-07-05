@@ -1,0 +1,22 @@
+{
+  "name": "contour-to-geojson",
+  "version": "1.0.0",
+  "description": "Convert Plotly.js contours to GeoJSON for mapping applications",
+  "main": "index.js",
+  "scripts": {
+    "test": "node example.js",
+    "start": "node example.js"
+  },
+  "keywords": [
+    "contour",
+    "plotly",
+    "geojson",
+    "marching-squares",
+    "contour-lines",
+    "contour-fills",
+    "mapping",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT"
+} 
