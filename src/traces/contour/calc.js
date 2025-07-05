@@ -48,6 +48,14 @@ module.exports = function calc(gd, trace) {
         cVals = zOut;
     }
 
+    // Debug: log colorscale calculation details
+    if(typeof console !== 'undefined' && console.log) {
+        console.log('=== Colorscale.calc in contour/calc.js ===');
+        console.log('Has custom thresholds:', !!(contours._levels && contours._levels.length > 0));
+        console.log('cVals type:', Array.isArray(cVals) ? 'array[' + cVals.length + ']' : typeof cVals);
+        console.log('Using cVals:', Array.isArray(cVals) && cVals.length <= 10 ? cVals : 'large array');
+    }
+
     Colorscale.calc(gd, trace, {vals: cVals, cLetter: 'z'});
 
     return cd;

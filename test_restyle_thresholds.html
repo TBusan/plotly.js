@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试Plotly.restyle更新自定义Thresholds</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>测试Plotly.restyle动态更新自定义Thresholds</h1>
+    
+    <div id="restyle-plot" style="width:800px;height:600px;"></div>
+    
+    <div style="margin-top: 20px;">
+        <h3>动态更新控制:</h3>
+        <button onclick="updateThresholds1()">更新为配置1 (密集低值)</button>
+        <button onclick="updateThresholds2()">更新为配置2 (密集高值)</button>
+        <button onclick="updateThresholds3()">更新为配置3 (等间距)</button>
+        <button onclick="resetOriginal()">恢复原始配置</button>
+    </div>
+    
+    <div id="current-config" style="margin-top: 20px;">
+        <h3>当前配置:</h3>
+        <div id="config-display"></div>
+    </div>
+    
+    <div id="restyle-log" style="margin-top: 20px;">
+        <h3>Restyle日志:</h3>
+        <div id="log-display" style="font-family: monospace; background: #f5f5f5; padding: 10px; max-height: 200px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        // 创建测试数据
+        function createRestyleTestData() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            for(var i = 0; i < 20; i++) {
+                x.push(i * 5); // 0到95
+                y.push(i * 5);
+            }
+            
+            for(var i = 0; i < 20; i++) {
+                var row = [];
+                for(var j = 0; j < 20; j++) {
+                    // 创建一个复杂的分布，从0到1000
+                    var dx = j - 10;
+                    var dy = i - 10;
+                    var r = Math.sqrt(dx*dx + dy*dy);
+                    
+                    var val;
+                    if(r === 0) {
+                        val = 1000;
+                    } else if(r <= 5) {
+                        val = 1000 - r * 150; // 250-1000
+                    } else if(r <= 10) {
+                        val = 250 - (r - 5) * 40; // 50-250
+                    } else {
+                        val = 50 - (r - 10) * 5; // 0-50
+                        val = Math.max(0, val);
+                    }
+                    
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createRestyleTestData();
+        var plotDiv = 'restyle-plot';
+        
+        // 原始配置
+        var originalConfig = {
+            thresholds: [0, 50, 100, 200, 300, 450, 600, 750, 900, 1000],
+            start: 0,
+            end: 1000,
+            zmin: 0,
+            zmax: 1000,
+            colorscale: 'Viridis'
+        };
+        
+        // 不同的更新配置
+        var config1 = {
+            thresholds: [0, 10, 25, 50, 75, 100, 150, 200, 300, 500, 750, 1000],
+            start: 0,
+            end: 1000,
+            zmin: 0,
+            zmax: 1000,
+            colorscale: [
+                [0, 'blue'],
+                [0.3, 'green'], 
+                [0.6, 'yellow'],
+                [1, 'red']
+            ]
+        };
+        
+        var config2 = {
+            thresholds: [0, 100, 200, 400, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000],
+            start: 0,
+            end: 1000,
+            zmin: 0,
+            zmax: 1000,
+            colorscale: 'Hot'
+        };
+        
+        var config3 = {
+            thresholds: [0, 125, 250, 375, 500, 625, 750, 875, 1000],
+            start: 0,
+            end: 1000,
+            zmin: 0,
+            zmax: 1000,
+            colorscale: 'Plasma'
+        };
+        
+        // 初始trace
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            zmin: originalConfig.zmin,
+            zmax: originalConfig.zmax,
+            colorscale: originalConfig.colorscale,
+            contours: {
+                coloring: 'fill',
+                thresholds: originalConfig.thresholds,
+                start: originalConfig.start,
+                end: originalConfig.end,
+                showlines: true,
+                showlabels: true
+            }
+        };
+        
+        var layout = {
+            title: 'Restyle测试 - 动态更新自定义Thresholds',
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' }
+        };
+        
+        // 初始绘制
+        Plotly.newPlot(plotDiv, [trace], layout);
+        updateConfigDisplay(originalConfig, 'original');
+        
+        // 更新函数
+        function updateThresholds1() {
+            performRestyle(config1, 'config1 (密集低值)');
+        }
+        
+        function updateThresholds2() {
+            performRestyle(config2, 'config2 (密集高值)');
+        }
+        
+        function updateThresholds3() {
+            performRestyle(config3, 'config3 (等间距)');
+        }
+        
+        function resetOriginal() {
+            performRestyle(originalConfig, 'original');
+        }
+        
+        function performRestyle(config, configName) {
+            var updateConfig = {
+                'contours.thresholds': config.thresholds,
+                'contours.start': config.start,
+                'contours.end': config.end,
+                'zmin': config.zmin,
+                'zmax': config.zmax,
+                'colorscale': config.colorscale
+            };
+            
+            console.log('=== Performing Restyle to ' + configName + ' ===');
+            console.log('Update config:', updateConfig);
+            
+            Plotly.restyle(plotDiv, updateConfig, 0).then(function() {
+                console.log('Restyle completed for ' + configName);
+                updateConfigDisplay(config, configName);
+                logRestyle(configName, config);
+            });
+        }
+        
+        function updateConfigDisplay(config, name) {
+            document.getElementById('config-display').innerHTML = 
+                '<p><strong>当前使用:</strong> ' + name + '</p>' +
+                '<p><strong>Thresholds (' + config.thresholds.length + '个):</strong> [' + config.thresholds.join(', ') + ']</p>' +
+                '<p><strong>Range:</strong> start=' + config.start + ', end=' + config.end + '</p>' +
+                '<p><strong>Z Range:</strong> zmin=' + config.zmin + ', zmax=' + config.zmax + '</p>' +
+                '<p><strong>ColorScale:</strong> ' + (typeof config.colorscale === 'string' ? config.colorscale : 'Custom (' + config.colorscale.length + ' points)') + '</p>';
+        }
+        
+        function logRestyle(configName, config) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logEntry = '<div style="border-bottom: 1px solid #ddd; padding: 5px 0;">' +
+                           '<strong>' + timestamp + '</strong> - Restyled to ' + configName + '<br>' +
+                           'Thresholds: [' + config.thresholds.slice(0, 5).join(', ') + 
+                           (config.thresholds.length > 5 ? ', ...' : '') + ']<br>' +
+                           'Range: ' + config.start + ' to ' + config.end + '</div>';
+            
+            document.getElementById('log-display').innerHTML = logEntry + document.getElementById('log-display').innerHTML;
+        }
+        
+        // 监听restyle事件
+        document.getElementById(plotDiv).addEventListener('plotly_restyle', function(eventData) {
+            console.log('plotly_restyle event fired:', eventData);
+        });
+        
+        console.log('=== Restyle测试初始化完成 ===');
+        console.log('初始数据范围:', Math.min(...data.z.flat()), 'to', Math.max(...data.z.flat()));
+        console.log('可以使用按钮测试动态更新功能');
+    </script>
+</body>
+</html>

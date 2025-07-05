@@ -13,6 +13,17 @@ module.exports = function makeColorMap(trace) {
     var nc = Math.floor((end - start) / cs) + 1;
     var extra = contours.coloring === 'lines' ? 0 : 1;
     var cOpts = Colorscale.extractOpts(trace);
+    
+    // Debug: log when makeColorMap is called
+    if(typeof console !== 'undefined' && console.log) {
+        console.log('=== makeColorMap called ===');
+        console.log('Has custom levels:', !!(contours._levels && contours._levels.length > 0));
+        console.log('Contours._levels:', contours._levels);
+        console.log('Contours coloring:', contours.coloring);
+        console.log('Contours start/end/size:', contours.start, contours.end, contours.size);
+        console.log('Trace zmin/zmax:', trace.zmin, trace.zmax);
+        console.log('Trace input thresholds:', trace._input && trace._input.contours && trace._input.contours.thresholds);
+    }
 
     if(!isFinite(cs)) {
         cs = 1;
@@ -64,10 +75,19 @@ module.exports = function makeColorMap(trace) {
             typeof trace._input.zmin === 'number' && typeof trace._input.zmax === 'number'
         );
 
-        // Check if we have custom thresholds
-        if(contours._levels && contours._levels.length > 0) {
+        // Check if we have custom thresholds (both from processed _levels and input thresholds)
+        var customLevels = contours._levels;
+        var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+        
+        // Fallback: if _levels is not set but input thresholds exist, use input thresholds
+        if(!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) { return a - b; });
+            console.log('makeColorMap: Using fallback to input thresholds:', customLevels);
+        }
+        
+        if(customLevels && customLevels.length > 0) {
             // Use custom thresholds for color mapping
-            var levels = contours._levels;
+            var levels = customLevels;
             var nLevels = levels.length;
             
             // For custom thresholds, we need to map colors directly to the threshold range
@@ -88,20 +108,21 @@ module.exports = function makeColorMap(trace) {
                 range[i] = si[1];
             }
             
-            // Debug information
+            // Debug information (including restyle updates)
             if(typeof console !== 'undefined' && console.log) {
-                console.log('Custom thresholds color mapping:');
+                console.log('=== Custom Thresholds Color Mapping (including restyle) ===');
                 console.log('- Levels:', levels);
-                console.log('- zmin/zmax:', zmin0, zmax0);
+                console.log('- zmin/zmax from colorscale:', zmin0, zmax0);
                 console.log('- Effective range:', effectiveMin, 'to', effectiveMax);
                 console.log('- Colorscale length:', len);
                 console.log('- Domain values:', domain);
-                console.log('- Range colors:', range);
+                console.log('- Color mapping details:');
                 
                 // Show how each colorscale position maps to a value
                 for(var j = 0; j < len; j++) {
-                    console.log('  Position ' + scl[j][0] + ' -> Value ' + domain[j].toFixed(2) + ' -> Color ' + range[j]);
+                    console.log('  Position ' + scl[j][0].toFixed(4) + ' -> Value ' + domain[j].toFixed(2) + ' -> Color ' + range[j]);
                 }
+                console.log('=== End Color Mapping ===');
             }
         } else {
             // Original logic for regular contours

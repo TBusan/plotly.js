@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>最终修复验证：newPlot vs restyle</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>最终修复验证：Plotly.newPlot vs Plotly.restyle</h1>
+    <p style="color: #666;">这个测试验证了我们对style.js中颜色映射偏移问题的修复</p>
+    
+    <div style="display: flex; gap: 20px;">
+        <div>
+            <h3>方法1: Plotly.newPlot (修复后)</h3>
+            <div id="newplot-fixed" style="width:400px;height:350px;"></div>
+        </div>
+        <div>
+            <h3>方法2: Plotly.restyle (参考)</h3>
+            <div id="restyle-reference" style="width:400px;height:350px;"></div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="runComparison()">运行对比测试</button>
+        <button onclick="clearAll()">清空</button>
+    </div>
+    
+    <div id="test-status" style="margin-top: 20px;">
+        <h3>测试状态:</h3>
+        <div id="status-info"></div>
+    </div>
+
+    <script>
+        // 创建简单测试数据
+        function createSimpleTestData() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            for(var i = 0; i < 10; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            
+            for(var i = 0; i < 10; i++) {
+                var row = [];
+                for(var j = 0; j < 10; j++) {
+                    // 简单的线性渐变
+                    var val = 0.1 + (i * 10 + j) / 99 * 0.8; // 0.1 到 0.9
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var testData = createSimpleTestData();
+        
+        // 测试配置
+        var testConfig = {
+            thresholds: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+            start: 0.1,
+            end: 0.9,
+            zmin: 0.1,
+            zmax: 0.9,
+            colorscale: [
+                [0, 'blue'],
+                [0.25, 'cyan'],
+                [0.5, 'green'],
+                [0.75, 'yellow'],
+                [1, 'red']
+            ]
+        };
+        
+        function createTrace(config) {
+            return {
+                type: 'contour',
+                x: testData.x,
+                y: testData.y,
+                z: testData.z,
+                zmin: config.zmin,
+                zmax: config.zmax,
+                colorscale: config.colorscale,
+                contours: {
+                    coloring: 'fill',
+                    thresholds: config.thresholds,
+                    start: config.start,
+                    end: config.end,
+                    showlines: true,
+                    showlabels: false // 简化显示
+                }
+            };
+        }
+        
+        var layout = {
+            margin: { t: 30, r: 30, b: 30, l: 30 },
+            showlegend: false
+        };
+        
+        function runComparison() {
+            console.log('=== 开始最终修复验证 ===');
+            updateStatus('正在运行测试...', 'info');
+            
+            try {
+                // 方法1: 直接使用newPlot
+                var trace1 = createTrace(testConfig);
+                console.log('Method 1: newPlot with custom thresholds');
+                
+                Plotly.newPlot('newplot-fixed', [trace1], layout).then(function() {
+                    console.log('newPlot completed successfully');
+                    return runRestyleTest();
+                }).then(function() {
+                    updateStatus('测试完成！如果两个图表颜色映射相同，说明修复成功。', 'success');
+                }).catch(function(err) {
+                    console.error('Error in newPlot:', err);
+                    updateStatus('newPlot 出错: ' + err.message, 'error');
+                });
+                
+            } catch(err) {
+                console.error('Error in runComparison:', err);
+                updateStatus('测试出错: ' + err.message, 'error');
+            }
+        }
+        
+        function runRestyleTest() {
+            return new Promise(function(resolve, reject) {
+                try {
+                    // 方法2: 使用restyle
+                    var defaultTrace = {
+                        type: 'contour',
+                        x: testData.x,
+                        y: testData.y,
+                        z: testData.z,
+                        contours: { coloring: 'fill' }
+                    };
+                    
+                    console.log('Method 2: restyle with custom thresholds');
+                    
+                    Plotly.newPlot('restyle-reference', [defaultTrace], layout).then(function() {
+                        var updateConfig = {
+                            'contours.thresholds': testConfig.thresholds,
+                            'contours.start': testConfig.start,
+                            'contours.end': testConfig.end,
+                            'zmin': testConfig.zmin,
+                            'zmax': testConfig.zmax,
+                            'colorscale': testConfig.colorscale
+                        };
+                        
+                        return Plotly.restyle('restyle-reference', updateConfig, 0);
+                    }).then(function() {
+                        console.log('restyle completed successfully');
+                        resolve();
+                    }).catch(function(err) {
+                        console.error('Error in restyle:', err);
+                        reject(err);
+                    });
+                    
+                } catch(err) {
+                    reject(err);
+                }
+            });
+        }
+        
+        function updateStatus(message, type) {
+            var colors = {
+                info: '#0066cc',
+                success: '#00aa00',
+                error: '#cc0000'
+            };
+            
+            document.getElementById('status-info').innerHTML = 
+                '<p style="color: ' + (colors[type] || '#000') + '; font-weight: bold;">' + message + '</p>' +
+                '<p><strong>测试配置:</strong></p>' +
+                '<ul>' +
+                '<li>Thresholds: [' + testConfig.thresholds.join(', ') + ']</li>' +
+                '<li>范围: ' + testConfig.start + ' to ' + testConfig.end + '</li>' +
+                '<li>显示范围: zmin=' + testConfig.zmin + ', zmax=' + testConfig.zmax + '</li>' +
+                '</ul>' +
+                '<p><strong>期望结果:</strong> 两个图表应该有相同的颜色映射</p>';
+        }
+        
+        function clearAll() {
+            Plotly.purge('newplot-fixed');
+            Plotly.purge('restyle-reference');
+            document.getElementById('status-info').innerHTML = '';
+        }
+        
+        console.log('=== 最终修复验证工具初始化完成 ===');
+        console.log('数据范围:', Math.min(...testData.z.flat()).toFixed(2), 'to', Math.max(...testData.z.flat()).toFixed(2));
+        console.log('关键修复: style.js中移除了不当的 +0.5*cs 偏移');
+        
+        updateStatus('点击"运行对比测试"开始验证修复效果', 'info');
+    </script>
+</body>
+</html>

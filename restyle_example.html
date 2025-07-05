@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plotly.restyle自定义Thresholds实际应用示例</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>Plotly.restyle自定义Thresholds实际应用示例</h1>
+    <p>这个示例展示了如何在实际应用中使用Plotly.restyle动态更新等值线的thresholds</p>
+    
+    <div id="example-plot" style="width:900px;height:600px;"></div>
+    
+    <div style="margin-top: 20px;">
+        <h3>应用场景控制:</h3>
+        <button onclick="applyUserScenario()">应用用户场景 (你的配置)</button>
+        <button onclick="applyScientificScenario()">应用科学研究场景</button>
+        <button onclick="applyEnvironmentalScenario()">应用环境监测场景</button>
+    </div>
+    
+    <div id="scenario-info" style="margin-top: 20px;">
+        <h3>当前场景信息:</h3>
+        <div id="info-display"></div>
+    </div>
+
+    <script>
+        // 创建模拟的科学数据
+        function createScientificData() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            // 创建30x30的高精度网格
+            for(var i = 0; i < 30; i++) {
+                x.push(i * 2); // 0到58
+                y.push(i * 2);
+            }
+            
+            for(var i = 0; i < 30; i++) {
+                var row = [];
+                for(var j = 0; j < 30; j++) {
+                    // 模拟复杂的科学数据分布
+                    var dx = j - 15;
+                    var dy = i - 15;
+                    var r = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // 创建多峰分布，类似科学实验数据
+                    var val = 0;
+                    
+                    // 主峰
+                    val += 1200 * Math.exp(-r*r / 25);
+                    
+                    // 次峰
+                    val += 300 * Math.exp(-((dx-8)*(dx-8) + (dy-5)*(dy-5)) / 15);
+                    val += 200 * Math.exp(-((dx+6)*(dx+6) + (dy+8)*(dy+8)) / 20);
+                    
+                    // 背景噪声
+                    val += 25 + Math.random() * 10;
+                    
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createScientificData();
+        var plotDiv = 'example-plot';
+        
+        // 初始的默认配置
+        var defaultConfig = {
+            thresholds: [0, 50, 100, 200, 400, 600, 800, 1000, 1200],
+            start: 0,
+            end: 1200,
+            zmin: 0,
+            zmax: 1200,
+            colorscale: 'Viridis'
+        };
+        
+        // 用户的实际配置 (类似你提供的)
+        var userConfig = {
+            thresholds: [25.35, 111.78, 198.22, 284.65, 371.09, 457.52, 543.96, 630.39, 716.83, 803.26, 889.7, 976.13, 1062.57, 1149.0, 1235.44, 1321.87],
+            start: 25.35,
+            end: 1321.87,
+            zmin: 25.35,
+            zmax: 1321.87,
+            colorscale: [
+                [0.01917839310031775, "#7D2030"],
+                [0.08456650022696324, "rgba(99, 66, 255, 255.00)"],
+                [0.14995460735360872, "rgba(72, 48, 255, 255.00)"],
+                [0.2153427144802542, "rgba(45, 30, 255, 255.00)"],
+                [0.28073082160689966, "rgba(18, 12, 255, 255.00)"],
+                [0.34611892873354516, "rgba(0, 15, 240, 255.00)"],
+                [0.4115070358601906, "rgba(0, 60, 195, 255.00)"],
+                [0.47689514298683616, "rgba(0, 105, 150, 255.00)"],
+                [0.5422832501134816, "rgba(0, 150, 105, 255.00)"],
+                [0.6076713572401271, "rgba(0, 195, 60, 255.00)"],
+                [0.6730594643667726, "rgba(0, 240, 15, 255.00)"],
+                [0.7384475714934181, "rgba(30, 255, 0, 255.00)"],
+                [0.8038356786200636, "rgba(75, 255, 0, 255.00)"],
+                [0.8692237857467091, "rgba(120, 255, 0, 255.00)"],
+                [0.9346118928733544, "rgba(165, 255, 0, 255.00)"],
+                [1, "rgba(210, 255, 0, 255.00)"]
+            ]
+        };
+        
+        // 科学研究场景 (关注低值细节)
+        var scientificConfig = {
+            thresholds: [0, 5, 15, 30, 50, 75, 100, 150, 200, 300, 500, 800, 1200],
+            start: 0,
+            end: 1200,
+            zmin: 0,
+            zmax: 1200,
+            colorscale: 'Plasma'
+        };
+        
+        // 环境监测场景 (关注中等值)
+        var environmentalConfig = {
+            thresholds: [0, 25, 50, 100, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200],
+            start: 0,
+            end: 1200,
+            zmin: 0,
+            zmax: 1200,
+            colorscale: 'RdYlBu'
+        };
+        
+        // 初始化绘图
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            zmin: defaultConfig.zmin,
+            zmax: defaultConfig.zmax,
+            colorscale: defaultConfig.colorscale,
+            contours: {
+                coloring: 'fill',
+                thresholds: defaultConfig.thresholds,
+                start: defaultConfig.start,
+                end: defaultConfig.end,
+                showlines: true,
+                showlabels: true
+            }
+        };
+        
+        var layout = {
+            title: '科学数据等值线可视化 - 支持动态更新Thresholds',
+            xaxis: { title: 'X坐标' },
+            yaxis: { title: 'Y坐标' }
+        };
+        
+        Plotly.newPlot(plotDiv, [trace], layout);
+        updateScenarioInfo('默认配置', defaultConfig);
+        
+        // 应用场景函数
+        function applyUserScenario() {
+            console.log('=== 应用用户场景 ===');
+            applyScenario(userConfig, '用户场景', '这是你提供的实际配置，包含16个自定义thresholds和自定义colorScale');
+        }
+        
+        function applyScientificScenario() {
+            console.log('=== 应用科学研究场景 ===');
+            applyScenario(scientificConfig, '科学研究场景', '专注于低值区域的细节分析，适合科学实验数据');
+        }
+        
+        function applyEnvironmentalScenario() {
+            console.log('=== 应用环境监测场景 ===');
+            applyScenario(environmentalConfig, '环境监测场景', '均衡关注各个数值范围，适合环境数据监测');
+        }
+        
+        function applyScenario(config, scenarioName, description) {
+            // 这就是你在实际应用中需要的restyle调用
+            var updateConfig = {
+                'contours.thresholds': config.thresholds,
+                'contours.start': config.start,
+                'contours.end': config.end,
+                'zmin': config.zmin,
+                'zmax': config.zmax,
+                'colorscale': config.colorscale
+            };
+            
+            console.log('Restyle updateConfig:', updateConfig);
+            
+            Plotly.restyle(plotDiv, updateConfig, 0).then(function() {
+                console.log('Restyle completed for ' + scenarioName);
+                updateScenarioInfo(scenarioName, config, description);
+            }).catch(function(err) {
+                console.error('Restyle failed:', err);
+            });
+        }
+        
+        function updateScenarioInfo(scenarioName, config, description) {
+            document.getElementById('info-display').innerHTML = 
+                '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">' +
+                '<h4>' + scenarioName + '</h4>' +
+                (description ? '<p><em>' + description + '</em></p>' : '') +
+                '<p><strong>Thresholds (' + config.thresholds.length + '个):</strong><br>' +
+                '[' + config.thresholds.map(v => typeof v === 'number' ? v.toFixed(2) : v).join(', ') + ']</p>' +
+                '<p><strong>数值范围:</strong> start=' + config.start + ', end=' + config.end + '</p>' +
+                '<p><strong>显示范围:</strong> zmin=' + config.zmin + ', zmax=' + config.zmax + '</p>' +
+                '<p><strong>颜色方案:</strong> ' + 
+                (typeof config.colorscale === 'string' ? config.colorscale : 'Custom (' + config.colorscale.length + ' colors)') + '</p>' +
+                '</div>';
+        }
+        
+        // 实际应用中的使用示例注释
+        console.log('=== 实际应用示例 ===');
+        console.log('在你的应用中，可以这样使用Plotly.restyle更新thresholds:');
+        console.log('');
+        console.log('var updateConfig = {');
+        console.log('  "contours.thresholds": newThresholds,');
+        console.log('  "contours.start": contourConfig.zmin,');
+        console.log('  "contours.end": contourConfig.zmax,');
+        console.log('  "zmin": contourConfig.zmin,');
+        console.log('  "zmax": contourConfig.zmax');
+        console.log('};');
+        console.log('');
+        console.log('Plotly.restyle(plotDiv, updateConfig, traceIndex);');
+        console.log('');
+        console.log('数据范围:', Math.min(...data.z.flat()).toFixed(2), 'to', Math.max(...data.z.flat()).toFixed(2));
+    </script>
+</body>
+</html>

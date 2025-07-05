@@ -8,6 +8,12 @@ module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerc
     if(hasThresholds) {
         // If thresholds are provided, disable autocontour and don't require start/end/size
         traceOut.autocontour = false;
+        
+        // Debug for restyle scenarios
+        if(typeof console !== 'undefined' && console.log) {
+            console.log('Contour defaults: using custom thresholds (' + contourThresholds.length + ' levels)');
+        }
+        
         return; // Exit early, thresholds handle everything
     }
 

@@ -28,16 +28,20 @@ module.exports = function setContours(trace, vals) {
             contours.size = null; // size is not applicable for custom thresholds
             contours._levels = thresholds; // store ALL custom levels for later use
             
-            // Debug: log the custom thresholds being used
+            // Debug: log the custom thresholds being used (including restyle updates)
             if(typeof console !== 'undefined' && console.log) {
+                console.log('=== Custom Thresholds Processing (including restyle) ===');
                 console.log('Using custom thresholds:', thresholds);
                 console.log('Data range:', dataMin, 'to', dataMax);
+                console.log('Input start/end:', contours.start, '/', contours.end);
+                console.log('Trace zmin/zmax:', trace.zmin, '/', trace.zmax);
                 console.log('Thresholds within data range:', thresholds.filter(function(t) {
                     return t >= dataMin && t <= dataMax;
                 }));
                 console.log('Thresholds outside data range:', thresholds.filter(function(t) {
                     return t < dataMin || t > dataMax;
                 }));
+                console.log('=== End Custom Thresholds Processing ===');
             }
             
             // copy thresholds info back to input
