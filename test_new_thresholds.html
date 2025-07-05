@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试新的Thresholds数据</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>测试新的Thresholds配置</h1>
+    
+    <div id="new-thresholds-test" style="width:800px;height:600px;"></div>
+    
+    <div id="debug-info" style="margin-top: 20px;">
+        <h3>调试信息:</h3>
+        <div id="params-info"></div>
+        <div id="analysis-info"></div>
+    </div>
+
+    <script>
+        // 创建符合新参数要求的测试数据
+        function createTestDataForNewParams() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            // 创建20x20网格
+            for(var i = 0; i < 20; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            
+            for(var i = 0; i < 20; i++) {
+                var row = [];
+                for(var j = 0; j < 20; j++) {
+                    // 创建一个确保覆盖25.35到1235.44范围的数据分布
+                    var dx = j - 10;
+                    var dy = i - 10;
+                    var r = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // 使用更复杂的函数确保数据在指定范围内
+                    var val;
+                    if(r === 0) {
+                        val = 1235.44; // 最大值在中心
+                    } else {
+                        // 从中心向外递减，确保最小值约为25.35
+                        val = 1235.44 - (r / 14.14) * (1235.44 - 25.35);
+                        val = Math.max(25.35, Math.min(1235.44, val));
+                    }
+                    
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createTestDataForNewParams();
+        
+        // 用户提供的新参数
+        var newThresholds = [25.35, 111.78, 198.22, 284.65, 371.09, 457.52, 543.96, 630.39, 716.83, 803.26, 889.7, 976.13, 1062.57, 1149.0, 1235.44, 1321.87];
+        var startVal = 25.35;
+        var endVal = 1321.87;
+        var zminVal = 25.35;
+        var zmaxVal = 1235.44;
+        
+        // 计算数据统计
+        var allValues = data.z.flat();
+        var dataMin = Math.min(...allValues);
+        var dataMax = Math.max(...allValues);
+        
+        // 分析thresholds
+        var thresholdsInRange = newThresholds.filter(t => t >= dataMin && t <= dataMax);
+        var thresholdsOutOfRange = newThresholds.filter(t => t < dataMin || t > dataMax);
+        
+        // 显示参数信息
+        document.getElementById('params-info').innerHTML = 
+            '<p><strong>设置参数:</strong></p>' +
+            '<p>• Thresholds: [' + newThresholds.join(', ') + ']</p>' +
+            '<p>• start: ' + startVal + ', end: ' + endVal + '</p>' +
+            '<p>• zmin: ' + zminVal + ', zmax: ' + zmaxVal + '</p>';
+        
+        document.getElementById('analysis-info').innerHTML = 
+            '<p><strong>数据分析:</strong></p>' +
+            '<p>• 数据范围: ' + dataMin.toFixed(2) + ' 到 ' + dataMax.toFixed(2) + '</p>' +
+            '<p>• 在数据范围内的thresholds (' + thresholdsInRange.length + '个): [' + thresholdsInRange.join(', ') + ']</p>' +
+            '<p>• 超出数据范围的thresholds (' + thresholdsOutOfRange.length + '个): [' + thresholdsOutOfRange.join(', ') + ']</p>' +
+            '<p>• zmax (' + zmaxVal + ') vs 最大threshold (' + Math.max(...newThresholds) + ')</p>';
+        
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            zmin: zminVal,
+            zmax: zmaxVal,
+            contours: {
+                coloring: 'fill',
+                thresholds: newThresholds,
+                start: startVal,
+                end: endVal,
+                showlines: true,
+                showlabels: true
+            },
+            colorscale: 'Viridis'
+        };
+        
+        var layout = {
+            title: '新Thresholds测试 - 所有在数据范围内的等值线应该可见',
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' }
+        };
+        
+        // 绘制图表
+        Plotly.newPlot('new-thresholds-test', [trace], layout);
+        
+        // 控制台输出
+        console.log('=== 新Thresholds测试 ===');
+        console.log('数据范围:', dataMin, 'to', dataMax);
+        console.log('设置的thresholds:', newThresholds);
+        console.log('zmin/zmax:', zminVal, '/', zmaxVal);
+        console.log('在范围内的thresholds:', thresholdsInRange);
+        console.log('超出范围的thresholds:', thresholdsOutOfRange);
+    </script>
+</body>
+</html>

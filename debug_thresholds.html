@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>调试自定义Thresholds</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>调试自定义Thresholds</h1>
+    
+    <div id="debug-plot" style="width:800px;height:600px;"></div>
+    
+    <div id="debug-info" style="margin-top: 20px;">
+        <h3>调试信息:</h3>
+        <div id="data-stats"></div>
+        <div id="contour-info"></div>
+    </div>
+
+    <script>
+        // 创建一个可控的测试数据集
+        function createTestData() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            // 创建一个21x21的网格
+            for(var i = 0; i <= 20; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            
+            for(var i = 0; i <= 20; i++) {
+                var row = [];
+                for(var j = 0; j <= 20; j++) {
+                    // 创建一个确保包含所有阈值的函数
+                    // 使用一个简单的二次函数，确保包含低值
+                    var dx = j - 10;
+                    var dy = i - 10;
+                    var r = Math.sqrt(dx*dx + dy*dy);
+                    var val;
+                    
+                    if(r <= 3) {
+                        // 中心区域高值
+                        val = 500 + r * 200;
+                    } else if(r <= 6) {
+                        // 中等值区域
+                        val = 50 + r * 15;
+                    } else {
+                        // 外围低值区域
+                        val = r * 2;
+                    }
+                    
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createTestData();
+        
+        // 计算数据统计
+        var allValues = [];
+        for(var i = 0; i < data.z.length; i++) {
+            for(var j = 0; j < data.z[i].length; j++) {
+                allValues.push(data.z[i][j]);
+            }
+        }
+        allValues.sort(function(a, b) { return a - b; });
+        
+        var dataMin = Math.min.apply(null, allValues);
+        var dataMax = Math.max.apply(null, allValues);
+        
+        // 显示数据统计
+        document.getElementById('data-stats').innerHTML = 
+            '<p><strong>数据范围:</strong> ' + dataMin.toFixed(2) + ' 到 ' + dataMax.toFixed(2) + '</p>' +
+            '<p><strong>数据分布:</strong> ' + allValues.slice(0, 10).map(v => v.toFixed(2)).join(', ') + ' ... ' + 
+            allValues.slice(-10).map(v => v.toFixed(2)).join(', ') + '</p>';
+        
+        // 测试的thresholds
+        var testThresholds = [0, 1.507, 2.273, 3.428, 5.169, 7.794, 11.75, 17.72, 26.73, 40.3, 60.77, 91.64, 138.2, 208.4, 314.2, 473.8, 714.5, 1323.2];
+        
+        // 检查哪些阈值在数据范围内
+        var validThresholds = testThresholds.filter(function(t) {
+            return t >= dataMin && t <= dataMax;
+        });
+        
+        document.getElementById('contour-info').innerHTML = 
+            '<p><strong>所有阈值:</strong> [' + testThresholds.join(', ') + ']</p>' +
+            '<p><strong>在数据范围内的阈值:</strong> [' + validThresholds.join(', ') + ']</p>' +
+            '<p><strong>超出数据范围的阈值:</strong> [' + testThresholds.filter(t => t < dataMin || t > dataMax).join(', ') + ']</p>';
+        
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            contours: {
+                coloring: 'fill',
+                thresholds: testThresholds,
+                showlines: true,
+                showlabels: true
+            },
+            colorscale: 'Viridis'
+        };
+        
+        var layout = {
+            title: '调试自定义Thresholds - 确保低值阈值在数据范围内',
+            xaxis: { title: 'X轴' },
+            yaxis: { title: 'Y轴' }
+        };
+        
+        // 绘制图表
+        Plotly.newPlot('debug-plot', [trace], layout);
+        
+        // 在控制台输出详细信息
+        console.log('数据范围:', dataMin, 'to', dataMax);
+        console.log('测试阈值:', testThresholds);
+        console.log('有效阈值:', validThresholds);
+        console.log('trace配置:', trace);
+    </script>
+</body>
+</html>

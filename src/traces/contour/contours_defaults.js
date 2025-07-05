@@ -1,6 +1,16 @@
 'use strict';
 
 module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+    // Check for custom thresholds first - this takes highest priority
+    var contourThresholds = coerce('contours.thresholds');
+    var hasThresholds = contourThresholds && contourThresholds.length > 0;
+    
+    if(hasThresholds) {
+        // If thresholds are provided, disable autocontour and don't require start/end/size
+        traceOut.autocontour = false;
+        return; // Exit early, thresholds handle everything
+    }
+
     var contourStart = coerce2('contours.start');
     var contourEnd = coerce2('contours.end');
     var missingEnd = (contourStart === false) || (contourEnd === false);

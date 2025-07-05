@@ -59,27 +59,6 @@ exports.plot = function plot(gd, plotinfo, cdcontours, contourLayer) {
             fillPathinfo = convertToConstraints(pathinfo, contours._operation);
         }
 
-        // === 新增：导出 fill 模式下的等值面几何数据 ===
-        if(contours.coloring === 'fill' && typeof window !== 'undefined') {
-                // 只导出 level、paths、edgepaths 这几个关键字段
-                window.plotlyContourPolygons = fillPathinfo.map(function(pi) {
-                    return {
-                        level: pi.level,
-                        // 闭合多边形（等值面）
-                        polygons: (pi.paths || []).map(function(path) {
-                            // path 是 [[x1, y1], [x2, y2], ...]
-                            return path.map(function(pt) { return [pt[0], pt[1]]; });
-                        }),
-                        // 非闭合路径（等值线）
-                        openLines: (pi.edgepaths || []).map(function(path) {
-                            return path.map(function(pt) { return [pt[0], pt[1]]; });
-                        })
-                    };
-                });
-                // 控制台输出
-                console.log('plotlyContourPolygons:', window.plotlyContourPolygons);
-        }
-
         // draw everything
         makeBackground(plotGroup, perimeter, contours);
         makeFills(plotGroup, fillPathinfo, perimeter, contours);

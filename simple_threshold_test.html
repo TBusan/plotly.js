@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简单Threshold测试</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>简单Threshold测试</h1>
+    
+    <div id="simple-test" style="width:600px;height:400px;"></div>
+    
+    <script>
+        // 创建一个简单的线性渐变数据，确保包含所有阈值
+        function createLinearGradient() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            for(var i = 0; i < 10; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            
+            for(var i = 0; i < 10; i++) {
+                var row = [];
+                for(var j = 0; j < 10; j++) {
+                    // 创建一个简单的线性渐变，从0到1400
+                    var val = (i * 10 + j) * 15.56; // 这将给我们0到1400的范围
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createLinearGradient();
+        
+        // 使用用户提供的thresholds
+        var userThresholds = [0, 1.507, 2.273, 3.428, 5.169, 7.794, 11.75, 17.72, 26.73, 40.3, 60.77, 91.64, 138.2, 208.4, 314.2, 473.8, 714.5, 1323.2];
+        
+        console.log('数据范围:', Math.min(...data.z.flat()), 'to', Math.max(...data.z.flat()));
+        console.log('使用阈值:', userThresholds);
+        
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            contours: {
+                coloring: 'fill',
+                thresholds: userThresholds,
+                showlines: true,
+                showlabels: true
+            },
+            colorscale: 'Viridis'
+        };
+        
+        var layout = {
+            title: '简单线性渐变测试 - 所有阈值都应该可见',
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' }
+        };
+        
+        Plotly.newPlot('simple-test', [trace], layout);
+    </script>
+</body>
+</html>

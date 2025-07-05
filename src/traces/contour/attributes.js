@@ -150,6 +150,18 @@ module.exports = extendFlat({
                 'Must be positive.'
             ].join(' ')
         },
+        thresholds: {
+            valType: 'data_array',
+            dflt: null,
+            editType: 'calc',
+            impliedEdits: {'^autocontour': false},
+            description: [
+                'Sets custom contour level values as an array of numbers.',
+                'When specified, this overrides the automatic contour generation',
+                'and the start/end/size parameters.',
+                'The array should be sorted in ascending order.'
+            ].join(' ')
+        },
         coloring: {
             valType: 'enumerated',
             values: ['fill', 'heatmap', 'lines', 'none'],

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试自定义ColorScale与Thresholds</title>
+    <script src="dist/plotly.js"></script>
+</head>
+<body>
+    <h1>测试自定义ColorScale与Thresholds配合</h1>
+    
+    <div id="custom-colorscale-test" style="width:900px;height:600px;"></div>
+    
+    <div id="debug-info" style="margin-top: 20px;">
+        <h3>配置信息:</h3>
+        <div id="config-info"></div>
+        <div id="mapping-info" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        // 创建测试数据，确保覆盖完整的thresholds范围
+        function createTestDataForColorScale() {
+            var x = [];
+            var y = [];
+            var z = [];
+            
+            // 创建25x25网格以获得更细腻的等值线
+            for(var i = 0; i < 25; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            
+            for(var i = 0; i < 25; i++) {
+                var row = [];
+                for(var j = 0; j < 25; j++) {
+                    // 创建一个确保覆盖25.35到1321.87范围的复杂分布
+                    var dx = j - 12;
+                    var dy = i - 12;
+                    var r = Math.sqrt(dx*dx + dy*dy);
+                    
+                    var val;
+                    if(r === 0) {
+                        val = 1321.87; // 最大值在中心
+                    } else if(r <= 6) {
+                        // 高值区域：800-1321.87
+                        val = 1321.87 - (r / 6) * (1321.87 - 800);
+                    } else if(r <= 12) {
+                        // 中值区域：200-800
+                        val = 800 - ((r - 6) / 6) * (800 - 200);
+                    } else {
+                        // 低值区域：25.35-200
+                        val = 200 - ((r - 12) / 6) * (200 - 25.35);
+                        val = Math.max(25.35, val);
+                    }
+                    
+                    row.push(val);
+                }
+                z.push(row);
+            }
+            
+            return {x: x, y: y, z: z};
+        }
+        
+        var data = createTestDataForColorScale();
+        
+        // 用户提供的精确配置
+        var customColorScale = [
+            [0.01917839310031775, "#7D2030"],
+            [0.08456650022696324, "rgba(99, 66, 255, 255.00)"],
+            [0.14995460735360872, "rgba(72, 48, 255, 255.00)"],
+            [0.2153427144802542, "rgba(45, 30, 255, 255.00)"],
+            [0.28073082160689966, "rgba(18, 12, 255, 255.00)"],
+            [0.34611892873354516, "rgba(0, 15, 240, 255.00)"],
+            [0.4115070358601906, "rgba(0, 60, 195, 255.00)"],
+            [0.47689514298683616, "rgba(0, 105, 150, 255.00)"],
+            [0.5422832501134816, "rgba(0, 150, 105, 255.00)"],
+            [0.6076713572401271, "rgba(0, 195, 60, 255.00)"],
+            [0.6730594643667726, "rgba(0, 240, 15, 255.00)"],
+            [0.7384475714934181, "rgba(30, 255, 0, 255.00)"],
+            [0.8038356786200636, "rgba(75, 255, 0, 255.00)"],
+            [0.8692237857467091, "rgba(120, 255, 0, 255.00)"],
+            [0.9346118928733544, "rgba(165, 255, 0, 255.00)"],
+            [1, "rgba(210, 255, 0, 255.00)"]
+        ];
+        
+        var userThresholds = [25.35, 111.78, 198.22, 284.65, 371.09, 457.52, 543.96, 630.39, 716.83, 803.26, 889.7, 976.13, 1062.57, 1149.0, 1235.44, 1321.87];
+        var zminVal = 25.35;
+        var zmaxVal = 1321.87;
+        var startVal = 25.35;
+        var endVal = 1321.87;
+        
+        // 计算数据统计
+        var allValues = data.z.flat();
+        var dataMin = Math.min(...allValues);
+        var dataMax = Math.max(...allValues);
+        
+        // 显示配置信息
+        document.getElementById('config-info').innerHTML = 
+            '<p><strong>配置参数:</strong></p>' +
+            '<p>• Thresholds (' + userThresholds.length + '个): [' + userThresholds.map(v => v.toFixed(2)).join(', ') + ']</p>' +
+            '<p>• ColorScale (' + customColorScale.length + '个): 从位置' + customColorScale[0][0] + '到' + customColorScale[customColorScale.length-1][0] + '</p>' +
+            '<p>• zmin: ' + zminVal + ', zmax: ' + zmaxVal + '</p>' +
+            '<p>• start: ' + startVal + ', end: ' + endVal + '</p>' +
+            '<p>• 数据范围: ' + dataMin.toFixed(2) + ' 到 ' + dataMax.toFixed(2) + '</p>';
+        
+        // 计算颜色映射
+        var mappingInfo = '<p><strong>ColorScale位置到数值映射:</strong></p><ul>';
+        customColorScale.forEach(function(item, index) {
+            var position = item[0];
+            var color = item[1];
+            var mappedValue = zminVal + position * (zmaxVal - zminVal);
+            mappingInfo += '<li>位置 ' + position.toFixed(4) + ' → 数值 ' + mappedValue.toFixed(2) + ' → 颜色 ' + color + '</li>';
+        });
+        mappingInfo += '</ul>';
+        
+        document.getElementById('mapping-info').innerHTML = mappingInfo;
+        
+        var trace = {
+            type: 'contour',
+            x: data.x,
+            y: data.y,
+            z: data.z,
+            zmin: zminVal,
+            zmax: zmaxVal,
+            colorscale: customColorScale,
+            contours: {
+                coloring: 'fill',
+                thresholds: userThresholds,
+                start: startVal,
+                end: endVal,
+                showlines: true,
+                showlabels: true
+            }
+        };
+        
+        var layout = {
+            title: '自定义ColorScale + 自定义Thresholds测试<br>每个threshold应该有对应的颜色分级',
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' },
+            coloraxis: {
+                colorbar: {
+                    title: '数值'
+                }
+            }
+        };
+        
+        // 绘制图表
+        Plotly.newPlot('custom-colorscale-test', [trace], layout);
+        
+        // 控制台输出详细信息
+        console.log('=== 自定义ColorScale + Thresholds测试 ===');
+        console.log('数据范围:', dataMin, 'to', dataMax);
+        console.log('Thresholds:', userThresholds);
+        console.log('ColorScale positions:', customColorScale.map(c => c[0]));
+        console.log('zmin/zmax:', zminVal, '/', zmaxVal);
+        console.log('ColorScale映射:');
+        customColorScale.forEach(function(item, index) {
+            var position = item[0];
+            var mappedValue = zminVal + position * (zmaxVal - zminVal);
+            console.log('  ' + position.toFixed(4) + ' -> ' + mappedValue.toFixed(2) + ' (' + item[1] + ')');
+        });
+    </script>
+</body>
+</html>

@@ -6,6 +6,49 @@ var Lib = require('../../lib');
 module.exports = function setContours(trace, vals) {
     var contours = trace.contours;
 
+    // check if we have custom thresholds - this takes highest priority
+    if(contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+        // validate and sort thresholds
+        var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+        });
+        
+        // filter out non-numeric values but keep all numeric values regardless of data range
+        thresholds = thresholds.filter(function(val) {
+            return typeof val === 'number' && !isNaN(val) && isFinite(val);
+        });
+        
+        if(thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            
+            // set contour parameters based on thresholds
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null; // size is not applicable for custom thresholds
+            contours._levels = thresholds; // store ALL custom levels for later use
+            
+            // Debug: log the custom thresholds being used
+            if(typeof console !== 'undefined' && console.log) {
+                console.log('Using custom thresholds:', thresholds);
+                console.log('Data range:', dataMin, 'to', dataMax);
+                console.log('Thresholds within data range:', thresholds.filter(function(t) {
+                    return t >= dataMin && t <= dataMax;
+                }));
+                console.log('Thresholds outside data range:', thresholds.filter(function(t) {
+                    return t < dataMin || t > dataMax;
+                }));
+            }
+            
+            // copy thresholds info back to input
+            if(!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            
+            return; // skip auto/manual contour generation
+        }
+    }
+
     // check if we need to auto-choose contour levels
     if(trace.autocontour) {
         // N.B. do not try to use coloraxis cmin/cmax,

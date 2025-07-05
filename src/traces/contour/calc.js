@@ -25,14 +25,25 @@ module.exports = function calc(gd, trace) {
         var cs = contours.size || 1;
         var nc = Math.floor((end - start) / cs) + 1;
 
-        if(!isFinite(cs)) {
-            cs = 1;
-            nc = 1;
-        }
+        if(contours._levels && contours._levels.length > 0) {
+            // Use custom thresholds for heatmap coloring
+            var levels = contours._levels;
+            // Calculate an appropriate padding based on the threshold spacing
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+        } else {
+            if(!isFinite(cs)) {
+                cs = 1;
+                nc = 1;
+            }
 
-        var min0 = start - cs / 2;
-        var max0 = min0 + nc * cs;
-        cVals = [min0, max0];
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
+        }
     } else {
         cVals = zOut;
     }

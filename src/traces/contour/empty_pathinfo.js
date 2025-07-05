@@ -29,25 +29,59 @@ module.exports = function emptyPathinfo(contours, plotinfo, cd0) {
         y: cd0.y
     };
 
-    for(var ci = contoursFinal.start; ci < end; ci += cs) {
-        pathinfo.push(Lib.extendFlat({
-            level: ci,
-            // all the cells with nontrivial marching index
-            crossings: {},
-            // starting points on the edges of the lattice for each contour
-            starts: [],
-            // all unclosed paths (may have less items than starts,
-            // if a path is closed by rounding)
-            edgepaths: [],
-            // all closed paths
-            paths: [],
-            z: cd0.z,
-            smoothing: cd0.trace.line.smoothing
-        }, basePathinfo));
+    // Check if we have custom thresholds
+    if(contoursFinal._levels && contoursFinal._levels.length > 0) {
+        // Use custom threshold levels
+        var levels = contoursFinal._levels;
+        
+        // Debug: log the levels being processed
+        if(typeof console !== 'undefined' && console.log) {
+            console.log('Processing custom levels in pathinfo:', levels);
+        }
+        
+        for(var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+                level: levels[i],
+                // all the cells with nontrivial marching index
+                crossings: {},
+                // starting points on the edges of the lattice for each contour
+                starts: [],
+                // all unclosed paths (may have less items than starts,
+                // if a path is closed by rounding)
+                edgepaths: [],
+                // all closed paths
+                paths: [],
+                z: cd0.z,
+                smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
 
-        if(pathinfo.length > 1000) {
-            Lib.warn('Too many contours, clipping at 1000', contours);
-            break;
+            if(pathinfo.length > 1000) {
+                Lib.warn('Too many contours, clipping at 1000', contours);
+                break;
+            }
+        }
+    } else {
+        // Use regular start/end/size logic
+        for(var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+                level: ci,
+                // all the cells with nontrivial marching index
+                crossings: {},
+                // starting points on the edges of the lattice for each contour
+                starts: [],
+                // all unclosed paths (may have less items than starts,
+                // if a path is closed by rounding)
+                edgepaths: [],
+                // all closed paths
+                paths: [],
+                z: cd0.z,
+                smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+
+            if(pathinfo.length > 1000) {
+                Lib.warn('Too many contours, clipping at 1000', contours);
+                break;
+            }
         }
     }
     return pathinfo;

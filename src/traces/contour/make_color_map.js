@@ -64,24 +64,66 @@ module.exports = function makeColorMap(trace) {
             typeof trace._input.zmin === 'number' && typeof trace._input.zmax === 'number'
         );
 
-        // If zmin/zmax are explicitly set, consider case where user specifies a
-        // narrower z range than that of the contours start/end.
-        if(zRangeInput && (start <= zmin0 || end >= zmax0)) {
-            if(start <= zmin0) start = zmin0;
-            if(end >= zmax0) end = zmax0;
-            nc = Math.floor((end - start) / cs) + 1;
-            extra = 0;
-        }
+        // Check if we have custom thresholds
+        if(contours._levels && contours._levels.length > 0) {
+            // Use custom thresholds for color mapping
+            var levels = contours._levels;
+            var nLevels = levels.length;
+            
+            // For custom thresholds, we need to map colors directly to the threshold range
+            // This is especially important when using custom colorscales
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            
+            // Use zmin/zmax if they provide a wider range, otherwise use threshold range
+            var effectiveMin = zmin0 !== undefined && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== undefined && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            
+            // For custom colorscales with custom thresholds, map the colorscale positions
+            // directly to the threshold value range
+            for(i = 0; i < len; i++) {
+                si = scl[i];
+                // Map colorscale positions directly to the value range
+                domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+                range[i] = si[1];
+            }
+            
+            // Debug information
+            if(typeof console !== 'undefined' && console.log) {
+                console.log('Custom thresholds color mapping:');
+                console.log('- Levels:', levels);
+                console.log('- zmin/zmax:', zmin0, zmax0);
+                console.log('- Effective range:', effectiveMin, 'to', effectiveMax);
+                console.log('- Colorscale length:', len);
+                console.log('- Domain values:', domain);
+                console.log('- Range colors:', range);
+                
+                // Show how each colorscale position maps to a value
+                for(var j = 0; j < len; j++) {
+                    console.log('  Position ' + scl[j][0] + ' -> Value ' + domain[j].toFixed(2) + ' -> Color ' + range[j]);
+                }
+            }
+        } else {
+            // Original logic for regular contours
+            // If zmin/zmax are explicitly set, consider case where user specifies a
+            // narrower z range than that of the contours start/end.
+            if(zRangeInput && (start <= zmin0 || end >= zmax0)) {
+                if(start <= zmin0) start = zmin0;
+                if(end >= zmax0) end = zmax0;
+                nc = Math.floor((end - start) / cs) + 1;
+                extra = 0;
+            }
 
-        for(i = 0; i < len; i++) {
-            si = scl[i];
-            domain[i] = (si[0] * (nc + extra - 1) - (extra / 2)) * cs + start;
-            range[i] = si[1];
+            for(i = 0; i < len; i++) {
+                si = scl[i];
+                domain[i] = (si[0] * (nc + extra - 1) - (extra / 2)) * cs + start;
+                range[i] = si[1];
+            }
         }
 
         // Make the colorscale fit the z range except if contours are explicitly
-        // set BUT NOT zmin/zmax.
-        if(zRangeInput || trace.autocontour) {
+        // set BUT NOT zmin/zmax. Skip this for custom thresholds.
+        if(!contours._levels && (zRangeInput || trace.autocontour)) {
             if(domain[0] > zmin0) {
                 domain.unshift(zmin0);
                 range.unshift(range[0]);
