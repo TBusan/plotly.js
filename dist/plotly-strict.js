@@ -65816,6 +65816,12 @@ var Plotly = (() => {
               editType: "plot",
               impliedEdits: { "^autocontour": false }
             },
+            thresholds: {
+              valType: "data_array",
+              dflt: null,
+              editType: "calc",
+              impliedEdits: { "^autocontour": false }
+            },
             coloring: {
               valType: "enumerated",
               values: ["fill", "heatmap", "lines", "none"],
@@ -65938,6 +65944,15 @@ var Plotly = (() => {
     "src/traces/contour/contours_defaults.js"(exports, module) {
       "use strict";
       module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+        var contourThresholds = coerce("contours.thresholds");
+        var hasThresholds = contourThresholds && contourThresholds.length > 0;
+        if (hasThresholds) {
+          traceOut.autocontour = false;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Contour defaults: using custom thresholds (" + contourThresholds.length + " levels)");
+          }
+          return;
+        }
         var contourStart = coerce2("contours.start");
         var contourEnd = coerce2("contours.end");
         var missingEnd = contourStart === false || contourEnd === false;
@@ -66042,6 +66057,40 @@ var Plotly = (() => {
       var Lib = require_lib();
       module.exports = function setContours(trace, vals) {
         var contours = trace.contours;
+        if (contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+          var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+          });
+          thresholds = thresholds.filter(function(val) {
+            return typeof val === "number" && !isNaN(val) && isFinite(val);
+          });
+          if (thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null;
+            contours._levels = thresholds;
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Processing (including restyle) ===");
+              console.log("Using custom thresholds:", thresholds);
+              console.log("Data range:", dataMin, "to", dataMax);
+              console.log("Input start/end:", contours.start, "/", contours.end);
+              console.log("Trace zmin/zmax:", trace.zmin, "/", trace.zmax);
+              console.log("Thresholds within data range:", thresholds.filter(function(t) {
+                return t >= dataMin && t <= dataMax;
+              }));
+              console.log("Thresholds outside data range:", thresholds.filter(function(t) {
+                return t < dataMin || t > dataMax;
+              }));
+              console.log("=== End Custom Thresholds Processing ===");
+            }
+            if (!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            return;
+          }
+        }
         if (trace.autocontour) {
           var zmin = trace.zmin;
           var zmax = trace.zmax;
@@ -66129,15 +66178,30 @@ var Plotly = (() => {
           var end = endPlus(contours);
           var cs = contours.size || 1;
           var nc = Math.floor((end - start) / cs) + 1;
-          if (!isFinite(cs)) {
-            cs = 1;
-            nc = 1;
+          if (contours._levels && contours._levels.length > 0) {
+            var levels = contours._levels;
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+          } else {
+            if (!isFinite(cs)) {
+              cs = 1;
+              nc = 1;
+            }
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
           }
-          var min0 = start - cs / 2;
-          var max0 = min0 + nc * cs;
-          cVals = [min0, max0];
         } else {
           cVals = zOut;
+        }
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== Colorscale.calc in contour/calc.js ===");
+          console.log("Has custom thresholds:", !!(contours._levels && contours._levels.length > 0));
+          console.log("cVals type:", Array.isArray(cVals) ? "array[" + cVals.length + "]" : typeof cVals);
+          console.log("Using cVals:", Array.isArray(cVals) && cVals.length <= 10 ? cVals : "large array");
         }
         Colorscale.calc(gd, trace, { vals: cVals, cLetter: "z" });
         return cd;
@@ -66580,24 +66644,51 @@ var Plotly = (() => {
           x: cd0.x,
           y: cd0.y
         };
-        for (var ci = contoursFinal.start; ci < end; ci += cs) {
-          pathinfo.push(Lib.extendFlat({
-            level: ci,
-            // all the cells with nontrivial marching index
-            crossings: {},
-            // starting points on the edges of the lattice for each contour
-            starts: [],
-            // all unclosed paths (may have less items than starts,
-            // if a path is closed by rounding)
-            edgepaths: [],
-            // all closed paths
-            paths: [],
-            z: cd0.z,
-            smoothing: cd0.trace.line.smoothing
-          }, basePathinfo));
-          if (pathinfo.length > 1e3) {
-            Lib.warn("Too many contours, clipping at 1000", contours);
-            break;
+        if (contoursFinal._levels && contoursFinal._levels.length > 0) {
+          var levels = contoursFinal._levels;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Processing custom levels in pathinfo:", levels);
+          }
+          for (var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+              level: levels[i],
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        } else {
+          for (var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+              level: ci,
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
           }
         }
         return pathinfo;
@@ -66800,26 +66891,6 @@ var Plotly = (() => {
           var fillPathinfo = pathinfo;
           if (contours.type === "constraint") {
             fillPathinfo = convertToConstraints(pathinfo, contours._operation);
-          }
-          if (contours.coloring === "fill" && typeof window !== "undefined") {
-            window.plotlyContourPolygons = fillPathinfo.map(function(pi) {
-              return {
-                level: pi.level,
-                // 闭合多边形（等值面）
-                polygons: (pi.paths || []).map(function(path) {
-                  return path.map(function(pt) {
-                    return [pt[0], pt[1]];
-                  });
-                }),
-                // 非闭合路径（等值线）
-                openLines: (pi.edgepaths || []).map(function(path) {
-                  return path.map(function(pt) {
-                    return [pt[0], pt[1]];
-                  });
-                })
-              };
-            });
-            console.log("plotlyContourPolygons:", window.plotlyContourPolygons);
           }
           makeBackground(plotGroup, perimeter, contours);
           makeFills(plotGroup, fillPathinfo, perimeter, contours);
@@ -67314,6 +67385,15 @@ var Plotly = (() => {
         var nc = Math.floor((end - start) / cs) + 1;
         var extra = contours.coloring === "lines" ? 0 : 1;
         var cOpts = Colorscale.extractOpts(trace);
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== makeColorMap called ===");
+          console.log("Has custom levels:", !!(contours._levels && contours._levels.length > 0));
+          console.log("Contours._levels:", contours._levels);
+          console.log("Contours coloring:", contours.coloring);
+          console.log("Contours start/end/size:", contours.start, contours.end, contours.size);
+          console.log("Trace zmin/zmax:", trace.zmin, trace.zmax);
+          console.log("Trace input thresholds:", trace._input && trace._input.contours && trace._input.contours.thresholds);
+        }
         if (!isFinite(cs)) {
           cs = 1;
           nc = 1;
@@ -67349,18 +67429,53 @@ var Plotly = (() => {
           }
         } else {
           var zRangeInput = trace._input && (typeof trace._input.zmin === "number" && typeof trace._input.zmax === "number");
-          if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
-            if (start <= zmin0) start = zmin0;
-            if (end >= zmax0) end = zmax0;
-            nc = Math.floor((end - start) / cs) + 1;
-            extra = 0;
+          var customLevels = contours._levels;
+          var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+          if (!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) {
+              return a - b;
+            });
+            console.log("makeColorMap: Using fallback to input thresholds:", customLevels);
           }
-          for (i = 0; i < len; i++) {
-            si = scl[i];
-            domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
-            range[i] = si[1];
+          if (customLevels && customLevels.length > 0) {
+            var levels = customLevels;
+            var nLevels = levels.length;
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            var effectiveMin = zmin0 !== void 0 && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== void 0 && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+              range[i] = si[1];
+            }
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Color Mapping (including restyle) ===");
+              console.log("- Levels:", levels);
+              console.log("- zmin/zmax from colorscale:", zmin0, zmax0);
+              console.log("- Effective range:", effectiveMin, "to", effectiveMax);
+              console.log("- Colorscale length:", len);
+              console.log("- Domain values:", domain);
+              console.log("- Color mapping details:");
+              for (var j = 0; j < len; j++) {
+                console.log("  Position " + scl[j][0].toFixed(4) + " -> Value " + domain[j].toFixed(2) + " -> Color " + range[j]);
+              }
+              console.log("=== End Color Mapping ===");
+            }
+          } else {
+            if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
+              if (start <= zmin0) start = zmin0;
+              if (end >= zmax0) end = zmax0;
+              nc = Math.floor((end - start) / cs) + 1;
+              extra = 0;
+            }
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
+              range[i] = si[1];
+            }
           }
-          if (zRangeInput || trace.autocontour) {
+          if (!contours._levels && (zRangeInput || trace.autocontour)) {
             if (domain[0] > zmin0) {
               domain.unshift(zmin0);
               range.unshift(range[0]);
@@ -67399,10 +67514,17 @@ var Plotly = (() => {
           var line = trace.line;
           var cs = contours2.size || 1;
           var start = contours2.start;
+          var hasCustomLevels = !!(contours2._levels && contours2._levels.length > 0);
           var isConstraintType = contours2.type === "constraint";
           var colorLines = !isConstraintType && contours2.coloring === "lines";
           var colorFills = !isConstraintType && contours2.coloring === "fill";
           var colorMap = colorLines || colorFills ? makeColorMap(trace) : null;
+          if (typeof console !== "undefined" && console.log && colorMap) {
+            console.log("=== Contour styling ===");
+            console.log("Has custom levels:", hasCustomLevels);
+            console.log("cs (contour size):", cs);
+            console.log("Custom levels:", contours2._levels);
+          }
           c.selectAll("g.contourlevel").each(function(d2) {
             d3.select(this).selectAll("path").call(
               Drawing.lineGroupStyle,
@@ -67431,10 +67553,20 @@ var Plotly = (() => {
             var firstFill;
             c.selectAll("g.contourfill path").style("fill", function(d2) {
               if (firstFill === void 0) firstFill = d2.level;
-              return colorMap(d2.level + 0.5 * cs);
+              if (hasCustomLevels) {
+                return colorMap(d2.level);
+              } else {
+                return colorMap(d2.level + 0.5 * cs);
+              }
             });
             if (firstFill === void 0) firstFill = start;
-            c.selectAll("g.contourbg path").style("fill", colorMap(firstFill - 0.5 * cs));
+            c.selectAll("g.contourbg path").style("fill", function() {
+              if (hasCustomLevels && contours2._levels && contours2._levels.length > 0) {
+                return colorMap(contours2._levels[0]);
+              } else {
+                return colorMap(firstFill - 0.5 * cs);
+              }
+            });
           }
         });
         heatmapStyle(gd);

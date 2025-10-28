@@ -62694,6 +62694,18 @@ var Plotly = (() => {
                 "Must be positive."
               ].join(" ")
             },
+            thresholds: {
+              valType: "data_array",
+              dflt: null,
+              editType: "calc",
+              impliedEdits: { "^autocontour": false },
+              description: [
+                "Sets custom contour level values as an array of numbers.",
+                "When specified, this overrides the automatic contour generation",
+                "and the start/end/size parameters.",
+                "The array should be sorted in ascending order."
+              ].join(" ")
+            },
             coloring: {
               valType: "enumerated",
               values: ["fill", "heatmap", "lines", "none"],
@@ -62974,6 +62986,15 @@ var Plotly = (() => {
     "src/traces/contour/contours_defaults.js"(exports, module) {
       "use strict";
       module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+        var contourThresholds = coerce("contours.thresholds");
+        var hasThresholds = contourThresholds && contourThresholds.length > 0;
+        if (hasThresholds) {
+          traceOut.autocontour = false;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Contour defaults: using custom thresholds (" + contourThresholds.length + " levels)");
+          }
+          return;
+        }
         var contourStart = coerce2("contours.start");
         var contourEnd = coerce2("contours.end");
         var missingEnd = contourStart === false || contourEnd === false;
@@ -64496,6 +64517,40 @@ var Plotly = (() => {
       var Lib = require_lib();
       module.exports = function setContours(trace, vals) {
         var contours = trace.contours;
+        if (contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+          var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+          });
+          thresholds = thresholds.filter(function(val) {
+            return typeof val === "number" && !isNaN(val) && isFinite(val);
+          });
+          if (thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null;
+            contours._levels = thresholds;
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Processing (including restyle) ===");
+              console.log("Using custom thresholds:", thresholds);
+              console.log("Data range:", dataMin, "to", dataMax);
+              console.log("Input start/end:", contours.start, "/", contours.end);
+              console.log("Trace zmin/zmax:", trace.zmin, "/", trace.zmax);
+              console.log("Thresholds within data range:", thresholds.filter(function(t) {
+                return t >= dataMin && t <= dataMax;
+              }));
+              console.log("Thresholds outside data range:", thresholds.filter(function(t) {
+                return t < dataMin || t > dataMax;
+              }));
+              console.log("=== End Custom Thresholds Processing ===");
+            }
+            if (!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            return;
+          }
+        }
         if (trace.autocontour) {
           var zmin = trace.zmin;
           var zmax = trace.zmax;
@@ -64583,15 +64638,30 @@ var Plotly = (() => {
           var end = endPlus(contours);
           var cs = contours.size || 1;
           var nc = Math.floor((end - start) / cs) + 1;
-          if (!isFinite(cs)) {
-            cs = 1;
-            nc = 1;
+          if (contours._levels && contours._levels.length > 0) {
+            var levels = contours._levels;
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+          } else {
+            if (!isFinite(cs)) {
+              cs = 1;
+              nc = 1;
+            }
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
           }
-          var min0 = start - cs / 2;
-          var max0 = min0 + nc * cs;
-          cVals = [min0, max0];
         } else {
           cVals = zOut;
+        }
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== Colorscale.calc in contour/calc.js ===");
+          console.log("Has custom thresholds:", !!(contours._levels && contours._levels.length > 0));
+          console.log("cVals type:", Array.isArray(cVals) ? "array[" + cVals.length + "]" : typeof cVals);
+          console.log("Using cVals:", Array.isArray(cVals) && cVals.length <= 10 ? cVals : "large array");
         }
         Colorscale.calc(gd, trace, { vals: cVals, cLetter: "z" });
         return cd;
@@ -65589,24 +65659,51 @@ var Plotly = (() => {
           x: cd0.x,
           y: cd0.y
         };
-        for (var ci = contoursFinal.start; ci < end; ci += cs) {
-          pathinfo.push(Lib.extendFlat({
-            level: ci,
-            // all the cells with nontrivial marching index
-            crossings: {},
-            // starting points on the edges of the lattice for each contour
-            starts: [],
-            // all unclosed paths (may have less items than starts,
-            // if a path is closed by rounding)
-            edgepaths: [],
-            // all closed paths
-            paths: [],
-            z: cd0.z,
-            smoothing: cd0.trace.line.smoothing
-          }, basePathinfo));
-          if (pathinfo.length > 1e3) {
-            Lib.warn("Too many contours, clipping at 1000", contours);
-            break;
+        if (contoursFinal._levels && contoursFinal._levels.length > 0) {
+          var levels = contoursFinal._levels;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Processing custom levels in pathinfo:", levels);
+          }
+          for (var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+              level: levels[i],
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        } else {
+          for (var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+              level: ci,
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
           }
         }
         return pathinfo;
@@ -65809,26 +65906,6 @@ var Plotly = (() => {
           var fillPathinfo = pathinfo;
           if (contours.type === "constraint") {
             fillPathinfo = convertToConstraints(pathinfo, contours._operation);
-          }
-          if (contours.coloring === "fill" && typeof window !== "undefined") {
-            window.plotlyContourPolygons = fillPathinfo.map(function(pi) {
-              return {
-                level: pi.level,
-                // 闭合多边形（等值面）
-                polygons: (pi.paths || []).map(function(path) {
-                  return path.map(function(pt) {
-                    return [pt[0], pt[1]];
-                  });
-                }),
-                // 非闭合路径（等值线）
-                openLines: (pi.edgepaths || []).map(function(path) {
-                  return path.map(function(pt) {
-                    return [pt[0], pt[1]];
-                  });
-                })
-              };
-            });
-            console.log("plotlyContourPolygons:", window.plotlyContourPolygons);
           }
           makeBackground(plotGroup, perimeter, contours);
           makeFills(plotGroup, fillPathinfo, perimeter, contours);
@@ -66336,6 +66413,15 @@ var Plotly = (() => {
         var nc = Math.floor((end - start) / cs) + 1;
         var extra = contours.coloring === "lines" ? 0 : 1;
         var cOpts = Colorscale.extractOpts(trace);
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== makeColorMap called ===");
+          console.log("Has custom levels:", !!(contours._levels && contours._levels.length > 0));
+          console.log("Contours._levels:", contours._levels);
+          console.log("Contours coloring:", contours.coloring);
+          console.log("Contours start/end/size:", contours.start, contours.end, contours.size);
+          console.log("Trace zmin/zmax:", trace.zmin, trace.zmax);
+          console.log("Trace input thresholds:", trace._input && trace._input.contours && trace._input.contours.thresholds);
+        }
         if (!isFinite(cs)) {
           cs = 1;
           nc = 1;
@@ -66371,18 +66457,53 @@ var Plotly = (() => {
           }
         } else {
           var zRangeInput = trace._input && (typeof trace._input.zmin === "number" && typeof trace._input.zmax === "number");
-          if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
-            if (start <= zmin0) start = zmin0;
-            if (end >= zmax0) end = zmax0;
-            nc = Math.floor((end - start) / cs) + 1;
-            extra = 0;
+          var customLevels = contours._levels;
+          var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+          if (!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) {
+              return a - b;
+            });
+            console.log("makeColorMap: Using fallback to input thresholds:", customLevels);
           }
-          for (i = 0; i < len; i++) {
-            si = scl[i];
-            domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
-            range[i] = si[1];
+          if (customLevels && customLevels.length > 0) {
+            var levels = customLevels;
+            var nLevels = levels.length;
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            var effectiveMin = zmin0 !== void 0 && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== void 0 && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+              range[i] = si[1];
+            }
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Color Mapping (including restyle) ===");
+              console.log("- Levels:", levels);
+              console.log("- zmin/zmax from colorscale:", zmin0, zmax0);
+              console.log("- Effective range:", effectiveMin, "to", effectiveMax);
+              console.log("- Colorscale length:", len);
+              console.log("- Domain values:", domain);
+              console.log("- Color mapping details:");
+              for (var j = 0; j < len; j++) {
+                console.log("  Position " + scl[j][0].toFixed(4) + " -> Value " + domain[j].toFixed(2) + " -> Color " + range[j]);
+              }
+              console.log("=== End Color Mapping ===");
+            }
+          } else {
+            if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
+              if (start <= zmin0) start = zmin0;
+              if (end >= zmax0) end = zmax0;
+              nc = Math.floor((end - start) / cs) + 1;
+              extra = 0;
+            }
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
+              range[i] = si[1];
+            }
           }
-          if (zRangeInput || trace.autocontour) {
+          if (!contours._levels && (zRangeInput || trace.autocontour)) {
             if (domain[0] > zmin0) {
               domain.unshift(zmin0);
               range.unshift(range[0]);
@@ -66421,10 +66542,17 @@ var Plotly = (() => {
           var line = trace.line;
           var cs = contours2.size || 1;
           var start = contours2.start;
+          var hasCustomLevels = !!(contours2._levels && contours2._levels.length > 0);
           var isConstraintType = contours2.type === "constraint";
           var colorLines = !isConstraintType && contours2.coloring === "lines";
           var colorFills = !isConstraintType && contours2.coloring === "fill";
           var colorMap = colorLines || colorFills ? makeColorMap(trace) : null;
+          if (typeof console !== "undefined" && console.log && colorMap) {
+            console.log("=== Contour styling ===");
+            console.log("Has custom levels:", hasCustomLevels);
+            console.log("cs (contour size):", cs);
+            console.log("Custom levels:", contours2._levels);
+          }
           c.selectAll("g.contourlevel").each(function(d2) {
             d3.select(this).selectAll("path").call(
               Drawing.lineGroupStyle,
@@ -66453,10 +66581,20 @@ var Plotly = (() => {
             var firstFill;
             c.selectAll("g.contourfill path").style("fill", function(d2) {
               if (firstFill === void 0) firstFill = d2.level;
-              return colorMap(d2.level + 0.5 * cs);
+              if (hasCustomLevels) {
+                return colorMap(d2.level);
+              } else {
+                return colorMap(d2.level + 0.5 * cs);
+              }
             });
             if (firstFill === void 0) firstFill = start;
-            c.selectAll("g.contourbg path").style("fill", colorMap(firstFill - 0.5 * cs));
+            c.selectAll("g.contourbg path").style("fill", function() {
+              if (hasCustomLevels && contours2._levels && contours2._levels.length > 0) {
+                return colorMap(contours2._levels[0]);
+              } else {
+                return colorMap(firstFill - 0.5 * cs);
+              }
+            });
           }
         });
         heatmapStyle(gd);
@@ -66686,13 +66824,1166 @@ var Plotly = (() => {
     }
   });
 
+  // src/traces/bar/constants.js
+  var require_constants15 = __commonJS({
+    "src/traces/bar/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // padding in pixels around text
+        TEXTPAD: 3,
+        // 'value' and 'label' are not really necessary for bar traces,
+        // but they were made available to `texttemplate` (maybe by accident)
+        // via tokens `%{value}` and `%{label}` starting in 1.50.0,
+        // so let's include them in the event data also.
+        eventDataKeys: ["value", "label"]
+      };
+    }
+  });
+
+  // src/traces/bar/attributes.js
+  var require_attributes25 = __commonJS({
+    "src/traces/bar/attributes.js"(exports, module) {
+      "use strict";
+      var scatterAttrs = require_attributes12();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var fontAttrs = require_font_attributes();
+      var constants = require_constants15();
+      var pattern = require_attributes4().pattern;
+      var extendFlat = require_extend().extendFlat;
+      var textFontAttrs = fontAttrs({
+        editType: "calc",
+        arrayOk: true,
+        colorEditType: "style",
+        description: ""
+      });
+      var scatterMarkerAttrs = scatterAttrs.marker;
+      var scatterMarkerLineAttrs = scatterMarkerAttrs.line;
+      var markerLineWidth = extendFlat(
+        {},
+        scatterMarkerLineAttrs.width,
+        { dflt: 0 }
+      );
+      var markerLine = extendFlat({
+        width: markerLineWidth,
+        editType: "calc"
+      }, colorScaleAttrs("marker.line"));
+      var marker = extendFlat({
+        line: markerLine,
+        editType: "calc"
+      }, colorScaleAttrs("marker"), {
+        opacity: {
+          valType: "number",
+          arrayOk: true,
+          dflt: 1,
+          min: 0,
+          max: 1,
+          editType: "style",
+          description: "Sets the opacity of the bars."
+        },
+        pattern,
+        cornerradius: {
+          valType: "any",
+          editType: "calc",
+          description: [
+            "Sets the rounding of corners. May be an integer number of pixels,",
+            "or a percentage of bar width (as a string ending in %). Defaults to `layout.barcornerradius`.",
+            "In stack or relative barmode, the first trace to set cornerradius is used for the whole stack."
+          ].join(" ")
+        }
+      });
+      module.exports = {
+        x: scatterAttrs.x,
+        x0: scatterAttrs.x0,
+        dx: scatterAttrs.dx,
+        y: scatterAttrs.y,
+        y0: scatterAttrs.y0,
+        dy: scatterAttrs.dy,
+        xperiod: scatterAttrs.xperiod,
+        yperiod: scatterAttrs.yperiod,
+        xperiod0: scatterAttrs.xperiod0,
+        yperiod0: scatterAttrs.yperiod0,
+        xperiodalignment: scatterAttrs.xperiodalignment,
+        yperiodalignment: scatterAttrs.yperiodalignment,
+        xhoverformat: axisHoverFormat("x"),
+        yhoverformat: axisHoverFormat("y"),
+        text: scatterAttrs.text,
+        texttemplate: texttemplateAttrs({ editType: "plot" }, {
+          keys: constants.eventDataKeys
+        }),
+        hovertext: scatterAttrs.hovertext,
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
+        }),
+        textposition: {
+          valType: "enumerated",
+          values: ["inside", "outside", "auto", "none"],
+          dflt: "auto",
+          arrayOk: true,
+          editType: "calc",
+          description: [
+            "Specifies the location of the `text`.",
+            "*inside* positions `text` inside, next to the bar end",
+            "(rotated and scaled if needed).",
+            "*outside* positions `text` outside, next to the bar end",
+            "(scaled if needed), unless there is another bar stacked on",
+            "this one, then the text gets pushed inside.",
+            "*auto* tries to position `text` inside the bar, but if",
+            "the bar is too small and no bar is stacked on this one",
+            "the text is moved outside.",
+            "If *none*, no text appears."
+          ].join(" ")
+        },
+        insidetextanchor: {
+          valType: "enumerated",
+          values: ["end", "middle", "start"],
+          dflt: "end",
+          editType: "plot",
+          description: [
+            "Determines if texts are kept at center or start/end points in `textposition` *inside* mode."
+          ].join(" ")
+        },
+        textangle: {
+          valType: "angle",
+          dflt: "auto",
+          editType: "plot",
+          description: [
+            "Sets the angle of the tick labels with respect to the bar.",
+            "For example, a `tickangle` of -90 draws the tick labels",
+            "vertically. With *auto* the texts may automatically be",
+            "rotated to fit with the maximum size in bars."
+          ].join(" ")
+        },
+        textfont: extendFlat({}, textFontAttrs, {
+          description: "Sets the font used for `text`."
+        }),
+        insidetextfont: extendFlat({}, textFontAttrs, {
+          description: "Sets the font used for `text` lying inside the bar."
+        }),
+        outsidetextfont: extendFlat({}, textFontAttrs, {
+          description: "Sets the font used for `text` lying outside the bar."
+        }),
+        constraintext: {
+          valType: "enumerated",
+          values: ["inside", "outside", "both", "none"],
+          dflt: "both",
+          editType: "calc",
+          description: [
+            "Constrain the size of text inside or outside a bar to be no",
+            "larger than the bar itself."
+          ].join(" ")
+        },
+        cliponaxis: extendFlat({}, scatterAttrs.cliponaxis, {
+          description: [
+            "Determines whether the text nodes",
+            "are clipped about the subplot axes.",
+            "To show the text nodes above axis lines and tick labels,",
+            "make sure to set `xaxis.layer` and `yaxis.layer` to *below traces*."
+          ].join(" ")
+        }),
+        orientation: {
+          valType: "enumerated",
+          values: ["v", "h"],
+          editType: "calc+clearAxisTypes",
+          description: [
+            "Sets the orientation of the bars.",
+            "With *v* (*h*), the value of the each bar spans",
+            "along the vertical (horizontal)."
+          ].join(" ")
+        },
+        base: {
+          valType: "any",
+          dflt: null,
+          arrayOk: true,
+          editType: "calc",
+          description: [
+            "Sets where the bar base is drawn (in position axis units).",
+            "In *stack* or *relative* barmode,",
+            "traces that set *base* will be excluded",
+            "and drawn in *overlay* mode instead."
+          ].join(" ")
+        },
+        offset: {
+          valType: "number",
+          dflt: null,
+          arrayOk: true,
+          editType: "calc",
+          description: [
+            "Shifts the position where the bar is drawn",
+            "(in position axis units).",
+            "In *group* barmode,",
+            "traces that set *offset* will be excluded",
+            "and drawn in *overlay* mode instead."
+          ].join(" ")
+        },
+        width: {
+          valType: "number",
+          dflt: null,
+          min: 0,
+          arrayOk: true,
+          editType: "calc",
+          description: [
+            "Sets the bar width (in position axis units)."
+          ].join(" ")
+        },
+        marker,
+        offsetgroup: scatterAttrs.offsetgroup,
+        alignmentgroup: scatterAttrs.alignmentgroup,
+        selected: {
+          marker: {
+            opacity: scatterAttrs.selected.marker.opacity,
+            color: scatterAttrs.selected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.selected.textfont,
+          editType: "style"
+        },
+        unselected: {
+          marker: {
+            opacity: scatterAttrs.unselected.marker.opacity,
+            color: scatterAttrs.unselected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.unselected.textfont,
+          editType: "style"
+        },
+        zorder: scatterAttrs.zorder
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_attributes.js
+  var require_bin_attributes = __commonJS({
+    "src/traces/histogram/bin_attributes.js"(exports, module) {
+      "use strict";
+      module.exports = function makeBinAttrs(axLetter, match) {
+        return {
+          start: {
+            valType: "any",
+            // for date axes
+            editType: "calc",
+            description: [
+              "Sets the starting value for the",
+              axLetter,
+              "axis bins. Defaults to the minimum data value,",
+              "shifted down if necessary to make nice round values",
+              "and to remove ambiguous bin edges. For example, if most of the",
+              "data is integers we shift the bin edges 0.5 down, so a `size`",
+              "of 5 would have a default `start` of -0.5, so it is clear",
+              "that 0-4 are in the first bin, 5-9 in the second, but",
+              "continuous data gets a start of 0 and bins [0,5), [5,10) etc.",
+              "Dates behave similarly, and `start` should be a date string.",
+              "For category data, `start` is based on the category serial",
+              "numbers, and defaults to -0.5.",
+              match ? "If multiple non-overlaying histograms share a subplot, the first explicit `start` is used exactly and all others are shifted down (if necessary) to differ from that one by an integer number of bins." : ""
+            ].join(" ")
+          },
+          end: {
+            valType: "any",
+            // for date axes
+            editType: "calc",
+            description: [
+              "Sets the end value for the",
+              axLetter,
+              "axis bins. The last bin may not end exactly at this value,",
+              "we increment the bin edge by `size` from `start` until we",
+              "reach or exceed `end`. Defaults to the maximum data value.",
+              "Like `start`, for dates use a date string, and for category",
+              "data `end` is based on the category serial numbers."
+            ].join(" ")
+          },
+          size: {
+            valType: "any",
+            // for date axes
+            editType: "calc",
+            description: [
+              "Sets the size of each",
+              axLetter,
+              "axis bin.",
+              "Default behavior: If `nbins" + axLetter + "` is 0 or omitted,",
+              "we choose a nice round bin size such that the number of bins",
+              "is about the same as the typical number of samples in each bin.",
+              "If `nbins" + axLetter + "` is provided, we choose a nice round",
+              "bin size giving no more than that many bins.",
+              "For date data, use milliseconds or *M<n>* for months, as in",
+              "`axis.dtick`. For category data, the number of categories to",
+              "bin together (always defaults to 1).",
+              match ? "If multiple non-overlaying histograms share a subplot, the first explicit `size` is used and all others discarded. If no `size` is provided,the sample data from all traces is combined to determine `size` as described above." : ""
+            ].join(" ")
+          },
+          editType: "calc"
+        };
+      };
+    }
+  });
+
+  // src/traces/histogram/constants.js
+  var require_constants16 = __commonJS({
+    "src/traces/histogram/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        eventDataKeys: ["binNumber"]
+      };
+    }
+  });
+
+  // src/traces/histogram/attributes.js
+  var require_attributes26 = __commonJS({
+    "src/traces/histogram/attributes.js"(exports, module) {
+      "use strict";
+      var barAttrs = require_attributes25();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var fontAttrs = require_font_attributes();
+      var makeBinAttrs = require_bin_attributes();
+      var constants = require_constants16();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = {
+        x: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes",
+          description: [
+            "Sets the sample data to be binned on the x axis."
+          ].join(" ")
+        },
+        y: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes",
+          description: [
+            "Sets the sample data to be binned on the y axis."
+          ].join(" ")
+        },
+        xhoverformat: axisHoverFormat("x"),
+        yhoverformat: axisHoverFormat("y"),
+        text: extendFlat({}, barAttrs.text, {
+          description: [
+            "Sets hover text elements associated with each bar.",
+            "If a single string, the same string appears over all bars.",
+            "If an array of string, the items are mapped in order to the",
+            "this trace's coordinates."
+          ].join(" ")
+        }),
+        hovertext: extendFlat({}, barAttrs.hovertext, {
+          description: "Same as `text`."
+        }),
+        orientation: barAttrs.orientation,
+        histfunc: {
+          valType: "enumerated",
+          values: ["count", "sum", "avg", "min", "max"],
+          dflt: "count",
+          editType: "calc",
+          description: [
+            "Specifies the binning function used for this histogram trace.",
+            "If *count*, the histogram values are computed by counting the",
+            "number of values lying inside each bin.",
+            "If *sum*, *avg*, *min*, *max*,",
+            "the histogram values are computed using",
+            "the sum, the average, the minimum or the maximum",
+            "of the values lying inside each bin respectively."
+          ].join(" ")
+        },
+        histnorm: {
+          valType: "enumerated",
+          values: ["", "percent", "probability", "density", "probability density"],
+          dflt: "",
+          editType: "calc",
+          description: [
+            "Specifies the type of normalization used for this histogram trace.",
+            "If **, the span of each bar corresponds to the number of",
+            "occurrences (i.e. the number of data points lying inside the bins).",
+            "If *percent* / *probability*, the span of each bar corresponds to",
+            "the percentage / fraction of occurrences with respect to the total",
+            "number of sample points",
+            "(here, the sum of all bin HEIGHTS equals 100% / 1).",
+            "If *density*, the span of each bar corresponds to the number of",
+            "occurrences in a bin divided by the size of the bin interval",
+            "(here, the sum of all bin AREAS equals the",
+            "total number of sample points).",
+            "If *probability density*, the area of each bar corresponds to the",
+            "probability that an event will fall into the corresponding bin",
+            "(here, the sum of all bin AREAS equals 1)."
+          ].join(" ")
+        },
+        cumulative: {
+          enabled: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc",
+            description: [
+              "If true, display the cumulative distribution by summing the",
+              "binned values. Use the `direction` and `centralbin` attributes",
+              "to tune the accumulation method.",
+              "Note: in this mode, the *density* `histnorm` settings behave",
+              "the same as their equivalents without *density*:",
+              "** and *density* both rise to the number of data points, and",
+              "*probability* and *probability density* both rise to the",
+              "number of sample points."
+            ].join(" ")
+          },
+          direction: {
+            valType: "enumerated",
+            values: ["increasing", "decreasing"],
+            dflt: "increasing",
+            editType: "calc",
+            description: [
+              "Only applies if cumulative is enabled.",
+              "If *increasing* (default) we sum all prior bins, so the result",
+              "increases from left to right. If *decreasing* we sum later bins",
+              "so the result decreases from left to right."
+            ].join(" ")
+          },
+          currentbin: {
+            valType: "enumerated",
+            values: ["include", "exclude", "half"],
+            dflt: "include",
+            editType: "calc",
+            description: [
+              "Only applies if cumulative is enabled.",
+              "Sets whether the current bin is included, excluded, or has half",
+              "of its value included in the current cumulative value.",
+              "*include* is the default for compatibility with various other",
+              "tools, however it introduces a half-bin bias to the results.",
+              "*exclude* makes the opposite half-bin bias, and *half* removes",
+              "it."
+            ].join(" ")
+          },
+          editType: "calc"
+        },
+        nbinsx: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc",
+          description: [
+            "Specifies the maximum number of desired bins. This value will be used",
+            "in an algorithm that will decide the optimal bin size such that the",
+            "histogram best visualizes the distribution of the data.",
+            "Ignored if `xbins.size` is provided."
+          ].join(" ")
+        },
+        xbins: makeBinAttrs("x", true),
+        nbinsy: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc",
+          description: [
+            "Specifies the maximum number of desired bins. This value will be used",
+            "in an algorithm that will decide the optimal bin size such that the",
+            "histogram best visualizes the distribution of the data.",
+            "Ignored if `ybins.size` is provided."
+          ].join(" ")
+        },
+        ybins: makeBinAttrs("y", true),
+        autobinx: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc",
+          description: [
+            "Obsolete: since v1.42 each bin attribute is auto-determined",
+            "separately and `autobinx` is not needed. However, we accept",
+            "`autobinx: true` or `false` and will update `xbins` accordingly",
+            "before deleting `autobinx` from the trace."
+          ].join(" ")
+        },
+        autobiny: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc",
+          description: [
+            "Obsolete: since v1.42 each bin attribute is auto-determined",
+            "separately and `autobiny` is not needed. However, we accept",
+            "`autobiny: true` or `false` and will update `ybins` accordingly",
+            "before deleting `autobiny` from the trace."
+          ].join(" ")
+        },
+        bingroup: {
+          valType: "string",
+          dflt: "",
+          editType: "calc",
+          description: [
+            "Set a group of histogram traces which will have compatible bin settings.",
+            "Note that traces on the same subplot and with the same *orientation*",
+            "under `barmode` *stack*, *relative* and *group* are forced into the same bingroup,",
+            "Using `bingroup`, traces under `barmode` *overlay* and on different axes",
+            "(of the same axis type) can have compatible bin settings.",
+            "Note that histogram and histogram2d* trace can share the same `bingroup`"
+          ].join(" ")
+        },
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
+        }),
+        texttemplate: texttemplateAttrs({
+          arrayOk: false,
+          editType: "plot"
+        }, {
+          keys: ["label", "value"]
+        }),
+        textposition: extendFlat({}, barAttrs.textposition, {
+          arrayOk: false
+        }),
+        textfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style",
+          description: "Sets the text font."
+        }),
+        outsidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style",
+          description: "Sets the font used for `text` lying outside the bar."
+        }),
+        insidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style",
+          description: "Sets the font used for `text` lying inside the bar."
+        }),
+        insidetextanchor: barAttrs.insidetextanchor,
+        textangle: barAttrs.textangle,
+        cliponaxis: barAttrs.cliponaxis,
+        constraintext: barAttrs.constraintext,
+        marker: barAttrs.marker,
+        offsetgroup: barAttrs.offsetgroup,
+        alignmentgroup: barAttrs.alignmentgroup,
+        selected: barAttrs.selected,
+        unselected: barAttrs.unselected,
+        zorder: barAttrs.zorder
+      };
+    }
+  });
+
+  // src/traces/histogram2d/attributes.js
+  var require_attributes27 = __commonJS({
+    "src/traces/histogram2d/attributes.js"(exports, module) {
+      "use strict";
+      var histogramAttrs = require_attributes26();
+      var makeBinAttrs = require_bin_attributes();
+      var heatmapAttrs = require_attributes23();
+      var baseAttrs = require_attributes2();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogramAttrs.x,
+          y: histogramAttrs.y,
+          z: {
+            valType: "data_array",
+            editType: "calc",
+            description: "Sets the aggregation data."
+          },
+          marker: {
+            color: {
+              valType: "data_array",
+              editType: "calc",
+              description: "Sets the aggregation data."
+            },
+            editType: "calc"
+          },
+          histnorm: histogramAttrs.histnorm,
+          histfunc: histogramAttrs.histfunc,
+          nbinsx: histogramAttrs.nbinsx,
+          xbins: makeBinAttrs("x"),
+          nbinsy: histogramAttrs.nbinsy,
+          ybins: makeBinAttrs("y"),
+          autobinx: histogramAttrs.autobinx,
+          autobiny: histogramAttrs.autobiny,
+          bingroup: extendFlat({}, histogramAttrs.bingroup, {
+            description: [
+              "Set the `xbingroup` and `ybingroup` default prefix",
+              "For example, setting a `bingroup` of *1* on two histogram2d traces",
+              "will make them their x-bins and y-bins match separately."
+            ].join(" ")
+          }),
+          xbingroup: extendFlat({}, histogramAttrs.bingroup, {
+            description: [
+              "Set a group of histogram traces which will have compatible x-bin settings.",
+              "Using `xbingroup`, histogram2d and histogram2dcontour traces ",
+              "(on axes of the same axis type) can have compatible x-bin settings.",
+              "Note that the same `xbingroup` value can be used to set (1D) histogram `bingroup`"
+            ].join(" ")
+          }),
+          ybingroup: extendFlat({}, histogramAttrs.bingroup, {
+            description: [
+              "Set a group of histogram traces which will have compatible y-bin settings.",
+              "Using `ybingroup`, histogram2d and histogram2dcontour traces ",
+              "(on axes of the same axis type) can have compatible y-bin settings.",
+              "Note that the same `ybingroup` value can be used to set (1D) histogram `bingroup`"
+            ].join(" ")
+          }),
+          xgap: heatmapAttrs.xgap,
+          ygap: heatmapAttrs.ygap,
+          zsmooth: heatmapAttrs.zsmooth,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs({}, { keys: "z" }),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: "z"
+          }),
+          textfont: heatmapAttrs.textfont,
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false })
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/traces/histogram2dcontour/attributes.js
+  var require_attributes28 = __commonJS({
+    "src/traces/histogram2dcontour/attributes.js"(exports, module) {
+      "use strict";
+      var histogram2dAttrs = require_attributes27();
+      var contourAttrs = require_attributes24();
+      var colorScaleAttrs = require_attributes8();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogram2dAttrs.x,
+          y: histogram2dAttrs.y,
+          z: histogram2dAttrs.z,
+          marker: histogram2dAttrs.marker,
+          histnorm: histogram2dAttrs.histnorm,
+          histfunc: histogram2dAttrs.histfunc,
+          nbinsx: histogram2dAttrs.nbinsx,
+          xbins: histogram2dAttrs.xbins,
+          nbinsy: histogram2dAttrs.nbinsy,
+          ybins: histogram2dAttrs.ybins,
+          autobinx: histogram2dAttrs.autobinx,
+          autobiny: histogram2dAttrs.autobiny,
+          bingroup: histogram2dAttrs.bingroup,
+          xbingroup: histogram2dAttrs.xbingroup,
+          ybingroup: histogram2dAttrs.ybingroup,
+          autocontour: contourAttrs.autocontour,
+          ncontours: contourAttrs.ncontours,
+          contours: contourAttrs.contours,
+          line: {
+            color: contourAttrs.line.color,
+            width: extendFlat({}, contourAttrs.line.width, {
+              dflt: 0.5,
+              description: "Sets the contour line width in (in px)"
+            }),
+            dash: contourAttrs.line.dash,
+            smoothing: contourAttrs.line.smoothing,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: histogram2dAttrs.hovertemplate,
+          texttemplate: contourAttrs.texttemplate,
+          textfont: contourAttrs.textfont
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/sample_defaults.js
+  var require_sample_defaults = __commonJS({
+    "src/traces/histogram2d/sample_defaults.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      module.exports = function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
+        var x = coerce("x");
+        var y = coerce("y");
+        var xlen = Lib.minRowLength(x);
+        var ylen = Lib.minRowLength(y);
+        if (!xlen || !ylen) {
+          traceOut.visible = false;
+          return;
+        }
+        traceOut._length = Math.min(xlen, ylen);
+        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
+        handleCalendarDefaults(traceIn, traceOut, ["x", "y"], layout);
+        var hasAggregationData = coerce("z") || coerce("marker.color");
+        if (hasAggregationData) coerce("histfunc");
+        coerce("histnorm");
+        coerce("autobinx");
+        coerce("autobiny");
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/defaults.js
+  var require_defaults20 = __commonJS({
+    "src/traces/histogram2dcontour/defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var handleSampleDefaults = require_sample_defaults();
+      var handleContoursDefaults = require_contours_defaults();
+      var handleStyleDefaults = require_style_defaults();
+      var handleHeatmapLabelDefaults = require_label_defaults2();
+      var attributes = require_attributes28();
+      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
+        }
+        function coerce2(attr) {
+          return Lib.coerce2(traceIn, traceOut, attributes, attr);
+        }
+        handleSampleDefaults(traceIn, traceOut, coerce, layout);
+        if (traceOut.visible === false) return;
+        handleContoursDefaults(traceIn, traceOut, coerce, coerce2);
+        handleStyleDefaults(traceIn, traceOut, coerce, layout);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("hovertemplate");
+        if (traceOut.contours && traceOut.contours.coloring === "heatmap") {
+          handleHeatmapLabelDefaults(coerce, layout);
+        }
+      };
+    }
+  });
+
+  // src/traces/bar/style_defaults.js
+  var require_style_defaults2 = __commonJS({
+    "src/traces/bar/style_defaults.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var hasColorscale = require_helpers().hasColorscale;
+      var colorscaleDefaults = require_defaults2();
+      var coercePattern = require_lib().coercePattern;
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout) {
+        var markerColor = coerce("marker.color", defaultColor);
+        var hasMarkerColorscale = hasColorscale(traceIn, "marker");
+        if (hasMarkerColorscale) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.color", Color.defaultLine);
+        if (hasColorscale(traceIn, "marker.line")) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.line.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.width");
+        coerce("marker.opacity");
+        coercePattern(coerce, "marker.pattern", markerColor, hasMarkerColorscale);
+        coerce("selected.marker.color");
+        coerce("unselected.marker.color");
+      };
+    }
+  });
+
+  // src/traces/bar/defaults.js
+  var require_defaults21 = __commonJS({
+    "src/traces/bar/defaults.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Color = require_color();
+      var Registry = require_registry();
+      var handleXYDefaults = require_xy_defaults();
+      var handlePeriodDefaults = require_period_defaults();
+      var handleStyleDefaults = require_style_defaults2();
+      var handleGroupingDefaults = require_grouping_defaults();
+      var attributes = require_attributes25();
+      var coerceFont = Lib.coerceFont;
+      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
+        }
+        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
+        if (!len) {
+          traceOut.visible = false;
+          return;
+        }
+        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("zorder");
+        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
+        coerce("base");
+        coerce("offset");
+        coerce("width");
+        coerce("text");
+        coerce("hovertext");
+        coerce("hovertemplate");
+        var textposition = coerce("textposition");
+        handleText(traceIn, traceOut, layout, coerce, textposition, {
+          moduleHasSelected: true,
+          moduleHasUnselected: true,
+          moduleHasConstrain: true,
+          moduleHasCliponaxis: true,
+          moduleHasTextangle: true,
+          moduleHasInsideanchor: true
+        });
+        handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout);
+        var lineColor = (traceOut.marker.line || {}).color;
+        var errorBarsSupplyDefaults = Registry.getComponentMethod("errorbars", "supplyDefaults");
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "y" });
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "x", inherit: "y" });
+        Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
+      }
+      function crossTraceDefaults(fullData, fullLayout) {
+        var traceIn, traceOut;
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, attributes, attr, dflt);
+        }
+        for (var i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceOut.type === "bar") {
+            traceIn = traceOut._input;
+            var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+            if (traceOut.marker) {
+              traceOut.marker.cornerradius = validateCornerradius(r);
+            }
+            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.barmode);
+          }
+        }
+      }
+      function validateCornerradius(r) {
+        if (isNumeric(r)) {
+          r = +r;
+          if (r >= 0) return r;
+        } else if (typeof r === "string") {
+          r = r.trim();
+          if (r.slice(-1) === "%" && isNumeric(r.slice(0, -1))) {
+            r = +r.slice(0, -1);
+            if (r >= 0) return r + "%";
+          }
+        }
+        return void 0;
+      }
+      function handleText(traceIn, traceOut, layout, coerce, textposition, opts) {
+        opts = opts || {};
+        var moduleHasSelected = !(opts.moduleHasSelected === false);
+        var moduleHasUnselected = !(opts.moduleHasUnselected === false);
+        var moduleHasConstrain = !(opts.moduleHasConstrain === false);
+        var moduleHasCliponaxis = !(opts.moduleHasCliponaxis === false);
+        var moduleHasTextangle = !(opts.moduleHasTextangle === false);
+        var moduleHasInsideanchor = !(opts.moduleHasInsideanchor === false);
+        var hasPathbar = !!opts.hasPathbar;
+        var hasBoth = Array.isArray(textposition) || textposition === "auto";
+        var hasInside = hasBoth || textposition === "inside";
+        var hasOutside = hasBoth || textposition === "outside";
+        if (hasInside || hasOutside) {
+          var dfltFont = coerceFont(coerce, "textfont", layout.font);
+          var insideTextFontDefault = Lib.extendFlat({}, dfltFont);
+          var isTraceTextfontColorSet = traceIn.textfont && traceIn.textfont.color;
+          var isColorInheritedFromLayoutFont = !isTraceTextfontColorSet;
+          if (isColorInheritedFromLayoutFont) {
+            delete insideTextFontDefault.color;
+          }
+          coerceFont(coerce, "insidetextfont", insideTextFontDefault);
+          if (hasPathbar) {
+            var pathbarTextFontDefault = Lib.extendFlat({}, dfltFont);
+            if (isColorInheritedFromLayoutFont) {
+              delete pathbarTextFontDefault.color;
+            }
+            coerceFont(coerce, "pathbar.textfont", pathbarTextFontDefault);
+          }
+          if (hasOutside) coerceFont(coerce, "outsidetextfont", dfltFont);
+          if (moduleHasSelected) coerce("selected.textfont.color");
+          if (moduleHasUnselected) coerce("unselected.textfont.color");
+          if (moduleHasConstrain) coerce("constraintext");
+          if (moduleHasCliponaxis) coerce("cliponaxis");
+          if (moduleHasTextangle) coerce("textangle");
+          coerce("texttemplate");
+        }
+        if (hasInside) {
+          if (moduleHasInsideanchor) coerce("insidetextanchor");
+        }
+      }
+      module.exports = {
+        supplyDefaults,
+        crossTraceDefaults,
+        handleText,
+        validateCornerradius
+      };
+    }
+  });
+
+  // src/traces/histogram/cross_trace_defaults.js
+  var require_cross_trace_defaults3 = __commonJS({
+    "src/traces/histogram/cross_trace_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var axisIds = require_axis_ids();
+      var traceIs = require_registry().traceIs;
+      var handleGroupingDefaults = require_grouping_defaults();
+      var validateCornerradius = require_defaults21().validateCornerradius;
+      var nestedProperty = Lib.nestedProperty;
+      var getAxisGroup = require_constraints().getAxisGroup;
+      var BINATTRS = [
+        { aStr: { x: "xbins.start", y: "ybins.start" }, name: "start" },
+        { aStr: { x: "xbins.end", y: "ybins.end" }, name: "end" },
+        { aStr: { x: "xbins.size", y: "ybins.size" }, name: "size" },
+        { aStr: { x: "nbinsx", y: "nbinsy" }, name: "nbins" }
+      ];
+      var BINDIRECTIONS = ["x", "y"];
+      module.exports = function crossTraceDefaults(fullData, fullLayout) {
+        var allBinOpts = fullLayout._histogramBinOpts = {};
+        var histTraces = [];
+        var mustMatchTracesLookup = {};
+        var otherTracesList = [];
+        var traceOut, traces, groupName, binDir;
+        var i, j, k;
+        function coerce(attr2, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, traceOut._module.attributes, attr2, dflt);
+        }
+        function orientation2binDir(traceOut2) {
+          return traceOut2.orientation === "v" ? "x" : "y";
+        }
+        function getAxisType(traceOut2, binDir2) {
+          var ax = axisIds.getFromTrace({ _fullLayout: fullLayout }, traceOut2, binDir2);
+          return ax.type;
+        }
+        function fillBinOpts(traceOut2, groupName2, binDir2) {
+          var fallbackGroupName = traceOut2.uid + "__" + binDir2;
+          if (!groupName2) groupName2 = fallbackGroupName;
+          var axType = getAxisType(traceOut2, binDir2);
+          var calendar = traceOut2[binDir2 + "calendar"] || "";
+          var binOpts2 = allBinOpts[groupName2];
+          var needsNewItem = true;
+          if (binOpts2) {
+            if (axType === binOpts2.axType && calendar === binOpts2.calendar) {
+              needsNewItem = false;
+              binOpts2.traces.push(traceOut2);
+              binOpts2.dirs.push(binDir2);
+            } else {
+              groupName2 = fallbackGroupName;
+              if (axType !== binOpts2.axType) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set on a",
+                  "type:" + axType,
+                  "axis",
+                  "with bins on",
+                  "type:" + binOpts2.axType,
+                  "axis."
+                ].join(" "));
+              }
+              if (calendar !== binOpts2.calendar) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set with a",
+                  calendar,
+                  "calendar",
+                  "with bins",
+                  binOpts2.calendar ? "on a " + binOpts2.calendar + " calendar" : "w/o a set calendar"
+                ].join(" "));
+              }
+            }
+          }
+          if (needsNewItem) {
+            allBinOpts[groupName2] = {
+              traces: [traceOut2],
+              dirs: [binDir2],
+              axType,
+              calendar: traceOut2[binDir2 + "calendar"] || ""
+            };
+          }
+          traceOut2["_" + binDir2 + "bingroup"] = groupName2;
+        }
+        for (i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceIs(traceOut, "histogram")) {
+            histTraces.push(traceOut);
+            delete traceOut._xautoBinFinished;
+            delete traceOut._yautoBinFinished;
+            if (traceOut.type === "histogram") {
+              var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+              if (traceOut.marker) {
+                traceOut.marker.cornerradius = validateCornerradius(r);
+              }
+            }
+            if (!traceIs(traceOut, "2dMap")) {
+              handleGroupingDefaults(traceOut._input, traceOut, fullLayout, coerce, fullLayout.barmode);
+            }
+          }
+        }
+        var alignmentOpts = fullLayout._alignmentOpts || {};
+        for (i = 0; i < histTraces.length; i++) {
+          traceOut = histTraces[i];
+          groupName = "";
+          if (!traceIs(traceOut, "2dMap")) {
+            binDir = orientation2binDir(traceOut);
+            if (fullLayout.barmode === "group" && traceOut.alignmentgroup) {
+              var pa = traceOut[binDir + "axis"];
+              var aGroupId = getAxisGroup(fullLayout, pa) + traceOut.orientation;
+              if ((alignmentOpts[aGroupId] || {})[traceOut.alignmentgroup]) {
+                groupName = aGroupId;
+              }
+            }
+            if (!groupName && fullLayout.barmode !== "overlay") {
+              groupName = getAxisGroup(fullLayout, traceOut.xaxis) + getAxisGroup(fullLayout, traceOut.yaxis) + orientation2binDir(traceOut);
+            }
+          }
+          if (groupName) {
+            if (!mustMatchTracesLookup[groupName]) {
+              mustMatchTracesLookup[groupName] = [];
+            }
+            mustMatchTracesLookup[groupName].push(traceOut);
+          } else {
+            otherTracesList.push(traceOut);
+          }
+        }
+        for (groupName in mustMatchTracesLookup) {
+          traces = mustMatchTracesLookup[groupName];
+          if (traces.length === 1) {
+            otherTracesList.push(traces[0]);
+            continue;
+          }
+          var binGroupFound = false;
+          if (traces.length) {
+            traceOut = traces[0];
+            binGroupFound = coerce("bingroup");
+          }
+          groupName = binGroupFound || groupName;
+          for (i = 0; i < traces.length; i++) {
+            traceOut = traces[i];
+            var bingroupIn = traceOut._input.bingroup;
+            if (bingroupIn && bingroupIn !== groupName) {
+              Lib.warn([
+                "Trace",
+                traceOut.index,
+                "must match",
+                "within bingroup",
+                groupName + ".",
+                "Ignoring its bingroup:",
+                bingroupIn,
+                "setting."
+              ].join(" "));
+            }
+            traceOut.bingroup = groupName;
+            fillBinOpts(traceOut, groupName, orientation2binDir(traceOut));
+          }
+        }
+        for (i = 0; i < otherTracesList.length; i++) {
+          traceOut = otherTracesList[i];
+          var binGroup = coerce("bingroup");
+          if (traceIs(traceOut, "2dMap")) {
+            for (k = 0; k < 2; k++) {
+              binDir = BINDIRECTIONS[k];
+              var binGroupInDir = coerce(
+                binDir + "bingroup",
+                binGroup ? binGroup + "__" + binDir : null
+              );
+              fillBinOpts(traceOut, binGroupInDir, binDir);
+            }
+          } else {
+            fillBinOpts(traceOut, binGroup, orientation2binDir(traceOut));
+          }
+        }
+        for (groupName in allBinOpts) {
+          var binOpts = allBinOpts[groupName];
+          traces = binOpts.traces;
+          for (j = 0; j < BINATTRS.length; j++) {
+            var attrSpec = BINATTRS[j];
+            var attr = attrSpec.name;
+            var aStr;
+            var autoVals;
+            if (attr === "nbins" && binOpts.sizeFound) continue;
+            for (i = 0; i < traces.length; i++) {
+              traceOut = traces[i];
+              binDir = binOpts.dirs[i];
+              aStr = attrSpec.aStr[binDir];
+              if (nestedProperty(traceOut._input, aStr).get() !== void 0) {
+                binOpts[attr] = coerce(aStr);
+                binOpts[attr + "Found"] = true;
+                break;
+              }
+              autoVals = (traceOut._autoBin || {})[binDir] || {};
+              if (autoVals[attr]) {
+                nestedProperty(traceOut, aStr).set(autoVals[attr]);
+              }
+            }
+            if (attr === "start" || attr === "end") {
+              for (; i < traces.length; i++) {
+                traceOut = traces[i];
+                if (traceOut["_" + binDir + "bingroup"]) {
+                  autoVals = (traceOut._autoBin || {})[binDir] || {};
+                  coerce(aStr, autoVals[attr]);
+                }
+              }
+            }
+            if (attr === "nbins" && !binOpts.sizeFound && !binOpts.nbinsFound) {
+              traceOut = traces[0];
+              binOpts[attr] = coerce(aStr);
+            }
+          }
+        }
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/index.js
+  var require_histogram2dcontour = __commonJS({
+    "src/traces/histogram2dcontour/index.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        attributes: require_attributes28(),
+        supplyDefaults: require_defaults20(),
+        crossTraceDefaults: require_cross_trace_defaults3(),
+        calc: require_calc8(),
+        plot: require_plot4().plot,
+        layerName: "contourlayer",
+        style: require_style5(),
+        colorbar: require_colorbar2(),
+        hoverPoints: require_hover4(),
+        moduleType: "trace",
+        name: "histogram2dcontour",
+        basePlotModule: require_cartesian(),
+        categories: ["cartesian", "svg", "2dMap", "contour", "histogram", "showLegend"],
+        meta: {
+          hrName: "histogram_2d_contour",
+          description: [
+            "The sample data from which statistics are computed is set in `x`",
+            "and `y` (where `x` and `y` represent marginal distributions,",
+            "binning is set in `xbins` and `ybins` in this case)",
+            "or `z` (where `z` represent the 2D distribution and binning set,",
+            "binning is set by `x` and `y` in this case).",
+            "The resulting distribution is visualized as a contour plot."
+          ].join(" ")
+        }
+      };
+    }
+  });
+
+  // lib/histogram2dcontour.js
+  var require_histogram2dcontour2 = __commonJS({
+    "lib/histogram2dcontour.js"(exports, module) {
+      "use strict";
+      module.exports = require_histogram2dcontour();
+    }
+  });
+
   // lib/index.js
   var require_index = __commonJS({
     "lib/index.js"(exports, module) {
       var Plotly = require_core2();
       Plotly.register([
         require_scatter2(),
-        require_contour2()
+        require_contour2(),
+        require_histogram2dcontour2()
         // traces
         // require('./bar'),
         // require('./box'),
