@@ -2,13 +2,150 @@
 
 /**
  * Canvas path drawing for contours
- * Extracted from canvas.js
+ * Based on Plotly's contour filling algorithm
  */
 
 var smooth = require('../../smooth');
 
 /**
+ * Create perimeter path for boundary closing
+ * @param {Object} style - Style options
+ * @returns {Array} Array of [x, y] perimeter points
+ */
+function createPerimeter(style) {
+    var m = style.z ? style.z.length : 10;
+    var n = style.z && style.z[0] ? style.z[0].length : 10;
+    var width = style.width || 500;
+    var height = style.height || 400;
+    var padding = style.padding || 30;
+
+    var xMin = padding;
+    var xMax = width - padding;
+    var yMin = padding;
+    var yMax = height - padding;
+
+    // Clockwise perimeter starting from top-left
+    return [
+        [xMin, yMin],  // 0: top-left
+        [xMax, yMin],  // 1: top-right
+        [xMax, yMax],  // 2: bottom-right
+        [xMin, yMax]   // 3: bottom-left
+    ];
+}
+
+/**
+ * Join all edge paths into a single path with proper boundary connections
+ * Based on Plotly's joinAllPaths function
+ * @param {Object} pathInfo - Path info object
+ * @param {Array} perimeter - Perimeter points
+ * @param {Object} style - Style options
+ * @returns {String} SVG path string
+ */
+function joinAllPaths(pathInfo, perimeter, style) {
+    var fullpath = '';
+    var edgepaths = pathInfo.edgepaths;
+
+    if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+        // No paths at all
+        return '';
+    }
+
+    var i = 0;
+    var startsleft = edgepaths.map(function(v, i) { return i; });
+    var newloop = true;
+    var endpt;
+    var newendpt;
+    var cnt;
+    var nexti;
+    var possiblei;
+    var addpath;
+
+    function istop(pt) { return Math.abs(pt[1] - perimeter[0][1]) < 0.1; }
+    function isbottom(pt) { return Math.abs(pt[1] - perimeter[2][1]) < 0.1; }
+    function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
+    function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
+
+    // Process edge paths (open paths that touch the boundary)
+    while (startsleft.length > 0) {
+        // Scale and smooth the current edge path
+        var scaledPath = edgepaths[i].map(function(pt) {
+            return scalePoint(style, pt);
+        });
+        addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
+        fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
+        startsleft.splice(startsleft.indexOf(i), 1);
+
+        endpt = scaledPath[scaledPath.length - 1];
+        nexti = -1;
+
+        // Loop through sides to find next path
+        for (cnt = 0; cnt < 4; cnt++) {
+            if (!endpt) break;
+
+            // Determine which corner to move to
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1]; // right top
+            else if (isleft(endpt)) newendpt = perimeter[0]; // left top
+            else if (isbottom(endpt)) newendpt = perimeter[3]; // right bottom
+            else if (isright(endpt)) newendpt = perimeter[2]; // left bottom
+
+            // Find next path that starts on this edge
+            for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
+                var ptNew = edgepaths[possiblei].map(function(pt) {
+                    return scalePoint(style, pt);
+                })[0];
+
+                // Check if ptNew is on the segment from endpt to newendpt
+                if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
+                    // Vertical edge
+                    if (Math.abs(endpt[0] - ptNew[0]) < 0.1 &&
+                        (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                        newendpt = ptNew;
+                        nexti = possiblei;
+                    }
+                } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
+                    // Horizontal edge
+                    if (Math.abs(endpt[1] - ptNew[1]) < 0.1 &&
+                        (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                        newendpt = ptNew;
+                        nexti = possiblei;
+                    }
+                }
+            }
+
+            endpt = newendpt;
+            if (nexti >= 0) break;
+            fullpath += 'L' + newendpt[0] + ' ' + newendpt[1];
+        }
+
+        if (nexti === edgepaths.length || nexti < 0) break;
+
+        i = nexti;
+
+        // if we closed back on a loop we already included,
+        // close it and start a new loop
+        newloop = (startsleft.indexOf(i) === -1);
+        if (newloop) {
+            if (startsleft.length > 0) {
+                i = startsleft[0];
+            }
+            fullpath += 'Z';
+        }
+    }
+
+    // Finally add the interior closed paths (THIS WAS MISSING!)
+    for (i = 0; i < pathInfo.paths.length; i++) {
+        var scaledPath = pathInfo.paths[i].map(function(pt) {
+            return scalePoint(style, pt);
+        });
+        fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+    }
+
+    return fullpath;
+}
+
+/**
  * Draw filled contour paths
+ * Using even-odd fill rule with prefixBoundary
  */
 function drawFilledPaths(ctx, contourResult, style) {
     var paths = contourResult.paths;
@@ -16,6 +153,7 @@ function drawFilledPaths(ctx, contourResult, style) {
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
     var smoothing = style.smoothing || 0;
+    var perimeter = createPerimeter(style);
 
     // Get color for this level
     function getColorForLevel(level) {
@@ -40,14 +178,23 @@ function drawFilledPaths(ctx, contourResult, style) {
 
         ctx.fillStyle = getColorForLevel(midLevel);
 
-        // Draw closed paths
-        for (var j = 0; j < pathInfo.paths.length; j++) {
-            drawPath(ctx, pathInfo.paths[j], smoothing, true, style);
+        // Build the complete path string
+        var boundaryPath = 'M' + perimeter.join('L') + 'Z';
+        var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
+        var fullpath = '';
+
+        // Use prefixBoundary flag
+        if (pathInfo.prefixBoundary) {
+            fullpath = boundaryPath + joinedPaths;
+        } else {
+            fullpath = joinedPaths;
         }
 
-        // Draw edge paths
-        for (j = 0; j < pathInfo.edgepaths.length; j++) {
-            drawEdgePath(ctx, pathInfo.edgepaths[j], smoothing, style);
+        // Draw the path using even-odd fill rule (same as SVG)
+        if (fullpath) {
+            ctx.beginPath();
+            drawSVGPath(ctx, fullpath);
+            ctx.fill('evenodd');  // Use even-odd rule like SVG
         }
     }
 }
@@ -110,46 +257,12 @@ function drawPath(ctx, path, smoothing, isClosed, style) {
 
 /**
  * Draw edge path (open at boundary)
+ * DEPRECATED: Now using joinAllPaths for proper boundary handling
  */
 function drawEdgePath(ctx, path, smoothing, style) {
-    if (path.length < 2) return;
-
-    var first = path[0];
-    var last = path[path.length - 1];
-    var width = style.width || 500;
-    var height = style.height || 400;
-    var padding = 30;
-
-    ctx.beginPath();
-    var start = scalePoint(style, first);
-    ctx.moveTo(start[0], start[1]);
-
-    for (var j = 1; j < path.length; j++) {
-        var pt = scalePoint(style, path[j]);
-        ctx.lineTo(pt[0], pt[1]);
-    }
-
-    // Close to appropriate edge
-    var lastCanvas = scalePoint(style, last);
-    var xMin = padding, xMax = width - padding;
-    var yMin = padding, yMax = height - padding;
-
-    if (Math.abs(start[0] - xMin) < 1) {  // Left edge
-        ctx.lineTo(xMin, lastCanvas[1]);
-        ctx.lineTo(xMin, start[1]);
-    } else if (Math.abs(start[0] - xMax) < 1) {  // Right edge
-        ctx.lineTo(xMax, lastCanvas[1]);
-        ctx.lineTo(xMax, start[1]);
-    } else if (Math.abs(start[1] - yMin) < 1) {  // Top edge
-        ctx.lineTo(lastCanvas[0], yMin);
-        ctx.lineTo(start[0], yMin);
-    } else {  // Bottom edge
-        ctx.lineTo(lastCanvas[0], yMax);
-        ctx.lineTo(start[0], yMax);
-    }
-
-    ctx.closePath();
-    ctx.fill();
+    // This function is kept for backward compatibility
+    // but edge paths are now handled in drawFilledPaths via joinAllPaths
+    drawPath(ctx, path, smoothing, false, style);
 }
 
 /**

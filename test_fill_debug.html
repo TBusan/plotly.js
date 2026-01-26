@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contour Fill Debug</title>
+    <style>
+        body { font-family: monospace; }
+        .container { display: flex; }
+        .panel { flex: 1; padding: 20px; }
+        canvas { border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Contour Fill Debug Tool</h1>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Plotly Reference</h2>
+            <div id="plotly"></div>
+        </div>
+        <div class="panel">
+            <h2>Contour-Core</h2>
+            <canvas id="core" width="500" height="400"></canvas>
+        </div>
+        <div class="panel">
+            <h2>Debug Info</h2>
+            <pre id="debug"></pre>
+        </div>
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // Generate test data
+        var grid = [];
+        for(var i = 0; i < 20; i++) {
+            grid[i] = [];
+            for(var j = 0; j < 30; j++) {
+                grid[i][j] = Math.sin(i * 0.3) * Math.cos(j * 0.3) * 10 + j * 0.3;
+            }
+        }
+
+        // Plotly original
+        var data = [{
+            z: grid,
+            type: 'contour',
+            contours: {
+                coloring: 'fill',
+                showlabels: false
+            },
+            colorscale: 'Viridis',
+            autocontour: true,
+            ncontours: 5
+        }];
+
+        var layout = {
+            width: 500,
+            height: 400,
+            margin: {l: 30, r: 30, t: 30, b: 30}
+        };
+
+        Plotly.newPlot('plotly', data, layout).then(function() {
+            // Get Plotly's SVG paths
+            var plotlySvg = document.querySelector('#plotly svg');
+            var plotlyPaths = plotlySvg.querySelectorAll('path.contourfill');
+            console.log('Plotly paths:', plotlyPaths.length);
+
+            var debugInfo = 'Plotly fill paths:\n';
+            plotlyPaths.forEach(function(p, i) {
+                debugInfo += 'Path ' + i + ' d="' + p.getAttribute('d').substring(0, 100) + '...\n';
+            });
+
+            // Contour-Core
+            var canvas = document.getElementById('core');
+            var ctx = canvas.getContext('2d');
+            var result = ContourCore.computeContours({z: grid}, {
+                autocontour: true,
+                ncontours: 5
+            });
+
+            debugInfo += '\nContour-Core:\n';
+            debugInfo += 'Total levels: ' + result.paths.length + '\n';
+
+            // Show first few levels
+            var shown = 0;
+            for(var i = 0; i < result.paths.length && shown < 5; i++) {
+                var p = result.paths[i];
+                if(p.edgepaths.length > 0 || p.paths.length > 0) {
+                    debugInfo += 'Level ' + p.level.toFixed(2) + ': edgepaths=' + p.edgepaths.length +
+                                   ', paths=' + p.paths.length + ', prefixBoundary=' + p.prefixBoundary + '\n';
+                    shown++;
+                }
+            }
+
+            document.getElementById('debug').textContent = debugInfo;
+
+            // Draw contour-core
+            ContourCore.drawTo(canvas, result, {
+                width: 500,
+                height: 400,
+                coloring: 'fill',
+                colorscale: 'Viridis',
+                showLabels: false
+            });
+        });
+    </script>
+</body>
+</html>

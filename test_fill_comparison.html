@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contour Fill Test</title>
+</head>
+<body>
+    <h1>Contour Fill Comparison</h1>
+
+    <div style="display: flex;">
+        <div style="flex: 1;">
+            <h2>Plotly Original</h2>
+            <div id="plotly"></div>
+        </div>
+        <div style="flex: 1;">
+            <h2>Contour-Core</h2>
+            <div id="core"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // Generate test data
+        var grid = [];
+        for(var i = 0; i < 20; i++) {
+            grid[i] = [];
+            for(var j = 0; j < 30; j++) {
+                grid[i][j] = Math.sin(i * 0.3) * Math.cos(j * 0.3) * 10 + j * 0.5;
+            }
+        }
+
+        // Plotly original
+        var data = [{
+            z: grid,
+            type: 'contour',
+            contours: {
+                coloring: 'fill',
+                showlabels: false
+            },
+            colorscale: 'Viridis'
+        }];
+
+        var layout = {
+            width: 500,
+            height: 400,
+            margin: {l: 30, r: 30, t: 30, b: 30}
+        };
+
+        Plotly.newPlot('plotly', data, layout);
+
+        // Contour-Core
+        var canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 400;
+        document.getElementById('core').appendChild(canvas);
+
+        var result = ContourCore.computeContours({z: grid}, {
+            autocontour: true,
+            ncontours: 8
+        });
+
+        ContourCore.drawTo(canvas, result, {
+            width: 500,
+            height: 400,
+            coloring: 'fill',
+            colorscale: 'Viridis',
+            showLabels: false
+        });
+    </script>
+</body>
+</html>

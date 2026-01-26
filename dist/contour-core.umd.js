@@ -1623,6 +1623,10 @@ function computeContours(grid, options) {
     // This must be called after findAllPaths and before returning results
     // It sets prefixBoundary flags needed for correct even-odd fill rule
     var contourOptions = options.contours || {};
+    // Default to 'fill' type if not specified
+    if (!contourOptions.type && !contourOptions.coloring) {
+        contourOptions.coloring = 'fill';
+    }
     closeBoundaries(pathinfo, contourOptions);
 
     // Convert paths to normalized format

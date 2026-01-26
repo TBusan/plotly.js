@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Single Level Fill Test</title>
+    <style>
+        canvas { border: 1px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Single Level Fill Test</h1>
+    <canvas id="test" width="500" height="400"></canvas>
+    <pre id="debug"></pre>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // Simple test grid
+        var grid = [
+            [1, 2, 3, 4, 5],
+            [2, 3, 4, 5, 6],
+            [3, 4, 5, 6, 7]
+        ];
+
+        var result = ContourCore.computeContours({z: grid}, {
+            start: 2,
+            end: 6,
+            size: 1
+        });
+
+        console.log('Result:', result);
+        var debugInfo = 'Levels: ' + result.levels + '\n';
+
+        result.paths.forEach(function(p, i) {
+            debugInfo += '\nLevel ' + p.level + ':\n';
+            debugInfo += '  edgepaths: ' + p.edgepaths.length + '\n';
+            debugInfo += '  paths: ' + p.paths.length + '\n';
+            debugInfo += '  prefixBoundary: ' + p.prefixBoundary + '\n';
+
+            p.edgepaths.forEach(function(ep, j) {
+                debugInfo += '    EP[' + j + '] length: ' + ep.length + '\n';
+            });
+        });
+
+        document.getElementById('debug').textContent = debugInfo;
+
+        // Draw on canvas
+        var canvas = document.getElementById('test');
+        var ctx = canvas.getContext('2d');
+
+        // Only draw the first level with edgepaths
+        for(var i = 0; i < result.paths.length; i++) {
+            var p = result.paths[i];
+            if(p.edgepaths.length > 0) {
+                ctx.fillStyle = i % 2 === 0 ? 'rgba(255,0,0,0.5)' : 'rgba(0,0,255,0.5)';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+
+                // Draw each edgepath separately to see structure
+                p.edgepaths.forEach(function(ep) {
+                    ctx.beginPath();
+                    var style = {z: grid, width: 500, height: 400, padding: 30};
+
+                    // Scale points
+                    var m = grid.length;
+                    var n = grid[0].length;
+                    var scaleX = (500 - 60) / (n - 1);
+                    var scaleY = (400 - 60) / (m - 1);
+
+                    var first = ep[0];
+                    ctx.moveTo(30 + first[0] * scaleX, 30 + (m - 1 - first[1]) * scaleY);
+
+                    for(var k = 1; k < ep.length; k++) {
+                        var pt = ep[k];
+                        ctx.lineTo(30 + pt[0] * scaleX, 30 + (m - 1 - pt[1]) * scaleY);
+                    }
+
+                    ctx.stroke();
+                    ctx.fill();
+                });
+
+                break; // Only draw first level with edgepaths
+            }
+        }
+    </script>
+</body>
+</html>
