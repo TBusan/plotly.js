@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contour-Core v0.2.0 - Simplified API Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #1976d2;
+            text-align: center;
+        }
+        h2 {
+            color: #424242;
+            margin-top: 30px;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 10px;
+        }
+        .demo-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .demo-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 500px;
+        }
+        .demo-card h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        .info-panel {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        .stat {
+            flex: 1;
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .code-block {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            border-left: 4px solid #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Contour-Core v0.2.0 - Simplified API Demo</h1>
+    <p style="text-align: center; color: #666;">
+        Null值支持 + 简化渲染API - 像Plotly一样简单调用
+    </p>
+
+    <!-- Demo 1: Simplified API with null values -->
+    <div class="demo-card">
+        <h3>示例 1: 简化 API + Null 值支持</h3>
+
+        <div class="info-panel">
+            <p><strong>特点：</strong>直接传入数据，自动处理 null 值，无需手动配置</p>
+            <p><strong>代码量：</strong>仅需 3 行核心代码！</p>
+        </div>
+
+        <div class="code-block">
+<strong>使用方法：</strong>
+ContourCore.render(canvas, {
+    z: [[null, 1, 2], [3, null, 5]],  // 支持null值
+    contours: { type: 'fill' },
+    colorscale: 'Viridis',
+    autocontour: true
+});
+        </div>
+
+        <canvas id="canvas1" width="500" height="400"></canvas>
+
+        <div class="stats" id="stats1"></div>
+    </div>
+
+    <!-- Demo 2: Comparison - Lines vs Fill -->
+    <div class="demo-card">
+        <h3>示例 2: 线条模式 vs 填充模式</h3>
+
+        <div class="info-panel">
+            <p><strong>左：</strong>contours.type = 'lines'</p>
+            <p><strong>右：</strong>contours.type = 'fill'</p>
+        </div>
+
+        <div class="demo-container">
+            <canvas id="canvas2-lines" width="450" height="350"></canvas>
+            <canvas id="canvas2-fill" width="450" height="350"></canvas>
+        </div>
+    </div>
+
+    <!-- Demo 3: Different Color Scales -->
+    <div class="demo-card">
+        <h3>示例 3: 预设配色方案</h3>
+
+        <div class="demo-container">
+            <canvas id="canvas3-viridis" width="300" height="300"></canvas>
+            <canvas id="canvas3-plasma" width="300" height="300"></canvas>
+            <canvas id="canvas3-hot" width="300" height="300"></canvas>
+        </div>
+        <div style="text-align: center; margin-top: 10px; color: #666;">
+            Viridis &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Plasma &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hot
+        </div>
+    </div>
+
+    <!-- Demo 4: Manual Contour Levels -->
+    <div class="demo-card">
+        <h3>示例 4: 手动指定等值线级别</h3>
+
+        <div class="info-panel">
+            <p><strong>配置：</strong>start: 0, end: 20, size: 2</p>
+        </div>
+
+        <canvas id="canvas4" width="500" height="350"></canvas>
+
+        <div class="stats" id="stats4"></div>
+    </div>
+
+    <!-- Load contour-core UMD build -->
+    <script src="dist/contour-core.umd.js"></script>
+
+    <script>
+        // Test data with null values
+        const DATASET_WITH_NULLS = [
+            [null, null, 12, 13, 14, 15, 16],
+            [null, 1, null, 11, null, null, 17],
+            [null, 2, 6, 7, null, null, 18],
+            [null, 3, null, 8, null, null, 19],
+            [5, 4, 10, 9, null, null, 20],
+            [null, null, null, 27, null, null, 21],
+            [null, null, null, 26, 25, 24, 22, 23]
+        ];
+
+        const COMPLETE_DATASET = [
+            [10, 11, 12, 13, 14, 15, 16],
+            [9, 10, 11, 12, 13, 14, 15],
+            [8, 9, 10, 11, 12, 13, 14],
+            [7, 8, 9, 10, 11, 12, 13],
+            [6, 7, 8, 9, 10, 11, 12],
+            [5, 6, 7, 8, 9, 10, 11],
+            [4, 5, 6, 7, 8, 9, 10]
+        ];
+
+        function showStats(elementId, result) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">${result.levels.length}</div>
+                    <div class="stat-label">等值线级别</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${result.nullCount || 0}</div>
+                    <div class="stat-label">Null 值数量</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${result.validCount || 0}</div>
+                    <div class="stat-label">有效值数量</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${result.paths.reduce((sum, p) => sum + p.paths.length + p.edgepaths.length, 0)}</div>
+                    <div class="stat-label">路径总数</div>
+                </div>
+            `;
+        }
+
+        function runDemo() {
+            if (typeof ContourCore === 'undefined') {
+                console.error('ContourCore not loaded!');
+                return;
+            }
+
+            console.log('=== Contour-Core v0.2.0 Demo ===\n');
+
+            // Demo 1: Simplified API with null values
+            console.log('Demo 1: Simplified API with null values...');
+            const start1 = performance.now();
+            const result1 = ContourCore.render(document.getElementById('canvas1'), {
+                z: DATASET_WITH_NULLS,
+                contours: { type: 'fill' },
+                colorscale: 'Viridis',
+                autocontour: true,
+                ncontours: 12,
+                smoothing: 0.5,
+                nullRegion: {
+                    visible: true,
+                    fill: '#ffffff',
+                    stroke: '#cccccc',
+                    strokeWidth: 1
+                },
+                colorbar: { show: true }
+            });
+            const time1 = (performance.now() - start1).toFixed(2);
+            showStats('stats1', result1);
+            console.log(`Demo 1 complete in ${time1}ms\n`);
+
+            // Demo 2: Lines vs Fill
+            console.log('Demo 2: Lines vs Fill...');
+            ContourCore.render(document.getElementById('canvas2-lines'), {
+                z: COMPLETE_DATASET,
+                contours: { type: 'lines' },
+                colorscale: 'Viridis',
+                autocontour: true,
+                ncontours: 10
+            });
+
+            ContourCore.render(document.getElementById('canvas2-fill'), {
+                z: COMPLETE_DATASET,
+                contours: { type: 'fill' },
+                colorscale: 'Viridis',
+                autocontour: true,
+                ncontours: 10,
+                smoothing: 0.5
+            });
+            console.log('Demo 2 complete\n');
+
+            // Demo 3: Different Color Scales
+            console.log('Demo 3: Different color scales...');
+            ContourCore.render(document.getElementById('canvas3-viridis'), {
+                z: COMPLETE_DATASET,
+                contours: { type: 'fill' },
+                colorscale: 'Viridis',
+                autocontour: true,
+                ncontours: 8
+            });
+
+            ContourCore.render(document.getElementById('canvas3-plasma'), {
+                z: COMPLETE_DATASET,
+                contours: { type: 'fill' },
+                colorscale: 'Plasma',
+                autocontour: true,
+                ncontours: 8
+            });
+
+            ContourCore.render(document.getElementById('canvas3-hot'), {
+                z: COMPLETE_DATASET,
+                contours: { type: 'fill' },
+                colorscale: 'Hot',
+                autocontour: true,
+                ncontours: 8
+            });
+            console.log('Demo 3 complete\n');
+
+            // Demo 4: Manual contour levels
+            console.log('Demo 4: Manual contour levels...');
+            const result4 = ContourCore.render(document.getElementById('canvas4'), {
+                z: COMPLETE_DATASET,
+                contours: {
+                    type: 'fill',
+                    start: 0,
+                    end: 20,
+                    size: 2
+                },
+                colorscale: 'Electric',
+                smoothing: 0.3,
+                colorbar: { show: true }
+            });
+            showStats('stats4', result4);
+            console.log('Demo 4 complete\n');
+
+            console.log('=== All Demos Complete! ===');
+            console.log('\n✅ v0.2.0 Features Demonstrated:');
+            console.log('  • Simplified API - render() in one call');
+            console.log('  • Null value support - automatic handling');
+            console.log('  • Multiple contour types - lines, fill');
+            console.log('  • Preset color scales - Viridis, Plasma, Hot, etc.');
+            console.log('  • Manual contour levels - start, end, size');
+            console.log('  • Null region visualization');
+            console.log('  • Built-in colorbar');
+        }
+
+        window.addEventListener('load', runDemo);
+    </script>
+</body>
+</html>

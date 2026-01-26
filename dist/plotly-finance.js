@@ -1,6 +1,6 @@
 /**
 * plotly.js (finance) v3.0.1
-* Copyright 2012-2025, Plotly, Inc.
+* Copyright 2012-2026, Plotly, Inc.
 * All rights reserved.
 * Licensed under the MIT license
 */
@@ -23,10 +23,6 @@ var Plotly = (() => {
   };
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  };
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, { get: all[name], enumerable: true });
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -2068,38 +2064,38 @@ var Plotly = (() => {
         function d3_rgb_hex(v) {
           return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
         }
-        function d3_rgb_parse(format, rgb2, hsl3) {
-          var r = 0, g = 0, b = 0, m1, m2, color2;
+        function d3_rgb_parse(format, rgb, hsl) {
+          var r = 0, g = 0, b = 0, m1, m2, color;
           m1 = /([a-z]+)\((.*)\)/.exec(format = format.toLowerCase());
           if (m1) {
             m2 = m1[2].split(",");
             switch (m1[1]) {
               case "hsl": {
-                return hsl3(parseFloat(m2[0]), parseFloat(m2[1]) / 100, parseFloat(m2[2]) / 100);
+                return hsl(parseFloat(m2[0]), parseFloat(m2[1]) / 100, parseFloat(m2[2]) / 100);
               }
               case "rgb": {
-                return rgb2(d3_rgb_parseNumber(m2[0]), d3_rgb_parseNumber(m2[1]), d3_rgb_parseNumber(m2[2]));
+                return rgb(d3_rgb_parseNumber(m2[0]), d3_rgb_parseNumber(m2[1]), d3_rgb_parseNumber(m2[2]));
               }
             }
           }
-          if (color2 = d3_rgb_names.get(format)) {
-            return rgb2(color2.r, color2.g, color2.b);
+          if (color = d3_rgb_names.get(format)) {
+            return rgb(color.r, color.g, color.b);
           }
-          if (format != null && format.charAt(0) === "#" && !isNaN(color2 = parseInt(format.slice(1), 16))) {
+          if (format != null && format.charAt(0) === "#" && !isNaN(color = parseInt(format.slice(1), 16))) {
             if (format.length === 4) {
-              r = (color2 & 3840) >> 4;
+              r = (color & 3840) >> 4;
               r = r >> 4 | r;
-              g = color2 & 240;
+              g = color & 240;
               g = g >> 4 | g;
-              b = color2 & 15;
+              b = color & 15;
               b = b << 4 | b;
             } else if (format.length === 7) {
-              r = (color2 & 16711680) >> 16;
-              g = (color2 & 65280) >> 8;
-              b = color2 & 255;
+              r = (color & 16711680) >> 16;
+              g = (color & 65280) >> 8;
+              b = color & 255;
             }
           }
-          return rgb2(r, g, b);
+          return rgb(r, g, b);
         }
         function d3_rgb_hsl(r, g, b) {
           var min = Math.min(r /= 255, g /= 255, b /= 255), max = Math.max(r, g, b), d = max - min, h, s, l = (max + min) / 2;
@@ -2541,16 +2537,16 @@ var Plotly = (() => {
           return now;
         }
         function d3_timer_sweep() {
-          var t02, t12 = d3_timer_queueHead, time = Infinity;
-          while (t12) {
-            if (t12.c) {
-              if (t12.t < time) time = t12.t;
-              t12 = (t02 = t12).n;
+          var t0, t1 = d3_timer_queueHead, time = Infinity;
+          while (t1) {
+            if (t1.c) {
+              if (t1.t < time) time = t1.t;
+              t1 = (t0 = t1).n;
             } else {
-              t12 = t02 ? t02.n = t12.n : d3_timer_queueHead = t12.n;
+              t1 = t0 ? t0.n = t1.n : d3_timer_queueHead = t1.n;
             }
           }
-          d3_timer_queueTail = t02;
+          d3_timer_queueTail = t0;
           return time;
         }
         d3.round = function(x, n) {
@@ -2883,54 +2879,54 @@ var Plotly = (() => {
         }
         function d3_geom_clipLine(x0, y0, x1, y1) {
           return function(line) {
-            var a = line.a, b = line.b, ax = a.x, ay = a.y, bx = b.x, by = b.y, t02 = 0, t12 = 1, dx = bx - ax, dy = by - ay, r;
+            var a = line.a, b = line.b, ax = a.x, ay = a.y, bx = b.x, by = b.y, t0 = 0, t1 = 1, dx = bx - ax, dy = by - ay, r;
             r = x0 - ax;
             if (!dx && r > 0) return;
             r /= dx;
             if (dx < 0) {
-              if (r < t02) return;
-              if (r < t12) t12 = r;
+              if (r < t0) return;
+              if (r < t1) t1 = r;
             } else if (dx > 0) {
-              if (r > t12) return;
-              if (r > t02) t02 = r;
+              if (r > t1) return;
+              if (r > t0) t0 = r;
             }
             r = x1 - ax;
             if (!dx && r < 0) return;
             r /= dx;
             if (dx < 0) {
-              if (r > t12) return;
-              if (r > t02) t02 = r;
+              if (r > t1) return;
+              if (r > t0) t0 = r;
             } else if (dx > 0) {
-              if (r < t02) return;
-              if (r < t12) t12 = r;
+              if (r < t0) return;
+              if (r < t1) t1 = r;
             }
             r = y0 - ay;
             if (!dy && r > 0) return;
             r /= dy;
             if (dy < 0) {
-              if (r < t02) return;
-              if (r < t12) t12 = r;
+              if (r < t0) return;
+              if (r < t1) t1 = r;
             } else if (dy > 0) {
-              if (r > t12) return;
-              if (r > t02) t02 = r;
+              if (r > t1) return;
+              if (r > t0) t0 = r;
             }
             r = y1 - ay;
             if (!dy && r < 0) return;
             r /= dy;
             if (dy < 0) {
-              if (r > t12) return;
-              if (r > t02) t02 = r;
+              if (r > t1) return;
+              if (r > t0) t0 = r;
             } else if (dy > 0) {
-              if (r < t02) return;
-              if (r < t12) t12 = r;
+              if (r < t0) return;
+              if (r < t1) t1 = r;
             }
-            if (t02 > 0) line.a = {
-              x: ax + t02 * dx,
-              y: ay + t02 * dy
+            if (t0 > 0) line.a = {
+              x: ax + t0 * dx,
+              y: ay + t0 * dy
             };
-            if (t12 < 1) line.b = {
-              x: ax + t12 * dx,
-              y: ay + t12 * dy
+            if (t1 < 1) line.b = {
+              x: ax + t1 * dx,
+              y: ay + t1 * dy
             };
             return line;
           };
@@ -3705,8 +3701,8 @@ var Plotly = (() => {
         function d3_ease_cubicInOut(t) {
           if (t <= 0) return 0;
           if (t >= 1) return 1;
-          var t22 = t * t, t32 = t22 * t;
-          return 4 * (t < 0.5 ? t32 : 3 * (t - t22) + t32 - 0.75);
+          var t2 = t * t, t3 = t2 * t;
+          return 4 * (t < 0.5 ? t3 : 3 * (t - t2) + t3 - 0.75);
         }
         function d3_ease_poly(e) {
           return function(t) {
@@ -5360,9 +5356,9 @@ var Plotly = (() => {
         function d3_scale_linear(domain, range, interpolate, clamp) {
           var output, input;
           function rescale() {
-            var linear2 = Math.min(domain.length, range.length) > 2 ? d3_scale_polylinear : d3_scale_bilinear, uninterpolate = clamp ? d3_uninterpolateClamp : d3_uninterpolateNumber;
-            output = linear2(domain, range, uninterpolate, interpolate);
-            input = linear2(range, domain, uninterpolate, d3_interpolate);
+            var linear = Math.min(domain.length, range.length) > 2 ? d3_scale_polylinear : d3_scale_bilinear, uninterpolate = clamp ? d3_uninterpolateClamp : d3_uninterpolateNumber;
+            output = linear(domain, range, uninterpolate, interpolate);
+            input = linear(range, domain, uninterpolate, d3_interpolate);
             return scale;
           }
           function scale(x) {
@@ -5409,8 +5405,8 @@ var Plotly = (() => {
           };
           return rescale();
         }
-        function d3_scale_linearRebind(scale, linear2) {
-          return d3.rebind(scale, linear2, "range", "rangeRound", "interpolate", "clamp");
+        function d3_scale_linearRebind(scale, linear) {
+          return d3.rebind(scale, linear, "range", "rangeRound", "interpolate", "clamp");
         }
         function d3_scale_linearNice(domain, m) {
           d3_scale_nice(domain, d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2]));
@@ -5448,7 +5444,7 @@ var Plotly = (() => {
         d3.scale.log = function() {
           return d3_scale_log(d3.scale.linear().domain([0, 1]), 10, true, [1, 10]);
         };
-        function d3_scale_log(linear2, base, positive, domain) {
+        function d3_scale_log(linear, base, positive, domain) {
           function log(x) {
             return (positive ? Math.log(x < 0 ? 0 : x) : -Math.log(x > 0 ? 0 : -x)) / Math.log(base);
           }
@@ -5456,26 +5452,26 @@ var Plotly = (() => {
             return positive ? Math.pow(base, x) : -Math.pow(base, -x);
           }
           function scale(x) {
-            return linear2(log(x));
+            return linear(log(x));
           }
           scale.invert = function(x) {
-            return pow(linear2.invert(x));
+            return pow(linear.invert(x));
           };
           scale.domain = function(x) {
             if (!arguments.length) return domain;
             positive = x[0] >= 0;
-            linear2.domain((domain = x.map(Number)).map(log));
+            linear.domain((domain = x.map(Number)).map(log));
             return scale;
           };
           scale.base = function(_) {
             if (!arguments.length) return base;
             base = +_;
-            linear2.domain(domain.map(log));
+            linear.domain(domain.map(log));
             return scale;
           };
           scale.nice = function() {
             var niced = d3_scale_nice(domain.map(log), positive ? Math : d3_scale_logNiceNegative);
-            linear2.domain(niced);
+            linear.domain(niced);
             domain = niced.map(pow);
             return scale;
           };
@@ -5498,9 +5494,9 @@ var Plotly = (() => {
             return ticks;
           };
           scale.copy = function() {
-            return d3_scale_log(linear2.copy(), base, positive, domain);
+            return d3_scale_log(linear.copy(), base, positive, domain);
           };
-          return d3_scale_linearRebind(scale, linear2);
+          return d3_scale_linearRebind(scale, linear);
         }
         var d3_scale_logNiceNegative = {
           floor: function(x) {
@@ -5513,17 +5509,17 @@ var Plotly = (() => {
         d3.scale.pow = function() {
           return d3_scale_pow(d3.scale.linear(), 1, [0, 1]);
         };
-        function d3_scale_pow(linear2, exponent, domain) {
+        function d3_scale_pow(linear, exponent, domain) {
           var powp = d3_scale_powPow(exponent), powb = d3_scale_powPow(1 / exponent);
           function scale(x) {
-            return linear2(powp(x));
+            return linear(powp(x));
           }
           scale.invert = function(x) {
-            return powb(linear2.invert(x));
+            return powb(linear.invert(x));
           };
           scale.domain = function(x) {
             if (!arguments.length) return domain;
-            linear2.domain((domain = x.map(Number)).map(powp));
+            linear.domain((domain = x.map(Number)).map(powp));
             return scale;
           };
           scale.ticks = function(m) {
@@ -5539,13 +5535,13 @@ var Plotly = (() => {
             if (!arguments.length) return exponent;
             powp = d3_scale_powPow(exponent = x);
             powb = d3_scale_powPow(1 / exponent);
-            linear2.domain(domain.map(powp));
+            linear.domain(domain.map(powp));
             return scale;
           };
           scale.copy = function() {
-            return d3_scale_pow(linear2.copy(), exponent, domain);
+            return d3_scale_pow(linear.copy(), exponent, domain);
           };
-          return d3_scale_linearRebind(scale, linear2);
+          return d3_scale_linearRebind(scale, linear);
         }
         function d3_scale_powPow(e) {
           return function(x) {
@@ -5764,25 +5760,25 @@ var Plotly = (() => {
           return d3_scale_identity([0, 1]);
         };
         function d3_scale_identity(domain) {
-          function identity2(x) {
+          function identity(x) {
             return +x;
           }
-          identity2.invert = identity2;
-          identity2.domain = identity2.range = function(x) {
+          identity.invert = identity;
+          identity.domain = identity.range = function(x) {
             if (!arguments.length) return domain;
-            domain = x.map(identity2);
-            return identity2;
+            domain = x.map(identity);
+            return identity;
           };
-          identity2.ticks = function(m) {
+          identity.ticks = function(m) {
             return d3_scale_linearTicks(domain, m);
           };
-          identity2.tickFormat = function(m, format) {
+          identity.tickFormat = function(m, format) {
             return d3_scale_linearTickFormat(domain, m, format);
           };
-          identity2.copy = function() {
+          identity.copy = function() {
             return d3_scale_identity(domain);
           };
-          return identity2;
+          return identity;
         }
         d3.svg = {};
         function d3_zero() {
@@ -5932,7 +5928,7 @@ var Plotly = (() => {
           return (x0 - x1) * y0 - (y0 - y1) * x0 > 0 ? 0 : 1;
         }
         function d3_svg_arcCornerTangents(p0, p1, r1, rc, cw) {
-          var x01 = p0[0] - p1[0], y01 = p0[1] - p1[1], lo = (cw ? rc : -rc) / Math.sqrt(x01 * x01 + y01 * y01), ox = lo * y01, oy = -lo * x01, x1 = p0[0] + ox, y1 = p0[1] + oy, x2 = p1[0] + ox, y2 = p1[1] + oy, x3 = (x1 + x2) / 2, y3 = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, d2 = dx * dx + dy * dy, r = r1 - rc, D2 = x1 * y2 - x2 * y1, d = (dy < 0 ? -1 : 1) * Math.sqrt(Math.max(0, r * r * d2 - D2 * D2)), cx0 = (D2 * dy - dx * d) / d2, cy0 = (-D2 * dx - dy * d) / d2, cx1 = (D2 * dy + dx * d) / d2, cy1 = (-D2 * dx + dy * d) / d2, dx0 = cx0 - x3, dy0 = cy0 - y3, dx1 = cx1 - x3, dy1 = cy1 - y3;
+          var x01 = p0[0] - p1[0], y01 = p0[1] - p1[1], lo = (cw ? rc : -rc) / Math.sqrt(x01 * x01 + y01 * y01), ox = lo * y01, oy = -lo * x01, x1 = p0[0] + ox, y1 = p0[1] + oy, x2 = p1[0] + ox, y2 = p1[1] + oy, x3 = (x1 + x2) / 2, y3 = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, d2 = dx * dx + dy * dy, r = r1 - rc, D = x1 * y2 - x2 * y1, d = (dy < 0 ? -1 : 1) * Math.sqrt(Math.max(0, r * r * d2 - D * D)), cx0 = (D * dy - dx * d) / d2, cy0 = (-D * dx - dy * d) / d2, cx1 = (D * dy + dx * d) / d2, cy1 = (-D * dx + dy * d) / d2, dx0 = cx0 - x3, dy0 = cy0 - y3, dx1 = cx1 - x3, dy1 = cy1 - y3;
           if (dx0 * dx0 + dy0 * dy0 > dx1 * dx1 + dy1 * dy1) cx0 = cx1, cy0 = cy1;
           return [[cx0 - ox, cy0 - oy], [cx0 * r1 / r, cy0 * r1 / r]];
         }
@@ -6042,9 +6038,9 @@ var Plotly = (() => {
           if (tangents.length < 1 || points.length != tangents.length && points.length != tangents.length + 2) {
             return d3_svg_lineLinear(points);
           }
-          var quad = points.length != tangents.length, path = "", p0 = points[0], p = points[1], t02 = tangents[0], t = t02, pi = 1;
+          var quad = points.length != tangents.length, path = "", p0 = points[0], p = points[1], t0 = tangents[0], t = t0, pi = 1;
           if (quad) {
-            path += "Q" + (p[0] - t02[0] * 2 / 3) + "," + (p[1] - t02[1] * 2 / 3) + "," + p[0] + "," + p[1];
+            path += "Q" + (p[0] - t0[0] * 2 / 3) + "," + (p[1] - t0[1] * 2 / 3) + "," + p[0] + "," + p[1];
             p0 = points[1];
             pi = 2;
           }
@@ -6052,7 +6048,7 @@ var Plotly = (() => {
             t = tangents[1];
             p = points[pi];
             pi++;
-            path += "C" + (p0[0] + t02[0]) + "," + (p0[1] + t02[1]) + "," + (p[0] - t[0]) + "," + (p[1] - t[1]) + "," + p[0] + "," + p[1];
+            path += "C" + (p0[0] + t0[0]) + "," + (p0[1] + t0[1]) + "," + (p[0] - t[0]) + "," + (p[1] - t[1]) + "," + p[0] + "," + p[1];
             for (var i = 2; i < tangents.length; i++, pi++) {
               p = points[pi];
               t = tangents[i];
@@ -7242,7 +7238,7 @@ var Plotly = (() => {
         typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && false ? define(["exports"], factory) : (global2 = global2 || self, factory(global2.d3 = global2.d3 || {}));
       })(exports, function(exports2) {
         "use strict";
-        var t02 = /* @__PURE__ */ new Date(), t12 = /* @__PURE__ */ new Date();
+        var t0 = /* @__PURE__ */ new Date(), t1 = /* @__PURE__ */ new Date();
         function newInterval(floori, offseti, count, field) {
           function interval(date) {
             return floori(date = arguments.length === 0 ? /* @__PURE__ */ new Date() : /* @__PURE__ */ new Date(+date)), date;
@@ -7288,9 +7284,9 @@ var Plotly = (() => {
           };
           if (count) {
             interval.count = function(start, end) {
-              t02.setTime(+start), t12.setTime(+end);
-              floori(t02), floori(t12);
-              return Math.floor(count(t02, t12));
+              t0.setTime(+start), t1.setTime(+end);
+              floori(t0), floori(t1);
+              return Math.floor(count(t0, t1));
             };
             interval.every = function(step) {
               step = Math.floor(step);
@@ -8265,18 +8261,18 @@ var Plotly = (() => {
             return Math.round(x).toString(16);
           }
         };
-        function identity2(x) {
+        function identity(x) {
           return x;
         }
         var map = Array.prototype.map, prefixes = ["y", "z", "a", "f", "p", "n", "\xB5", "m", "", "k", "M", "G", "T", "P", "E", "Z", "Y"];
         function formatLocale(locale2) {
-          var group = locale2.grouping === void 0 || locale2.thousands === void 0 ? identity2 : formatGroup(map.call(locale2.grouping, Number), locale2.thousands + ""), currencyPrefix = locale2.currency === void 0 ? "" : locale2.currency[0] + "", currencySuffix = locale2.currency === void 0 ? "" : locale2.currency[1] + "", decimal = locale2.decimal === void 0 ? "." : locale2.decimal + "", numerals = locale2.numerals === void 0 ? identity2 : formatNumerals(map.call(locale2.numerals, String)), percent = locale2.percent === void 0 ? "%" : locale2.percent + "", minus = locale2.minus === void 0 ? "-" : locale2.minus + "", nan = locale2.nan === void 0 ? "NaN" : locale2.nan + "";
+          var group = locale2.grouping === void 0 || locale2.thousands === void 0 ? identity : formatGroup(map.call(locale2.grouping, Number), locale2.thousands + ""), currencyPrefix = locale2.currency === void 0 ? "" : locale2.currency[0] + "", currencySuffix = locale2.currency === void 0 ? "" : locale2.currency[1] + "", decimal = locale2.decimal === void 0 ? "." : locale2.decimal + "", numerals = locale2.numerals === void 0 ? identity : formatNumerals(map.call(locale2.numerals, String)), percent = locale2.percent === void 0 ? "%" : locale2.percent + "", minus = locale2.minus === void 0 ? "-" : locale2.minus + "", nan = locale2.nan === void 0 ? "NaN" : locale2.nan + "";
           function newFormat(specifier) {
             specifier = formatSpecifier(specifier);
-            var fill = specifier.fill, align = specifier.align, sign = specifier.sign, symbol = specifier.symbol, zero2 = specifier.zero, width = specifier.width, comma = specifier.comma, precision = specifier.precision, trim = specifier.trim, type = specifier.type;
+            var fill = specifier.fill, align = specifier.align, sign = specifier.sign, symbol = specifier.symbol, zero = specifier.zero, width = specifier.width, comma = specifier.comma, precision = specifier.precision, trim = specifier.trim, type = specifier.type;
             if (type === "n") comma = true, type = "g";
             else if (!formatTypes[type]) precision === void 0 && (precision = 12), trim = true, type = "g";
-            if (zero2 || fill === "0" && align === "=") zero2 = true, fill = "0", align = "=";
+            if (zero || fill === "0" && align === "=") zero = true, fill = "0", align = "=";
             var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "", suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
             var formatType = formatTypes[type], maybeSuffix = /[defgprs%]/.test(type);
             precision = precision === void 0 ? 6 : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision)) : Math.max(0, Math.min(20, precision));
@@ -8304,9 +8300,9 @@ var Plotly = (() => {
                   }
                 }
               }
-              if (comma && !zero2) value = group(value, Infinity);
+              if (comma && !zero) value = group(value, Infinity);
               var length = valuePrefix.length + value.length + valueSuffix.length, padding = length < width ? new Array(width - length + 1).join(fill) : "";
-              if (comma && zero2) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
+              if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
               switch (align) {
                 case "<":
                   value = valuePrefix + value + valueSuffix + padding;
@@ -9140,17 +9136,17 @@ var Plotly = (() => {
     "node_modules/tinycolor2/tinycolor.js"(exports, module) {
       (function(Math2) {
         var trimLeft = /^\s+/, trimRight = /\s+$/, tinyCounter = 0, mathRound = Math2.round, mathMin = Math2.min, mathMax = Math2.max, mathRandom = Math2.random;
-        function tinycolor(color2, opts) {
-          color2 = color2 ? color2 : "";
+        function tinycolor(color, opts) {
+          color = color ? color : "";
           opts = opts || {};
-          if (color2 instanceof tinycolor) {
-            return color2;
+          if (color instanceof tinycolor) {
+            return color;
           }
           if (!(this instanceof tinycolor)) {
-            return new tinycolor(color2, opts);
+            return new tinycolor(color, opts);
           }
-          var rgb2 = inputToRGB(color2);
-          this._originalInput = color2, this._r = rgb2.r, this._g = rgb2.g, this._b = rgb2.b, this._a = rgb2.a, this._roundA = mathRound(100 * this._a) / 100, this._format = opts.format || rgb2.format;
+          var rgb = inputToRGB(color);
+          this._originalInput = color, this._r = rgb.r, this._g = rgb.g, this._b = rgb.b, this._a = rgb.a, this._roundA = mathRound(100 * this._a) / 100, this._format = opts.format || rgb.format;
           this._gradientType = opts.gradientType;
           if (this._r < 1) {
             this._r = mathRound(this._r);
@@ -9161,7 +9157,7 @@ var Plotly = (() => {
           if (this._b < 1) {
             this._b = mathRound(this._b);
           }
-          this._ok = rgb2.ok;
+          this._ok = rgb.ok;
           this._tc_id = tinyCounter++;
         }
         tinycolor.prototype = {
@@ -9184,15 +9180,15 @@ var Plotly = (() => {
             return this._a;
           },
           getBrightness: function() {
-            var rgb2 = this.toRgb();
-            return (rgb2.r * 299 + rgb2.g * 587 + rgb2.b * 114) / 1e3;
+            var rgb = this.toRgb();
+            return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1e3;
           },
           getLuminance: function() {
-            var rgb2 = this.toRgb();
-            var RsRGB, GsRGB, BsRGB, R, G, B2;
-            RsRGB = rgb2.r / 255;
-            GsRGB = rgb2.g / 255;
-            BsRGB = rgb2.b / 255;
+            var rgb = this.toRgb();
+            var RsRGB, GsRGB, BsRGB, R, G, B;
+            RsRGB = rgb.r / 255;
+            GsRGB = rgb.g / 255;
+            BsRGB = rgb.b / 255;
             if (RsRGB <= 0.03928) {
               R = RsRGB / 12.92;
             } else {
@@ -9204,11 +9200,11 @@ var Plotly = (() => {
               G = Math2.pow((GsRGB + 0.055) / 1.055, 2.4);
             }
             if (BsRGB <= 0.03928) {
-              B2 = BsRGB / 12.92;
+              B = BsRGB / 12.92;
             } else {
-              B2 = Math2.pow((BsRGB + 0.055) / 1.055, 2.4);
+              B = Math2.pow((BsRGB + 0.055) / 1.055, 2.4);
             }
-            return 0.2126 * R + 0.7152 * G + 0.0722 * B2;
+            return 0.2126 * R + 0.7152 * G + 0.0722 * B;
           },
           setAlpha: function(value) {
             this._a = boundAlpha(value);
@@ -9225,12 +9221,12 @@ var Plotly = (() => {
             return this._a == 1 ? "hsv(" + h + ", " + s + "%, " + v + "%)" : "hsva(" + h + ", " + s + "%, " + v + "%, " + this._roundA + ")";
           },
           toHsl: function() {
-            var hsl3 = rgbToHsl(this._r, this._g, this._b);
-            return { h: hsl3.h * 360, s: hsl3.s, l: hsl3.l, a: this._a };
+            var hsl = rgbToHsl(this._r, this._g, this._b);
+            return { h: hsl.h * 360, s: hsl.s, l: hsl.l, a: this._a };
           },
           toHslString: function() {
-            var hsl3 = rgbToHsl(this._r, this._g, this._b);
-            var h = mathRound(hsl3.h * 360), s = mathRound(hsl3.s * 100), l = mathRound(hsl3.l * 100);
+            var hsl = rgbToHsl(this._r, this._g, this._b);
+            var h = mathRound(hsl.h * 360), s = mathRound(hsl.s * 100), l = mathRound(hsl.l * 100);
             return this._a == 1 ? "hsl(" + h + ", " + s + "%, " + l + "%)" : "hsla(" + h + ", " + s + "%, " + l + "%, " + this._roundA + ")";
           },
           toHex: function(allow3Char) {
@@ -9321,11 +9317,11 @@ var Plotly = (() => {
             return tinycolor(this.toString());
           },
           _applyModification: function(fn, args) {
-            var color2 = fn.apply(null, [this].concat([].slice.call(args)));
-            this._r = color2._r;
-            this._g = color2._g;
-            this._b = color2._b;
-            this.setAlpha(color2._a);
+            var color = fn.apply(null, [this].concat([].slice.call(args)));
+            this._r = color._r;
+            this._g = color._g;
+            this._b = color._b;
+            this.setAlpha(color._a);
             return this;
           },
           lighten: function() {
@@ -9371,62 +9367,62 @@ var Plotly = (() => {
             return this._applyCombination(tetrad, arguments);
           }
         };
-        tinycolor.fromRatio = function(color2, opts) {
-          if (typeof color2 == "object") {
+        tinycolor.fromRatio = function(color, opts) {
+          if (typeof color == "object") {
             var newColor = {};
-            for (var i in color2) {
-              if (color2.hasOwnProperty(i)) {
+            for (var i in color) {
+              if (color.hasOwnProperty(i)) {
                 if (i === "a") {
-                  newColor[i] = color2[i];
+                  newColor[i] = color[i];
                 } else {
-                  newColor[i] = convertToPercentage(color2[i]);
+                  newColor[i] = convertToPercentage(color[i]);
                 }
               }
             }
-            color2 = newColor;
+            color = newColor;
           }
-          return tinycolor(color2, opts);
+          return tinycolor(color, opts);
         };
-        function inputToRGB(color2) {
-          var rgb2 = { r: 0, g: 0, b: 0 };
+        function inputToRGB(color) {
+          var rgb = { r: 0, g: 0, b: 0 };
           var a = 1;
           var s = null;
           var v = null;
           var l = null;
           var ok = false;
           var format = false;
-          if (typeof color2 == "string") {
-            color2 = stringInputToObject(color2);
+          if (typeof color == "string") {
+            color = stringInputToObject(color);
           }
-          if (typeof color2 == "object") {
-            if (isValidCSSUnit(color2.r) && isValidCSSUnit(color2.g) && isValidCSSUnit(color2.b)) {
-              rgb2 = rgbToRgb(color2.r, color2.g, color2.b);
+          if (typeof color == "object") {
+            if (isValidCSSUnit(color.r) && isValidCSSUnit(color.g) && isValidCSSUnit(color.b)) {
+              rgb = rgbToRgb(color.r, color.g, color.b);
               ok = true;
-              format = String(color2.r).substr(-1) === "%" ? "prgb" : "rgb";
-            } else if (isValidCSSUnit(color2.h) && isValidCSSUnit(color2.s) && isValidCSSUnit(color2.v)) {
-              s = convertToPercentage(color2.s);
-              v = convertToPercentage(color2.v);
-              rgb2 = hsvToRgb(color2.h, s, v);
+              format = String(color.r).substr(-1) === "%" ? "prgb" : "rgb";
+            } else if (isValidCSSUnit(color.h) && isValidCSSUnit(color.s) && isValidCSSUnit(color.v)) {
+              s = convertToPercentage(color.s);
+              v = convertToPercentage(color.v);
+              rgb = hsvToRgb(color.h, s, v);
               ok = true;
               format = "hsv";
-            } else if (isValidCSSUnit(color2.h) && isValidCSSUnit(color2.s) && isValidCSSUnit(color2.l)) {
-              s = convertToPercentage(color2.s);
-              l = convertToPercentage(color2.l);
-              rgb2 = hslToRgb(color2.h, s, l);
+            } else if (isValidCSSUnit(color.h) && isValidCSSUnit(color.s) && isValidCSSUnit(color.l)) {
+              s = convertToPercentage(color.s);
+              l = convertToPercentage(color.l);
+              rgb = hslToRgb(color.h, s, l);
               ok = true;
               format = "hsl";
             }
-            if (color2.hasOwnProperty("a")) {
-              a = color2.a;
+            if (color.hasOwnProperty("a")) {
+              a = color.a;
             }
           }
           a = boundAlpha(a);
           return {
             ok,
-            format: color2.format || format,
-            r: mathMin(255, mathMax(rgb2.r, 0)),
-            g: mathMin(255, mathMax(rgb2.g, 0)),
-            b: mathMin(255, mathMax(rgb2.b, 0)),
+            format: color.format || format,
+            r: mathMin(255, mathMax(rgb.r, 0)),
+            g: mathMin(255, mathMax(rgb.g, 0)),
+            b: mathMin(255, mathMax(rgb.b, 0)),
             a
           };
         }
@@ -9521,36 +9517,36 @@ var Plotly = (() => {
           return { r: r * 255, g: g * 255, b: b * 255 };
         }
         function rgbToHex(r, g, b, allow3Char) {
-          var hex2 = [
+          var hex = [
             pad2(mathRound(r).toString(16)),
             pad2(mathRound(g).toString(16)),
             pad2(mathRound(b).toString(16))
           ];
-          if (allow3Char && hex2[0].charAt(0) == hex2[0].charAt(1) && hex2[1].charAt(0) == hex2[1].charAt(1) && hex2[2].charAt(0) == hex2[2].charAt(1)) {
-            return hex2[0].charAt(0) + hex2[1].charAt(0) + hex2[2].charAt(0);
+          if (allow3Char && hex[0].charAt(0) == hex[0].charAt(1) && hex[1].charAt(0) == hex[1].charAt(1) && hex[2].charAt(0) == hex[2].charAt(1)) {
+            return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0);
           }
-          return hex2.join("");
+          return hex.join("");
         }
         function rgbaToHex(r, g, b, a, allow4Char) {
-          var hex2 = [
+          var hex = [
             pad2(mathRound(r).toString(16)),
             pad2(mathRound(g).toString(16)),
             pad2(mathRound(b).toString(16)),
             pad2(convertDecimalToHex(a))
           ];
-          if (allow4Char && hex2[0].charAt(0) == hex2[0].charAt(1) && hex2[1].charAt(0) == hex2[1].charAt(1) && hex2[2].charAt(0) == hex2[2].charAt(1) && hex2[3].charAt(0) == hex2[3].charAt(1)) {
-            return hex2[0].charAt(0) + hex2[1].charAt(0) + hex2[2].charAt(0) + hex2[3].charAt(0);
+          if (allow4Char && hex[0].charAt(0) == hex[0].charAt(1) && hex[1].charAt(0) == hex[1].charAt(1) && hex[2].charAt(0) == hex[2].charAt(1) && hex[3].charAt(0) == hex[3].charAt(1)) {
+            return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0) + hex[3].charAt(0);
           }
-          return hex2.join("");
+          return hex.join("");
         }
         function rgbaToArgbHex(r, g, b, a) {
-          var hex2 = [
+          var hex = [
             pad2(convertDecimalToHex(a)),
             pad2(mathRound(r).toString(16)),
             pad2(mathRound(g).toString(16)),
             pad2(mathRound(b).toString(16))
           ];
-          return hex2.join("");
+          return hex.join("");
         }
         tinycolor.equals = function(color1, color2) {
           if (!color1 || !color2) {
@@ -9565,99 +9561,99 @@ var Plotly = (() => {
             b: mathRandom()
           });
         };
-        function desaturate(color2, amount) {
+        function desaturate(color, amount) {
           amount = amount === 0 ? 0 : amount || 10;
-          var hsl3 = tinycolor(color2).toHsl();
-          hsl3.s -= amount / 100;
-          hsl3.s = clamp01(hsl3.s);
-          return tinycolor(hsl3);
+          var hsl = tinycolor(color).toHsl();
+          hsl.s -= amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return tinycolor(hsl);
         }
-        function saturate(color2, amount) {
+        function saturate(color, amount) {
           amount = amount === 0 ? 0 : amount || 10;
-          var hsl3 = tinycolor(color2).toHsl();
-          hsl3.s += amount / 100;
-          hsl3.s = clamp01(hsl3.s);
-          return tinycolor(hsl3);
+          var hsl = tinycolor(color).toHsl();
+          hsl.s += amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return tinycolor(hsl);
         }
-        function greyscale(color2) {
-          return tinycolor(color2).desaturate(100);
+        function greyscale(color) {
+          return tinycolor(color).desaturate(100);
         }
-        function lighten(color2, amount) {
+        function lighten(color, amount) {
           amount = amount === 0 ? 0 : amount || 10;
-          var hsl3 = tinycolor(color2).toHsl();
-          hsl3.l += amount / 100;
-          hsl3.l = clamp01(hsl3.l);
-          return tinycolor(hsl3);
+          var hsl = tinycolor(color).toHsl();
+          hsl.l += amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return tinycolor(hsl);
         }
-        function brighten(color2, amount) {
+        function brighten(color, amount) {
           amount = amount === 0 ? 0 : amount || 10;
-          var rgb2 = tinycolor(color2).toRgb();
-          rgb2.r = mathMax(0, mathMin(255, rgb2.r - mathRound(255 * -(amount / 100))));
-          rgb2.g = mathMax(0, mathMin(255, rgb2.g - mathRound(255 * -(amount / 100))));
-          rgb2.b = mathMax(0, mathMin(255, rgb2.b - mathRound(255 * -(amount / 100))));
-          return tinycolor(rgb2);
+          var rgb = tinycolor(color).toRgb();
+          rgb.r = mathMax(0, mathMin(255, rgb.r - mathRound(255 * -(amount / 100))));
+          rgb.g = mathMax(0, mathMin(255, rgb.g - mathRound(255 * -(amount / 100))));
+          rgb.b = mathMax(0, mathMin(255, rgb.b - mathRound(255 * -(amount / 100))));
+          return tinycolor(rgb);
         }
-        function darken(color2, amount) {
+        function darken(color, amount) {
           amount = amount === 0 ? 0 : amount || 10;
-          var hsl3 = tinycolor(color2).toHsl();
-          hsl3.l -= amount / 100;
-          hsl3.l = clamp01(hsl3.l);
-          return tinycolor(hsl3);
+          var hsl = tinycolor(color).toHsl();
+          hsl.l -= amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return tinycolor(hsl);
         }
-        function spin(color2, amount) {
-          var hsl3 = tinycolor(color2).toHsl();
-          var hue2 = (hsl3.h + amount) % 360;
-          hsl3.h = hue2 < 0 ? 360 + hue2 : hue2;
-          return tinycolor(hsl3);
+        function spin(color, amount) {
+          var hsl = tinycolor(color).toHsl();
+          var hue = (hsl.h + amount) % 360;
+          hsl.h = hue < 0 ? 360 + hue : hue;
+          return tinycolor(hsl);
         }
-        function complement(color2) {
-          var hsl3 = tinycolor(color2).toHsl();
-          hsl3.h = (hsl3.h + 180) % 360;
-          return tinycolor(hsl3);
+        function complement(color) {
+          var hsl = tinycolor(color).toHsl();
+          hsl.h = (hsl.h + 180) % 360;
+          return tinycolor(hsl);
         }
-        function triad(color2) {
-          var hsl3 = tinycolor(color2).toHsl();
-          var h = hsl3.h;
+        function triad(color) {
+          var hsl = tinycolor(color).toHsl();
+          var h = hsl.h;
           return [
-            tinycolor(color2),
-            tinycolor({ h: (h + 120) % 360, s: hsl3.s, l: hsl3.l }),
-            tinycolor({ h: (h + 240) % 360, s: hsl3.s, l: hsl3.l })
+            tinycolor(color),
+            tinycolor({ h: (h + 120) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 240) % 360, s: hsl.s, l: hsl.l })
           ];
         }
-        function tetrad(color2) {
-          var hsl3 = tinycolor(color2).toHsl();
-          var h = hsl3.h;
+        function tetrad(color) {
+          var hsl = tinycolor(color).toHsl();
+          var h = hsl.h;
           return [
-            tinycolor(color2),
-            tinycolor({ h: (h + 90) % 360, s: hsl3.s, l: hsl3.l }),
-            tinycolor({ h: (h + 180) % 360, s: hsl3.s, l: hsl3.l }),
-            tinycolor({ h: (h + 270) % 360, s: hsl3.s, l: hsl3.l })
+            tinycolor(color),
+            tinycolor({ h: (h + 90) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 180) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 270) % 360, s: hsl.s, l: hsl.l })
           ];
         }
-        function splitcomplement(color2) {
-          var hsl3 = tinycolor(color2).toHsl();
-          var h = hsl3.h;
+        function splitcomplement(color) {
+          var hsl = tinycolor(color).toHsl();
+          var h = hsl.h;
           return [
-            tinycolor(color2),
-            tinycolor({ h: (h + 72) % 360, s: hsl3.s, l: hsl3.l }),
-            tinycolor({ h: (h + 216) % 360, s: hsl3.s, l: hsl3.l })
+            tinycolor(color),
+            tinycolor({ h: (h + 72) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 216) % 360, s: hsl.s, l: hsl.l })
           ];
         }
-        function analogous(color2, results, slices) {
+        function analogous(color, results, slices) {
           results = results || 6;
           slices = slices || 30;
-          var hsl3 = tinycolor(color2).toHsl();
+          var hsl = tinycolor(color).toHsl();
           var part = 360 / slices;
-          var ret = [tinycolor(color2)];
-          for (hsl3.h = (hsl3.h - (part * results >> 1) + 720) % 360; --results; ) {
-            hsl3.h = (hsl3.h + part) % 360;
-            ret.push(tinycolor(hsl3));
+          var ret = [tinycolor(color)];
+          for (hsl.h = (hsl.h - (part * results >> 1) + 720) % 360; --results; ) {
+            hsl.h = (hsl.h + part) % 360;
+            ret.push(tinycolor(hsl));
           }
           return ret;
         }
-        function monochromatic(color2, results) {
+        function monochromatic(color, results) {
           results = results || 6;
-          var hsv = tinycolor(color2).toHsv();
+          var hsv = tinycolor(color).toHsv();
           var h = hsv.h, s = hsv.s, v = hsv.v;
           var ret = [];
           var modification = 1 / results;
@@ -9672,13 +9668,13 @@ var Plotly = (() => {
           var rgb1 = tinycolor(color1).toRgb();
           var rgb2 = tinycolor(color2).toRgb();
           var p = amount / 100;
-          var rgba2 = {
+          var rgba = {
             r: (rgb2.r - rgb1.r) * p + rgb1.r,
             g: (rgb2.g - rgb1.g) * p + rgb1.g,
             b: (rgb2.b - rgb1.b) * p + rgb1.b,
             a: (rgb2.a - rgb1.a) * p + rgb1.a
           };
-          return tinycolor(rgba2);
+          return tinycolor(rgba);
         };
         tinycolor.readability = function(color1, color2) {
           var c1 = tinycolor(color1);
@@ -9956,69 +9952,69 @@ var Plotly = (() => {
             hex8: /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/
           };
         }();
-        function isValidCSSUnit(color2) {
-          return !!matchers.CSS_UNIT.exec(color2);
+        function isValidCSSUnit(color) {
+          return !!matchers.CSS_UNIT.exec(color);
         }
-        function stringInputToObject(color2) {
-          color2 = color2.replace(trimLeft, "").replace(trimRight, "").toLowerCase();
-          var named2 = false;
-          if (names[color2]) {
-            color2 = names[color2];
-            named2 = true;
-          } else if (color2 == "transparent") {
+        function stringInputToObject(color) {
+          color = color.replace(trimLeft, "").replace(trimRight, "").toLowerCase();
+          var named = false;
+          if (names[color]) {
+            color = names[color];
+            named = true;
+          } else if (color == "transparent") {
             return { r: 0, g: 0, b: 0, a: 0, format: "name" };
           }
           var match;
-          if (match = matchers.rgb.exec(color2)) {
+          if (match = matchers.rgb.exec(color)) {
             return { r: match[1], g: match[2], b: match[3] };
           }
-          if (match = matchers.rgba.exec(color2)) {
+          if (match = matchers.rgba.exec(color)) {
             return { r: match[1], g: match[2], b: match[3], a: match[4] };
           }
-          if (match = matchers.hsl.exec(color2)) {
+          if (match = matchers.hsl.exec(color)) {
             return { h: match[1], s: match[2], l: match[3] };
           }
-          if (match = matchers.hsla.exec(color2)) {
+          if (match = matchers.hsla.exec(color)) {
             return { h: match[1], s: match[2], l: match[3], a: match[4] };
           }
-          if (match = matchers.hsv.exec(color2)) {
+          if (match = matchers.hsv.exec(color)) {
             return { h: match[1], s: match[2], v: match[3] };
           }
-          if (match = matchers.hsva.exec(color2)) {
+          if (match = matchers.hsva.exec(color)) {
             return { h: match[1], s: match[2], v: match[3], a: match[4] };
           }
-          if (match = matchers.hex8.exec(color2)) {
+          if (match = matchers.hex8.exec(color)) {
             return {
               r: parseIntFromHex(match[1]),
               g: parseIntFromHex(match[2]),
               b: parseIntFromHex(match[3]),
               a: convertHexToDecimal(match[4]),
-              format: named2 ? "name" : "hex8"
+              format: named ? "name" : "hex8"
             };
           }
-          if (match = matchers.hex6.exec(color2)) {
+          if (match = matchers.hex6.exec(color)) {
             return {
               r: parseIntFromHex(match[1]),
               g: parseIntFromHex(match[2]),
               b: parseIntFromHex(match[3]),
-              format: named2 ? "name" : "hex"
+              format: named ? "name" : "hex"
             };
           }
-          if (match = matchers.hex4.exec(color2)) {
+          if (match = matchers.hex4.exec(color)) {
             return {
               r: parseIntFromHex(match[1] + "" + match[1]),
               g: parseIntFromHex(match[2] + "" + match[2]),
               b: parseIntFromHex(match[3] + "" + match[3]),
               a: convertHexToDecimal(match[4] + "" + match[4]),
-              format: named2 ? "name" : "hex8"
+              format: named ? "name" : "hex8"
             };
           }
-          if (match = matchers.hex3.exec(color2)) {
+          if (match = matchers.hex3.exec(color)) {
             return {
               r: parseIntFromHex(match[1] + "" + match[1]),
               g: parseIntFromHex(match[2] + "" + match[2]),
               b: parseIntFromHex(match[3] + "" + match[3]),
-              format: named2 ? "name" : "hex"
+              format: named ? "name" : "hex"
             };
           }
           return false;
@@ -10771,27 +10767,27 @@ var Plotly = (() => {
       var tinycolor = require_tinycolor();
       var isNumeric = require_fast_isnumeric();
       var isTypedArray = require_array().isTypedArray;
-      var color2 = module.exports = {};
+      var color = module.exports = {};
       var colorAttrs = require_attributes3();
-      color2.defaults = colorAttrs.defaults;
-      var defaultLine = color2.defaultLine = colorAttrs.defaultLine;
-      color2.lightLine = colorAttrs.lightLine;
-      var background = color2.background = colorAttrs.background;
-      color2.tinyRGB = function(tc) {
+      color.defaults = colorAttrs.defaults;
+      var defaultLine = color.defaultLine = colorAttrs.defaultLine;
+      color.lightLine = colorAttrs.lightLine;
+      var background = color.background = colorAttrs.background;
+      color.tinyRGB = function(tc) {
         var c = tc.toRgb();
         return "rgb(" + Math.round(c.r) + ", " + Math.round(c.g) + ", " + Math.round(c.b) + ")";
       };
-      color2.rgb = function(cstr) {
-        return color2.tinyRGB(tinycolor(cstr));
+      color.rgb = function(cstr) {
+        return color.tinyRGB(tinycolor(cstr));
       };
-      color2.opacity = function(cstr) {
+      color.opacity = function(cstr) {
         return cstr ? tinycolor(cstr).getAlpha() : 0;
       };
-      color2.addOpacity = function(cstr, op) {
+      color.addOpacity = function(cstr, op) {
         var c = tinycolor(cstr).toRgb();
         return "rgba(" + Math.round(c.r) + ", " + Math.round(c.g) + ", " + Math.round(c.b) + ", " + op + ")";
       };
-      color2.combine = function(front, back) {
+      color.combine = function(front, back) {
         var fc = tinycolor(front).toRgb();
         if (fc.a === 1) return tinycolor(front).toRgbString();
         var bc = tinycolor(back || background).toRgb();
@@ -10807,7 +10803,7 @@ var Plotly = (() => {
         };
         return tinycolor(fcflat).toRgbString();
       };
-      color2.interpolate = function(first, second, factor) {
+      color.interpolate = function(first, second, factor) {
         var fc = tinycolor(first).toRgb();
         var sc = tinycolor(second).toRgb();
         var ic = {
@@ -10817,24 +10813,24 @@ var Plotly = (() => {
         };
         return tinycolor(ic).toRgbString();
       };
-      color2.contrast = function(cstr, lightAmount, darkAmount) {
+      color.contrast = function(cstr, lightAmount, darkAmount) {
         var tc = tinycolor(cstr);
-        if (tc.getAlpha() !== 1) tc = tinycolor(color2.combine(cstr, background));
+        if (tc.getAlpha() !== 1) tc = tinycolor(color.combine(cstr, background));
         var newColor = tc.isDark() ? lightAmount ? tc.lighten(lightAmount) : background : darkAmount ? tc.darken(darkAmount) : defaultLine;
         return newColor.toString();
       };
-      color2.stroke = function(s, c) {
+      color.stroke = function(s, c) {
         var tc = tinycolor(c);
-        s.style({ stroke: color2.tinyRGB(tc), "stroke-opacity": tc.getAlpha() });
+        s.style({ stroke: color.tinyRGB(tc), "stroke-opacity": tc.getAlpha() });
       };
-      color2.fill = function(s, c) {
+      color.fill = function(s, c) {
         var tc = tinycolor(c);
         s.style({
-          fill: color2.tinyRGB(tc),
+          fill: color.tinyRGB(tc),
           "fill-opacity": tc.getAlpha()
         });
       };
-      color2.clean = function(container) {
+      color.clean = function(container) {
         if (!container || typeof container !== "object") return;
         var keys = Object.keys(container);
         var i, j, key, val;
@@ -10852,9 +10848,9 @@ var Plotly = (() => {
           } else if (Array.isArray(val)) {
             var el0 = val[0];
             if (!Array.isArray(el0) && el0 && typeof el0 === "object") {
-              for (j = 0; j < val.length; j++) color2.clean(val[j]);
+              for (j = 0; j < val.length; j++) color.clean(val[j]);
             }
-          } else if (val && typeof val === "object" && !isTypedArray(val)) color2.clean(val);
+          } else if (val && typeof val === "object" && !isTypedArray(val)) color.clean(val);
         }
       };
       function cleanOne(val) {
@@ -10864,8 +10860,8 @@ var Plotly = (() => {
         var match = valTrim.match(/^rgba?\s*\(([^()]*)\)$/);
         if (!match) return val;
         var parts = match[1].trim().split(/\s*[\s,]\s*/);
-        var rgba2 = valTrim.charAt(3) === "a" && parts.length === 4;
-        if (!rgba2 && parts.length !== 3) return val;
+        var rgba = valTrim.charAt(3) === "a" && parts.length === 4;
+        if (!rgba && parts.length !== 3) return val;
         for (var i = 0; i < parts.length; i++) {
           if (!parts[i].length) return val;
           parts[i] = Number(parts[i]);
@@ -10879,7 +10875,7 @@ var Plotly = (() => {
           }
         }
         var rgbStr = Math.round(parts[0] * 255) + ", " + Math.round(parts[1] * 255) + ", " + Math.round(parts[2] * 255);
-        if (rgba2) return "rgba(" + rgbStr + ", " + parts[3] + ")";
+        if (rgba) return "rgba(" + rgbStr + ", " + parts[3] + ")";
         return "rgb(" + rgbStr + ")";
       }
     }
@@ -10925,7 +10921,7 @@ var Plotly = (() => {
       var extendFlat = require_extend().extendFlat;
       var baseTraceAttrs = require_attributes2();
       var colorscales = require_scales();
-      var Color2 = require_color();
+      var Color = require_color();
       var DESELECTDIM = require_interactions().DESELECTDIM;
       var nestedProperty = require_nested_property();
       var counterRegex = require_regex().counter;
@@ -11007,8 +11003,8 @@ var Plotly = (() => {
         },
         colorlist: {
           coerceFunction: function(v, propOut, dflt) {
-            function isColor(color2) {
-              return tinycolor(color2).isValid();
+            function isColor(color) {
+              return tinycolor(color).isValid();
             }
             if (!Array.isArray(v) || !v.length) propOut.set(dflt);
             else if (v.every(isColor)) propOut.set(v);
@@ -11217,8 +11213,14 @@ var Plotly = (() => {
       };
       exports.coercePattern = function(coerce, attr, markerColor, hasMarkerColorscale) {
         var shape = coerce(attr + ".shape");
-        if (shape) {
-          coerce(attr + ".solidity");
+        var path;
+        if (!shape) {
+          path = coerce(attr + ".path");
+        }
+        if (shape || path) {
+          if (shape) {
+            coerce(attr + ".solidity");
+          }
           coerce(attr + ".size");
           var fillmode = coerce(attr + ".fillmode");
           var isOverlay = fillmode === "overlay";
@@ -11229,7 +11231,7 @@ var Plotly = (() => {
             );
             coerce(
               attr + ".fgcolor",
-              isOverlay ? Color2.contrast(bgcolor) : markerColor
+              isOverlay ? Color.contrast(bgcolor) : markerColor
             );
           }
           coerce(
@@ -11731,8 +11733,8 @@ var Plotly = (() => {
   // node_modules/gl-mat4/identity.js
   var require_identity = __commonJS({
     "node_modules/gl-mat4/identity.js"(exports, module) {
-      module.exports = identity2;
-      function identity2(out) {
+      module.exports = identity;
+      function identity(out) {
         out[0] = 1;
         out[1] = 0;
         out[2] = 0;
@@ -12464,12 +12466,12 @@ var Plotly = (() => {
   // node_modules/gl-mat4/lookAt.js
   var require_lookAt = __commonJS({
     "node_modules/gl-mat4/lookAt.js"(exports, module) {
-      var identity2 = require_identity();
+      var identity = require_identity();
       module.exports = lookAt;
       function lookAt(out, eye, center, up) {
         var x0, x1, x2, y0, y1, y2, z0, z1, z2, len, eyex = eye[0], eyey = eye[1], eyez = eye[2], upx = up[0], upy = up[1], upz = up[2], centerx = center[0], centery = center[1], centerz = center[2];
         if (Math.abs(eyex - centerx) < 1e-6 && Math.abs(eyey - centery) < 1e-6 && Math.abs(eyez - centerz) < 1e-6) {
-          return identity2(out);
+          return identity(out);
         }
         z0 = eyex - centerx;
         z1 = eyey - centery;
@@ -13079,6 +13081,11 @@ var Plotly = (() => {
           valType: "enumerated",
           values: ["", "/", "\\", "x", "-", "|", "+", "."],
           dflt: "",
+          arrayOk: true,
+          editType: "style"
+        },
+        path: {
+          valType: "string",
           arrayOk: true,
           editType: "style"
         },
@@ -13735,16 +13742,16 @@ var Plotly = (() => {
     }
   });
 
-  // temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css
+  // temp_stylePlugin:node_modules\maplibre-gl\dist\maplibre-gl.css
   var init_maplibre_gl = __esm({
-    "temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "temp_stylePlugin:node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
     }
   });
 
-  // stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css
+  // stylePlugin:D:\study\code\webgl\plotly.js\node_modules\maplibre-gl\dist\maplibre-gl.css
   var maplibre_gl_exports = {};
   var init_maplibre_gl2 = __esm({
-    "stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "stylePlugin:D:\\study\\code\\webgl\\plotly.js\\node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
       init_maplibre_gl();
     }
   });
@@ -14315,7 +14322,7 @@ var Plotly = (() => {
   var require_identity2 = __commonJS({
     "src/lib/identity.js"(exports, module) {
       "use strict";
-      module.exports = function identity2(d) {
+      module.exports = function identity(d) {
         return d;
       };
     }
@@ -14327,7 +14334,7 @@ var Plotly = (() => {
       "use strict";
       var isNumeric = require_fast_isnumeric();
       var loggers = require_loggers();
-      var identity2 = require_identity2();
+      var identity = require_identity2();
       var BADNUM = require_numerical().BADNUM;
       var roundingError = 1e-9;
       exports.findBin = function(val, bins, linelow) {
@@ -14424,7 +14431,7 @@ var Plotly = (() => {
         return notReversed ? array : array.reverse();
       };
       exports.findIndexOfMin = function(arr, fn) {
-        fn = fn || identity2;
+        fn = fn || identity;
         var min = Infinity;
         var ind;
         for (var i = 0; i < arr.length; i++) {
@@ -17719,7 +17726,7 @@ var Plotly = (() => {
       var PlotSchema = require_plot_schema();
       var Template = require_plot_template();
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var BADNUM = require_numerical().BADNUM;
       var axisIDs = require_axis_ids();
       var clearOutline = require_handle_outline().clearOutline;
@@ -17797,7 +17804,7 @@ var Plotly = (() => {
           s.style({
             "font-family": '"Open Sans", Arial, sans-serif',
             "font-size": "12px",
-            fill: Color2.defaultLine,
+            fill: Color.defaultLine,
             "pointer-events": "all"
           }).each(function() {
             var links = d3.select(this);
@@ -18473,7 +18480,7 @@ var Plotly = (() => {
         return frameOut;
       };
       plots.supplyTraceDefaults = function(traceIn, traceOut, colorIndex, layout, traceInIndex) {
-        var colorway = layout.colorway || Color2.defaults;
+        var colorway = layout.colorway || Color.defaults;
         var defaultColor = colorway[colorIndex % colorway.length];
         var i;
         function coerce(attr, dflt) {
@@ -19905,10 +19912,10 @@ var Plotly = (() => {
       };
       plots.reselect = function(gd) {
         var fullLayout = gd._fullLayout;
-        var A2 = (gd.layout || {}).selections;
-        var B2 = fullLayout._previousSelections;
-        fullLayout._previousSelections = A2;
-        var mayEmitSelected = fullLayout._reselect || JSON.stringify(A2) !== JSON.stringify(B2);
+        var A = (gd.layout || {}).selections;
+        var B = fullLayout._previousSelections;
+        fullLayout._previousSelections = A;
+        var mayEmitSelected = fullLayout._reselect || JSON.stringify(A) !== JSON.stringify(B);
         Registry.getComponentMethod("selections", "reselect")(gd, mayEmitSelected);
       };
       plots.generalUpdatePerTraceModule = function(gd, subplot, subplotCalcData, subplotLayout) {
@@ -20629,11 +20636,11 @@ var Plotly = (() => {
         };
       }
       var onePx = "1px ";
-      exports.makeTextShadow = function(color2) {
+      exports.makeTextShadow = function(color) {
         var x = onePx;
         var y = onePx;
         var b = onePx;
-        return x + y + b + color2 + ", -" + x + "-" + y + b + color2 + ", " + x + "-" + y + b + color2 + ", -" + x + y + b + color2;
+        return x + y + b + color + ", -" + x + "-" + y + b + color + ", " + x + "-" + y + b + color + ", -" + x + y + b + color;
       };
       exports.makeEditable = function(context, options) {
         var gd = options.gd;
@@ -20733,16 +20740,16 @@ var Plotly = (() => {
       var tinycolor = require_tinycolor();
       var isNumeric = require_fast_isnumeric();
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var isValidScale = require_scales().isValid;
       function hasColorscale(trace, containerStr, colorKey) {
         var container = containerStr ? Lib.nestedProperty(trace, containerStr).get() || {} : trace;
-        var color2 = container[colorKey || "color"];
-        if (color2 && color2._inputArray) color2 = color2._inputArray;
+        var color = container[colorKey || "color"];
+        if (color && color._inputArray) color = color._inputArray;
         var isArrayWithOneNumber = false;
-        if (Lib.isArrayOrTypedArray(color2)) {
-          for (var i = 0; i < color2.length; i++) {
-            if (isNumeric(color2[i])) {
+        if (Lib.isArrayOrTypedArray(color)) {
+          for (var i = 0; i < color.length; i++) {
+            if (isNumeric(color[i])) {
               isArrayWithOneNumber = true;
               break;
             }
@@ -20821,8 +20828,8 @@ var Plotly = (() => {
         var N = range.length;
         var _range = new Array(N);
         for (var i = 0; i < N; i++) {
-          var rgba2 = tinycolor(range[i]).toRgb();
-          _range[i] = [rgba2.r, rgba2.g, rgba2.b, rgba2.a];
+          var rgba = tinycolor(range[i]).toRgb();
+          _range[i] = [rgba.r, rgba.g, rgba.b, rgba.a];
         }
         var _sclFunc = d3.scale.linear().domain(domain).range(_range).clamp(true);
         var noNumericCheck = opts.noNumericCheck;
@@ -20838,13 +20845,13 @@ var Plotly = (() => {
           sclFunc = function(v) {
             if (isNumeric(v)) return _sclFunc(v);
             else if (tinycolor(v).isValid()) return v;
-            else return Color2.defaultLine;
+            else return Color.defaultLine;
           };
         } else {
           sclFunc = function(v) {
             if (isNumeric(v)) return colorArray2rbga(_sclFunc(v));
             else if (tinycolor(v).isValid()) return v;
-            else return Color2.defaultLine;
+            else return Color.defaultLine;
           };
         }
         sclFunc.domain = _sclFunc.domain;
@@ -21474,6 +21481,12 @@ var Plotly = (() => {
           valType: "color",
           dflt: colorAttrs.defaultLine,
           editType: "ticks"
+        },
+        zerolinelayer: {
+          valType: "enumerated",
+          values: ["above traces", "below traces"],
+          dflt: "below traces",
+          editType: "plot"
         },
         zerolinewidth: {
           valType: "number",
@@ -23488,9 +23501,9 @@ var Plotly = (() => {
         lastAngle = angle;
         lastStandoff = standoff;
         lastPathIn = path;
-        function rotate(t4, xy) {
-          var cosT = cos(t4);
-          var sinT = sin(t4);
+        function rotate(t2, xy) {
+          var cosT = cos(t2);
+          var sinT = sin(t2);
           var x2 = xy[0];
           var y2 = xy[1] + (standoff || 0);
           return [
@@ -23525,9 +23538,9 @@ var Plotly = (() => {
           } else if (op === "A") {
             x = +cmdI[1];
             y = +cmdI[2];
-            var E2 = rotate(t, [+cmdI[6], +cmdI[7]]);
-            cmdI[6] = E2[0];
-            cmdI[7] = E2[1];
+            var E = rotate(t, [+cmdI[6], +cmdI[7]]);
+            cmdI[6] = E[0];
+            cmdI[7] = E[1];
             cmdI[3] = +cmdI[3] + angle;
           }
           if (op === "H" || op === "V") op = "L";
@@ -23536,11 +23549,11 @@ var Plotly = (() => {
             x -= x0;
             y -= y0;
           }
-          var B2 = rotate(t, [x, y]);
+          var B = rotate(t, [x, y]);
           if (op === "H" || op === "V") op = "L";
           if (op === "M" || op === "L" || op === "m" || op === "l") {
-            cmdI[1] = B2[0];
-            cmdI[2] = B2[1];
+            cmdI[1] = B[0];
+            cmdI[2] = B[1];
           }
           cmdI[0] = op;
           str += cmdI[0] + cmdI.slice(1).join(",");
@@ -23561,7 +23574,7 @@ var Plotly = (() => {
       var isNumeric = require_fast_isnumeric();
       var tinycolor = require_tinycolor();
       var Registry = require_registry();
-      var Color2 = require_color();
+      var Color = require_color();
       var Colorscale = require_colorscale();
       var strTranslate = Lib.strTranslate;
       var svgTextUtils = require_svg_text_utils();
@@ -23577,7 +23590,7 @@ var Plotly = (() => {
         var variant = font.variant;
         var style = font.style;
         var weight = font.weight;
-        var color2 = font.color;
+        var color = font.color;
         var size = font.size;
         var family = font.family;
         var shadow = font.shadow;
@@ -23585,12 +23598,12 @@ var Plotly = (() => {
         var textcase = font.textcase;
         if (family) s.style("font-family", family);
         if (size + 1) s.style("font-size", size + "px");
-        if (color2) s.call(Color2.fill, color2);
+        if (color) s.call(Color.fill, color);
         if (weight) s.style("font-weight", weight);
         if (style) s.style("font-style", style);
         if (variant) s.style("font-variant", variant);
         if (textcase) s.style("text-transform", dropNone(textcase2transform(textcase)));
-        if (shadow) s.style("text-shadow", shadow === "auto" ? svgTextUtils.makeTextShadow(Color2.contrast(color2)) : dropNone(shadow));
+        if (shadow) s.style("text-shadow", shadow === "auto" ? svgTextUtils.makeTextShadow(Color.contrast(color)) : dropNone(shadow));
         if (lineposition) s.style("text-decoration-line", dropNone(lineposition2decorationLine(lineposition)));
       };
       function dropNone(a) {
@@ -23668,7 +23681,7 @@ var Plotly = (() => {
         var line = (((d || [])[0] || {}).trace || {}).line || {};
         var lw1 = lw || line.width || 0;
         var dash = ld || line.dash || "";
-        Color2.stroke(s, lc || line.color);
+        Color.stroke(s, lc || line.color);
         drawing.dashLine(s, dash, lw1);
       };
       drawing.lineGroupStyle = function(s, lw, lc, ld) {
@@ -23676,7 +23689,7 @@ var Plotly = (() => {
           var line = (((d || [])[0] || {}).trace || {}).line || {};
           var lw1 = lw || line.width || 0;
           var dash = ld || line.dash || "";
-          d3.select(this).call(Color2.stroke, lc || line.color).call(drawing.dashLine, dash, lw1);
+          d3.select(this).call(Color.stroke, lc || line.color).call(drawing.dashLine, dash, lw1);
         });
       };
       drawing.dashLine = function(s, dash, lineWidth) {
@@ -23704,13 +23717,14 @@ var Plotly = (() => {
       function setFillStyle(sel, trace, gd, forLegend) {
         var markerPattern = trace.fillpattern;
         var fillgradient = trace.fillgradient;
-        var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, 0, "");
+        var pAttr = drawing.getPatternAttr;
+        var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
         if (patternShape) {
-          var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-          var patternFGColor = drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+          var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+          var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
           var patternFGOpacity = markerPattern.fgopacity;
-          var patternSize = drawing.getPatternAttr(markerPattern.size, 0, 8);
-          var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, 0, 0.3);
+          var patternSize = pAttr(markerPattern.size, 0, 8);
+          var patternSolidity = pAttr(markerPattern.solidity, 0, 0.3);
           var patternID = trace.uid;
           drawing.pattern(
             sel,
@@ -23777,7 +23791,7 @@ var Plotly = (() => {
             sel.call(drawing.gradient, gd, gradientID, direction, fillgradient.colorscale, "fill");
           }
         } else if (trace.fillcolor) {
-          sel.call(Color2.fill, trace.fillcolor);
+          sel.call(Color.fill, trace.fillcolor);
         }
       }
       drawing.singleFillStyle = function(sel, gd) {
@@ -23929,7 +23943,7 @@ var Plotly = (() => {
             var tc = tinycolor(d[1]);
             d3.select(this).attr({
               offset: d[0] + "%",
-              "stop-color": Color2.tinyRGB(tc),
+              "stop-color": Color.tinyRGB(tc),
               "stop-opacity": tc.getAlpha()
             });
           });
@@ -23942,7 +23956,7 @@ var Plotly = (() => {
         if (mcc) {
           if (fillmode === "overlay") {
             bgcolor = mcc;
-            fgcolor = Color2.contrast(bgcolor);
+            fgcolor = Color.contrast(bgcolor);
           } else {
             bgcolor = void 0;
             fgcolor = mcc;
@@ -23958,7 +23972,7 @@ var Plotly = (() => {
         var patternTag;
         var patternAttrs = {};
         var fgC = tinycolor(fgcolor);
-        var fgRGB = Color2.tinyRGB(fgC);
+        var fgRGB = Color.tinyRGB(fgC);
         var fgAlpha = fgC.getAlpha();
         var opacity = fgopacity * fgAlpha;
         switch (shape) {
@@ -24060,6 +24074,16 @@ var Plotly = (() => {
               fill: fgRGB
             };
             break;
+          default:
+            width = size;
+            height = size;
+            patternTag = "path";
+            patternAttrs = {
+              d: shape,
+              opacity,
+              fill: fgRGB
+            };
+            break;
         }
         var str = [
           shape || "noSh",
@@ -24082,7 +24106,7 @@ var Plotly = (() => {
           });
           if (bgcolor) {
             var bgC = tinycolor(bgcolor);
-            var bgRGB = Color2.tinyRGB(bgC);
+            var bgRGB = Color.tinyRGB(bgC);
             var bgAlpha = bgC.getAlpha();
             var rects = el.selectAll("rect").data([0]);
             rects.exit().remove();
@@ -24161,10 +24185,10 @@ var Plotly = (() => {
           lineWidth = (d.mlw + 1 || markerLineWidth + 1 || // TODO: we need the latter for legends... can we get rid of it?
           (d.trace ? (d.trace.marker.line || {}).width : 0) + 1) - 1 || 0;
           if ("mlc" in d) lineColor = d.mlcc = fns.lineScale(d.mlc);
-          else if (Lib.isArrayOrTypedArray(markerLine.color)) lineColor = Color2.defaultLine;
+          else if (Lib.isArrayOrTypedArray(markerLine.color)) lineColor = Color.defaultLine;
           else lineColor = markerLine.color;
           if (Lib.isArrayOrTypedArray(marker.color)) {
-            fillColor = Color2.defaultLine;
+            fillColor = Color.defaultLine;
             perPointGradient = true;
           }
           if ("mc" in d) {
@@ -24177,7 +24201,7 @@ var Plotly = (() => {
           }
         }
         if (d.om) {
-          sel.call(Color2.stroke, fillColor).style({
+          sel.call(Color.stroke, fillColor).style({
             "stroke-width": (lineWidth || 1) + "px",
             fill: "none"
           });
@@ -24192,7 +24216,8 @@ var Plotly = (() => {
             if (!gradientInfo[gradientType]) gradientType = 0;
           }
           var markerPattern = marker.pattern;
-          var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, d.i, "");
+          var pAttr = drawing.getPatternAttr;
+          var patternShape = markerPattern && (pAttr(markerPattern.shape, d.i, "") || pAttr(markerPattern.path, d.i, ""));
           if (gradientType && gradientType !== "none") {
             var gradientColor = d.mgc;
             if (gradientColor) perPointGradient = true;
@@ -24214,12 +24239,12 @@ var Plotly = (() => {
               fgcolor = pt.color;
               perPointPattern = true;
             }
-            var patternFGColor = drawing.getPatternAttr(fgcolor, d.i, pt && pt.color || null);
-            var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, d.i, null);
+            var patternFGColor = pAttr(fgcolor, d.i, pt && pt.color || null);
+            var patternBGColor = pAttr(markerPattern.bgcolor, d.i, null);
             var patternFGOpacity = markerPattern.fgopacity;
-            var patternSize = drawing.getPatternAttr(markerPattern.size, d.i, 8);
-            var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, d.i, 0.3);
-            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
+            var patternSize = pAttr(markerPattern.size, d.i, 8);
+            var patternSolidity = pAttr(markerPattern.solidity, d.i, 0.3);
+            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.path) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
             var patternID = trace.uid;
             if (perPointPattern) patternID += "-" + d.i;
             drawing.pattern(
@@ -24237,10 +24262,10 @@ var Plotly = (() => {
               patternFGOpacity
             );
           } else {
-            Lib.isArrayOrTypedArray(fillColor) ? Color2.fill(sel, fillColor[d.i]) : Color2.fill(sel, fillColor);
+            Lib.isArrayOrTypedArray(fillColor) ? Color.fill(sel, fillColor[d.i]) : Color.fill(sel, fillColor);
           }
           if (lineWidth) {
-            Color2.stroke(sel, lineColor);
+            Color.stroke(sel, lineColor);
           }
         }
       };
@@ -24327,7 +24352,7 @@ var Plotly = (() => {
             return stc || base;
           } else {
             if (utc) return utc;
-            else return stc ? base : Color2.addOpacity(base, DESELECTDIM);
+            else return stc ? base : Color.addOpacity(base, DESELECTDIM);
           }
         };
         return out;
@@ -24344,7 +24369,7 @@ var Plotly = (() => {
         }
         if (fns.selectedColorFn) {
           seq.push(function(pt, d) {
-            Color2.fill(pt, fns.selectedColorFn(d));
+            Color.fill(pt, fns.selectedColorFn(d));
           });
         }
         if (fns.selectedSizeFn) {
@@ -24446,7 +24471,7 @@ var Plotly = (() => {
           var tc = fns.selectedTextColorFn(d);
           var tp = d.tp || trace.textposition;
           var fontSize = extracTextFontSize(d, trace);
-          Color2.fill(tx, tc);
+          Color.fill(tx, tc);
           var dontTouchParent = Registry.traceIs(trace, "bar-like");
           textPointPosition(tx, tp, fontSize, d.mrc2 || d.mrc, dontTouchParent);
         });
@@ -24868,11 +24893,11 @@ var Plotly = (() => {
               previousLon = lon;
               previousLat = lat;
             }
-            var A2 = rotate(u, [cos(t), 0]);
-            var B2 = rotate(v, [sin(t), 0]);
+            var A = rotate(u, [cos(t), 0]);
+            var B = rotate(v, [sin(t), 0]);
             angle = atan2(
-              A2[1] + B2[1],
-              A2[0] + B2[0]
+              A[1] + B[1],
+              A[0] + B[0]
             ) / Math.PI * 180;
             if (ref === "previous" && !(previousTraceUid === trace.uid && d.i === previousI + 1)) {
               angle = null;
@@ -24913,7 +24938,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var svgTextUtils = require_svg_text_utils();
       var interactConstants = require_interactions();
       var OPPOSITE_SIDE = require_alignment().OPPOSITE_SIDE;
@@ -24964,7 +24989,7 @@ var Plotly = (() => {
         var editAttr;
         if (prop === "title.text") editAttr = "titleText";
         else if (prop.indexOf("axis") !== -1) editAttr = "axisTitleText";
-        else if (prop.indexOf("colorbar" !== -1)) editAttr = "colorbarTitleText";
+        else if (prop.indexOf(true)) editAttr = "colorbarTitleText";
         var editable = gd._context.edits[editAttr];
         function matchesPlaceholder(text, placeholder2) {
           if (text === void 0 || placeholder2 === void 0) return false;
@@ -25042,8 +25067,8 @@ var Plotly = (() => {
               }
             }
           }
-          titleEl.style("opacity", opacity * Color2.opacity(fontColor)).call(Drawing.font, {
-            color: Color2.rgb(fontColor),
+          titleEl.style("opacity", opacity * Color.opacity(fontColor)).call(Drawing.font, {
+            color: Color.rgb(fontColor),
             size: d3.round(fontSize, 2),
             family: fontFamily,
             weight: fontWeight,
@@ -25062,8 +25087,8 @@ var Plotly = (() => {
               y: subtitleY2
             });
             subtitleEl2.attr("transform", transformVal);
-            subtitleEl2.style("opacity", subtitleOpacity * Color2.opacity(subFontColor)).call(Drawing.font, {
-              color: Color2.rgb(subFontColor),
+            subtitleEl2.style("opacity", subtitleOpacity * Color.opacity(subFontColor)).call(Drawing.font, {
+              color: Color.rgb(subFontColor),
               size: d3.round(subFontSize, 2),
               family: subFontFamily,
               weight: subFontWeight,
@@ -25741,35 +25766,35 @@ var Plotly = (() => {
             var brk = rangebreaksIn[i];
             if (brk.enabled) {
               if (brk.bounds) {
-                var t02 = r0;
-                var t12 = r1;
+                var t0 = r0;
+                var t1 = r1;
                 if (brk.pattern) {
-                  t02 = Math.floor(t02);
+                  t0 = Math.floor(t0);
                 }
                 bnds = Lib.simpleMap(brk.bounds, brk.pattern ? cleanNumber : ax.r2l);
                 b0 = bnds[0];
                 b1 = bnds[1];
-                var t0Date = new Date(t02);
+                var t0Date = new Date(t0);
                 var bndDelta;
                 var step;
                 switch (brk.pattern) {
                   case WEEKDAY_PATTERN:
                     step = ONEWEEK;
                     bndDelta = ((b1 < b0 ? 7 : 0) + (b1 - b0)) * ONEDAY;
-                    t02 += b0 * ONEDAY - (t0Date.getUTCDay() * ONEDAY + t0Date.getUTCHours() * ONEHOUR + t0Date.getUTCMinutes() * ONEMIN + t0Date.getUTCSeconds() * ONESEC + t0Date.getUTCMilliseconds());
+                    t0 += b0 * ONEDAY - (t0Date.getUTCDay() * ONEDAY + t0Date.getUTCHours() * ONEHOUR + t0Date.getUTCMinutes() * ONEMIN + t0Date.getUTCSeconds() * ONESEC + t0Date.getUTCMilliseconds());
                     break;
                   case HOUR_PATTERN:
                     step = ONEDAY;
                     bndDelta = ((b1 < b0 ? 24 : 0) + (b1 - b0)) * ONEHOUR;
-                    t02 += b0 * ONEHOUR - (t0Date.getUTCHours() * ONEHOUR + t0Date.getUTCMinutes() * ONEMIN + t0Date.getUTCSeconds() * ONESEC + t0Date.getUTCMilliseconds());
+                    t0 += b0 * ONEHOUR - (t0Date.getUTCHours() * ONEHOUR + t0Date.getUTCMinutes() * ONEMIN + t0Date.getUTCSeconds() * ONESEC + t0Date.getUTCMilliseconds());
                     break;
                   default:
-                    t02 = Math.min(bnds[0], bnds[1]);
-                    t12 = Math.max(bnds[0], bnds[1]);
-                    step = t12 - t02;
+                    t0 = Math.min(bnds[0], bnds[1]);
+                    t1 = Math.max(bnds[0], bnds[1]);
+                    step = t1 - t0;
                     bndDelta = step;
                 }
-                for (var t = t02; t < t12; t += step) {
+                for (var t = t0; t < t1; t += step) {
                   addBreak(t, t + bndDelta);
                 }
               } else {
@@ -26156,17 +26181,17 @@ var Plotly = (() => {
           }
           if (axReverse) max = !max;
         }
-        var zero2 = 0;
+        var zero = 0;
         if (!isLinked(fullLayout, ax._id)) {
-          zero2 = padInsideLabelsOnAnchorAxis(fullLayout, ax, max);
+          zero = padInsideLabelsOnAnchorAxis(fullLayout, ax, max);
         }
-        extrappad = Math.max(zero2, extrappad);
+        extrappad = Math.max(zero, extrappad);
         if (ax.constrain === "domain" && ax._inputDomain) {
           extrappad *= (ax._inputDomain[1] - ax._inputDomain[0]) / (ax.domain[1] - ax.domain[0]);
         }
         return function getPad(pt) {
           if (pt.nopad) return 0;
-          return pt.pad + (pt.extrapad ? extrappad : zero2);
+          return pt.pad + (pt.extrapad ? extrappad : zero);
         };
       }
       var TEXTPAD = 3;
@@ -26475,7 +26500,7 @@ var Plotly = (() => {
       var strTranslate = Lib.strTranslate;
       var svgTextUtils = require_svg_text_utils();
       var Titles = require_titles();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var axAttrs = require_layout_attributes4();
       var cleanTicks = require_clean_ticks();
@@ -26996,9 +27021,9 @@ var Plotly = (() => {
             a = i;
             b = i;
           }
-          var A2 = tickVals[a].value;
-          var B2 = tickVals[b].value;
-          var actualDelta = Math.abs(B2 - A2);
+          var A = tickVals[a].value;
+          var B = tickVals[b].value;
+          var actualDelta = Math.abs(B - A);
           var delta = definedDelta || actualDelta;
           var periodLength = 0;
           if (delta >= ONEMINYEAR) {
@@ -27535,21 +27560,21 @@ var Plotly = (() => {
         var dtNum = Number(dtick.substr(1));
         if (tType === "M") {
           var cnt = 0;
-          var t02 = tick0;
-          var t12, mult, newDTick;
+          var t0 = tick0;
+          var t1, mult, newDTick;
           while (cnt < 10) {
-            t12 = axes.tickIncrement(t02, dtick, axrev, ax.calendar);
-            if ((t12 - r0) * (t02 - r0) <= 0) {
-              if (axrev) return Math.min(t02, t12);
-              return Math.max(t02, t12);
+            t1 = axes.tickIncrement(t0, dtick, axrev, ax.calendar);
+            if ((t1 - r0) * (t0 - r0) <= 0) {
+              if (axrev) return Math.min(t0, t1);
+              return Math.max(t0, t1);
             }
-            mult = (r0 - (t02 + t12) / 2) / (t12 - t02);
+            mult = (r0 - (t0 + t1) / 2) / (t1 - t0);
             newDTick = tType + (Math.abs(Math.round(mult)) || 1) * dtNum;
-            t02 = axes.tickIncrement(t02, newDTick, mult < 0 ? !axrev : axrev, ax.calendar);
+            t0 = axes.tickIncrement(t0, newDTick, mult < 0 ? !axrev : axrev, ax.calendar);
             cnt++;
           }
           Lib.error("tickFirst did not converge", ax);
-          return t02;
+          return t0;
         } else if (tType === "L") {
           return Math.log(sRound(
             (Math.pow(10, r0) - tick0) / dtNum
@@ -28033,6 +28058,7 @@ var Plotly = (() => {
               if (plotinfo.minorGridlayer) plotinfo.minorGridlayer.selectAll("path").remove();
               if (plotinfo.gridlayer) plotinfo.gridlayer.selectAll("path").remove();
               if (plotinfo.zerolinelayer) plotinfo.zerolinelayer.selectAll("path").remove();
+              if (plotinfo.zerolinelayerAbove) plotinfo.zerolinelayerAbove.selectAll("path").remove();
               fullLayout._infolayer.select(".g-" + xa._id + "title").remove();
               fullLayout._infolayer.select(".g-" + ya._id + "title").remove();
             }
@@ -28085,6 +28111,7 @@ var Plotly = (() => {
         var axLetter = axId.charAt(0);
         var counterLetter = axes.counterLetter(axId);
         var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         if (!mainPlotinfo) return;
         ax._shiftPusher = ax.autoshift || overlayingShiftedAx.indexOf(ax._id) !== -1 || overlayingShiftedAx.indexOf(ax.overlaying) !== -1;
         if (ax._shiftPusher & ax.anchor === "free") {
@@ -28153,7 +28180,7 @@ var Plotly = (() => {
             });
             axes.drawZeroLine(gd, ax, {
               counterAxis,
-              layer: plotinfo.zerolinelayer,
+              layer: zerolineIsAbove ? plotinfo.zerolinelayerAbove : plotinfo.zerolinelayer,
               path: gridPath,
               transFn: transTickFn
             });
@@ -28540,6 +28567,7 @@ var Plotly = (() => {
       }
       function getTickLabelUV(ax) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28548,7 +28576,7 @@ var Plotly = (() => {
         var isRight = has("right");
         var isBottom = has("bottom");
         var isInside = has("inside");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         if (!isAligned && !isInside) return [0, 0];
         var side = ax.side;
         var u = isAligned ? (ax.tickwidth || 0) / 2 : 0;
@@ -28583,6 +28611,7 @@ var Plotly = (() => {
       };
       axes.makeLabelFns = function(ax, shift, angle) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28590,9 +28619,9 @@ var Plotly = (() => {
         var isLeft = has("left");
         var isRight = has("right");
         var isBottom = has("bottom");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         var insideTickLabels = has("inside");
-        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && ax.tickson !== "boundaries";
+        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && tickson !== "boundaries";
         var labelStandoff = 0;
         var labelShift = 0;
         var tickLen = labelsOverTicks ? ax.ticklen : 0;
@@ -28728,7 +28757,7 @@ var Plotly = (() => {
         var ticks = opts.layer.selectAll("path." + cls).data(vals, tickDataFn);
         ticks.exit().remove();
         ticks.enter().append("path").classed(cls, 1).classed("ticks", 1).classed("crisp", opts.crisp !== false).each(function(d) {
-          return Color2.stroke(d3.select(this), d.minor ? ax.minor.tickcolor : ax.tickcolor);
+          return Color.stroke(d3.select(this), d.minor ? ax.minor.tickcolor : ax.tickcolor);
         }).style("stroke-width", function(d) {
           return Drawing.crispRound(
             gd,
@@ -28775,7 +28804,7 @@ var Plotly = (() => {
           grid.exit().remove();
           grid.enter().append("path").classed(cls, 1).classed("crisp", opts.crisp !== false);
           grid.attr("transform", opts.transFn).attr("d", opts.path).each(function(d) {
-            return Color2.stroke(
+            return Color.stroke(
               d3.select(this),
               d.minor ? ax.minor.gridcolor : ax.gridcolor || "#ddd"
             );
@@ -28802,13 +28831,14 @@ var Plotly = (() => {
             return idSort(da.id, db.id);
           });
         });
-        zl.attr("transform", opts.transFn).attr("d", opts.path).call(Color2.stroke, ax.zerolinecolor || Color2.defaultLine).style("stroke-width", Drawing.crispRound(gd, ax.zerolinewidth, ax._gw || 1) + "px").style("display", null);
+        zl.attr("transform", opts.transFn).attr("d", opts.path).call(Color.stroke, ax.zerolinecolor || Color.defaultLine).style("stroke-width", Drawing.crispRound(gd, ax.zerolinewidth, ax._gw || 1) + "px").style("display", null);
         hideCounterAxisInsideTickLabels(ax, [ZERO_PATH]);
       };
       axes.drawLabels = function(gd, ax, opts) {
         opts = opts || {};
         var fullLayout = gd._fullLayout;
         var axId = ax._id;
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         var cls = opts.cls || axId + "tick";
         var vals = opts.vals.filter(function(d) {
           return d.text;
@@ -28954,8 +28984,10 @@ var Plotly = (() => {
                 var isPeriodLabel = e.K === "tick" && e.L === "text" && ax.ticklabelmode === "period";
                 var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
                 var sel;
-                if (e.K === ZERO_PATH.K) sel = mainPlotinfo.zerolinelayer.selectAll("." + ax._id + "zl");
-                else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
+                if (e.K === ZERO_PATH.K) {
+                  var zerolineLayer = zerolineIsAbove ? mainPlotinfo.zerolinelayerAbove : mainPlotinfo.zerolinelayer;
+                  sel = zerolineLayer.selectAll("." + ax._id + "zl");
+                } else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
                 else if (e.K === GRID_PATH.K) sel = mainPlotinfo.gridlayer.selectAll("." + ax._id);
                 else sel = mainPlotinfo[ax._id.charAt(0) + "axislayer"];
                 sel.each(function() {
@@ -29015,8 +29047,8 @@ var Plotly = (() => {
             var hypotenuse = Math.sqrt(Math.pow(adjacent, 2) + Math.pow(opposite, 2));
             var maxCos = adjacent / hypotenuse;
             var autoTickAnglesRadians = ax.autotickangles.map(
-              function(degrees3) {
-                return degrees3 * Math.PI / 180;
+              function(degrees) {
+                return degrees * Math.PI / 180;
               }
             );
             var angleRadians = autoTickAnglesRadians.find(
@@ -29046,6 +29078,7 @@ var Plotly = (() => {
               }
             } else {
               var ticklabelposition = ax.ticklabelposition || "";
+              var tickson = ax.tickson || "";
               var has = function(str) {
                 return ticklabelposition.indexOf(str) !== -1;
               };
@@ -29053,7 +29086,7 @@ var Plotly = (() => {
               var isLeft = has("left");
               var isRight = has("right");
               var isBottom = has("bottom");
-              var isAligned = isBottom || isLeft || isTop || isRight;
+              var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
               var pad = !isAligned ? 0 : (ax.tickwidth || 0) + 2 * TEXTPAD;
               for (i = 0; i < lbbArray.length - 1; i++) {
                 if (Lib.bBoxIntersect(lbbArray[i], lbbArray[i + 1], pad)) {
@@ -29175,7 +29208,7 @@ var Plotly = (() => {
         var vals = opts.vals;
         var dividers = opts.layer.selectAll("path." + cls).data(vals, tickDataFn);
         dividers.exit().remove();
-        dividers.enter().insert("path", ":first-child").classed(cls, 1).classed("crisp", 1).call(Color2.stroke, ax.dividercolor).style("stroke-width", Drawing.crispRound(gd, ax.dividerwidth, 1) + "px");
+        dividers.enter().insert("path", ":first-child").classed(cls, 1).classed("crisp", 1).call(Color.stroke, ax.dividercolor).style("stroke-width", Drawing.crispRound(gd, ax.dividerwidth, 1) + "px");
         dividers.attr("transform", opts.transFn).attr("d", opts.path);
       }
       axes.getPxPosition = function(gd, ax) {
@@ -29973,6 +30006,11 @@ var Plotly = (() => {
           dflt: colorAttrs.defaultLine,
           editType: "legend"
         },
+        maxheight: {
+          valType: "number",
+          min: 0,
+          editType: "legend"
+        },
         borderwidth: {
           valType: "number",
           min: 0,
@@ -30269,6 +30307,7 @@ var Plotly = (() => {
         coerce("groupclick");
         coerce("xanchor", defaultXAnchor);
         coerce("yanchor", defaultYAnchor);
+        coerce("maxheight", isHorizontal ? 0.5 : 1);
         coerce("valign");
         Lib.noneOrAll(containerIn, containerOut, ["x", "y"]);
         var titleText = coerce("title.text");
@@ -30727,13 +30766,13 @@ var Plotly = (() => {
     "src/traces/pie/fill_one.js"(exports, module) {
       "use strict";
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       module.exports = function fillOne(s, pt, trace, gd) {
         var pattern = trace.marker.pattern;
         if (pattern && pattern.shape) {
           Drawing.pointStyle(s, trace, gd, pt);
         } else {
-          Color2.fill(s, pt.color);
+          Color.fill(s, pt.color);
         }
       };
     }
@@ -30743,14 +30782,14 @@ var Plotly = (() => {
   var require_style_one = __commonJS({
     "src/traces/pie/style_one.js"(exports, module) {
       "use strict";
-      var Color2 = require_color();
+      var Color = require_color();
       var castOption = require_helpers4().castOption;
       var fillOne = require_fill_one();
       module.exports = function styleOne(s, pt, trace, gd) {
         var line = trace.marker.line;
-        var lineColor = castOption(line.color, pt.pts) || Color2.defaultLine;
+        var lineColor = castOption(line.color, pt.pts) || Color.defaultLine;
         var lineWidth = castOption(line.width, pt.pts) || 0;
-        s.call(fillOne, pt, trace, gd).style("stroke-width", lineWidth).call(Color2.stroke, lineColor);
+        s.call(fillOne, pt, trace, gd).style("stroke-width", lineWidth).call(Color.stroke, lineColor);
       };
     }
   });
@@ -30764,7 +30803,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var extractOpts = require_helpers().extractOpts;
       var subTypes = require_subtypes();
       var stylePie = require_style_one();
@@ -30981,9 +31020,9 @@ var Plotly = (() => {
             var pt = d3.select(this);
             var cont2 = trace[dd[0]].marker;
             var lw = boundLineWidth(void 0, cont2.line, MAX_MARKER_LINE_WIDTH, CST_MARKER_LINE_WIDTH);
-            pt.attr("d", dd[1]).style("stroke-width", lw + "px").call(Color2.fill, cont2.color);
+            pt.attr("d", dd[1]).style("stroke-width", lw + "px").call(Color.fill, cont2.color);
             if (lw) {
-              pt.call(Color2.stroke, cont2.line.color);
+              pt.call(Color.stroke, cont2.line.color);
             }
           });
         }
@@ -31019,10 +31058,11 @@ var Plotly = (() => {
             }
             var fillColor = mcc || d0.mc || marker.color;
             var markerPattern = marker.pattern;
-            var patternShape = markerPattern && Drawing.getPatternAttr(markerPattern.shape, 0, "");
+            var pAttr = Drawing.getPatternAttr;
+            var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
             if (patternShape) {
-              var patternBGColor = Drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-              var patternFGColor = Drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+              var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+              var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
               var patternFGOpacity = markerPattern.fgopacity;
               var patternSize = dimAttr(markerPattern.size, 8, 10);
               var patternSolidity = dimAttr(markerPattern.solidity, 0.5, 1);
@@ -31042,9 +31082,9 @@ var Plotly = (() => {
                 patternFGOpacity
               );
             } else {
-              p.call(Color2.fill, fillColor);
+              p.call(Color.fill, fillColor);
             }
-            if (w) Color2.stroke(p, d0.mlc || markerLine.color);
+            if (w) Color.stroke(p, d0.mlc || markerLine.color);
           });
         }
         function styleBoxes(d) {
@@ -31054,7 +31094,7 @@ var Plotly = (() => {
           pts.exit().remove();
           pts.each(function() {
             var p = d3.select(this);
-            if ((trace.boxpoints === "all" || trace.points === "all") && Color2.opacity(trace.fillcolor) === 0 && Color2.opacity((trace.line || {}).color) === 0) {
+            if ((trace.boxpoints === "all" || trace.points === "all") && Color.opacity(trace.fillcolor) === 0 && Color.opacity((trace.line || {}).color) === 0) {
               var tMod = Lib.minExtend(trace, {
                 marker: {
                   size: constantItemSizing ? CST_MARKER_SIZE : Lib.constrain(trace.marker.size, 2, 16),
@@ -31066,8 +31106,8 @@ var Plotly = (() => {
               pts.call(Drawing.pointStyle, tMod, gd);
             } else {
               var w = boundLineWidth(void 0, trace.line, MAX_MARKER_LINE_WIDTH, CST_MARKER_LINE_WIDTH);
-              p.style("stroke-width", w + "px").call(Color2.fill, trace.fillcolor);
-              if (w) Color2.stroke(p, trace.line.color);
+              p.style("stroke-width", w + "px").call(Color.fill, trace.fillcolor);
+              if (w) Color.stroke(p, trace.line.color);
             }
           });
         }
@@ -31083,8 +31123,8 @@ var Plotly = (() => {
             var p = d3.select(this);
             var cont = trace[i ? "increasing" : "decreasing"];
             var w = boundLineWidth(void 0, cont.line, MAX_MARKER_LINE_WIDTH, CST_MARKER_LINE_WIDTH);
-            p.style("stroke-width", w + "px").call(Color2.fill, cont.fillcolor);
-            if (w) Color2.stroke(p, cont.line.color);
+            p.style("stroke-width", w + "px").call(Color.fill, cont.fillcolor);
+            if (w) Color.stroke(p, cont.line.color);
           });
         }
         function styleOHLC(d) {
@@ -31100,7 +31140,7 @@ var Plotly = (() => {
             var cont = trace[i ? "increasing" : "decreasing"];
             var w = boundLineWidth(void 0, cont.line, MAX_MARKER_LINE_WIDTH, CST_MARKER_LINE_WIDTH);
             p.style("fill", "none").call(Drawing.dashLine, cont.line.dash, w);
-            if (w) Color2.stroke(p, cont.line.color);
+            if (w) Color.stroke(p, cont.line.color);
           });
         }
         function stylePies(d) {
@@ -31226,8 +31266,8 @@ var Plotly = (() => {
             };
             var fillColor;
             if (!colorscale) {
-              var color2 = trace.vertexcolor || trace.facecolor || trace.color;
-              fillColor = Lib.isArrayOrTypedArray(color2) ? color2[i] || color2[0] : color2;
+              var color = trace.vertexcolor || trace.facecolor || trace.color;
+              fillColor = Lib.isArrayOrTypedArray(color) ? color[i] || color[0] : color;
             } else {
               if (!useGradient) {
                 var len = colorscale.length;
@@ -31242,7 +31282,7 @@ var Plotly = (() => {
             }
             pt.attr("d", dd[0]);
             if (fillColor) {
-              pt.call(Color2.fill, fillColor);
+              pt.call(Color.fill, fillColor);
             } else {
               pt.call(fillGradient);
             }
@@ -31303,7 +31343,7 @@ var Plotly = (() => {
       var Events = require_events2();
       var dragElement = require_dragelement();
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var svgTextUtils = require_svg_text_utils();
       var handleClick = require_handle_click();
       var constants = require_constants3();
@@ -31426,7 +31466,7 @@ var Plotly = (() => {
         var bg = Lib.ensureSingle(legend, "rect", "bg", function(s) {
           s.attr("shape-rendering", "crispEdges");
         });
-        bg.call(Color2.stroke, legendObj.bordercolor).call(Color2.fill, legendObj.bgcolor).style("stroke-width", legendObj.borderwidth + "px");
+        bg.call(Color.stroke, legendObj.bordercolor).call(Color.fill, legendObj.bgcolor).style("stroke-width", legendObj.borderwidth + "px");
         var scrollBox = Lib.ensureSingle(legend, "g", "scrollbox");
         var title = legendObj.title;
         legendObj._titleWidth = 0;
@@ -31440,7 +31480,7 @@ var Plotly = (() => {
           scrollBox.selectAll("." + legendId + "titletext").remove();
         }
         var scrollBar = Lib.ensureSingle(legend, "rect", "scrollbar", function(s) {
-          s.attr(constants.scrollBarEnterAttrs).call(Color2.fill, constants.scrollBarColor);
+          s.attr(constants.scrollBarEnterAttrs).call(Color.fill, constants.scrollBarColor);
         });
         var groups = scrollBox.selectAll("g.groups").data(legendData);
         groups.enter().append("g").attr("class", "groups");
@@ -31757,7 +31797,7 @@ var Plotly = (() => {
           if (!gd._context.staticPlot) {
             s.style("cursor", "pointer").attr("pointer-events", "all");
           }
-          s.call(Color2.fill, "rgba(0,0,0,0)");
+          s.call(Color.fill, "rgba(0,0,0,0)");
         });
         if (gd._context.staticPlot) return;
         traceToggle.on("mousedown", function() {
@@ -31888,10 +31928,9 @@ var Plotly = (() => {
         var isAbovePlotArea = legendObj.y > 1 || legendObj.y === 1 && yanchor === "bottom";
         var traceGroupGap = legendObj.tracegroupgap;
         var legendGroupWidths = {};
-        legendObj._maxHeight = Math.max(
-          isBelowPlotArea || isAbovePlotArea ? fullLayout.height / 2 : gs.h,
-          30
-        );
+        var { maxheight, orientation, yref } = legendObj;
+        var heightToBeScaled = orientation === "v" && yref === "paper" ? gs.h : fullLayout.height;
+        legendObj._maxHeight = Math.max(maxheight > 1 ? maxheight : maxheight * heightToBeScaled, 30);
         var toggleRectWidth = 0;
         legendObj._width = 0;
         legendObj._height = 0;
@@ -32105,7 +32144,7 @@ var Plotly = (() => {
       var svgTextUtils = require_svg_text_utils();
       var overrideCursor = require_override_cursor();
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var dragElement = require_dragelement();
       var Axes = require_axes();
       var zindexSeparator = require_constants2().zindexSeparator;
@@ -32189,7 +32228,7 @@ var Plotly = (() => {
             eventData = false;
           }
           return {
-            color: hoverItem.color || Color2.defaultLine,
+            color: hoverItem.color || Color.defaultLine,
             x0: hoverItem.x0 || hoverItem.x || 0,
             x1: hoverItem.x1 || hoverItem.x || 0,
             y0: hoverItem.y0 || hoverItem.y || 0,
@@ -32228,7 +32267,7 @@ var Plotly = (() => {
           gd,
           hovermode: "closest",
           rotateLabels,
-          bgColor: opts.bgColor || Color2.background,
+          bgColor: opts.bgColor || Color.background,
           container: d3.select(opts.container),
           outerContainer: opts.outerContainer || opts.container
         });
@@ -32439,7 +32478,7 @@ var Plotly = (() => {
               xSpike: void 0,
               ySpike: void 0,
               // where and how to display the hover label
-              color: Color2.defaultLine,
+              color: Color.defaultLine,
               // trace color
               name: trace.name,
               x0: void 0,
@@ -32710,8 +32749,8 @@ var Plotly = (() => {
         }
         gd._hoverdata = newhoverdata;
         var rotateLabels = hovermode === "y" && (searchData.length > 1 || hoverData.length > 1) || hovermode === "closest" && hasOneHorizontalTrace && hoverData.length > 1;
-        var bgColor = Color2.combine(
-          fullLayout.plot_bgcolor || Color2.background,
+        var bgColor = Color.combine(
+          fullLayout.plot_bgcolor || Color.background,
           fullLayout.paper_bgcolor
         );
         var hoverText = createHoverText(hoverData, {
@@ -32776,18 +32815,18 @@ var Plotly = (() => {
         var ya = c0.ya;
         var axLetter = hovermode.charAt(0);
         var axLabel = axLetter + "Label";
-        var t02 = c0[axLabel];
-        if (t02 === void 0 && xa.type === "multicategory") {
+        var t0 = c0[axLabel];
+        if (t0 === void 0 && xa.type === "multicategory") {
           for (var q = 0; q < hoverData.length; q++) {
-            t02 = hoverData[q][axLabel];
-            if (t02 !== void 0) break;
+            t0 = hoverData[q][axLabel];
+            if (t0 !== void 0) break;
           }
         }
         var outerContainerBB = getBoundingClientRect(gd, outerContainer);
         var outerTop = outerContainerBB.top;
         var outerWidth = outerContainerBB.width;
         var outerHeight = outerContainerBB.height;
-        var showCommonLabel = t02 !== void 0 && c0.distance <= opts.hoverdistance && (hovermode === "x" || hovermode === "y");
+        var showCommonLabel = t0 !== void 0 && c0.distance <= opts.hoverdistance && (hovermode === "x" || hovermode === "y");
         if (showCommonLabel) {
           var allHaveZ = true;
           var i, traceHoverinfo;
@@ -32821,9 +32860,9 @@ var Plotly = (() => {
           var ltext = Lib.ensureSingle(label, "text", "", function(s) {
             s.attr("data-notex", 1);
           });
-          var commonBgColor = commonLabelOpts.bgcolor || Color2.defaultLine;
-          var commonStroke = commonLabelOpts.bordercolor || Color2.contrast(commonBgColor);
-          var contrastColor = Color2.contrast(commonBgColor);
+          var commonBgColor = commonLabelOpts.bgcolor || Color.defaultLine;
+          var commonStroke = commonLabelOpts.bordercolor || Color.contrast(commonBgColor);
+          var contrastColor = Color.contrast(commonBgColor);
           var commonLabelOptsFont = commonLabelOpts.font;
           var commonLabelFont = {
             weight: commonLabelOptsFont.weight || fontWeight,
@@ -32840,7 +32879,7 @@ var Plotly = (() => {
             fill: commonBgColor,
             stroke: commonStroke
           });
-          ltext.text(t02).call(Drawing.font, commonLabelFont).call(svgTextUtils.positionText, 0, 0).call(svgTextUtils.convertToTspans, gd);
+          ltext.text(t0).call(Drawing.font, commonLabelFont).call(svgTextUtils.positionText, 0, 0).call(svgTextUtils.convertToTspans, gd);
           label.attr("transform", "");
           var tbb2 = getBoundingClientRect(gd, ltext.node());
           var lx2, ly2;
@@ -32936,7 +32975,7 @@ var Plotly = (() => {
           var mockLayoutIn = {
             showlegend: true,
             legend: {
-              title: { text: t02, font },
+              title: { text: t0, font },
               font,
               bgcolor: hoverlabel.bgcolor,
               bordercolor: hoverlabel.bordercolor,
@@ -32955,7 +32994,7 @@ var Plotly = (() => {
           for (var j = 0; j < groupedHoverData.length; j++) {
             var pt = groupedHoverData[j];
             if (pt.hoverinfo === "none") continue;
-            var texts = getHoverLabelText(pt, true, hovermode, fullLayout, t02);
+            var texts = getHoverLabelText(pt, true, hovermode, fullLayout, t0);
             var text = texts[0];
             var name = texts[1];
             pt.name = name;
@@ -33071,7 +33110,7 @@ var Plotly = (() => {
         });
         hoverLabels.enter().append("g").classed("hovertext", true).each(function() {
           var g = d3.select(this);
-          g.append("rect").call(Color2.fill, Color2.addOpacity(bgColor, 0.8));
+          g.append("rect").call(Color.fill, Color.addOpacity(bgColor, 0.8));
           g.append("text").classed("name", true);
           g.append("path").style("stroke-width", "1px");
           g.append("text").classed("nums", true).call(Drawing.font, {
@@ -33093,16 +33132,16 @@ var Plotly = (() => {
             dColor = dColor[d.eventData[0].pointNumber];
           }
           var color0 = d.bgcolor || dColor;
-          var numsColor = Color2.combine(
-            Color2.opacity(color0) ? color0 : Color2.defaultLine,
+          var numsColor = Color.combine(
+            Color.opacity(color0) ? color0 : Color.defaultLine,
             bgColor
           );
-          var nameColor = Color2.combine(
-            Color2.opacity(dColor) ? dColor : Color2.defaultLine,
+          var nameColor = Color.combine(
+            Color.opacity(dColor) ? dColor : Color.defaultLine,
             bgColor
           );
-          var contrastColor = d.borderColor || Color2.contrast(numsColor);
-          var texts2 = getHoverLabelText(d, showCommonLabel, hovermode, fullLayout, t02, g);
+          var contrastColor = d.borderColor || Color.contrast(numsColor);
+          var texts2 = getHoverLabelText(d, showCommonLabel, hovermode, fullLayout, t0, g);
           var text2 = texts2[0];
           var name2 = texts2[1];
           var tx = g.select("text.nums").call(Drawing.font, {
@@ -33201,7 +33240,7 @@ var Plotly = (() => {
           commonLabelBoundingBox: commonLabelRect
         };
       }
-      function getHoverLabelText(d, showCommonLabel, hovermode, fullLayout, t02, g) {
+      function getHoverLabelText(d, showCommonLabel, hovermode, fullLayout, t0, g) {
         var name = "";
         var text = "";
         if (d.nameOverride !== void 0) d.name = d.nameOverride;
@@ -33219,7 +33258,7 @@ var Plotly = (() => {
           if (d.trace.type !== "choropleth" && d.trace.type !== "choroplethmapbox" && d.trace.type !== "choroplethmap") {
             text += (text ? "z: " : "") + d.zLabel;
           }
-        } else if (showCommonLabel && d[h0 + "Label"] === t02) {
+        } else if (showCommonLabel && d[h0 + "Label"] === t0) {
           text = d[h1 + "Label"] || "";
         } else if (d.xLabel === void 0) {
           if (d.yLabel !== void 0 && d.trace.type !== "scattercarpet") {
@@ -33238,7 +33277,7 @@ var Plotly = (() => {
         var hovertemplate = d.hovertemplate || false;
         if (hovertemplate) {
           var labels = d.hovertemplateLabels || d;
-          if (d[h0 + "Label"] !== t02) {
+          if (d[h0 + "Label"] !== t0) {
             labels[h0 + "other"] = labels[h0 + "Val"];
             labels[h0 + "otherLabel"] = labels[h0 + "Label"];
           }
@@ -33584,7 +33623,7 @@ var Plotly = (() => {
         var xa, ya;
         container.selectAll(".spikeline").remove();
         if (!(showX || showY)) return;
-        var contrastColor = Color2.combine(fullLayout.plot_bgcolor, fullLayout.paper_bgcolor);
+        var contrastColor = Color.combine(fullLayout.plot_bgcolor, fullLayout.paper_bgcolor);
         if (showY) {
           var hLinePoint = closestPoints.hLinePoint;
           var hLinePointX, hLinePointY;
@@ -33598,7 +33637,7 @@ var Plotly = (() => {
             hLinePointX = xa._offset + hLinePoint.x;
             hLinePointY = ya._offset + hLinePoint.y;
           }
-          var dfltHLineColor = tinycolor.readability(hLinePoint.color, contrastColor) < 1.5 ? Color2.contrast(contrastColor) : hLinePoint.color;
+          var dfltHLineColor = tinycolor.readability(hLinePoint.color, contrastColor) < 1.5 ? Color.contrast(contrastColor) : hLinePoint.color;
           var yMode = ya.spikemode;
           var yThickness = ya.spikethickness;
           var yColor = ya.spikecolor || dfltHLineColor;
@@ -33659,7 +33698,7 @@ var Plotly = (() => {
             vLinePointX = xa._offset + vLinePoint.x;
             vLinePointY = ya._offset + vLinePoint.y;
           }
-          var dfltVLineColor = tinycolor.readability(vLinePoint.color, contrastColor) < 1.5 ? Color2.contrast(contrastColor) : vLinePoint.color;
+          var dfltVLineColor = tinycolor.readability(vLinePoint.color, contrastColor) < 1.5 ? Color.contrast(contrastColor) : vLinePoint.color;
           var xMode = xa.spikemode;
           var xThickness = xa.spikethickness;
           var xColor = xa.spikecolor || dfltVLineColor;
@@ -33789,12 +33828,12 @@ var Plotly = (() => {
         var y0 = rect.top;
         var x1 = x0 + rect.width;
         var y1 = y0 + rect.height;
-        var A2 = Lib.apply3DTransform(fullLayout._invTransform)(x0, y0);
-        var B2 = Lib.apply3DTransform(fullLayout._invTransform)(x1, y1);
-        var Ax = A2[0];
-        var Ay = A2[1];
-        var Bx = B2[0];
-        var By = B2[1];
+        var A = Lib.apply3DTransform(fullLayout._invTransform)(x0, y0);
+        var B = Lib.apply3DTransform(fullLayout._invTransform)(x1, y1);
+        var Ax = A[0];
+        var Ay = A[1];
+        var Bx = B[0];
+        var By = B[1];
         return {
           x: Ax,
           y: Ay,
@@ -33814,7 +33853,7 @@ var Plotly = (() => {
     "src/components/fx/hoverlabel_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var isUnifiedHover = require_helpers2().isUnifiedHover;
       module.exports = function handleHoverLabelDefaults(contIn, contOut, coerce, opts) {
         opts = opts || {};
@@ -33833,7 +33872,7 @@ var Plotly = (() => {
           inheritFontAttr("style");
           inheritFontAttr("variant");
           if (hasLegend) {
-            if (!opts.bgcolor) opts.bgcolor = Color2.combine(contOut.legend.bgcolor, contOut.paper_bgcolor);
+            if (!opts.bgcolor) opts.bgcolor = Color.combine(contOut.legend.bgcolor, contOut.paper_bgcolor);
             if (!opts.bordercolor) opts.bordercolor = contOut.legend.bordercolor;
           } else {
             if (!opts.bgcolor) opts.bgcolor = contOut.paper_bgcolor;
@@ -35477,7 +35516,7 @@ var Plotly = (() => {
       var drawMode = dragHelpers.drawMode;
       var selectMode = dragHelpers.selectMode;
       var Registry = require_registry();
-      var Color2 = require_color();
+      var Color = require_color();
       var constants = require_constants4();
       var i000 = constants.i000;
       var i090 = constants.i090;
@@ -35643,8 +35682,8 @@ var Plotly = (() => {
               var x = cell[j][1];
               var y = cell[j][2];
               var vertex = g2.append(rectSelection ? "rect" : "circle").attr("data-i", i).attr("data-j", j).style({
-                fill: Color2.background,
-                stroke: Color2.defaultLine,
+                fill: Color.background,
+                stroke: Color.defaultLine,
                 "stroke-width": 1,
                 "shape-rendering": "crispEdges"
               });
@@ -35776,7 +35815,7 @@ var Plotly = (() => {
       var displayOutlines = require_display_outlines();
       var drawLabel = require_display_labels();
       var clearOutlineControllers = require_handle_outline().clearOutlineControllers;
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var arrayEditor = require_plot_template().arrayEditor;
       var dragElement = require_dragelement();
@@ -35858,7 +35897,7 @@ var Plotly = (() => {
             opacity = gd._fullLayout.activeshape.opacity;
           }
           var shapeGroup = shapeLayer.append("g").classed("shape-group", true).attr({ "data-index": index });
-          var path = shapeGroup.append("path").attr(attrs).style("opacity", opacity).call(Color2.stroke, lineColor).call(Color2.fill, fillColor).call(Drawing.dashLine, lineDash, lineWidth);
+          var path = shapeGroup.append("path").attr(attrs).style("opacity", opacity).call(Color.stroke, lineColor).call(Color.fill, fillColor).call(Drawing.dashLine, lineDash, lineWidth);
           setClipPath(shapeGroup, gd, options);
           drawLabel(gd, index, options, shapeGroup);
           var editHelpers;
@@ -35884,7 +35923,7 @@ var Plotly = (() => {
             } else if (options.editable === true) {
               path.style(
                 "pointer-events",
-                isOpen || Color2.opacity(fillColor) * opacity <= 0.5 ? "stroke" : "all"
+                isOpen || Color.opacity(fillColor) * opacity <= 0.5 ? "stroke" : "all"
               );
             }
           }
@@ -36292,7 +36331,7 @@ var Plotly = (() => {
         title: function(gd) {
           var opts = gd._context.toImageButtonOptions || {};
           var format = opts.format || "png";
-          return format === "png" ? _(gd, "Download plot as a png") : (
+          return format === "png" ? _(gd, "Download plot as a PNG") : (
             // legacy text
             _(gd, "Download plot")
           );
@@ -37094,7 +37133,7 @@ var Plotly = (() => {
     "src/components/modebar/defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var Template = require_plot_template();
       var attributes = require_attributes10();
       module.exports = function supplyLayoutDefaults(layoutIn, layoutOut) {
@@ -37104,10 +37143,10 @@ var Plotly = (() => {
           return Lib.coerce(containerIn, containerOut, attributes, attr, dflt);
         }
         coerce("orientation");
-        coerce("bgcolor", Color2.addOpacity(layoutOut.paper_bgcolor, 0.5));
-        var defaultColor = Color2.contrast(Color2.rgb(layoutOut.modebar.bgcolor));
-        coerce("color", Color2.addOpacity(defaultColor, 0.3));
-        coerce("activecolor", Color2.addOpacity(defaultColor, 0.7));
+        coerce("bgcolor", Color.addOpacity(layoutOut.paper_bgcolor, 0.5));
+        var defaultColor = Color.contrast(Color.rgb(layoutOut.modebar.bgcolor));
+        coerce("color", Color.addOpacity(defaultColor, 0.3));
+        coerce("activecolor", Color.addOpacity(defaultColor, 0.7));
         coerce("uirevision", layoutOut.uirevision);
         coerce("add");
         coerce("remove");
@@ -37397,12 +37436,12 @@ var Plotly = (() => {
         var fullLayout = gd._fullLayout;
         var fullData = gd._fullData;
         var context = gd._context;
-        function match(name, B2) {
-          if (typeof B2 === "string") {
-            if (B2.toLowerCase() === name.toLowerCase()) return true;
+        function match(name, B) {
+          if (typeof B === "string") {
+            if (B.toLowerCase() === name.toLowerCase()) return true;
           } else {
-            var v0 = B2.name;
-            var v1 = B2._cat || B2.name;
+            var v0 = B.name;
+            var v1 = B._cat || B.name;
             if (v0 === name || v1 === name.toLowerCase()) return true;
           }
           return false;
@@ -37446,9 +37485,9 @@ var Plotly = (() => {
           var out = [];
           for (var i2 = 0; i2 < newGroup.length; i2++) {
             var name = newGroup[i2];
-            var B2 = modeBarButtons[name];
-            var v0 = B2.name.toLowerCase();
-            var v1 = (B2._cat || B2.name).toLowerCase();
+            var B = modeBarButtons[name];
+            var v0 = B.name.toLowerCase();
+            var v1 = (B._cat || B.name).toLowerCase();
             var found = false;
             for (var q = 0; q < buttonsToRemove.length; q++) {
               var t = buttonsToRemove[q].toLowerCase();
@@ -38117,7 +38156,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var svgTextUtils = require_svg_text_utils();
       var clearGlCanvases = require_clear_gl_canvases();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Titles = require_titles();
       var ModeBar = require_modebar2();
@@ -38189,7 +38228,7 @@ var Plotly = (() => {
         var lowerBackgroundIDs = [];
         var backgroundIds = [];
         var lowerDomains = [];
-        var noNeedForBg = Color2.opacity(fullLayout.paper_bgcolor) === 1 && Color2.opacity(fullLayout.plot_bgcolor) === 1 && fullLayout.paper_bgcolor === fullLayout.plot_bgcolor;
+        var noNeedForBg = Color.opacity(fullLayout.paper_bgcolor) === 1 && Color.opacity(fullLayout.plot_bgcolor) === 1 && fullLayout.paper_bgcolor === fullLayout.plot_bgcolor;
         for (subplot in fullLayout._plots) {
           plotinfo = fullLayout._plots[subplot];
           if (plotinfo.mainplot) {
@@ -38233,7 +38272,7 @@ var Plotly = (() => {
               ya._offset - pad,
               xa._length + 2 * pad,
               ya._length + 2 * pad
-            ).call(Color2.fill, fullLayout.plot_bgcolor).style("stroke-width", 0);
+            ).call(Color.fill, fullLayout.plot_bgcolor).style("stroke-width", 0);
           }
         }
         if (!fullLayout._hasOnlyLargeSploms) {
@@ -38308,7 +38347,7 @@ var Plotly = (() => {
             if (extraSubplot && xa.showline && (xa.mirror === "all" || xa.mirror === "allticks")) {
               xPath += xLinePath(xLinesYBottom) + xLinePath(xLinesYTop);
             }
-            plotinfo.xlines.style("stroke-width", xa._lw + "px").call(Color2.stroke, xa.showline ? xa.linecolor : "rgba(0,0,0,0)");
+            plotinfo.xlines.style("stroke-width", xa._lw + "px").call(Color.stroke, xa.showline ? xa.linecolor : "rgba(0,0,0,0)");
           }
           plotinfo.xlines.attr("d", xPath);
           var yPath = "M0,0";
@@ -38327,7 +38366,7 @@ var Plotly = (() => {
             if (extraSubplot && ya.showline && (ya.mirror === "all" || ya.mirror === "allticks")) {
               yPath += yLinePath(yLinesXLeft) + yLinePath(yLinesXRight);
             }
-            plotinfo.ylines.style("stroke-width", ya._lw + "px").call(Color2.stroke, ya.showline ? ya.linecolor : "rgba(0,0,0,0)");
+            plotinfo.ylines.style("stroke-width", ya._lw + "px").call(Color.stroke, ya.showline ? ya.linecolor : "rgba(0,0,0,0)");
           }
           plotinfo.ylines.attr("d", yPath);
         }
@@ -38707,7 +38746,7 @@ var Plotly = (() => {
       var readPaths = require_helpers7().readPaths;
       var displayOutlines = require_display_outlines();
       var clearOutlineControllers = require_handle_outline().clearOutlineControllers;
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var arrayEditor = require_plot_template().arrayEditor;
       var helpers = require_helpers8();
@@ -38748,7 +38787,7 @@ var Plotly = (() => {
           };
           var opacity = options.opacity;
           var fillColor = "rgba(0,0,0,0)";
-          var lineColor = options.line.color || Color2.contrast(gd._fullLayout.plot_bgcolor);
+          var lineColor = options.line.color || Color.contrast(gd._fullLayout.plot_bgcolor);
           var lineWidth = options.line.width;
           var lineDash = options.line.dash;
           if (!lineWidth) {
@@ -38762,7 +38801,7 @@ var Plotly = (() => {
           }
           var allPaths = [];
           for (var sensory = 1; sensory >= 0; sensory--) {
-            var path = selectionLayer.append("path").attr(attrs).style("opacity", sensory ? 0.1 : opacity).call(Color2.stroke, lineColor).call(Color2.fill, fillColor).call(
+            var path = selectionLayer.append("path").attr(attrs).style("opacity", sensory ? 0.1 : opacity).call(Color.stroke, lineColor).call(Color.fill, fillColor).call(
               Drawing.dashLine,
               sensory ? "solid" : lineDash,
               sensory ? 4 + lineWidth : lineWidth
@@ -39008,33 +39047,33 @@ var Plotly = (() => {
               return false;
             var dx = a0[0] - b0[0];
             var dy = a0[1] - b0[1];
-            var A2 = (bdx * dy - bdy * dx) / axb;
-            var B2 = (adx * dy - ady * dx) / axb;
+            var A = (bdx * dy - bdy * dx) / axb;
+            var B = (adx * dy - ady * dx) / axb;
             var ret = {
               alongA: 0,
               alongB: 0,
               pt: [
-                a0[0] + A2 * adx,
-                a0[1] + A2 * ady
+                a0[0] + A * adx,
+                a0[1] + A * ady
               ]
             };
-            if (A2 <= -eps)
+            if (A <= -eps)
               ret.alongA = -2;
-            else if (A2 < eps)
+            else if (A < eps)
               ret.alongA = -1;
-            else if (A2 - 1 <= -eps)
+            else if (A - 1 <= -eps)
               ret.alongA = 0;
-            else if (A2 - 1 < eps)
+            else if (A - 1 < eps)
               ret.alongA = 1;
             else
               ret.alongA = 2;
-            if (B2 <= -eps)
+            if (B <= -eps)
               ret.alongB = -2;
-            else if (B2 < eps)
+            else if (B < eps)
               ret.alongB = -1;
-            else if (B2 - 1 <= -eps)
+            else if (B - 1 <= -eps)
               ret.alongB = 0;
-            else if (B2 - 1 < eps)
+            else if (B - 1 < eps)
               ret.alongB = 1;
             else
               ret.alongB = 2;
@@ -40227,7 +40266,7 @@ var Plotly = (() => {
       var pointInPolygon = require_nested();
       var Registry = require_registry();
       var dashStyle = require_drawing().dashStyle;
-      var Color2 = require_color();
+      var Color = require_color();
       var Fx = require_fx();
       var makeEventData = require_helpers2().makeEventData;
       var dragHelpers = require_helpers5();
@@ -40309,16 +40348,16 @@ var Plotly = (() => {
           dragOptions.hasText = newStyle.label.text || newStyle.label.texttemplate;
         }
         var fillC = isDrawMode && !isOpenMode ? newStyle.fillcolor : "rgba(0,0,0,0)";
-        var strokeC = newStyle.line.color || (isCartesian ? Color2.contrast(gd._fullLayout.plot_bgcolor) : "#7f7f7f");
+        var strokeC = newStyle.line.color || (isCartesian ? Color.contrast(gd._fullLayout.plot_bgcolor) : "#7f7f7f");
         outlines.enter().append("path").attr("class", "select-outline select-outline-" + plotinfo.id).style({
           opacity: isDrawMode ? newStyle.opacity / 2 : 1,
           "stroke-dasharray": dashStyle(newStyle.line.dash, newStyle.line.width),
           "stroke-width": newStyle.line.width + "px",
           "shape-rendering": "crispEdges"
-        }).call(Color2.stroke, strokeC).call(Color2.fill, fillC).attr("fill-rule", "evenodd").classed("cursor-move", isDrawMode ? true : false).attr("transform", transform).attr("d", path0 + "Z");
+        }).call(Color.stroke, strokeC).call(Color.fill, fillC).attr("fill-rule", "evenodd").classed("cursor-move", isDrawMode ? true : false).attr("transform", transform).attr("d", path0 + "Z");
         var corners = zoomLayer.append("path").attr("class", "zoombox-corners").style({
-          fill: Color2.background,
-          stroke: Color2.defaultLine,
+          fill: Color.background,
+          stroke: Color.defaultLine,
           "stroke-width": 1
         }).attr("transform", transform).attr("d", "M0,0Z");
         if (isDrawMode && dragOptions.hasText) {
@@ -42417,7 +42456,7 @@ var Plotly = (() => {
       var Registry = require_registry();
       var strTranslate = Lib.strTranslate;
       var svgTextUtils = require_svg_text_utils();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Fx = require_fx();
       var Axes = require_axes();
@@ -43238,8 +43277,8 @@ var Plotly = (() => {
       }
       function makeCorners(zoomlayer, xs, ys) {
         return zoomlayer.append("path").attr("class", "zoombox-corners").style({
-          fill: Color2.background,
-          stroke: Color2.defaultLine,
+          fill: Color.background,
+          stroke: Color.defaultLine,
           "stroke-width": 1,
           opacity: 0
         }).attr("transform", strTranslate(xs, ys)).attr("d", "M0,0Z");
@@ -43734,7 +43773,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var Plots = require_plots();
       var AxisIds = require_axis_ids();
-      var Color2 = require_color();
+      var Color = require_color();
       var cleanId = AxisIds.cleanId;
       var getFromTrace = AxisIds.getFromTrace;
       var traceIs = Registry.traceIs;
@@ -43827,7 +43866,7 @@ var Plotly = (() => {
           }
         }
         if (layout.dragmode === "rotate") layout.dragmode = "orbit";
-        Color2.clean(layout);
+        Color.clean(layout);
         if (layout.template && layout.template.layout) {
           exports.cleanLayout(layout.template.layout);
         }
@@ -43920,7 +43959,7 @@ var Plotly = (() => {
             if (emptyContainer(trace.marker, "line")) delete trace.marker.line;
             if (emptyContainer(trace, "marker")) delete trace.marker;
           }
-          Color2.clean(trace);
+          Color.clean(trace);
           if (trace.autobinx) {
             delete trace.autobinx;
             delete trace.xbins;
@@ -44081,7 +44120,7 @@ var Plotly = (() => {
       var handleRangeDefaults = require_range_defaults();
       var cartesianLayoutAttributes = require_layout_attributes4();
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var initInteractions = require_graph_interact().initInteractions;
       var xmlnsNamespaces = require_xmlns_namespaces();
       var clearOutline = require_selections().clearOutline;
@@ -44328,7 +44367,7 @@ var Plotly = (() => {
         }
       }
       function opaqueSetBackground(gd, bgColor) {
-        var blend = Color2.combine(bgColor, "white");
+        var blend = Color.combine(bgColor, "white");
         setBackground(gd, blend);
       }
       function setPlotContext(gd, config) {
@@ -46527,7 +46566,7 @@ var Plotly = (() => {
       var d3 = require_d3();
       var Lib = require_lib();
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var xmlnsNamespaces = require_xmlns_namespaces();
       var DOUBLEQUOTE_REGEX = /"/g;
       var DUMMY_SUB = "TOBESTRIPPED";
@@ -46559,7 +46598,7 @@ var Plotly = (() => {
         var width = fullLayout.width;
         var height = fullLayout.height;
         var i;
-        svg.insert("rect", ":first-child").call(Drawing.setRect, 0, 0, width, height).call(Color2.fill, fullLayout.paper_bgcolor);
+        svg.insert("rect", ":first-child").call(Drawing.setRect, 0, 0, width, height).call(Color.fill, fullLayout.paper_bgcolor);
         var basePlotModules = fullLayout._basePlotModules || [];
         for (i = 0; i < basePlotModules.length; i++) {
           var _module = basePlotModules[i];
@@ -47034,7 +47073,7 @@ var Plotly = (() => {
             list.push(format("unused", base, p, valIn));
           } else if (!Lib.validate(valIn, nestedSchema)) {
             list.push(format("value", base, p, valIn));
-          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || valIn !== valOut)) {
+          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || !isArrayOrTypedArray(valIn) && valIn !== valOut || String(valIn) !== String(valOut))) {
             list.push(format("dynamic", base, p, valIn, valOut));
           }
         }
@@ -47762,7 +47801,7 @@ var Plotly = (() => {
   var require_marker_defaults = __commonJS({
     "src/traces/scatter/marker_defaults.js"(exports, module) {
       "use strict";
-      var Color2 = require_color();
+      var Color = require_color();
       var hasColorscale = require_helpers().hasColorscale;
       var colorscaleDefaults = require_defaults2();
       var subTypes = require_subtypes();
@@ -47797,8 +47836,8 @@ var Plotly = (() => {
         if (!opts.noLine) {
           if (lineColor && !Array.isArray(lineColor) && traceOut.marker.color !== lineColor) {
             defaultMLC = lineColor;
-          } else if (isBubble) defaultMLC = Color2.background;
-          else defaultMLC = Color2.defaultLine;
+          } else if (isBubble) defaultMLC = Color.background;
+          else defaultMLC = Color.defaultLine;
           coerce("marker.line.color", defaultMLC);
           if (hasColorscale(traceIn, "marker.line")) {
             colorscaleDefaults(traceIn, traceOut, layout, coerce, { prefix: "marker.line.", cLetter: "c" });
@@ -47877,15 +47916,15 @@ var Plotly = (() => {
   var require_fillcolor_defaults = __commonJS({
     "src/traces/scatter/fillcolor_defaults.js"(exports, module) {
       "use strict";
-      var Color2 = require_color();
+      var Color = require_color();
       var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
       function averageColors(colorscale) {
-        var color2 = Color2.interpolate(colorscale[0][1], colorscale[1][1], 0.5);
+        var color = Color.interpolate(colorscale[0][1], colorscale[1][1], 0.5);
         for (var i = 2; i < colorscale.length; i++) {
-          var averageColorI = Color2.interpolate(colorscale[i - 1][1], colorscale[i][1], 0.5);
-          color2 = Color2.interpolate(color2, averageColorI, colorscale[i - 1][0] / colorscale[i][0]);
+          var averageColorI = Color.interpolate(colorscale[i - 1][1], colorscale[i][1], 0.5);
+          color = Color.interpolate(color, averageColorI, colorscale[i - 1][0] / colorscale[i][0]);
         }
-        return color2;
+        return color;
       }
       module.exports = function fillColorDefaults(traceIn, traceOut, defaultColor, coerce, opts) {
         if (!opts) opts = {};
@@ -47911,7 +47950,7 @@ var Plotly = (() => {
             }
           }
         }
-        coerce("fillcolor", Color2.addOpacity(
+        coerce("fillcolor", Color.addOpacity(
           (traceOut.line || {}).color || inheritColorFromMarker || averageGradientColor || defaultColor,
           0.5
         ));
@@ -49357,7 +49396,7 @@ var Plotly = (() => {
         var connectGaps = opts.connectGaps;
         var baseTolerance = opts.baseTolerance;
         var shape = opts.shape;
-        var linear2 = shape === "linear";
+        var linear = shape === "linear";
         var fill = trace.fill && trace.fill !== "none";
         var segments = [];
         var minTolerance = constants.minTolerance;
@@ -49600,7 +49639,7 @@ var Plotly = (() => {
               if (connectGaps) continue;
               else break;
             }
-            if (!linear2 || !opts.simplify) {
+            if (!linear || !opts.simplify) {
               addPt(clusterHighPt);
               continue;
             }
@@ -49758,7 +49797,7 @@ var Plotly = (() => {
       var Registry = require_registry();
       var Lib = require_lib();
       var ensureSingle = Lib.ensureSingle;
-      var identity2 = Lib.identity;
+      var identity = Lib.identity;
       var Drawing = require_drawing();
       var subTypes = require_subtypes();
       var linePoints = require_line_points();
@@ -49809,7 +49848,7 @@ var Plotly = (() => {
           var fillData = [];
           if (trace._ownfill) fillData.push("_ownFill");
           if (trace._nexttrace) fillData.push("_nextFill");
-          var fillJoin = fills.selectAll("g").data(fillData, identity2);
+          var fillJoin = fills.selectAll("g").data(fillData, identity);
           fillJoin.enter().append("g");
           fillJoin.exit().each(function(d2) {
             trace[d2] = null;
@@ -50075,7 +50114,7 @@ var Plotly = (() => {
           var markerFilter = hideFilter;
           var textFilter = hideFilter;
           if (showMarkers || showText) {
-            var showFilter = identity2;
+            var showFilter = identity;
             var stackGroup = trace2.stackgroup;
             var isInferZero = stackGroup && gd._fullLayout._scatterStackOpts[xa._id + ya._id][stackGroup].stackgaps === "infer zero";
             if (trace2.marker.maxdisplayed || trace2._needsCull) {
@@ -50270,26 +50309,26 @@ var Plotly = (() => {
   var require_get_trace_color = __commonJS({
     "src/traces/scatter/get_trace_color.js"(exports, module) {
       "use strict";
-      var Color2 = require_color();
+      var Color = require_color();
       var subtypes = require_subtypes();
       module.exports = function getTraceColor(trace, di) {
         var lc, tc;
         if (trace.mode === "lines") {
           lc = trace.line.color;
-          return lc && Color2.opacity(lc) ? lc : trace.fillcolor;
+          return lc && Color.opacity(lc) ? lc : trace.fillcolor;
         } else if (trace.mode === "none") {
           return trace.fill ? trace.fillcolor : "";
         } else {
           var mc = di.mcc || (trace.marker || {}).color;
           var mlc = di.mlcc || ((trace.marker || {}).line || {}).color;
-          tc = mc && Color2.opacity(mc) ? mc : mlc && Color2.opacity(mlc) && (di.mlw || ((trace.marker || {}).line || {}).width) ? mlc : "";
+          tc = mc && Color.opacity(mc) ? mc : mlc && Color.opacity(mlc) && (di.mlw || ((trace.marker || {}).line || {}).width) ? mlc : "";
           if (tc) {
-            if (Color2.opacity(tc) < 0.3) {
-              return Color2.addOpacity(tc, 0.3);
+            if (Color.opacity(tc) < 0.3) {
+              return Color.addOpacity(tc, 0.3);
             } else return tc;
           } else {
             lc = (trace.line || {}).color;
-            return lc && Color2.opacity(lc) && subtypes.hasLines(trace) && trace.line.width ? lc : trace.fillcolor;
+            return lc && Color.opacity(lc) && subtypes.hasLines(trace) && trace.line.width ? lc : trace.fillcolor;
           }
         }
       };
@@ -50304,7 +50343,7 @@ var Plotly = (() => {
       var Fx = require_fx();
       var Registry = require_registry();
       var getTraceColor = require_get_trace_color();
-      var Color2 = require_color();
+      var Color = require_color();
       var fillText = Lib.fillText;
       module.exports = function hoverPoints(pointData, xval, yval, hovermode) {
         var cd = pointData.cd;
@@ -50450,10 +50489,10 @@ var Plotly = (() => {
                 y1: pt[1]
               };
             }
-            var color2 = Color2.defaultLine;
-            if (Color2.opacity(trace.fillcolor)) color2 = trace.fillcolor;
-            else if (Color2.opacity((trace.line || {}).color)) {
-              color2 = trace.line.color;
+            var color = Color.defaultLine;
+            if (Color.opacity(trace.fillcolor)) color = trace.fillcolor;
+            else if (Color.opacity((trace.line || {}).color)) {
+              color = trace.line.color;
             }
             Lib.extendFlat(pointData, {
               // never let a 2D override 1D type as closest point
@@ -50463,7 +50502,7 @@ var Plotly = (() => {
               x1: hoverLabelCoords.x1,
               y0: hoverLabelCoords.y0,
               y1: hoverLabelCoords.y1,
-              color: color2,
+              color,
               hovertemplate: false
             });
             delete pointData.index;
@@ -50734,10 +50773,12 @@ var Plotly = (() => {
           }
         }
         if (!opts.noZeroLine) {
+          var zeroLineLayer = coerce2("zerolinelayer");
           var zeroLineColor = coerce2("zerolinecolor", dfltColor);
           var zeroLineWidth = coerce2("zerolinewidth");
           var showZeroLine = coerce("zeroline", opts.showGrid || !!zeroLineColor || !!zeroLineWidth);
           if (!showZeroLine) {
+            delete containerOut.zerolinelayer;
             delete containerOut.zerolinecolor;
             delete containerOut.zerolinewidth;
           }
@@ -50855,11 +50896,11 @@ var Plotly = (() => {
         if (containerOut.showline || containerOut.ticks) coerce("mirror");
         var isMultiCategory = axType === "multicategory";
         if (!options.noTickson && (axType === "category" || isMultiCategory) && (containerOut.ticks || containerOut.showgrid)) {
-          var ticksonDflt;
-          if (isMultiCategory) ticksonDflt = "boundaries";
-          var tickson = coerce("tickson", ticksonDflt);
-          if (tickson === "boundaries") {
+          if (isMultiCategory) {
+            coerce("tickson", "boundaries");
             delete containerOut.ticklabelposition;
+          } else {
+            coerce("tickson");
           }
         }
         if (isMultiCategory) {
@@ -51080,7 +51121,7 @@ var Plotly = (() => {
     "src/plots/cartesian/layout_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var isUnifiedHover = require_helpers2().isUnifiedHover;
       var handleHoverModeDefaults = require_hovermode_defaults();
       var Template = require_plot_template();
@@ -51172,11 +51213,11 @@ var Plotly = (() => {
         var xNames = Lib.simpleMap(xIds, id2name);
         var yNames = Lib.simpleMap(yIds, id2name);
         var axNames = xNames.concat(yNames);
-        var plotBgColor = Color2.background;
+        var plotBgColor = Color.background;
         if (xIds.length && yIds.length) {
           plotBgColor = Lib.coerce(layoutIn, layoutOut, basePlotLayoutAttributes, "plot_bgcolor");
         }
-        var bgColor = Color2.combine(plotBgColor, layoutOut.paper_bgcolor);
+        var bgColor = Color.combine(plotBgColor, layoutOut.paper_bgcolor);
         var axName;
         var axId;
         var axLetter;
@@ -51476,7 +51517,7 @@ var Plotly = (() => {
             }
           });
         }
-        var t12, t22, raf;
+        var t1, t2, raf;
         var easeFn = d3.ease(transitionOpts.easing);
         gd._transitionData._interruptCallbacks.push(function() {
           window.cancelAnimationFrame(raf);
@@ -51484,20 +51525,20 @@ var Plotly = (() => {
           return transitionInterrupt();
         });
         function doFrame() {
-          t22 = Date.now();
-          var tInterp = Math.min(1, (t22 - t12) / transitionOpts.duration);
+          t2 = Date.now();
+          var tInterp = Math.min(1, (t2 - t1) / transitionOpts.duration);
           var progress = easeFn(tInterp);
           for (var i = 0; i < edits.length; i++) {
             updateSubplot(edits[i], progress);
           }
-          if (t22 - t12 > transitionOpts.duration) {
+          if (t2 - t1 > transitionOpts.duration) {
             transitionComplete();
             raf = window.cancelAnimationFrame(doFrame);
           } else {
             raf = window.requestAnimationFrame(doFrame);
           }
         }
-        t12 = Date.now();
+        t1 = Date.now();
         raf = window.requestAnimationFrame(doFrame);
         return Promise.resolve();
       };
@@ -51930,6 +51971,11 @@ var Plotly = (() => {
             }
             plotinfo.overplot = ensureSingle(plotgroup, "g", "overplot");
             plotinfo.plot = ensureSingle(plotinfo.overplot, "g", id);
+            if (mainplotinfo && hasMultipleZ) {
+              plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
+            } else {
+              plotinfo.zerolinelayerAbove = ensureSingle(plotgroup, "g", "zerolinelayer-above");
+            }
             if (!hasZ) {
               plotinfo.xlines = ensureSingle(plotgroup, "path", "xlines-above");
               plotinfo.ylines = ensureSingle(plotgroup, "path", "ylines-above");
@@ -51950,6 +51996,7 @@ var Plotly = (() => {
           plotinfo.minorGridlayer = mainplotinfo.minorGridlayer;
           plotinfo.gridlayer = mainplotinfo.gridlayer;
           plotinfo.zerolinelayer = mainplotinfo.zerolinelayer;
+          plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
           ensureSingle(mainplotinfo.overlinesBelow, "path", xId);
           ensureSingle(mainplotinfo.overlinesBelow, "path", yId);
           ensureSingle(mainplotinfo.overaxesBelow, "g", xId);
@@ -52080,7 +52127,7 @@ var Plotly = (() => {
     "src/components/annotations/draw_arrow_head.js"(exports, module) {
       "use strict";
       var d3 = require_d3();
-      var Color2 = require_color();
+      var Color = require_color();
       var ARROWPATHS = require_arrow_paths();
       var Lib = require_lib();
       var strScale = Lib.strScale;
@@ -52163,7 +52210,7 @@ var Plotly = (() => {
             d: arrowHeadStyle.path,
             transform: strTranslate(p.x, p.y) + strRotate(rot * 180 / Math.PI) + strScale(arrowScale)
           }).style({
-            fill: Color2.rgb(options.arrowcolor),
+            fill: Color.rgb(options.arrowcolor),
             "stroke-width": 0
           });
         }
@@ -52183,7 +52230,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
       var Axes = require_axes();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Fx = require_fx();
       var svgTextUtils = require_svg_text_utils();
@@ -52309,7 +52356,7 @@ var Plotly = (() => {
         var borderwidth = options.borderwidth;
         var borderpad = options.borderpad;
         var borderfull = borderwidth + borderpad;
-        var annTextBG = annTextGroupInner.append("rect").attr("class", "bg").style("stroke-width", borderwidth + "px").call(Color2.stroke, options.bordercolor).call(Color2.fill, options.bgcolor);
+        var annTextBG = annTextGroupInner.append("rect").attr("class", "bg").style("stroke-width", borderwidth + "px").call(Color.stroke, options.bordercolor).call(Color.fill, options.bgcolor);
         var isSizeConstrained = options.width || options.height;
         var annTextClip = fullLayout._topclips.selectAll("#" + annClipID).data(isSizeConstrained ? [0] : []);
         annTextClip.enter().append("clipPath").classed("annclip", true).attr("id", annClipID).append("rect");
@@ -52562,8 +52609,8 @@ var Plotly = (() => {
             var strokewidth = options.arrowwidth;
             var arrowColor = options.arrowcolor;
             var arrowSide = options.arrowside;
-            var arrowGroup = annGroup.append("g").style({ opacity: Color2.opacity(arrowColor) }).classed("annotation-arrow-g", true);
-            var arrow = arrowGroup.append("path").attr("d", "M" + tailX + "," + tailY + "L" + headX + "," + headY).style("stroke-width", strokewidth + "px").call(Color2.stroke, Color2.rgb(arrowColor));
+            var arrowGroup = annGroup.append("g").style({ opacity: Color.opacity(arrowColor) }).classed("annotation-arrow-g", true);
+            var arrow = arrowGroup.append("path").attr("d", "M" + tailX + "," + tailY + "L" + headX + "," + headY).style("stroke-width", strokewidth + "px").call(Color.stroke, Color.rgb(arrowColor));
             drawArrowHead(arrow, arrowSide, options);
             if (edits.annotationPosition && arrow.node().parentNode && !subplotId) {
               var arrowDragHeadX = headX;
@@ -52576,7 +52623,7 @@ var Plotly = (() => {
               var arrowDrag = arrowGroup.append("path").classed("annotation-arrow", true).classed("anndrag", true).classed("cursor-move", true).attr({
                 d: "M3,3H-3V-3H3ZM0,0L" + (tailX - arrowDragHeadX) + "," + (tailY - arrowDragHeadY),
                 transform: strTranslate(arrowDragHeadX, arrowDragHeadY)
-              }).style("stroke-width", strokewidth + 6 + "px").call(Color2.stroke, "rgba(0,0,0,0)").call(Color2.fill, "rgba(0,0,0,0)");
+              }).style("stroke-width", strokewidth + 6 + "px").call(Color.stroke, "rgba(0,0,0,0)").call(Color.fill, "rgba(0,0,0,0)");
               var annx0, anny0;
               dragElement.init({
                 element: arrowDrag.node(),
@@ -52802,12 +52849,12 @@ var Plotly = (() => {
     "src/components/annotations/common_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       module.exports = function handleAnnotationCommonDefaults(annIn, annOut, fullLayout, coerce) {
         coerce("opacity");
         var bgColor = coerce("bgcolor");
         var borderColor = coerce("bordercolor");
-        var borderOpacity = Color2.opacity(borderColor);
+        var borderOpacity = Color.opacity(borderColor);
         coerce("borderpad");
         var borderWidth = coerce("borderwidth");
         var showArrow = coerce("showarrow");
@@ -52830,7 +52877,7 @@ var Plotly = (() => {
             coerce("startarrowhead", arrowhead);
             coerce("startarrowsize", arrowsize);
           }
-          coerce("arrowcolor", borderOpacity ? annOut.bordercolor : Color2.defaultLine);
+          coerce("arrowcolor", borderOpacity ? annOut.bordercolor : Color.defaultLine);
           coerce("arrowwidth", (borderOpacity && borderWidth || 1) * 2);
           coerce("standoff");
           coerce("startstandoff");
@@ -52840,11 +52887,11 @@ var Plotly = (() => {
         if (hoverText) {
           var hoverBG = coerce(
             "hoverlabel.bgcolor",
-            globalHoverLabel.bgcolor || (Color2.opacity(bgColor) ? Color2.rgb(bgColor) : Color2.defaultLine)
+            globalHoverLabel.bgcolor || (Color.opacity(bgColor) ? Color.rgb(bgColor) : Color.defaultLine)
           );
           var hoverBorder = coerce(
             "hoverlabel.bordercolor",
-            globalHoverLabel.bordercolor || Color2.contrast(hoverBG)
+            globalHoverLabel.bordercolor || Color.contrast(hoverBG)
           );
           var fontDflt = Lib.extendFlat({}, globalHoverLabel.font);
           if (!fontDflt.color) {
@@ -53668,7 +53715,7 @@ var Plotly = (() => {
   var require_defaults12 = __commonJS({
     "src/components/shapes/draw_newshape/defaults.js"(exports, module) {
       "use strict";
-      var Color2 = require_color();
+      var Color = require_color();
       var Lib = require_lib();
       function dfltLabelYanchor(isLine, labelTextPosition) {
         return isLine ? "bottom" : labelTextPosition.indexOf("top") !== -1 ? "top" : labelTextPosition.indexOf("bottom") !== -1 ? "bottom" : "middle";
@@ -53691,7 +53738,7 @@ var Plotly = (() => {
         var newshapeLineWidth = coerce("newshape.line.width");
         if (newshapeLineWidth) {
           var bgcolor = (layoutIn || {}).plot_bgcolor || "#FFF";
-          coerce("newshape.line.color", Color2.contrast(bgcolor));
+          coerce("newshape.line.color", Color.contrast(bgcolor));
           coerce("newshape.line.dash");
         }
         var isLine = layoutIn.dragmode === "drawline";
@@ -54462,7 +54509,7 @@ var Plotly = (() => {
       "use strict";
       module.exports = ScrollBox;
       var d3 = require_d3();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Lib = require_lib();
       function ScrollBox(gd, container, id) {
@@ -54553,7 +54600,7 @@ var Plotly = (() => {
           needsHorizontalScrollBar ? [0] : []
         );
         hbar.exit().on(".drag", null).remove();
-        hbar.enter().append("rect").classed("scrollbar-horizontal", true).call(Color2.fill, ScrollBox.barColor);
+        hbar.enter().append("rect").classed("scrollbar-horizontal", true).call(Color.fill, ScrollBox.barColor);
         if (needsHorizontalScrollBar) {
           this.hbar = hbar.attr({
             rx: ScrollBox.barRadius,
@@ -54580,7 +54627,7 @@ var Plotly = (() => {
           needsVerticalScrollBar ? [0] : []
         );
         vbar.exit().on(".drag", null).remove();
-        vbar.enter().append("rect").classed("scrollbar-vertical", true).call(Color2.fill, ScrollBox.barColor);
+        vbar.enter().append("rect").classed("scrollbar-vertical", true).call(Color.fill, ScrollBox.barColor);
         if (needsVerticalScrollBar) {
           this.vbar = vbar.attr({
             rx: ScrollBox.barRadius,
@@ -54756,7 +54803,7 @@ var Plotly = (() => {
       "use strict";
       var d3 = require_d3();
       var Plots = require_plots();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Lib = require_lib();
       var svgTextUtils = require_svg_text_utils();
@@ -55006,7 +55053,7 @@ var Plotly = (() => {
             "shape-rendering": "crispEdges"
           });
         });
-        rect.call(Color2.stroke, menuOpts.bordercolor).call(Color2.fill, menuOpts.bgcolor).style("stroke-width", menuOpts.borderwidth + "px");
+        rect.call(Color.stroke, menuOpts.bordercolor).call(Color.fill, menuOpts.bgcolor).style("stroke-width", menuOpts.borderwidth + "px");
       }
       function drawItemText(item, menuOpts, itemOpts, gd) {
         var text = Lib.ensureSingle(item, "text", constants.itemTextClassName, function(s) {
@@ -55025,15 +55072,15 @@ var Plotly = (() => {
         buttons.each(function(buttonOpts, i) {
           var button = d3.select(this);
           if (i === active && menuOpts.showactive) {
-            button.select("rect." + constants.itemRectClassName).call(Color2.fill, constants.activeColor);
+            button.select("rect." + constants.itemRectClassName).call(Color.fill, constants.activeColor);
           }
         });
       }
       function styleOnMouseOver(item) {
-        item.select("rect." + constants.itemRectClassName).call(Color2.fill, constants.hoverColor);
+        item.select("rect." + constants.itemRectClassName).call(Color.fill, constants.hoverColor);
       }
       function styleOnMouseOut(item, menuOpts) {
-        item.select("rect." + constants.itemRectClassName).call(Color2.fill, menuOpts.bgcolor);
+        item.select("rect." + constants.itemRectClassName).call(Color.fill, menuOpts.bgcolor);
       }
       function findDimensions(gd, menuOpts) {
         var dims = menuOpts._dims = {
@@ -55509,7 +55556,7 @@ var Plotly = (() => {
       "use strict";
       var d3 = require_d3();
       var Plots = require_plots();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
@@ -55726,7 +55773,7 @@ var Plotly = (() => {
           height: constants.gripHeight,
           rx: constants.gripRadius,
           ry: constants.gripRadius
-        }).call(Color2.stroke, sliderOpts.bordercolor).call(Color2.fill, sliderOpts.bgcolor).style("stroke-width", sliderOpts.borderwidth + "px");
+        }).call(Color.stroke, sliderOpts.bordercolor).call(Color.fill, sliderOpts.bgcolor).style("stroke-width", sliderOpts.borderwidth + "px");
       }
       function drawLabel(item, data, sliderOpts) {
         var text = Lib.ensureSingle(item, "text", constants.labelClass, function(s) {
@@ -55811,7 +55858,7 @@ var Plotly = (() => {
           var grip = sliderGroup.select("." + constants.gripRectClass);
           d3.event.stopPropagation();
           d3.event.preventDefault();
-          grip.call(Color2.fill, sliderOpts.activebgcolor);
+          grip.call(Color.fill, sliderOpts.activebgcolor);
           var normalizedPosition = positionToNormalizedValue(sliderOpts, d3.mouse(node)[0]);
           handleInput(gd, sliderGroup, sliderOpts, normalizedPosition, true);
           sliderOpts._dragging = true;
@@ -55825,7 +55872,7 @@ var Plotly = (() => {
           function mouseUpHandler() {
             var sliderOpts2 = getSliderOpts();
             sliderOpts2._dragging = false;
-            grip.call(Color2.fill, sliderOpts2.bgcolor);
+            grip.call(Color.fill, sliderOpts2.bgcolor);
             $gd.on("mouseup", null);
             $gd.on("mousemove", null);
             $gd.on("touchend", null);
@@ -55853,7 +55900,7 @@ var Plotly = (() => {
         tick.each(function(d, i) {
           var isMajor = i % dims.labelStride === 0;
           var item = d3.select(this);
-          item.attr({ height: isMajor ? sliderOpts.ticklen : sliderOpts.minorticklen }).call(Color2.fill, isMajor ? sliderOpts.tickcolor : sliderOpts.tickcolor);
+          item.attr({ height: isMajor ? sliderOpts.ticklen : sliderOpts.minorticklen }).call(Color.fill, isMajor ? sliderOpts.tickcolor : sliderOpts.tickcolor);
           Drawing.setTranslate(
             item,
             normalizedValueToPosition(sliderOpts, i / (sliderOpts._stepCount - 1)) - 0.5 * sliderOpts.tickwidth,
@@ -55905,7 +55952,7 @@ var Plotly = (() => {
         rect.attr({
           width: dims.inputAreaLength,
           height: Math.max(dims.inputAreaWidth, constants.tickOffset + sliderOpts.ticklen + dims.labelHeight)
-        }).call(Color2.fill, sliderOpts.bgcolor).attr("opacity", 0);
+        }).call(Color.fill, sliderOpts.bgcolor).attr("opacity", 0);
         Drawing.setTranslate(rect, 0, dims.currentValueTotalHeight);
       }
       function drawRail(sliderGroup, sliderOpts) {
@@ -55918,7 +55965,7 @@ var Plotly = (() => {
           rx: constants.railRadius,
           ry: constants.railRadius,
           "shape-rendering": "crispEdges"
-        }).call(Color2.stroke, sliderOpts.bordercolor).call(Color2.fill, sliderOpts.bgcolor).style("stroke-width", sliderOpts.borderwidth + "px");
+        }).call(Color.stroke, sliderOpts.bordercolor).call(Color.fill, sliderOpts.bgcolor).style("stroke-width", sliderOpts.borderwidth + "px");
         Drawing.setTranslate(
           rect,
           constants.railInset,
@@ -56212,7 +56259,7 @@ var Plotly = (() => {
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var Titles = require_titles();
       var Cartesian = require_cartesian();
       var axisIDs = require_axis_ids();
@@ -56479,7 +56526,7 @@ var Plotly = (() => {
           height: opts._height + borderCorrect,
           transform: strTranslate(offsetShift, offsetShift),
           "stroke-width": lw
-        }).call(Color2.stroke, opts.bordercolor).call(Color2.fill, opts.bgcolor);
+        }).call(Color.stroke, opts.bordercolor).call(Color.fill, opts.bgcolor);
       }
       function addClipPath(rangeSlider, gd, axisOpts, opts) {
         var fullLayout = gd._fullLayout;
@@ -56574,14 +56621,14 @@ var Plotly = (() => {
             "shape-rendering": "crispEdges"
           });
         });
-        maskMin.attr("height", opts._height).call(Color2.fill, constants.maskColor);
+        maskMin.attr("height", opts._height).call(Color.fill, constants.maskColor);
         var maskMax = Lib.ensureSingle(rangeSlider, "rect", constants.maskMaxClassName, function(s) {
           s.attr({
             y: 0,
             "shape-rendering": "crispEdges"
           });
         });
-        maskMax.attr("height", opts._height).call(Color2.fill, constants.maskColor);
+        maskMax.attr("height", opts._height).call(Color.fill, constants.maskColor);
         if (oppAxisRangeOpts.rangemode !== "match") {
           var maskMinOppAxis = Lib.ensureSingle(rangeSlider, "rect", constants.maskMinOppAxisClassName, function(s) {
             s.attr({
@@ -56589,14 +56636,14 @@ var Plotly = (() => {
               "shape-rendering": "crispEdges"
             });
           });
-          maskMinOppAxis.attr("width", opts._width).call(Color2.fill, constants.maskOppAxisColor);
+          maskMinOppAxis.attr("width", opts._width).call(Color.fill, constants.maskOppAxisColor);
           var maskMaxOppAxis = Lib.ensureSingle(rangeSlider, "rect", constants.maskMaxOppAxisClassName, function(s) {
             s.attr({
               y: 0,
               "shape-rendering": "crispEdges"
             });
           });
-          maskMaxOppAxis.attr("width", opts._width).style("border-top", constants.maskOppBorder).call(Color2.fill, constants.maskOppAxisColor);
+          maskMaxOppAxis.attr("width", opts._width).style("border-top", constants.maskOppBorder).call(Color.fill, constants.maskOppAxisColor);
         }
       }
       function drawSlideBox(rangeSlider, gd, axisOpts, opts) {
@@ -56620,8 +56667,8 @@ var Plotly = (() => {
           x: 0,
           width: constants.handleWidth,
           rx: constants.handleRadius,
-          fill: Color2.background,
-          stroke: Color2.defaultLine,
+          fill: Color.background,
+          stroke: Color.defaultLine,
           "stroke-width": constants.handleStrokeWidth,
           "shape-rendering": "crispEdges"
         };
@@ -56806,7 +56853,7 @@ var Plotly = (() => {
     "src/components/rangeselector/defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var Color2 = require_color();
+      var Color = require_color();
       var Template = require_plot_template();
       var handleArrayContainerDefaults = require_array_container_defaults();
       var attributes = require_attributes21();
@@ -56832,7 +56879,7 @@ var Plotly = (() => {
           coerce("yanchor");
           Lib.coerceFont(coerce, "font", layout.font);
           var bgColor = coerce("bgcolor");
-          coerce("activecolor", Color2.contrast(bgColor, constants.lightAmount, constants.darkAmount));
+          coerce("activecolor", Color.contrast(bgColor, constants.lightAmount, constants.darkAmount));
           coerce("bordercolor");
           coerce("borderwidth");
         }
@@ -56917,7 +56964,7 @@ var Plotly = (() => {
       var d3 = require_d3();
       var Registry = require_registry();
       var Plots = require_plots();
-      var Color2 = require_color();
+      var Color = require_color();
       var Drawing = require_drawing();
       var Lib = require_lib();
       var strTranslate = Lib.strTranslate;
@@ -56997,7 +57044,7 @@ var Plotly = (() => {
           rx: constants.rx,
           ry: constants.ry
         });
-        rect.call(Color2.stroke, selectorLayout.bordercolor).call(Color2.fill, getFillColor(selectorLayout, d)).style("stroke-width", selectorLayout.borderwidth + "px");
+        rect.call(Color.stroke, selectorLayout.bordercolor).call(Color.fill, getFillColor(selectorLayout, d)).style("stroke-width", selectorLayout.borderwidth + "px");
       }
       function getFillColor(selectorLayout, d) {
         return d._isActive || d._isHovered ? selectorLayout.activecolor : selectorLayout.bgcolor;
@@ -57819,16 +57866,16 @@ var Plotly = (() => {
     "src/components/errorbars/style.js"(exports, module) {
       "use strict";
       var d3 = require_d3();
-      var Color2 = require_color();
+      var Color = require_color();
       module.exports = function style(traces) {
         traces.each(function(d) {
           var trace = d[0].trace;
           var yObj = trace.error_y || {};
           var xObj = trace.error_x || {};
           var s = d3.select(this);
-          s.selectAll("path.yerror").style("stroke-width", yObj.thickness + "px").call(Color2.stroke, yObj.color);
+          s.selectAll("path.yerror").style("stroke-width", yObj.thickness + "px").call(Color.stroke, yObj.color);
           if (xObj.copy_ystyle) xObj = yObj;
-          s.selectAll("path.xerror").style("stroke-width", xObj.thickness + "px").call(Color2.stroke, xObj.color);
+          s.selectAll("path.xerror").style("stroke-width", xObj.thickness + "px").call(Color.stroke, xObj.color);
         });
       };
     }
@@ -57927,7 +57974,7 @@ var Plotly = (() => {
       var extendFlat = require_extend().extendFlat;
       var setCursor = require_setcursor();
       var Drawing = require_drawing();
-      var Color2 = require_color();
+      var Color = require_color();
       var Titles = require_titles();
       var svgTextUtils = require_svg_text_utils();
       var flipScale = require_helpers().flipScale;
@@ -58374,9 +58421,9 @@ var Plotly = (() => {
           var extraW = borderwidth + outlinewidth;
           var lx = (isVertical ? uPx : vPx) - extraW / 2 - (isVertical ? xpad : 0);
           var ly = (isVertical ? vPx : uPx) - (isVertical ? lenPx : ypad + moveY - hColorbarMoveTitle);
-          g.select("." + cn.cbbg).attr("x", lx).attr("y", ly).attr(isVertical ? "width" : "height", Math.max(outerThickness - hColorbarMoveTitle, 2)).attr(isVertical ? "height" : "width", Math.max(lenPx + extraW, 2)).call(Color2.fill, bgcolor).call(Color2.stroke, opts.bordercolor).style("stroke-width", borderwidth);
+          g.select("." + cn.cbbg).attr("x", lx).attr("y", ly).attr(isVertical ? "width" : "height", Math.max(outerThickness - hColorbarMoveTitle, 2)).attr(isVertical ? "height" : "width", Math.max(lenPx + extraW, 2)).call(Color.fill, bgcolor).call(Color.stroke, opts.bordercolor).style("stroke-width", borderwidth);
           var moveX = rightSideHorizontal ? Math.max(titleWidth2 - 10, 0) : 0;
-          g.selectAll("." + cn.cboutline).attr("x", (isVertical ? uPx : vPx + xpad) + moveX).attr("y", (isVertical ? vPx + ypad - lenPx : uPx) + (topSideVertical ? titleHeight : 0)).attr(isVertical ? "width" : "height", Math.max(thickPx, 2)).attr(isVertical ? "height" : "width", Math.max(lenPx - (isVertical ? 2 * ypad + titleHeight : 2 * xpad + moveX), 2)).call(Color2.stroke, opts.outlinecolor).style({
+          g.selectAll("." + cn.cboutline).attr("x", (isVertical ? uPx : vPx + xpad) + moveX).attr("y", (isVertical ? vPx + ypad - lenPx : uPx) + (topSideVertical ? titleHeight : 0)).attr(isVertical ? "width" : "height", Math.max(thickPx, 2)).attr(isVertical ? "height" : "width", Math.max(lenPx - (isVertical ? 2 * ypad + titleHeight : 2 * xpad + moveX), 2)).call(Color.stroke, opts.outlinecolor).style({
             fill: "none",
             "stroke-width": outlinewidth
           });
@@ -58509,16 +58556,16 @@ var Plotly = (() => {
         var isVertical = opts.orientation === "v";
         var fullLayout = gd._fullLayout;
         var gs = fullLayout._size;
-        var t02, xf, yf;
+        var t0, xf, yf;
         dragElement.init({
           element: g.node(),
           gd,
           prepFn: function() {
-            t02 = g.attr("transform");
+            t0 = g.attr("transform");
             setCursor(g);
           },
           moveFn: function(dx, dy) {
-            g.attr("transform", t02 + strTranslate(dx, dy));
+            g.attr("transform", t0 + strTranslate(dx, dy));
             xf = dragElement.align(
               (isVertical ? opts._uFrac : opts._vFrac) + dx / gs.w,
               isVertical ? opts._thickFrac : opts._lenFrac,
@@ -59035,6 +59082,14 @@ var Plotly = (() => {
     }
   });
 
+  // lib/scatter.js
+  var require_scatter2 = __commonJS({
+    "lib/scatter.js"(exports, module) {
+      "use strict";
+      module.exports = require_scatter();
+    }
+  });
+
   // src/traces/bar/constants.js
   var require_constants14 = __commonJS({
     "src/traces/bar/constants.js"(exports, module) {
@@ -59196,1650 +59251,6 @@ var Plotly = (() => {
         },
         zorder: scatterAttrs.zorder
       };
-    }
-  });
-
-  // src/traces/bar/layout_attributes.js
-  var require_layout_attributes6 = __commonJS({
-    "src/traces/bar/layout_attributes.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        barmode: {
-          valType: "enumerated",
-          values: ["stack", "group", "overlay", "relative"],
-          dflt: "group",
-          editType: "calc"
-        },
-        barnorm: {
-          valType: "enumerated",
-          values: ["", "fraction", "percent"],
-          dflt: "",
-          editType: "calc"
-        },
-        bargap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          editType: "calc"
-        },
-        bargroupgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0,
-          editType: "calc"
-        },
-        barcornerradius: {
-          valType: "any",
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/traces/bar/style_defaults.js
-  var require_style_defaults = __commonJS({
-    "src/traces/bar/style_defaults.js"(exports, module) {
-      "use strict";
-      var Color2 = require_color();
-      var hasColorscale = require_helpers().hasColorscale;
-      var colorscaleDefaults = require_defaults2();
-      var coercePattern = require_lib().coercePattern;
-      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout) {
-        var markerColor = coerce("marker.color", defaultColor);
-        var hasMarkerColorscale = hasColorscale(traceIn, "marker");
-        if (hasMarkerColorscale) {
-          colorscaleDefaults(
-            traceIn,
-            traceOut,
-            layout,
-            coerce,
-            { prefix: "marker.", cLetter: "c" }
-          );
-        }
-        coerce("marker.line.color", Color2.defaultLine);
-        if (hasColorscale(traceIn, "marker.line")) {
-          colorscaleDefaults(
-            traceIn,
-            traceOut,
-            layout,
-            coerce,
-            { prefix: "marker.line.", cLetter: "c" }
-          );
-        }
-        coerce("marker.line.width");
-        coerce("marker.opacity");
-        coercePattern(coerce, "marker.pattern", markerColor, hasMarkerColorscale);
-        coerce("selected.marker.color");
-        coerce("unselected.marker.color");
-      };
-    }
-  });
-
-  // src/traces/bar/defaults.js
-  var require_defaults19 = __commonJS({
-    "src/traces/bar/defaults.js"(exports, module) {
-      "use strict";
-      var isNumeric = require_fast_isnumeric();
-      var Lib = require_lib();
-      var Color2 = require_color();
-      var Registry = require_registry();
-      var handleXYDefaults = require_xy_defaults();
-      var handlePeriodDefaults = require_period_defaults();
-      var handleStyleDefaults = require_style_defaults();
-      var handleGroupingDefaults = require_grouping_defaults();
-      var attributes = require_attributes23();
-      var coerceFont = Lib.coerceFont;
-      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        coerce("zorder");
-        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
-        coerce("base");
-        coerce("offset");
-        coerce("width");
-        coerce("text");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        var textposition = coerce("textposition");
-        handleText(traceIn, traceOut, layout, coerce, textposition, {
-          moduleHasSelected: true,
-          moduleHasUnselected: true,
-          moduleHasConstrain: true,
-          moduleHasCliponaxis: true,
-          moduleHasTextangle: true,
-          moduleHasInsideanchor: true
-        });
-        handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout);
-        var lineColor = (traceOut.marker.line || {}).color;
-        var errorBarsSupplyDefaults = Registry.getComponentMethod("errorbars", "supplyDefaults");
-        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color2.defaultLine, { axis: "y" });
-        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color2.defaultLine, { axis: "x", inherit: "y" });
-        Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
-      }
-      function crossTraceDefaults(fullData, fullLayout) {
-        var traceIn, traceOut;
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceOut._input, traceOut, attributes, attr, dflt);
-        }
-        for (var i = 0; i < fullData.length; i++) {
-          traceOut = fullData[i];
-          if (traceOut.type === "bar") {
-            traceIn = traceOut._input;
-            var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
-            if (traceOut.marker) {
-              traceOut.marker.cornerradius = validateCornerradius(r);
-            }
-            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.barmode);
-          }
-        }
-      }
-      function validateCornerradius(r) {
-        if (isNumeric(r)) {
-          r = +r;
-          if (r >= 0) return r;
-        } else if (typeof r === "string") {
-          r = r.trim();
-          if (r.slice(-1) === "%" && isNumeric(r.slice(0, -1))) {
-            r = +r.slice(0, -1);
-            if (r >= 0) return r + "%";
-          }
-        }
-        return void 0;
-      }
-      function handleText(traceIn, traceOut, layout, coerce, textposition, opts) {
-        opts = opts || {};
-        var moduleHasSelected = !(opts.moduleHasSelected === false);
-        var moduleHasUnselected = !(opts.moduleHasUnselected === false);
-        var moduleHasConstrain = !(opts.moduleHasConstrain === false);
-        var moduleHasCliponaxis = !(opts.moduleHasCliponaxis === false);
-        var moduleHasTextangle = !(opts.moduleHasTextangle === false);
-        var moduleHasInsideanchor = !(opts.moduleHasInsideanchor === false);
-        var hasPathbar = !!opts.hasPathbar;
-        var hasBoth = Array.isArray(textposition) || textposition === "auto";
-        var hasInside = hasBoth || textposition === "inside";
-        var hasOutside = hasBoth || textposition === "outside";
-        if (hasInside || hasOutside) {
-          var dfltFont = coerceFont(coerce, "textfont", layout.font);
-          var insideTextFontDefault = Lib.extendFlat({}, dfltFont);
-          var isTraceTextfontColorSet = traceIn.textfont && traceIn.textfont.color;
-          var isColorInheritedFromLayoutFont = !isTraceTextfontColorSet;
-          if (isColorInheritedFromLayoutFont) {
-            delete insideTextFontDefault.color;
-          }
-          coerceFont(coerce, "insidetextfont", insideTextFontDefault);
-          if (hasPathbar) {
-            var pathbarTextFontDefault = Lib.extendFlat({}, dfltFont);
-            if (isColorInheritedFromLayoutFont) {
-              delete pathbarTextFontDefault.color;
-            }
-            coerceFont(coerce, "pathbar.textfont", pathbarTextFontDefault);
-          }
-          if (hasOutside) coerceFont(coerce, "outsidetextfont", dfltFont);
-          if (moduleHasSelected) coerce("selected.textfont.color");
-          if (moduleHasUnselected) coerce("unselected.textfont.color");
-          if (moduleHasConstrain) coerce("constraintext");
-          if (moduleHasCliponaxis) coerce("cliponaxis");
-          if (moduleHasTextangle) coerce("textangle");
-          coerce("texttemplate");
-        }
-        if (hasInside) {
-          if (moduleHasInsideanchor) coerce("insidetextanchor");
-        }
-      }
-      module.exports = {
-        supplyDefaults,
-        crossTraceDefaults,
-        handleText,
-        validateCornerradius
-      };
-    }
-  });
-
-  // src/traces/bar/layout_defaults.js
-  var require_layout_defaults5 = __commonJS({
-    "src/traces/bar/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Registry = require_registry();
-      var Axes = require_axes();
-      var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes6();
-      var validateCornerradius = require_defaults19().validateCornerradius;
-      module.exports = function(layoutIn, layoutOut, fullData) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
-        }
-        var hasBars = false;
-        var shouldBeGapless = false;
-        var gappedAnyway = false;
-        var usedSubplots = {};
-        var mode = coerce("barmode");
-        var isGroup = mode === "group";
-        for (var i = 0; i < fullData.length; i++) {
-          var trace = fullData[i];
-          if (Registry.traceIs(trace, "bar") && trace.visible) hasBars = true;
-          else continue;
-          var subploti = trace.xaxis + trace.yaxis;
-          if (isGroup) {
-            if (usedSubplots[subploti]) gappedAnyway = true;
-            usedSubplots[subploti] = true;
-          } else {
-            subploti += trace._input.offsetgroup;
-            if (usedSubplots.length > 0 && !usedSubplots[subploti]) gappedAnyway = true;
-            usedSubplots[subploti] = true;
-          }
-          if (trace.visible && trace.type === "histogram") {
-            var pa = Axes.getFromId(
-              { _fullLayout: layoutOut },
-              trace[trace.orientation === "v" ? "xaxis" : "yaxis"]
-            );
-            if (pa.type !== "category") shouldBeGapless = true;
-          }
-        }
-        if (!hasBars) {
-          delete layoutOut.barmode;
-          return;
-        }
-        if (mode !== "overlay") coerce("barnorm");
-        coerce("bargap", shouldBeGapless && !gappedAnyway ? 0 : 0.2);
-        coerce("bargroupgap");
-        var r = coerce("barcornerradius");
-        layoutOut.barcornerradius = validateCornerradius(r);
-      };
-    }
-  });
-
-  // src/traces/bar/arrays_to_calcdata.js
-  var require_arrays_to_calcdata2 = __commonJS({
-    "src/traces/bar/arrays_to_calcdata.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      module.exports = function arraysToCalcdata(cd, trace) {
-        for (var i = 0; i < cd.length; i++) cd[i].i = i;
-        Lib.mergeArray(trace.text, cd, "tx");
-        Lib.mergeArray(trace.hovertext, cd, "htx");
-        var marker = trace.marker;
-        if (marker) {
-          Lib.mergeArray(marker.opacity, cd, "mo", true);
-          Lib.mergeArray(marker.color, cd, "mc");
-          var markerLine = marker.line;
-          if (markerLine) {
-            Lib.mergeArray(markerLine.color, cd, "mlc");
-            Lib.mergeArrayCastPositive(markerLine.width, cd, "mlw");
-          }
-        }
-      };
-    }
-  });
-
-  // src/traces/bar/calc.js
-  var require_calc5 = __commonJS({
-    "src/traces/bar/calc.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      var alignPeriod = require_align_period();
-      var hasColorscale = require_helpers().hasColorscale;
-      var colorscaleCalc = require_calc();
-      var arraysToCalcdata = require_arrays_to_calcdata2();
-      var calcSelection = require_calc_selection();
-      module.exports = function calc(gd, trace) {
-        var xa = Axes.getFromId(gd, trace.xaxis || "x");
-        var ya = Axes.getFromId(gd, trace.yaxis || "y");
-        var size, pos, origPos, pObj, hasPeriod, pLetter;
-        var sizeOpts = {
-          msUTC: !!(trace.base || trace.base === 0)
-        };
-        if (trace.orientation === "h") {
-          size = xa.makeCalcdata(trace, "x", sizeOpts);
-          origPos = ya.makeCalcdata(trace, "y");
-          pObj = alignPeriod(trace, ya, "y", origPos);
-          hasPeriod = !!trace.yperiodalignment;
-          pLetter = "y";
-        } else {
-          size = ya.makeCalcdata(trace, "y", sizeOpts);
-          origPos = xa.makeCalcdata(trace, "x");
-          pObj = alignPeriod(trace, xa, "x", origPos);
-          hasPeriod = !!trace.xperiodalignment;
-          pLetter = "x";
-        }
-        pos = pObj.vals;
-        var serieslen = Math.min(pos.length, size.length);
-        var cd = new Array(serieslen);
-        for (var i = 0; i < serieslen; i++) {
-          cd[i] = { p: pos[i], s: size[i] };
-          if (hasPeriod) {
-            cd[i].orig_p = origPos[i];
-            cd[i][pLetter + "End"] = pObj.ends[i];
-            cd[i][pLetter + "Start"] = pObj.starts[i];
-          }
-          if (trace.ids) {
-            cd[i].id = String(trace.ids[i]);
-          }
-        }
-        if (hasColorscale(trace, "marker")) {
-          colorscaleCalc(gd, trace, {
-            vals: trace.marker.color,
-            containerStr: "marker",
-            cLetter: "c"
-          });
-        }
-        if (hasColorscale(trace, "marker.line")) {
-          colorscaleCalc(gd, trace, {
-            vals: trace.marker.line.color,
-            containerStr: "marker.line",
-            cLetter: "c"
-          });
-        }
-        arraysToCalcdata(cd, trace);
-        calcSelection(cd, trace);
-        return cd;
-      };
-    }
-  });
-
-  // src/traces/bar/uniform_text.js
-  var require_uniform_text = __commonJS({
-    "src/traces/bar/uniform_text.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      function resizeText(gd, gTrace, traceType) {
-        var fullLayout = gd._fullLayout;
-        var minSize = fullLayout["_" + traceType + "Text_minsize"];
-        if (minSize) {
-          var shouldHide = fullLayout.uniformtext.mode === "hide";
-          var selector;
-          switch (traceType) {
-            case "funnelarea":
-            case "pie":
-            case "sunburst":
-              selector = "g.slice";
-              break;
-            case "treemap":
-            case "icicle":
-              selector = "g.slice, g.pathbar";
-              break;
-            default:
-              selector = "g.points > g.point";
-          }
-          gTrace.selectAll(selector).each(function(d) {
-            var transform = d.transform;
-            if (transform) {
-              transform.scale = shouldHide && transform.hide ? 0 : minSize / transform.fontSize;
-              var el = d3.select(this).select("text");
-              Lib.setTransormAndDisplay(el, transform);
-            }
-          });
-        }
-      }
-      function recordMinTextSize(traceType, transform, fullLayout) {
-        if (fullLayout.uniformtext.mode) {
-          var minKey = getMinKey(traceType);
-          var minSize = fullLayout.uniformtext.minsize;
-          var size = transform.scale * transform.fontSize;
-          transform.hide = size < minSize;
-          fullLayout[minKey] = fullLayout[minKey] || Infinity;
-          if (!transform.hide) {
-            fullLayout[minKey] = Math.min(
-              fullLayout[minKey],
-              Math.max(size, minSize)
-            );
-          }
-        }
-      }
-      function clearMinTextSize(traceType, fullLayout) {
-        var minKey = getMinKey(traceType);
-        fullLayout[minKey] = void 0;
-      }
-      function getMinKey(traceType) {
-        return "_" + traceType + "Text_minsize";
-      }
-      module.exports = {
-        recordMinTextSize,
-        clearMinTextSize,
-        resizeText
-      };
-    }
-  });
-
-  // src/traces/bar/helpers.js
-  var require_helpers12 = __commonJS({
-    "src/traces/bar/helpers.js"(exports) {
-      "use strict";
-      var isNumeric = require_fast_isnumeric();
-      var tinycolor = require_tinycolor();
-      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
-      exports.coerceString = function(attributeDefinition, value, defaultValue) {
-        if (typeof value === "string") {
-          if (value || !attributeDefinition.noBlank) return value;
-        } else if (typeof value === "number" || value === true) {
-          if (!attributeDefinition.strict) return String(value);
-        }
-        return defaultValue !== void 0 ? defaultValue : attributeDefinition.dflt;
-      };
-      exports.coerceNumber = function(attributeDefinition, value, defaultValue) {
-        if (isNumeric(value)) {
-          value = +value;
-          var min = attributeDefinition.min;
-          var max = attributeDefinition.max;
-          var isOutOfBounds = min !== void 0 && value < min || max !== void 0 && value > max;
-          if (!isOutOfBounds) return value;
-        }
-        return defaultValue !== void 0 ? defaultValue : attributeDefinition.dflt;
-      };
-      exports.coerceColor = function(attributeDefinition, value, defaultValue) {
-        if (tinycolor(value).isValid()) return value;
-        return defaultValue !== void 0 ? defaultValue : attributeDefinition.dflt;
-      };
-      exports.coerceEnumerated = function(attributeDefinition, value, defaultValue) {
-        if (attributeDefinition.coerceNumber) value = +value;
-        if (attributeDefinition.values.indexOf(value) !== -1) return value;
-        return defaultValue !== void 0 ? defaultValue : attributeDefinition.dflt;
-      };
-      exports.getValue = function(arrayOrScalar, index) {
-        var value;
-        if (!isArrayOrTypedArray(arrayOrScalar)) value = arrayOrScalar;
-        else if (index < arrayOrScalar.length) value = arrayOrScalar[index];
-        return value;
-      };
-      exports.getLineWidth = function(trace, di) {
-        var w = 0 < di.mlw ? di.mlw : !isArrayOrTypedArray(trace.marker.line.width) ? trace.marker.line.width : 0;
-        return w;
-      };
-    }
-  });
-
-  // src/traces/bar/style.js
-  var require_style4 = __commonJS({
-    "src/traces/bar/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Color2 = require_color();
-      var Drawing = require_drawing();
-      var Lib = require_lib();
-      var Registry = require_registry();
-      var resizeText = require_uniform_text().resizeText;
-      var attributes = require_attributes23();
-      var attributeTextFont = attributes.textfont;
-      var attributeInsideTextFont = attributes.insidetextfont;
-      var attributeOutsideTextFont = attributes.outsidetextfont;
-      var helpers = require_helpers12();
-      function style(gd) {
-        var s = d3.select(gd).selectAll('g[class^="barlayer"]').selectAll("g.trace");
-        resizeText(gd, s, "bar");
-        var barcount = s.size();
-        var fullLayout = gd._fullLayout;
-        s.style("opacity", function(d) {
-          return d[0].trace.opacity;
-        }).each(function(d) {
-          if (fullLayout.barmode === "stack" && barcount > 1 || fullLayout.bargap === 0 && fullLayout.bargroupgap === 0 && !d[0].trace.marker.line.width) {
-            d3.select(this).attr("shape-rendering", "crispEdges");
-          }
-        });
-        s.selectAll("g.points").each(function(d) {
-          var sel = d3.select(this);
-          var trace = d[0].trace;
-          stylePoints(sel, trace, gd);
-        });
-        Registry.getComponentMethod("errorbars", "style")(s);
-      }
-      function stylePoints(sel, trace, gd) {
-        Drawing.pointStyle(sel.selectAll("path"), trace, gd);
-        styleTextPoints(sel, trace, gd);
-      }
-      function styleTextPoints(sel, trace, gd) {
-        sel.selectAll("text").each(function(d) {
-          var tx = d3.select(this);
-          var font = Lib.ensureUniformFontSize(gd, determineFont(tx, d, trace, gd));
-          Drawing.font(tx, font);
-        });
-      }
-      function styleOnSelect(gd, cd, sel) {
-        var trace = cd[0].trace;
-        if (trace.selectedpoints) {
-          stylePointsInSelectionMode(sel, trace, gd);
-        } else {
-          stylePoints(sel, trace, gd);
-          Registry.getComponentMethod("errorbars", "style")(sel);
-        }
-      }
-      function stylePointsInSelectionMode(s, trace, gd) {
-        Drawing.selectedPointStyle(s.selectAll("path"), trace);
-        styleTextInSelectionMode(s.selectAll("text"), trace, gd);
-      }
-      function styleTextInSelectionMode(txs, trace, gd) {
-        txs.each(function(d) {
-          var tx = d3.select(this);
-          var font;
-          if (d.selected) {
-            font = Lib.ensureUniformFontSize(gd, determineFont(tx, d, trace, gd));
-            var selectedFontColor = trace.selected.textfont && trace.selected.textfont.color;
-            if (selectedFontColor) {
-              font.color = selectedFontColor;
-            }
-            Drawing.font(tx, font);
-          } else {
-            Drawing.selectedTextStyle(tx, trace);
-          }
-        });
-      }
-      function determineFont(tx, d, trace, gd) {
-        var layoutFont = gd._fullLayout.font;
-        var textFont = trace.textfont;
-        if (tx.classed("bartext-inside")) {
-          var barColor = getBarColor(d, trace);
-          textFont = getInsideTextFont(trace, d.i, layoutFont, barColor);
-        } else if (tx.classed("bartext-outside")) {
-          textFont = getOutsideTextFont(trace, d.i, layoutFont);
-        }
-        return textFont;
-      }
-      function getTextFont(trace, index, defaultValue) {
-        return getFontValue(
-          attributeTextFont,
-          trace.textfont,
-          index,
-          defaultValue
-        );
-      }
-      function getInsideTextFont(trace, index, layoutFont, barColor) {
-        var defaultFont = getTextFont(trace, index, layoutFont);
-        var wouldFallBackToLayoutFont = trace._input.textfont === void 0 || trace._input.textfont.color === void 0 || Array.isArray(trace.textfont.color) && trace.textfont.color[index] === void 0;
-        if (wouldFallBackToLayoutFont) {
-          defaultFont = {
-            color: Color2.contrast(barColor),
-            family: defaultFont.family,
-            size: defaultFont.size,
-            weight: defaultFont.weight,
-            style: defaultFont.style,
-            variant: defaultFont.variant,
-            textcase: defaultFont.textcase,
-            lineposition: defaultFont.lineposition,
-            shadow: defaultFont.shadow
-          };
-        }
-        return getFontValue(
-          attributeInsideTextFont,
-          trace.insidetextfont,
-          index,
-          defaultFont
-        );
-      }
-      function getOutsideTextFont(trace, index, layoutFont) {
-        var defaultFont = getTextFont(trace, index, layoutFont);
-        return getFontValue(
-          attributeOutsideTextFont,
-          trace.outsidetextfont,
-          index,
-          defaultFont
-        );
-      }
-      function getFontValue(attributeDefinition, attributeValue, index, defaultValue) {
-        attributeValue = attributeValue || {};
-        var familyValue = helpers.getValue(attributeValue.family, index);
-        var sizeValue = helpers.getValue(attributeValue.size, index);
-        var colorValue = helpers.getValue(attributeValue.color, index);
-        var weightValue = helpers.getValue(attributeValue.weight, index);
-        var styleValue = helpers.getValue(attributeValue.style, index);
-        var variantValue = helpers.getValue(attributeValue.variant, index);
-        var textcaseValue = helpers.getValue(attributeValue.textcase, index);
-        var linepositionValue = helpers.getValue(attributeValue.lineposition, index);
-        var shadowValue = helpers.getValue(attributeValue.shadow, index);
-        return {
-          family: helpers.coerceString(
-            attributeDefinition.family,
-            familyValue,
-            defaultValue.family
-          ),
-          size: helpers.coerceNumber(
-            attributeDefinition.size,
-            sizeValue,
-            defaultValue.size
-          ),
-          color: helpers.coerceColor(
-            attributeDefinition.color,
-            colorValue,
-            defaultValue.color
-          ),
-          weight: helpers.coerceString(
-            attributeDefinition.weight,
-            weightValue,
-            defaultValue.weight
-          ),
-          style: helpers.coerceString(
-            attributeDefinition.style,
-            styleValue,
-            defaultValue.style
-          ),
-          variant: helpers.coerceString(
-            attributeDefinition.variant,
-            variantValue,
-            defaultValue.variant
-          ),
-          textcase: helpers.coerceString(
-            attributeDefinition.variant,
-            textcaseValue,
-            defaultValue.textcase
-          ),
-          lineposition: helpers.coerceString(
-            attributeDefinition.variant,
-            linepositionValue,
-            defaultValue.lineposition
-          ),
-          shadow: helpers.coerceString(
-            attributeDefinition.variant,
-            shadowValue,
-            defaultValue.shadow
-          )
-        };
-      }
-      function getBarColor(cd, trace) {
-        if (trace.type === "waterfall") {
-          return trace[cd.dir].marker.color;
-        }
-        return cd.mcc || cd.mc || trace.marker.color;
-      }
-      module.exports = {
-        style,
-        styleTextPoints,
-        styleOnSelect,
-        getInsideTextFont,
-        getOutsideTextFont,
-        getBarColor,
-        resizeText
-      };
-    }
-  });
-
-  // src/traces/bar/plot.js
-  var require_plot3 = __commonJS({
-    "src/traces/bar/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var isNumeric = require_fast_isnumeric();
-      var Lib = require_lib();
-      var svgTextUtils = require_svg_text_utils();
-      var Color2 = require_color();
-      var Drawing = require_drawing();
-      var Registry = require_registry();
-      var tickText = require_axes().tickText;
-      var uniformText = require_uniform_text();
-      var recordMinTextSize = uniformText.recordMinTextSize;
-      var clearMinTextSize = uniformText.clearMinTextSize;
-      var style = require_style4();
-      var helpers = require_helpers12();
-      var constants = require_constants14();
-      var attributes = require_attributes23();
-      var attributeText = attributes.text;
-      var attributeTextPosition = attributes.textposition;
-      var appendArrayPointValue = require_helpers2().appendArrayPointValue;
-      var TEXTPAD = constants.TEXTPAD;
-      function keyFunc(d) {
-        return d.id;
-      }
-      function getKeyFunc(trace) {
-        if (trace.ids) {
-          return keyFunc;
-        }
-      }
-      function sign(v) {
-        return (v > 0) - (v < 0);
-      }
-      function dirSign(a, b) {
-        return a < b ? 1 : -1;
-      }
-      function getXY(di, xa, ya, isHorizontal) {
-        var s = [];
-        var p = [];
-        var sAxis = isHorizontal ? xa : ya;
-        var pAxis = isHorizontal ? ya : xa;
-        s[0] = sAxis.c2p(di.s0, true);
-        p[0] = pAxis.c2p(di.p0, true);
-        s[1] = sAxis.c2p(di.s1, true);
-        p[1] = pAxis.c2p(di.p1, true);
-        return isHorizontal ? [s, p] : [p, s];
-      }
-      function transition(selection, fullLayout, opts, makeOnCompleteCallback) {
-        if (!fullLayout.uniformtext.mode && hasTransition(opts)) {
-          var onComplete;
-          if (makeOnCompleteCallback) {
-            onComplete = makeOnCompleteCallback();
-          }
-          return selection.transition().duration(opts.duration).ease(opts.easing).each("end", function() {
-            onComplete && onComplete();
-          }).each("interrupt", function() {
-            onComplete && onComplete();
-          });
-        } else {
-          return selection;
-        }
-      }
-      function hasTransition(transitionOpts) {
-        return transitionOpts && transitionOpts.duration > 0;
-      }
-      function plot(gd, plotinfo, cdModule, traceLayer, opts, makeOnCompleteCallback) {
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        var fullLayout = gd._fullLayout;
-        var isStatic = gd._context.staticPlot;
-        if (!opts) {
-          opts = {
-            mode: fullLayout.barmode,
-            norm: fullLayout.barmode,
-            gap: fullLayout.bargap,
-            groupgap: fullLayout.bargroupgap
-          };
-          clearMinTextSize("bar", fullLayout);
-        }
-        var bartraces = Lib.makeTraceGroups(traceLayer, cdModule, "trace bars").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var trace = cd[0].trace;
-          var t = cd[0].t;
-          var isWaterfall = trace.type === "waterfall";
-          var isFunnel = trace.type === "funnel";
-          var isHistogram = trace.type === "histogram";
-          var isBar = trace.type === "bar";
-          var shouldDisplayZeros = isBar || isFunnel;
-          var adjustPixel = 0;
-          if (isWaterfall && trace.connector.visible && trace.connector.mode === "between") {
-            adjustPixel = trace.connector.line.width / 2;
-          }
-          var isHorizontal = trace.orientation === "h";
-          var withTransition = hasTransition(opts);
-          var pointGroup = Lib.ensureSingle(plotGroup, "g", "points");
-          var keyFunc2 = getKeyFunc(trace);
-          var bars = pointGroup.selectAll("g.point").data(Lib.identity, keyFunc2);
-          bars.enter().append("g").classed("point", true);
-          bars.exit().remove();
-          bars.each(function(di, i) {
-            var bar = d3.select(this);
-            var xy = getXY(di, xa, ya, isHorizontal);
-            var x0 = xy[0][0];
-            var x1 = xy[0][1];
-            var y0 = xy[1][0];
-            var y1 = xy[1][1];
-            var isBlank = (isHorizontal ? x1 - x0 : y1 - y0) === 0;
-            if (isBlank && shouldDisplayZeros && helpers.getLineWidth(trace, di)) {
-              isBlank = false;
-            }
-            if (!isBlank) {
-              isBlank = !isNumeric(x0) || !isNumeric(x1) || !isNumeric(y0) || !isNumeric(y1);
-            }
-            di.isBlank = isBlank;
-            if (isBlank) {
-              if (isHorizontal) {
-                x1 = x0;
-              } else {
-                y1 = y0;
-              }
-            }
-            if (adjustPixel && !isBlank) {
-              if (isHorizontal) {
-                x0 -= dirSign(x0, x1) * adjustPixel;
-                x1 += dirSign(x0, x1) * adjustPixel;
-              } else {
-                y0 -= dirSign(y0, y1) * adjustPixel;
-                y1 += dirSign(y0, y1) * adjustPixel;
-              }
-            }
-            var lw;
-            var mc;
-            if (trace.type === "waterfall") {
-              if (!isBlank) {
-                var cont = trace[di.dir].marker;
-                lw = cont.line.width;
-                mc = cont.color;
-              }
-            } else {
-              lw = helpers.getLineWidth(trace, di);
-              mc = di.mc || trace.marker.color;
-            }
-            function roundWithLine(v) {
-              var offset = d3.round(lw / 2 % 1, 2);
-              return opts.gap === 0 && opts.groupgap === 0 ? d3.round(Math.round(v) - offset, 2) : v;
-            }
-            function expandToVisible(v, vc, hideZeroSpan) {
-              if (hideZeroSpan && v === vc) {
-                return v;
-              }
-              return Math.abs(v - vc) >= 2 ? roundWithLine(v) : (
-                // but if it's very thin, expand it so it's
-                // necessarily visible, even if it might overlap
-                // its neighbor
-                v > vc ? Math.ceil(v) : Math.floor(v)
-              );
-            }
-            var op = Color2.opacity(mc);
-            var fixpx = op < 1 || lw > 0.01 ? roundWithLine : expandToVisible;
-            if (!gd._context.staticPlot) {
-              x0 = fixpx(x0, x1, isHorizontal);
-              x1 = fixpx(x1, x0, isHorizontal);
-              y0 = fixpx(y0, y1, !isHorizontal);
-              y1 = fixpx(y1, y0, !isHorizontal);
-            }
-            var c2p = isHorizontal ? xa.c2p : ya.c2p;
-            var outerBound;
-            if (di.s0 > 0) {
-              outerBound = di._sMax;
-            } else if (di.s0 < 0) {
-              outerBound = di._sMin;
-            } else {
-              outerBound = di.s1 > 0 ? di._sMax : di._sMin;
-            }
-            function calcCornerRadius(crValue, crForm) {
-              if (!crValue) return 0;
-              var barWidth = isHorizontal ? Math.abs(y1 - y0) : Math.abs(x1 - x0);
-              var barLength = isHorizontal ? Math.abs(x1 - x0) : Math.abs(y1 - y0);
-              var stackedBarTotalLength = fixpx(Math.abs(c2p(outerBound, true) - c2p(0, true)));
-              var maxRadius = di.hasB ? Math.min(barWidth / 2, barLength / 2) : Math.min(barWidth / 2, stackedBarTotalLength);
-              var crPx;
-              if (crForm === "%") {
-                var crPercent = Math.min(50, crValue);
-                crPx = barWidth * (crPercent / 100);
-              } else {
-                crPx = crValue;
-              }
-              return fixpx(Math.max(Math.min(crPx, maxRadius), 0));
-            }
-            var r = isBar || isHistogram ? calcCornerRadius(t.cornerradiusvalue, t.cornerradiusform) : 0;
-            var path, h;
-            var rectanglePath = "M" + x0 + "," + y0 + "V" + y1 + "H" + x1 + "V" + y0 + "Z";
-            var overhead = 0;
-            if (r && di.s) {
-              var refPoint = sign(di.s0) === 0 || sign(di.s) === sign(di.s0) ? di.s1 : di.s0;
-              overhead = fixpx(!di.hasB ? Math.abs(c2p(outerBound, true) - c2p(refPoint, true)) : 0);
-              if (overhead < r) {
-                var xdir = dirSign(x0, x1);
-                var ydir = dirSign(y0, y1);
-                var cornersweep = xdir === -ydir ? 1 : 0;
-                if (isHorizontal) {
-                  if (di.hasB) {
-                    path = "M" + (x0 + r * xdir) + "," + y0 + "A " + r + "," + r + " 0 0 " + cornersweep + " " + x0 + "," + (y0 + r * ydir) + "V" + (y1 - r * ydir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x0 + r * xdir) + "," + y1 + "H" + (x1 - r * xdir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + x1 + "," + (y1 - r * ydir) + "V" + (y0 + r * ydir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x1 - r * xdir) + "," + y0 + "Z";
-                  } else {
-                    h = Math.abs(x1 - x0) + overhead;
-                    var dy1 = h < r ? r - Math.sqrt(h * (2 * r - h)) : 0;
-                    var dy2 = overhead > 0 ? Math.sqrt(overhead * (2 * r - overhead)) : 0;
-                    var xminfunc = xdir > 0 ? Math.max : Math.min;
-                    path = "M" + x0 + "," + y0 + "V" + (y1 - dy1 * ydir) + "H" + xminfunc(x1 - (r - overhead) * xdir, x0) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + x1 + "," + (y1 - r * ydir - dy2) + "V" + (y0 + r * ydir + dy2) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + xminfunc(x1 - (r - overhead) * xdir, x0) + "," + (y0 + dy1 * ydir) + "Z";
-                  }
-                } else {
-                  if (di.hasB) {
-                    path = "M" + (x0 + r * xdir) + "," + y0 + "A " + r + "," + r + " 0 0 " + cornersweep + " " + x0 + "," + (y0 + r * ydir) + "V" + (y1 - r * ydir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x0 + r * xdir) + "," + y1 + "H" + (x1 - r * xdir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + x1 + "," + (y1 - r * ydir) + "V" + (y0 + r * ydir) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x1 - r * xdir) + "," + y0 + "Z";
-                  } else {
-                    h = Math.abs(y1 - y0) + overhead;
-                    var dx1 = h < r ? r - Math.sqrt(h * (2 * r - h)) : 0;
-                    var dx2 = overhead > 0 ? Math.sqrt(overhead * (2 * r - overhead)) : 0;
-                    var yminfunc = ydir > 0 ? Math.max : Math.min;
-                    path = "M" + (x0 + dx1 * xdir) + "," + y0 + "V" + yminfunc(y1 - (r - overhead) * ydir, y0) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x0 + r * xdir - dx2) + "," + y1 + "H" + (x1 - r * xdir + dx2) + "A " + r + "," + r + " 0 0 " + cornersweep + " " + (x1 - dx1 * xdir) + "," + yminfunc(y1 - (r - overhead) * ydir, y0) + "V" + y0 + "Z";
-                  }
-                }
-              } else {
-                path = rectanglePath;
-              }
-            } else {
-              path = rectanglePath;
-            }
-            var sel = transition(Lib.ensureSingle(bar, "path"), fullLayout, opts, makeOnCompleteCallback);
-            sel.style("vector-effect", isStatic ? "none" : "non-scaling-stroke").attr("d", isNaN((x1 - x0) * (y1 - y0)) || isBlank && gd._context.staticPlot ? "M0,0Z" : path).call(Drawing.setClipUrl, plotinfo.layerClipId, gd);
-            if (!fullLayout.uniformtext.mode && withTransition) {
-              var styleFns = Drawing.makePointStyleFns(trace);
-              Drawing.singlePointStyle(di, sel, trace, styleFns, gd);
-            }
-            appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, r, overhead, opts, makeOnCompleteCallback);
-            if (plotinfo.layerClipId) {
-              Drawing.hideOutsideRangePoint(di, bar.select("text"), xa, ya, trace.xcalendar, trace.ycalendar);
-            }
-          });
-          var hasClipOnAxisFalse = trace.cliponaxis === false;
-          Drawing.setClipUrl(plotGroup, hasClipOnAxisFalse ? null : plotinfo.layerClipId, gd);
-        });
-        Registry.getComponentMethod("errorbars", "plot")(gd, bartraces, plotinfo, opts);
-      }
-      function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, r, overhead, opts, makeOnCompleteCallback) {
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        var fullLayout = gd._fullLayout;
-        var textPosition;
-        function appendTextNode(bar2, text2, font2) {
-          var textSelection2 = Lib.ensureSingle(bar2, "text").text(text2).attr({
-            class: "bartext bartext-" + textPosition,
-            "text-anchor": "middle",
-            // prohibit tex interpretation until we can handle
-            // tex and regular text together
-            "data-notex": 1
-          }).call(Drawing.font, font2).call(svgTextUtils.convertToTspans, gd);
-          return textSelection2;
-        }
-        var trace = cd[0].trace;
-        var isHorizontal = trace.orientation === "h";
-        var text = getText(fullLayout, cd, i, xa, ya);
-        textPosition = getTextPosition(trace, i);
-        var inStackOrRelativeMode = opts.mode === "stack" || opts.mode === "relative";
-        var calcBar = cd[i];
-        var isOutmostBar = !inStackOrRelativeMode || calcBar._outmost;
-        var hasB = calcBar.hasB;
-        var barIsRounded = r && r - overhead > TEXTPAD;
-        if (!text || textPosition === "none" || (calcBar.isBlank || x0 === x1 || y0 === y1) && (textPosition === "auto" || textPosition === "inside")) {
-          bar.select("text").remove();
-          return;
-        }
-        var layoutFont = fullLayout.font;
-        var barColor = style.getBarColor(cd[i], trace);
-        var insideTextFont = style.getInsideTextFont(trace, i, layoutFont, barColor);
-        var outsideTextFont = style.getOutsideTextFont(trace, i, layoutFont);
-        var insidetextanchor = trace.insidetextanchor || "end";
-        var di = bar.datum();
-        if (isHorizontal) {
-          if (xa.type === "log" && di.s0 <= 0) {
-            if (xa.range[0] < xa.range[1]) {
-              x0 = 0;
-            } else {
-              x0 = xa._length;
-            }
-          }
-        } else {
-          if (ya.type === "log" && di.s0 <= 0) {
-            if (ya.range[0] < ya.range[1]) {
-              y0 = ya._length;
-            } else {
-              y0 = 0;
-            }
-          }
-        }
-        var lx = Math.abs(x1 - x0);
-        var ly = Math.abs(y1 - y0);
-        var barWidth = lx - 2 * TEXTPAD;
-        var barHeight = ly - 2 * TEXTPAD;
-        var textSelection;
-        var textBB;
-        var textWidth;
-        var textHeight;
-        var font;
-        if (textPosition === "outside") {
-          if (!isOutmostBar && !calcBar.hasB) textPosition = "inside";
-        }
-        if (textPosition === "auto") {
-          if (isOutmostBar) {
-            textPosition = "inside";
-            font = Lib.ensureUniformFontSize(gd, insideTextFont);
-            textSelection = appendTextNode(bar, text, font);
-            textBB = Drawing.bBox(textSelection.node());
-            textWidth = textBB.width;
-            textHeight = textBB.height;
-            var textHasSize = textWidth > 0 && textHeight > 0;
-            var fitsInside;
-            if (barIsRounded) {
-              if (hasB) {
-                fitsInside = textfitsInsideBar(barWidth - 2 * r, barHeight, textWidth, textHeight, isHorizontal) || textfitsInsideBar(barWidth, barHeight - 2 * r, textWidth, textHeight, isHorizontal);
-              } else if (isHorizontal) {
-                fitsInside = textfitsInsideBar(barWidth - (r - overhead), barHeight, textWidth, textHeight, isHorizontal) || textfitsInsideBar(barWidth, barHeight - 2 * (r - overhead), textWidth, textHeight, isHorizontal);
-              } else {
-                fitsInside = textfitsInsideBar(barWidth, barHeight - (r - overhead), textWidth, textHeight, isHorizontal) || textfitsInsideBar(barWidth - 2 * (r - overhead), barHeight, textWidth, textHeight, isHorizontal);
-              }
-            } else {
-              fitsInside = textfitsInsideBar(barWidth, barHeight, textWidth, textHeight, isHorizontal);
-            }
-            if (textHasSize && fitsInside) {
-              textPosition = "inside";
-            } else {
-              textPosition = "outside";
-              textSelection.remove();
-              textSelection = null;
-            }
-          } else {
-            textPosition = "inside";
-          }
-        }
-        if (!textSelection) {
-          font = Lib.ensureUniformFontSize(gd, textPosition === "outside" ? outsideTextFont : insideTextFont);
-          textSelection = appendTextNode(bar, text, font);
-          var currentTransform = textSelection.attr("transform");
-          textSelection.attr("transform", "");
-          textBB = Drawing.bBox(textSelection.node()), textWidth = textBB.width, textHeight = textBB.height;
-          textSelection.attr("transform", currentTransform);
-          if (textWidth <= 0 || textHeight <= 0) {
-            textSelection.remove();
-            return;
-          }
-        }
-        var angle = trace.textangle;
-        var transform, constrained;
-        if (textPosition === "outside") {
-          constrained = trace.constraintext === "both" || trace.constraintext === "outside";
-          transform = toMoveOutsideBar(x0, x1, y0, y1, textBB, {
-            isHorizontal,
-            constrained,
-            angle
-          });
-        } else {
-          constrained = trace.constraintext === "both" || trace.constraintext === "inside";
-          transform = toMoveInsideBar(x0, x1, y0, y1, textBB, {
-            isHorizontal,
-            constrained,
-            angle,
-            anchor: insidetextanchor,
-            hasB,
-            r,
-            overhead
-          });
-        }
-        transform.fontSize = font.size;
-        recordMinTextSize(trace.type === "histogram" ? "bar" : trace.type, transform, fullLayout);
-        calcBar.transform = transform;
-        var s = transition(textSelection, fullLayout, opts, makeOnCompleteCallback);
-        Lib.setTransormAndDisplay(s, transform);
-      }
-      function textfitsInsideBar(barWidth, barHeight, textWidth, textHeight, isHorizontal) {
-        if (barWidth < 0 || barHeight < 0) return false;
-        var fitsInside = textWidth <= barWidth && textHeight <= barHeight;
-        var fitsInsideIfRotated = textWidth <= barHeight && textHeight <= barWidth;
-        var fitsInsideIfShrunk = isHorizontal ? barWidth >= textWidth * (barHeight / textHeight) : barHeight >= textHeight * (barWidth / textWidth);
-        return fitsInside || fitsInsideIfRotated || fitsInsideIfShrunk;
-      }
-      function getRotateFromAngle(angle) {
-        return angle === "auto" ? 0 : angle;
-      }
-      function getRotatedTextSize(textBB, rotate) {
-        var a = Math.PI / 180 * rotate;
-        var absSin = Math.abs(Math.sin(a));
-        var absCos = Math.abs(Math.cos(a));
-        return {
-          x: textBB.width * absCos + textBB.height * absSin,
-          y: textBB.width * absSin + textBB.height * absCos
-        };
-      }
-      function toMoveInsideBar(x0, x1, y0, y1, textBB, opts) {
-        var isHorizontal = !!opts.isHorizontal;
-        var constrained = !!opts.constrained;
-        var angle = opts.angle || 0;
-        var anchor = opts.anchor;
-        var isEnd = anchor === "end";
-        var isStart = anchor === "start";
-        var leftToRight = opts.leftToRight || 0;
-        var toRight = (leftToRight + 1) / 2;
-        var toLeft = 1 - toRight;
-        var hasB = opts.hasB;
-        var r = opts.r;
-        var overhead = opts.overhead;
-        var textWidth = textBB.width;
-        var textHeight = textBB.height;
-        var lx = Math.abs(x1 - x0);
-        var ly = Math.abs(y1 - y0);
-        var textpad = lx > 2 * TEXTPAD && ly > 2 * TEXTPAD ? TEXTPAD : 0;
-        lx -= 2 * textpad;
-        ly -= 2 * textpad;
-        var rotate = getRotateFromAngle(angle);
-        if (angle === "auto" && !(textWidth <= lx && textHeight <= ly) && (textWidth > lx || textHeight > ly) && (!(textWidth > ly || textHeight > lx) || textWidth < textHeight !== lx < ly)) {
-          rotate += 90;
-        }
-        var t = getRotatedTextSize(textBB, rotate);
-        var scale, padForRounding;
-        if (r && r - overhead > TEXTPAD) {
-          var scaleAndPad = scaleTextForRoundedBar(x0, x1, y0, y1, t, r, overhead, isHorizontal, hasB);
-          scale = scaleAndPad.scale;
-          padForRounding = scaleAndPad.pad;
-        } else {
-          scale = 1;
-          if (constrained) {
-            scale = Math.min(
-              1,
-              lx / t.x,
-              ly / t.y
-            );
-          }
-          padForRounding = 0;
-        }
-        var textX = textBB.left * toLeft + textBB.right * toRight;
-        var textY = (textBB.top + textBB.bottom) / 2;
-        var targetX = (x0 + TEXTPAD) * toLeft + (x1 - TEXTPAD) * toRight;
-        var targetY = (y0 + y1) / 2;
-        var anchorX = 0;
-        var anchorY = 0;
-        if (isStart || isEnd) {
-          var extrapad = (isHorizontal ? t.x : t.y) / 2;
-          if (r && (isEnd || hasB)) {
-            textpad += padForRounding;
-          }
-          var dir = isHorizontal ? dirSign(x0, x1) : dirSign(y0, y1);
-          if (isHorizontal) {
-            if (isStart) {
-              targetX = x0 + dir * textpad;
-              anchorX = -dir * extrapad;
-            } else {
-              targetX = x1 - dir * textpad;
-              anchorX = dir * extrapad;
-            }
-          } else {
-            if (isStart) {
-              targetY = y0 + dir * textpad;
-              anchorY = -dir * extrapad;
-            } else {
-              targetY = y1 - dir * textpad;
-              anchorY = dir * extrapad;
-            }
-          }
-        }
-        return {
-          textX,
-          textY,
-          targetX,
-          targetY,
-          anchorX,
-          anchorY,
-          scale,
-          rotate
-        };
-      }
-      function scaleTextForRoundedBar(x0, x1, y0, y1, t, r, overhead, isHorizontal, hasB) {
-        var barWidth = Math.max(0, Math.abs(x1 - x0) - 2 * TEXTPAD);
-        var barHeight = Math.max(0, Math.abs(y1 - y0) - 2 * TEXTPAD);
-        var R = r - TEXTPAD;
-        var clippedR = overhead ? R - Math.sqrt(R * R - (R - overhead) * (R - overhead)) : R;
-        var rX = hasB ? R * 2 : isHorizontal ? R - overhead : 2 * clippedR;
-        var rY = hasB ? R * 2 : isHorizontal ? 2 * clippedR : R - overhead;
-        var a, b, c;
-        var scale, pad;
-        if (t.y / t.x >= barHeight / (barWidth - rX)) {
-          scale = barHeight / t.y;
-        } else if (t.y / t.x <= (barHeight - rY) / barWidth) {
-          scale = barWidth / t.x;
-        } else if (!hasB && isHorizontal) {
-          a = t.x * t.x + t.y * t.y / 4;
-          b = -2 * t.x * (barWidth - R) - t.y * (barHeight / 2 - R);
-          c = (barWidth - R) * (barWidth - R) + (barHeight / 2 - R) * (barHeight / 2 - R) - R * R;
-          scale = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-        } else if (!hasB) {
-          a = t.x * t.x / 4 + t.y * t.y;
-          b = -t.x * (barWidth / 2 - R) - 2 * t.y * (barHeight - R);
-          c = (barWidth / 2 - R) * (barWidth / 2 - R) + (barHeight - R) * (barHeight - R) - R * R;
-          scale = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-        } else {
-          a = (t.x * t.x + t.y * t.y) / 4;
-          b = -t.x * (barWidth / 2 - R) - t.y * (barHeight / 2 - R);
-          c = (barWidth / 2 - R) * (barWidth / 2 - R) + (barHeight / 2 - R) * (barHeight / 2 - R) - R * R;
-          scale = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-        }
-        scale = Math.min(1, scale);
-        if (isHorizontal) {
-          pad = Math.max(0, R - Math.sqrt(Math.max(0, R * R - (R - (barHeight - t.y * scale) / 2) * (R - (barHeight - t.y * scale) / 2))) - overhead);
-        } else {
-          pad = Math.max(0, R - Math.sqrt(Math.max(0, R * R - (R - (barWidth - t.x * scale) / 2) * (R - (barWidth - t.x * scale) / 2))) - overhead);
-        }
-        return { scale, pad };
-      }
-      function toMoveOutsideBar(x0, x1, y0, y1, textBB, opts) {
-        var isHorizontal = !!opts.isHorizontal;
-        var constrained = !!opts.constrained;
-        var angle = opts.angle || 0;
-        var textWidth = textBB.width;
-        var textHeight = textBB.height;
-        var lx = Math.abs(x1 - x0);
-        var ly = Math.abs(y1 - y0);
-        var textpad;
-        if (isHorizontal) {
-          textpad = ly > 2 * TEXTPAD ? TEXTPAD : 0;
-        } else {
-          textpad = lx > 2 * TEXTPAD ? TEXTPAD : 0;
-        }
-        var scale = 1;
-        if (constrained) {
-          scale = isHorizontal ? Math.min(1, ly / textHeight) : Math.min(1, lx / textWidth);
-        }
-        var rotate = getRotateFromAngle(angle);
-        var t = getRotatedTextSize(textBB, rotate);
-        var extrapad = (isHorizontal ? t.x : t.y) / 2;
-        var textX = (textBB.left + textBB.right) / 2;
-        var textY = (textBB.top + textBB.bottom) / 2;
-        var targetX = (x0 + x1) / 2;
-        var targetY = (y0 + y1) / 2;
-        var anchorX = 0;
-        var anchorY = 0;
-        var dir = isHorizontal ? dirSign(x1, x0) : dirSign(y0, y1);
-        if (isHorizontal) {
-          targetX = x1 - dir * textpad;
-          anchorX = dir * extrapad;
-        } else {
-          targetY = y1 + dir * textpad;
-          anchorY = -dir * extrapad;
-        }
-        return {
-          textX,
-          textY,
-          targetX,
-          targetY,
-          anchorX,
-          anchorY,
-          scale,
-          rotate
-        };
-      }
-      function getText(fullLayout, cd, index, xa, ya) {
-        var trace = cd[0].trace;
-        var texttemplate = trace.texttemplate;
-        var value;
-        if (texttemplate) {
-          value = calcTexttemplate(fullLayout, cd, index, xa, ya);
-        } else if (trace.textinfo) {
-          value = calcTextinfo(cd, index, xa, ya);
-        } else {
-          value = helpers.getValue(trace.text, index);
-        }
-        return helpers.coerceString(attributeText, value);
-      }
-      function getTextPosition(trace, index) {
-        var value = helpers.getValue(trace.textposition, index);
-        return helpers.coerceEnumerated(attributeTextPosition, value);
-      }
-      function calcTexttemplate(fullLayout, cd, index, xa, ya) {
-        var trace = cd[0].trace;
-        var texttemplate = Lib.castOption(trace, index, "texttemplate");
-        if (!texttemplate) return "";
-        var isHistogram = trace.type === "histogram";
-        var isWaterfall = trace.type === "waterfall";
-        var isFunnel = trace.type === "funnel";
-        var isHorizontal = trace.orientation === "h";
-        var pLetter, pAxis;
-        var vLetter, vAxis;
-        if (isHorizontal) {
-          pLetter = "y";
-          pAxis = ya;
-          vLetter = "x";
-          vAxis = xa;
-        } else {
-          pLetter = "x";
-          pAxis = xa;
-          vLetter = "y";
-          vAxis = ya;
-        }
-        function formatLabel(u) {
-          return tickText(pAxis, pAxis.c2l(u), true).text;
-        }
-        function formatNumber(v) {
-          return tickText(vAxis, vAxis.c2l(v), true).text;
-        }
-        var cdi = cd[index];
-        var obj = {};
-        obj.label = cdi.p;
-        obj.labelLabel = obj[pLetter + "Label"] = formatLabel(cdi.p);
-        var tx = Lib.castOption(trace, cdi.i, "text");
-        if (tx === 0 || tx) obj.text = tx;
-        obj.value = cdi.s;
-        obj.valueLabel = obj[vLetter + "Label"] = formatNumber(cdi.s);
-        var pt = {};
-        appendArrayPointValue(pt, trace, cdi.i);
-        if (isHistogram || pt.x === void 0) pt.x = isHorizontal ? obj.value : obj.label;
-        if (isHistogram || pt.y === void 0) pt.y = isHorizontal ? obj.label : obj.value;
-        if (isHistogram || pt.xLabel === void 0) pt.xLabel = isHorizontal ? obj.valueLabel : obj.labelLabel;
-        if (isHistogram || pt.yLabel === void 0) pt.yLabel = isHorizontal ? obj.labelLabel : obj.valueLabel;
-        if (isWaterfall) {
-          obj.delta = +cdi.rawS || cdi.s;
-          obj.deltaLabel = formatNumber(obj.delta);
-          obj.final = cdi.v;
-          obj.finalLabel = formatNumber(obj.final);
-          obj.initial = obj.final - obj.delta;
-          obj.initialLabel = formatNumber(obj.initial);
-        }
-        if (isFunnel) {
-          obj.value = cdi.s;
-          obj.valueLabel = formatNumber(obj.value);
-          obj.percentInitial = cdi.begR;
-          obj.percentInitialLabel = Lib.formatPercent(cdi.begR);
-          obj.percentPrevious = cdi.difR;
-          obj.percentPreviousLabel = Lib.formatPercent(cdi.difR);
-          obj.percentTotal = cdi.sumR;
-          obj.percenTotalLabel = Lib.formatPercent(cdi.sumR);
-        }
-        var customdata = Lib.castOption(trace, cdi.i, "customdata");
-        if (customdata) obj.customdata = customdata;
-        return Lib.texttemplateString(texttemplate, obj, fullLayout._d3locale, pt, obj, trace._meta || {});
-      }
-      function calcTextinfo(cd, index, xa, ya) {
-        var trace = cd[0].trace;
-        var isHorizontal = trace.orientation === "h";
-        var isWaterfall = trace.type === "waterfall";
-        var isFunnel = trace.type === "funnel";
-        function formatLabel(u) {
-          var pAxis = isHorizontal ? ya : xa;
-          return tickText(pAxis, u, true).text;
-        }
-        function formatNumber(v) {
-          var sAxis = isHorizontal ? xa : ya;
-          return tickText(sAxis, +v, true).text;
-        }
-        var textinfo = trace.textinfo;
-        var cdi = cd[index];
-        var parts = textinfo.split("+");
-        var text = [];
-        var tx;
-        var hasFlag = function(flag) {
-          return parts.indexOf(flag) !== -1;
-        };
-        if (hasFlag("label")) {
-          text.push(formatLabel(cd[index].p));
-        }
-        if (hasFlag("text")) {
-          tx = Lib.castOption(trace, cdi.i, "text");
-          if (tx === 0 || tx) text.push(tx);
-        }
-        if (isWaterfall) {
-          var delta = +cdi.rawS || cdi.s;
-          var final = cdi.v;
-          var initial = final - delta;
-          if (hasFlag("initial")) text.push(formatNumber(initial));
-          if (hasFlag("delta")) text.push(formatNumber(delta));
-          if (hasFlag("final")) text.push(formatNumber(final));
-        }
-        if (isFunnel) {
-          if (hasFlag("value")) text.push(formatNumber(cdi.s));
-          var nPercent = 0;
-          if (hasFlag("percent initial")) nPercent++;
-          if (hasFlag("percent previous")) nPercent++;
-          if (hasFlag("percent total")) nPercent++;
-          var hasMultiplePercents = nPercent > 1;
-          if (hasFlag("percent initial")) {
-            tx = Lib.formatPercent(cdi.begR);
-            if (hasMultiplePercents) tx += " of initial";
-            text.push(tx);
-          }
-          if (hasFlag("percent previous")) {
-            tx = Lib.formatPercent(cdi.difR);
-            if (hasMultiplePercents) tx += " of previous";
-            text.push(tx);
-          }
-          if (hasFlag("percent total")) {
-            tx = Lib.formatPercent(cdi.sumR);
-            if (hasMultiplePercents) tx += " of total";
-            text.push(tx);
-          }
-        }
-        return text.join("<br>");
-      }
-      module.exports = {
-        plot,
-        toMoveInsideBar
-      };
-    }
-  });
-
-  // src/traces/bar/hover.js
-  var require_hover3 = __commonJS({
-    "src/traces/bar/hover.js"(exports, module) {
-      "use strict";
-      var Fx = require_fx();
-      var Registry = require_registry();
-      var Color2 = require_color();
-      var fillText = require_lib().fillText;
-      var getLineWidth = require_helpers12().getLineWidth;
-      var hoverLabelText = require_axes().hoverLabelText;
-      var BADNUM = require_numerical().BADNUM;
-      function hoverPoints(pointData, xval, yval, hovermode, opts) {
-        var barPointData = hoverOnBars(pointData, xval, yval, hovermode, opts);
-        if (barPointData) {
-          var cd = barPointData.cd;
-          var trace = cd[0].trace;
-          var di = cd[barPointData.index];
-          barPointData.color = getTraceColor(trace, di);
-          Registry.getComponentMethod("errorbars", "hoverInfo")(di, trace, barPointData);
-          return [barPointData];
-        }
-      }
-      function hoverOnBars(pointData, xval, yval, hovermode, opts) {
-        var cd = pointData.cd;
-        var trace = cd[0].trace;
-        var t = cd[0].t;
-        var isClosest = hovermode === "closest";
-        var isWaterfall = trace.type === "waterfall";
-        var maxHoverDistance = pointData.maxHoverDistance;
-        var maxSpikeDistance = pointData.maxSpikeDistance;
-        var posVal, sizeVal, posLetter, sizeLetter, dx, dy, pRangeCalc;
-        if (trace.orientation === "h") {
-          posVal = yval;
-          sizeVal = xval;
-          posLetter = "y";
-          sizeLetter = "x";
-          dx = sizeFn;
-          dy = positionFn;
-        } else {
-          posVal = xval;
-          sizeVal = yval;
-          posLetter = "x";
-          sizeLetter = "y";
-          dy = sizeFn;
-          dx = positionFn;
-        }
-        var period = trace[posLetter + "period"];
-        var isClosestOrPeriod = isClosest || period;
-        function thisBarMinPos(di2) {
-          return thisBarExtPos(di2, -1);
-        }
-        function thisBarMaxPos(di2) {
-          return thisBarExtPos(di2, 1);
-        }
-        function thisBarExtPos(di2, sgn) {
-          var w = di2.w;
-          return di2[posLetter] + sgn * w / 2;
-        }
-        function periodLength(di2) {
-          return di2[posLetter + "End"] - di2[posLetter + "Start"];
-        }
-        var minPos = isClosest ? thisBarMinPos : period ? function(di2) {
-          return di2.p - periodLength(di2) / 2;
-        } : function(di2) {
-          return Math.min(thisBarMinPos(di2), di2.p - t.bardelta / 2);
-        };
-        var maxPos = isClosest ? thisBarMaxPos : period ? function(di2) {
-          return di2.p + periodLength(di2) / 2;
-        } : function(di2) {
-          return Math.max(thisBarMaxPos(di2), di2.p + t.bardelta / 2);
-        };
-        function inbox(_minPos, _maxPos, maxDistance) {
-          if (opts.finiteRange) maxDistance = 0;
-          return Fx.inbox(
-            _minPos - posVal,
-            _maxPos - posVal,
-            maxDistance + Math.min(1, Math.abs(_maxPos - _minPos) / pRangeCalc) - 1
-          );
-        }
-        function positionFn(di2) {
-          return inbox(minPos(di2), maxPos(di2), maxHoverDistance);
-        }
-        function thisBarPositionFn(di2) {
-          return inbox(thisBarMinPos(di2), thisBarMaxPos(di2), maxSpikeDistance);
-        }
-        function getSize(di2) {
-          var s = di2[sizeLetter];
-          if (isWaterfall) {
-            var rawS = Math.abs(di2.rawS) || 0;
-            if (sizeVal > 0) {
-              s += rawS;
-            } else if (sizeVal < 0) {
-              s -= rawS;
-            }
-          }
-          return s;
-        }
-        function sizeFn(di2) {
-          var v = sizeVal;
-          var b = di2.b;
-          var s = getSize(di2);
-          return Fx.inbox(b - v, s - v, maxHoverDistance + (s - v) / (s - b) - 1);
-        }
-        function thisBarSizeFn(di2) {
-          var v = sizeVal;
-          var b = di2.b;
-          var s = getSize(di2);
-          return Fx.inbox(b - v, s - v, maxSpikeDistance + (s - v) / (s - b) - 1);
-        }
-        var pa = pointData[posLetter + "a"];
-        var sa = pointData[sizeLetter + "a"];
-        pRangeCalc = Math.abs(pa.r2c(pa.range[1]) - pa.r2c(pa.range[0]));
-        function dxy(di2) {
-          return (dx(di2) + dy(di2)) / 2;
-        }
-        var distfn = Fx.getDistanceFunction(hovermode, dx, dy, dxy);
-        Fx.getClosest(cd, distfn, pointData);
-        if (pointData.index === false) return;
-        if (cd[pointData.index].p === BADNUM) return;
-        if (!isClosestOrPeriod) {
-          minPos = function(di2) {
-            return Math.min(thisBarMinPos(di2), di2.p - t.bargroupwidth / 2);
-          };
-          maxPos = function(di2) {
-            return Math.max(thisBarMaxPos(di2), di2.p + t.bargroupwidth / 2);
-          };
-        }
-        var index = pointData.index;
-        var di = cd[index];
-        var size = trace.base ? di.b + di.s : di.s;
-        pointData[sizeLetter + "0"] = pointData[sizeLetter + "1"] = sa.c2p(di[sizeLetter], true);
-        pointData[sizeLetter + "LabelVal"] = size;
-        var extent = t.extents[t.extents.round(di.p)];
-        pointData[posLetter + "0"] = pa.c2p(isClosest ? minPos(di) : extent[0], true);
-        pointData[posLetter + "1"] = pa.c2p(isClosest ? maxPos(di) : extent[1], true);
-        var hasPeriod = di.orig_p !== void 0;
-        pointData[posLetter + "LabelVal"] = hasPeriod ? di.orig_p : di.p;
-        pointData.labelLabel = hoverLabelText(pa, pointData[posLetter + "LabelVal"], trace[posLetter + "hoverformat"]);
-        pointData.valueLabel = hoverLabelText(sa, pointData[sizeLetter + "LabelVal"], trace[sizeLetter + "hoverformat"]);
-        pointData.baseLabel = hoverLabelText(sa, di.b, trace[sizeLetter + "hoverformat"]);
-        pointData.spikeDistance = (thisBarSizeFn(di) + thisBarPositionFn(di)) / 2;
-        pointData[posLetter + "Spike"] = pa.c2p(di.p, true);
-        fillText(di, trace, pointData);
-        pointData.hovertemplate = trace.hovertemplate;
-        return pointData;
-      }
-      function getTraceColor(trace, di) {
-        var mc = di.mcc || trace.marker.color;
-        var mlc = di.mlcc || trace.marker.line.color;
-        var mlw = getLineWidth(trace, di);
-        if (Color2.opacity(mc)) return mc;
-        else if (Color2.opacity(mlc) && mlw) return mlc;
-      }
-      module.exports = {
-        hoverPoints,
-        hoverOnBars,
-        getTraceColor
-      };
-    }
-  });
-
-  // src/traces/bar/event_data.js
-  var require_event_data = __commonJS({
-    "src/traces/bar/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt, trace) {
-        out.x = "xVal" in pt ? pt.xVal : pt.x;
-        out.y = "yVal" in pt ? pt.yVal : pt.y;
-        if (pt.xa) out.xaxis = pt.xa;
-        if (pt.ya) out.yaxis = pt.ya;
-        if (trace.orientation === "h") {
-          out.label = out.y;
-          out.value = out.x;
-        } else {
-          out.label = out.x;
-          out.value = out.y;
-        }
-        return out;
-      };
-    }
-  });
-
-  // src/traces/bar/select.js
-  var require_select3 = __commonJS({
-    "src/traces/bar/select.js"(exports, module) {
-      "use strict";
-      module.exports = function selectPoints(searchInfo, selectionTester) {
-        var cd = searchInfo.cd;
-        var xa = searchInfo.xaxis;
-        var ya = searchInfo.yaxis;
-        var trace = cd[0].trace;
-        var isFunnel = trace.type === "funnel";
-        var isHorizontal = trace.orientation === "h";
-        var selection = [];
-        var i;
-        if (selectionTester === false) {
-          for (i = 0; i < cd.length; i++) {
-            cd[i].selected = 0;
-          }
-        } else {
-          for (i = 0; i < cd.length; i++) {
-            var di = cd[i];
-            var ct = "ct" in di ? di.ct : getCentroid(di, xa, ya, isHorizontal, isFunnel);
-            if (selectionTester.contains(ct, false, i, searchInfo)) {
-              selection.push({
-                pointNumber: i,
-                x: xa.c2d(di.x),
-                y: ya.c2d(di.y)
-              });
-              di.selected = 1;
-            } else {
-              di.selected = 0;
-            }
-          }
-        }
-        return selection;
-      };
-      function getCentroid(d, xa, ya, isHorizontal, isFunnel) {
-        var x0 = xa.c2p(isHorizontal ? d.s0 : d.p0, true);
-        var x1 = xa.c2p(isHorizontal ? d.s1 : d.p1, true);
-        var y0 = ya.c2p(isHorizontal ? d.p0 : d.s0, true);
-        var y1 = ya.c2p(isHorizontal ? d.p1 : d.s1, true);
-        if (isFunnel) {
-          return [(x0 + x1) / 2, (y0 + y1) / 2];
-        } else {
-          if (isHorizontal) {
-            return [x1, (y0 + y1) / 2];
-          } else {
-            return [(x0 + x1) / 2, y1];
-          }
-        }
-      }
-    }
-  });
-
-  // src/traces/bar/index.js
-  var require_bar = __commonJS({
-    "src/traces/bar/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes23(),
-        layoutAttributes: require_layout_attributes6(),
-        supplyDefaults: require_defaults19().supplyDefaults,
-        crossTraceDefaults: require_defaults19().crossTraceDefaults,
-        supplyLayoutDefaults: require_layout_defaults5(),
-        calc: require_calc5(),
-        crossTraceCalc: require_cross_trace_calc().crossTraceCalc,
-        colorbar: require_marker_colorbar(),
-        arraysToCalcdata: require_arrays_to_calcdata2(),
-        plot: require_plot3().plot,
-        style: require_style4().style,
-        styleOnSelect: require_style4().styleOnSelect,
-        hoverPoints: require_hover3().hoverPoints,
-        eventData: require_event_data(),
-        selectPoints: require_select3(),
-        moduleType: "trace",
-        name: "bar",
-        basePlotModule: require_cartesian(),
-        categories: ["bar-like", "cartesian", "svg", "bar", "oriented", "errorBarsOK", "showLegend", "zoomScale"],
-        animatable: true,
-        meta: {}
-      };
-    }
-  });
-
-  // lib/bar.js
-  var require_bar2 = __commonJS({
-    "lib/bar.js"(exports, module) {
-      "use strict";
-      module.exports = require_bar();
     }
   });
 
@@ -61008,28 +59419,639 @@ var Plotly = (() => {
     }
   });
 
-  // src/traces/histogram/defaults.js
-  var require_defaults20 = __commonJS({
-    "src/traces/histogram/defaults.js"(exports, module) {
+  // src/traces/heatmap/attributes.js
+  var require_attributes25 = __commonJS({
+    "src/traces/heatmap/attributes.js"(exports, module) {
+      "use strict";
+      var scatterAttrs = require_attributes12();
+      var baseAttrs = require_attributes2();
+      var fontAttrs = require_font_attributes();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          z: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          x: extendFlat({}, scatterAttrs.x, { impliedEdits: { xtype: "array" } }),
+          x0: extendFlat({}, scatterAttrs.x0, { impliedEdits: { xtype: "scaled" } }),
+          dx: extendFlat({}, scatterAttrs.dx, { impliedEdits: { xtype: "scaled" } }),
+          y: extendFlat({}, scatterAttrs.y, { impliedEdits: { ytype: "array" } }),
+          y0: extendFlat({}, scatterAttrs.y0, { impliedEdits: { ytype: "scaled" } }),
+          dy: extendFlat({}, scatterAttrs.dy, { impliedEdits: { ytype: "scaled" } }),
+          xperiod: extendFlat({}, scatterAttrs.xperiod, { impliedEdits: { xtype: "scaled" } }),
+          yperiod: extendFlat({}, scatterAttrs.yperiod, { impliedEdits: { ytype: "scaled" } }),
+          xperiod0: extendFlat({}, scatterAttrs.xperiod0, { impliedEdits: { xtype: "scaled" } }),
+          yperiod0: extendFlat({}, scatterAttrs.yperiod0, { impliedEdits: { ytype: "scaled" } }),
+          xperiodalignment: extendFlat({}, scatterAttrs.xperiodalignment, { impliedEdits: { xtype: "scaled" } }),
+          yperiodalignment: extendFlat({}, scatterAttrs.yperiodalignment, { impliedEdits: { ytype: "scaled" } }),
+          text: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          hovertext: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          transpose: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc"
+          },
+          xtype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          ytype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          zsmooth: {
+            valType: "enumerated",
+            values: ["fast", "best", false],
+            dflt: false,
+            editType: "calc"
+          },
+          hoverongaps: {
+            valType: "boolean",
+            dflt: true,
+            editType: "none"
+          },
+          connectgaps: {
+            valType: "boolean",
+            editType: "calc"
+          },
+          xgap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          ygap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs(),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: ["x", "y", "z", "text"]
+          }),
+          textfont: fontAttrs({
+            editType: "plot",
+            autoSize: true,
+            autoColor: true,
+            colorEditType: "style"
+          }),
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false }),
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/attributes.js
+  var require_attributes26 = __commonJS({
+    "src/traces/histogram2d/attributes.js"(exports, module) {
+      "use strict";
+      var histogramAttrs = require_attributes24();
+      var makeBinAttrs = require_bin_attributes();
+      var heatmapAttrs = require_attributes25();
+      var baseAttrs = require_attributes2();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogramAttrs.x,
+          y: histogramAttrs.y,
+          z: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          marker: {
+            color: {
+              valType: "data_array",
+              editType: "calc"
+            },
+            editType: "calc"
+          },
+          histnorm: histogramAttrs.histnorm,
+          histfunc: histogramAttrs.histfunc,
+          nbinsx: histogramAttrs.nbinsx,
+          xbins: makeBinAttrs("x"),
+          nbinsy: histogramAttrs.nbinsy,
+          ybins: makeBinAttrs("y"),
+          autobinx: histogramAttrs.autobinx,
+          autobiny: histogramAttrs.autobiny,
+          bingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xbingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          ybingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xgap: heatmapAttrs.xgap,
+          ygap: heatmapAttrs.ygap,
+          zsmooth: heatmapAttrs.zsmooth,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs({}, { keys: "z" }),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: "z"
+          }),
+          textfont: heatmapAttrs.textfont,
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false })
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/constants/filter_ops.js
+  var require_filter_ops = __commonJS({
+    "src/constants/filter_ops.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        COMPARISON_OPS: ["=", "!=", "<", ">=", ">", "<="],
+        COMPARISON_OPS2: ["=", "<", ">=", ">", "<="],
+        INTERVAL_OPS: ["[]", "()", "[)", "(]", "][", ")(", "](", ")["],
+        SET_OPS: ["{}", "}{"],
+        CONSTRAINT_REDUCTION: {
+          // for contour constraints, open/closed endpoints are equivalent
+          "=": "=",
+          "<": "<",
+          "<=": "<",
+          ">": ">",
+          ">=": ">",
+          "[]": "[]",
+          "()": "[]",
+          "[)": "[]",
+          "(]": "[]",
+          "][": "][",
+          ")(": "][",
+          "](": "][",
+          ")[": "]["
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/attributes.js
+  var require_attributes27 = __commonJS({
+    "src/traces/contour/attributes.js"(exports, module) {
+      "use strict";
+      var heatmapAttrs = require_attributes25();
+      var scatterAttrs = require_attributes12();
+      var axisFormat = require_axis_format_attributes();
+      var axisHoverFormat = axisFormat.axisHoverFormat;
+      var descriptionOnlyNumbers = axisFormat.descriptionOnlyNumbers;
+      var colorScaleAttrs = require_attributes8();
+      var dash = require_attributes4().dash;
+      var fontAttrs = require_font_attributes();
+      var extendFlat = require_extend().extendFlat;
+      var filterOps = require_filter_ops();
+      var COMPARISON_OPS2 = filterOps.COMPARISON_OPS2;
+      var INTERVAL_OPS = filterOps.INTERVAL_OPS;
+      var scatterLineAttrs = scatterAttrs.line;
+      module.exports = extendFlat(
+        {
+          z: heatmapAttrs.z,
+          x: heatmapAttrs.x,
+          x0: heatmapAttrs.x0,
+          dx: heatmapAttrs.dx,
+          y: heatmapAttrs.y,
+          y0: heatmapAttrs.y0,
+          dy: heatmapAttrs.dy,
+          xperiod: heatmapAttrs.xperiod,
+          yperiod: heatmapAttrs.yperiod,
+          xperiod0: scatterAttrs.xperiod0,
+          yperiod0: scatterAttrs.yperiod0,
+          xperiodalignment: heatmapAttrs.xperiodalignment,
+          yperiodalignment: heatmapAttrs.yperiodalignment,
+          text: heatmapAttrs.text,
+          hovertext: heatmapAttrs.hovertext,
+          transpose: heatmapAttrs.transpose,
+          xtype: heatmapAttrs.xtype,
+          ytype: heatmapAttrs.ytype,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: heatmapAttrs.hovertemplate,
+          texttemplate: extendFlat({}, heatmapAttrs.texttemplate, {}),
+          textfont: extendFlat({}, heatmapAttrs.textfont, {}),
+          hoverongaps: heatmapAttrs.hoverongaps,
+          connectgaps: extendFlat({}, heatmapAttrs.connectgaps, {}),
+          fillcolor: {
+            valType: "color",
+            editType: "calc"
+          },
+          autocontour: {
+            valType: "boolean",
+            dflt: true,
+            editType: "calc",
+            impliedEdits: {
+              "contours.start": void 0,
+              "contours.end": void 0,
+              "contours.size": void 0
+            }
+          },
+          ncontours: {
+            valType: "integer",
+            dflt: 15,
+            min: 1,
+            editType: "calc"
+          },
+          contours: {
+            type: {
+              valType: "enumerated",
+              values: ["levels", "constraint"],
+              dflt: "levels",
+              editType: "calc"
+            },
+            start: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            end: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            size: {
+              valType: "number",
+              dflt: null,
+              min: 0,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            thresholds: {
+              valType: "data_array",
+              dflt: null,
+              editType: "calc",
+              impliedEdits: { "^autocontour": false }
+            },
+            coloring: {
+              valType: "enumerated",
+              values: ["fill", "heatmap", "lines", "none"],
+              dflt: "fill",
+              editType: "calc"
+            },
+            showlines: {
+              valType: "boolean",
+              dflt: true,
+              editType: "plot"
+            },
+            showlabels: {
+              valType: "boolean",
+              dflt: false,
+              editType: "plot"
+            },
+            labelfont: fontAttrs({
+              editType: "plot",
+              colorEditType: "style"
+            }),
+            labelformat: {
+              valType: "string",
+              dflt: "",
+              editType: "plot",
+              description: descriptionOnlyNumbers("contour label")
+            },
+            operation: {
+              valType: "enumerated",
+              values: [].concat(COMPARISON_OPS2).concat(INTERVAL_OPS),
+              dflt: "=",
+              editType: "calc"
+            },
+            value: {
+              valType: "any",
+              dflt: 0,
+              editType: "calc"
+            },
+            editType: "calc",
+            impliedEdits: { autocontour: false }
+          },
+          line: {
+            color: extendFlat({}, scatterLineAttrs.color, {
+              editType: "style+colorbars"
+            }),
+            width: {
+              valType: "number",
+              min: 0,
+              editType: "style+colorbars"
+            },
+            dash,
+            smoothing: extendFlat({}, scatterLineAttrs.smoothing, {}),
+            editType: "plot"
+          },
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          autoColorDflt: false,
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2dcontour/attributes.js
+  var require_attributes28 = __commonJS({
+    "src/traces/histogram2dcontour/attributes.js"(exports, module) {
+      "use strict";
+      var histogram2dAttrs = require_attributes26();
+      var contourAttrs = require_attributes27();
+      var colorScaleAttrs = require_attributes8();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogram2dAttrs.x,
+          y: histogram2dAttrs.y,
+          z: histogram2dAttrs.z,
+          marker: histogram2dAttrs.marker,
+          histnorm: histogram2dAttrs.histnorm,
+          histfunc: histogram2dAttrs.histfunc,
+          nbinsx: histogram2dAttrs.nbinsx,
+          xbins: histogram2dAttrs.xbins,
+          nbinsy: histogram2dAttrs.nbinsy,
+          ybins: histogram2dAttrs.ybins,
+          autobinx: histogram2dAttrs.autobinx,
+          autobiny: histogram2dAttrs.autobiny,
+          bingroup: histogram2dAttrs.bingroup,
+          xbingroup: histogram2dAttrs.xbingroup,
+          ybingroup: histogram2dAttrs.ybingroup,
+          autocontour: contourAttrs.autocontour,
+          ncontours: contourAttrs.ncontours,
+          contours: contourAttrs.contours,
+          line: {
+            color: contourAttrs.line.color,
+            width: extendFlat({}, contourAttrs.line.width, {
+              dflt: 0.5
+            }),
+            dash: contourAttrs.line.dash,
+            smoothing: contourAttrs.line.smoothing,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: histogram2dAttrs.hovertemplate,
+          texttemplate: contourAttrs.texttemplate,
+          textfont: contourAttrs.textfont
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/sample_defaults.js
+  var require_sample_defaults = __commonJS({
+    "src/traces/histogram2d/sample_defaults.js"(exports, module) {
       "use strict";
       var Registry = require_registry();
       var Lib = require_lib();
-      var Color2 = require_color();
-      var handleText = require_defaults19().handleText;
+      module.exports = function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
+        var x = coerce("x");
+        var y = coerce("y");
+        var xlen = Lib.minRowLength(x);
+        var ylen = Lib.minRowLength(y);
+        if (!xlen || !ylen) {
+          traceOut.visible = false;
+          return;
+        }
+        traceOut._length = Math.min(xlen, ylen);
+        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
+        handleCalendarDefaults(traceIn, traceOut, ["x", "y"], layout);
+        var hasAggregationData = coerce("z") || coerce("marker.color");
+        if (hasAggregationData) coerce("histfunc");
+        coerce("histnorm");
+        coerce("autobinx");
+        coerce("autobiny");
+      };
+    }
+  });
+
+  // src/traces/contour/contours_defaults.js
+  var require_contours_defaults = __commonJS({
+    "src/traces/contour/contours_defaults.js"(exports, module) {
+      "use strict";
+      module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+        var contourThresholds = coerce("contours.thresholds");
+        var hasThresholds = contourThresholds && contourThresholds.length > 0;
+        if (hasThresholds) {
+          traceOut.autocontour = false;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Contour defaults: using custom thresholds (" + contourThresholds.length + " levels)");
+          }
+          return;
+        }
+        var contourStart = coerce2("contours.start");
+        var contourEnd = coerce2("contours.end");
+        var missingEnd = contourStart === false || contourEnd === false;
+        var contourSize = coerce("contours.size");
+        var autoContour;
+        if (missingEnd) autoContour = traceOut.autocontour = true;
+        else autoContour = coerce("autocontour", false);
+        if (autoContour || !contourSize) coerce("ncontours");
+      };
+    }
+  });
+
+  // src/traces/contour/label_defaults.js
+  var require_label_defaults = __commonJS({
+    "src/traces/contour/label_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function handleLabelDefaults(coerce, layout, lineColor, opts) {
+        if (!opts) opts = {};
+        var showLabels = coerce("contours.showlabels");
+        if (showLabels) {
+          var globalFont = layout.font;
+          Lib.coerceFont(coerce, "contours.labelfont", globalFont, { overrideDflt: {
+            color: lineColor
+          } });
+          coerce("contours.labelformat");
+        }
+        if (opts.hasHover !== false) coerce("zhoverformat");
+      };
+    }
+  });
+
+  // src/traces/contour/style_defaults.js
+  var require_style_defaults = __commonJS({
+    "src/traces/contour/style_defaults.js"(exports, module) {
+      "use strict";
+      var colorscaleDefaults = require_defaults2();
+      var handleLabelDefaults = require_label_defaults();
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, layout, opts) {
+        var coloring = coerce("contours.coloring");
+        var showLines;
+        var lineColor = "";
+        if (coloring === "fill") showLines = coerce("contours.showlines");
+        if (showLines !== false) {
+          if (coloring !== "lines") lineColor = coerce("line.color", "#000");
+          coerce("line.width", 0.5);
+          coerce("line.dash");
+        }
+        if (coloring !== "none") {
+          if (traceIn.showlegend !== true) traceOut.showlegend = false;
+          traceOut._dfltShowLegend = false;
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "", cLetter: "z" }
+          );
+        }
+        coerce("line.smoothing");
+        handleLabelDefaults(coerce, layout, lineColor, opts);
+      };
+    }
+  });
+
+  // src/traces/heatmap/label_defaults.js
+  var require_label_defaults2 = __commonJS({
+    "src/traces/heatmap/label_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function handleHeatmapLabelDefaults(coerce, layout) {
+        coerce("texttemplate");
+        var fontDflt = Lib.extendFlat({}, layout.font, {
+          color: "auto",
+          size: "auto"
+        });
+        Lib.coerceFont(coerce, "textfont", fontDflt);
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/defaults.js
+  var require_defaults19 = __commonJS({
+    "src/traces/histogram2dcontour/defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var handleSampleDefaults = require_sample_defaults();
+      var handleContoursDefaults = require_contours_defaults();
       var handleStyleDefaults = require_style_defaults();
-      var attributes = require_attributes24();
+      var handleHeatmapLabelDefaults = require_label_defaults2();
+      var attributes = require_attributes28();
       module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
         function coerce(attr, dflt) {
           return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
         }
-        var x = coerce("x");
-        var y = coerce("y");
-        var cumulative = coerce("cumulative.enabled");
-        if (cumulative) {
-          coerce("cumulative.direction");
-          coerce("cumulative.currentbin");
+        function coerce2(attr) {
+          return Lib.coerce2(traceIn, traceOut, attributes, attr);
         }
+        handleSampleDefaults(traceIn, traceOut, coerce, layout);
+        if (traceOut.visible === false) return;
+        handleContoursDefaults(traceIn, traceOut, coerce, coerce2);
+        handleStyleDefaults(traceIn, traceOut, coerce, layout);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("hovertemplate");
+        if (traceOut.contours && traceOut.contours.coloring === "heatmap") {
+          handleHeatmapLabelDefaults(coerce, layout);
+        }
+      };
+    }
+  });
+
+  // src/traces/bar/style_defaults.js
+  var require_style_defaults2 = __commonJS({
+    "src/traces/bar/style_defaults.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var hasColorscale = require_helpers().hasColorscale;
+      var colorscaleDefaults = require_defaults2();
+      var coercePattern = require_lib().coercePattern;
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout) {
+        var markerColor = coerce("marker.color", defaultColor);
+        var hasMarkerColorscale = hasColorscale(traceIn, "marker");
+        if (hasMarkerColorscale) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.color", Color.defaultLine);
+        if (hasColorscale(traceIn, "marker.line")) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.line.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.width");
+        coerce("marker.opacity");
+        coercePattern(coerce, "marker.pattern", markerColor, hasMarkerColorscale);
+        coerce("selected.marker.color");
+        coerce("unselected.marker.color");
+      };
+    }
+  });
+
+  // src/traces/bar/defaults.js
+  var require_defaults20 = __commonJS({
+    "src/traces/bar/defaults.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Color = require_color();
+      var Registry = require_registry();
+      var handleXYDefaults = require_xy_defaults();
+      var handlePeriodDefaults = require_period_defaults();
+      var handleStyleDefaults = require_style_defaults2();
+      var handleGroupingDefaults = require_grouping_defaults();
+      var attributes = require_attributes23();
+      var coerceFont = Lib.coerceFont;
+      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
+        }
+        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
+        if (!len) {
+          traceOut.visible = false;
+          return;
+        }
+        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("zorder");
+        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
+        coerce("base");
+        coerce("offset");
+        coerce("width");
         coerce("text");
+        coerce("hovertext");
+        coerce("hovertemplate");
         var textposition = coerce("textposition");
         handleText(traceIn, traceOut, layout, coerce, textposition, {
           moduleHasSelected: true,
@@ -61039,32 +60061,88 @@ var Plotly = (() => {
           moduleHasTextangle: true,
           moduleHasInsideanchor: true
         });
-        coerce("hovertext");
-        coerce("hovertemplate");
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        var orientation = coerce("orientation", y && !x ? "h" : "v");
-        var sampleLetter = orientation === "v" ? "x" : "y";
-        var aggLetter = orientation === "v" ? "y" : "x";
-        var len = x && y ? Math.min(Lib.minRowLength(x) && Lib.minRowLength(y)) : Lib.minRowLength(traceOut[sampleLetter] || []);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        traceOut._length = len;
-        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
-        handleCalendarDefaults(traceIn, traceOut, ["x", "y"], layout);
-        var hasAggregationData = traceOut[aggLetter];
-        if (hasAggregationData) coerce("histfunc");
-        coerce("histnorm");
-        coerce("autobin" + sampleLetter);
         handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout);
-        Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
         var lineColor = (traceOut.marker.line || {}).color;
         var errorBarsSupplyDefaults = Registry.getComponentMethod("errorbars", "supplyDefaults");
-        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color2.defaultLine, { axis: "y" });
-        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color2.defaultLine, { axis: "x", inherit: "y" });
-        coerce("zorder");
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "y" });
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "x", inherit: "y" });
+        Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
+      }
+      function crossTraceDefaults(fullData, fullLayout) {
+        var traceIn, traceOut;
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, attributes, attr, dflt);
+        }
+        for (var i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceOut.type === "bar") {
+            traceIn = traceOut._input;
+            var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+            if (traceOut.marker) {
+              traceOut.marker.cornerradius = validateCornerradius(r);
+            }
+            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.barmode);
+          }
+        }
+      }
+      function validateCornerradius(r) {
+        if (isNumeric(r)) {
+          r = +r;
+          if (r >= 0) return r;
+        } else if (typeof r === "string") {
+          r = r.trim();
+          if (r.slice(-1) === "%" && isNumeric(r.slice(0, -1))) {
+            r = +r.slice(0, -1);
+            if (r >= 0) return r + "%";
+          }
+        }
+        return void 0;
+      }
+      function handleText(traceIn, traceOut, layout, coerce, textposition, opts) {
+        opts = opts || {};
+        var moduleHasSelected = !(opts.moduleHasSelected === false);
+        var moduleHasUnselected = !(opts.moduleHasUnselected === false);
+        var moduleHasConstrain = !(opts.moduleHasConstrain === false);
+        var moduleHasCliponaxis = !(opts.moduleHasCliponaxis === false);
+        var moduleHasTextangle = !(opts.moduleHasTextangle === false);
+        var moduleHasInsideanchor = !(opts.moduleHasInsideanchor === false);
+        var hasPathbar = !!opts.hasPathbar;
+        var hasBoth = Array.isArray(textposition) || textposition === "auto";
+        var hasInside = hasBoth || textposition === "inside";
+        var hasOutside = hasBoth || textposition === "outside";
+        if (hasInside || hasOutside) {
+          var dfltFont = coerceFont(coerce, "textfont", layout.font);
+          var insideTextFontDefault = Lib.extendFlat({}, dfltFont);
+          var isTraceTextfontColorSet = traceIn.textfont && traceIn.textfont.color;
+          var isColorInheritedFromLayoutFont = !isTraceTextfontColorSet;
+          if (isColorInheritedFromLayoutFont) {
+            delete insideTextFontDefault.color;
+          }
+          coerceFont(coerce, "insidetextfont", insideTextFontDefault);
+          if (hasPathbar) {
+            var pathbarTextFontDefault = Lib.extendFlat({}, dfltFont);
+            if (isColorInheritedFromLayoutFont) {
+              delete pathbarTextFontDefault.color;
+            }
+            coerceFont(coerce, "pathbar.textfont", pathbarTextFontDefault);
+          }
+          if (hasOutside) coerceFont(coerce, "outsidetextfont", dfltFont);
+          if (moduleHasSelected) coerce("selected.textfont.color");
+          if (moduleHasUnselected) coerce("unselected.textfont.color");
+          if (moduleHasConstrain) coerce("constraintext");
+          if (moduleHasCliponaxis) coerce("cliponaxis");
+          if (moduleHasTextangle) coerce("textangle");
+          coerce("texttemplate");
+        }
+        if (hasInside) {
+          if (moduleHasInsideanchor) coerce("insidetextanchor");
+        }
+      }
+      module.exports = {
+        supplyDefaults,
+        crossTraceDefaults,
+        handleText,
+        validateCornerradius
       };
     }
   });
@@ -61077,7 +60155,7 @@ var Plotly = (() => {
       var axisIds = require_axis_ids();
       var traceIs = require_registry().traceIs;
       var handleGroupingDefaults = require_grouping_defaults();
-      var validateCornerradius = require_defaults19().validateCornerradius;
+      var validateCornerradius = require_defaults20().validateCornerradius;
       var nestedProperty = Lib.nestedProperty;
       var getAxisGroup = require_constraints().getAxisGroup;
       var BINATTRS = [
@@ -61502,8 +60580,31 @@ var Plotly = (() => {
     }
   });
 
+  // src/traces/bar/arrays_to_calcdata.js
+  var require_arrays_to_calcdata2 = __commonJS({
+    "src/traces/bar/arrays_to_calcdata.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function arraysToCalcdata(cd, trace) {
+        for (var i = 0; i < cd.length; i++) cd[i].i = i;
+        Lib.mergeArray(trace.text, cd, "tx");
+        Lib.mergeArray(trace.hovertext, cd, "htx");
+        var marker = trace.marker;
+        if (marker) {
+          Lib.mergeArray(marker.opacity, cd, "mo", true);
+          Lib.mergeArray(marker.color, cd, "mc");
+          var markerLine = marker.line;
+          if (markerLine) {
+            Lib.mergeArray(markerLine.color, cd, "mlc");
+            Lib.mergeArrayCastPositive(markerLine.width, cd, "mlw");
+          }
+        }
+      };
+    }
+  });
+
   // src/traces/histogram/calc.js
-  var require_calc6 = __commonJS({
+  var require_calc5 = __commonJS({
     "src/traces/histogram/calc.js"(exports, module) {
       "use strict";
       var isNumeric = require_fast_isnumeric();
@@ -61935,15283 +61036,3043 @@ var Plotly = (() => {
     }
   });
 
-  // src/traces/histogram/hover.js
-  var require_hover4 = __commonJS({
-    "src/traces/histogram/hover.js"(exports, module) {
-      "use strict";
-      var barHover = require_hover3().hoverPoints;
-      var hoverLabelText = require_axes().hoverLabelText;
-      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
-        var pts = barHover(pointData, xval, yval, hovermode, opts);
-        if (!pts) return;
-        pointData = pts[0];
-        var di = pointData.cd[pointData.index];
-        var trace = pointData.cd[0].trace;
-        if (!trace.cumulative.enabled) {
-          var posLetter = trace.orientation === "h" ? "y" : "x";
-          pointData[posLetter + "Label"] = hoverLabelText(pointData[posLetter + "a"], [di.ph0, di.ph1], trace[posLetter + "hoverformat"]);
-        }
-        return pts;
-      };
-    }
-  });
-
-  // src/traces/histogram/event_data.js
-  var require_event_data2 = __commonJS({
-    "src/traces/histogram/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt, trace, cd, pointNumber) {
-        out.x = "xVal" in pt ? pt.xVal : pt.x;
-        out.y = "yVal" in pt ? pt.yVal : pt.y;
-        if ("zLabelVal" in pt) out.z = pt.zLabelVal;
-        if (pt.xa) out.xaxis = pt.xa;
-        if (pt.ya) out.yaxis = pt.ya;
-        if (!(trace.cumulative || {}).enabled) {
-          var pts = Array.isArray(pointNumber) ? cd[0].pts[pointNumber[0]][pointNumber[1]] : cd[pointNumber].pts;
-          out.pointNumbers = pts;
-          out.binNumber = out.pointNumber;
-          delete out.pointNumber;
-          delete out.pointIndex;
-          var pointIndices;
-          if (trace._indexToPoints) {
-            pointIndices = [];
-            for (var i = 0; i < pts.length; i++) {
-              pointIndices = pointIndices.concat(trace._indexToPoints[pts[i]]);
-            }
-          } else {
-            pointIndices = pts;
-          }
-          out.pointIndices = pointIndices;
-        }
-        return out;
-      };
-    }
-  });
-
-  // src/traces/histogram/index.js
-  var require_histogram = __commonJS({
-    "src/traces/histogram/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes24(),
-        layoutAttributes: require_layout_attributes6(),
-        supplyDefaults: require_defaults20(),
-        crossTraceDefaults: require_cross_trace_defaults3(),
-        supplyLayoutDefaults: require_layout_defaults5(),
-        calc: require_calc6().calc,
-        crossTraceCalc: require_cross_trace_calc().crossTraceCalc,
-        plot: require_plot3().plot,
-        layerName: "barlayer",
-        style: require_style4().style,
-        styleOnSelect: require_style4().styleOnSelect,
-        colorbar: require_marker_colorbar(),
-        hoverPoints: require_hover4(),
-        selectPoints: require_select3(),
-        eventData: require_event_data2(),
-        moduleType: "trace",
-        name: "histogram",
-        basePlotModule: require_cartesian(),
-        categories: ["bar-like", "cartesian", "svg", "bar", "histogram", "oriented", "errorBarsOK", "showLegend"],
-        meta: {}
-      };
-    }
-  });
-
-  // lib/histogram.js
-  var require_histogram2 = __commonJS({
-    "lib/histogram.js"(exports, module) {
-      "use strict";
-      module.exports = require_histogram();
-    }
-  });
-
-  // src/traces/funnel/constants.js
-  var require_constants16 = __commonJS({
-    "src/traces/funnel/constants.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        eventDataKeys: [
-          "percentInitial",
-          "percentPrevious",
-          "percentTotal"
-        ]
-      };
-    }
-  });
-
-  // src/traces/funnel/attributes.js
-  var require_attributes25 = __commonJS({
-    "src/traces/funnel/attributes.js"(exports, module) {
-      "use strict";
-      var barAttrs = require_attributes23();
-      var lineAttrs = require_attributes12().line;
-      var baseAttrs = require_attributes2();
-      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
-      var constants = require_constants16();
-      var extendFlat = require_extend().extendFlat;
-      var Color2 = require_color();
-      module.exports = {
-        x: barAttrs.x,
-        x0: barAttrs.x0,
-        dx: barAttrs.dx,
-        y: barAttrs.y,
-        y0: barAttrs.y0,
-        dy: barAttrs.dy,
-        xperiod: barAttrs.xperiod,
-        yperiod: barAttrs.yperiod,
-        xperiod0: barAttrs.xperiod0,
-        yperiod0: barAttrs.yperiod0,
-        xperiodalignment: barAttrs.xperiodalignment,
-        yperiodalignment: barAttrs.yperiodalignment,
-        xhoverformat: axisHoverFormat("x"),
-        yhoverformat: axisHoverFormat("y"),
-        hovertext: barAttrs.hovertext,
-        hovertemplate: hovertemplateAttrs({}, {
-          keys: constants.eventDataKeys
-        }),
-        hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-          flags: ["name", "x", "y", "text", "percent initial", "percent previous", "percent total"]
-        }),
-        textinfo: {
-          valType: "flaglist",
-          flags: ["label", "text", "percent initial", "percent previous", "percent total", "value"],
-          extras: ["none"],
-          editType: "plot",
-          arrayOk: false
-        },
-        // TODO: incorporate `label` and `value` in the eventData
-        texttemplate: texttemplateAttrs({ editType: "plot" }, {
-          keys: constants.eventDataKeys.concat(["label", "value"])
-        }),
-        text: barAttrs.text,
-        textposition: barAttrs.textposition,
-        insidetextanchor: extendFlat({}, barAttrs.insidetextanchor, { dflt: "middle" }),
-        textangle: extendFlat({}, barAttrs.textangle, { dflt: 0 }),
-        textfont: barAttrs.textfont,
-        insidetextfont: barAttrs.insidetextfont,
-        outsidetextfont: barAttrs.outsidetextfont,
-        constraintext: barAttrs.constraintext,
-        cliponaxis: barAttrs.cliponaxis,
-        orientation: extendFlat({}, barAttrs.orientation, {}),
-        offset: extendFlat({}, barAttrs.offset, { arrayOk: false }),
-        width: extendFlat({}, barAttrs.width, { arrayOk: false }),
-        marker: funnelMarker(),
-        connector: {
-          fillcolor: {
-            valType: "color",
-            editType: "style"
-          },
-          line: {
-            color: extendFlat({}, lineAttrs.color, { dflt: Color2.defaultLine }),
-            width: extendFlat({}, lineAttrs.width, {
-              dflt: 0,
-              editType: "plot"
-            }),
-            dash: lineAttrs.dash,
-            editType: "style"
-          },
-          visible: {
-            valType: "boolean",
-            dflt: true,
-            editType: "plot"
-          },
-          editType: "plot"
-        },
-        offsetgroup: barAttrs.offsetgroup,
-        alignmentgroup: barAttrs.alignmentgroup,
-        zorder: barAttrs.zorder
-      };
-      function funnelMarker() {
-        var marker = extendFlat({}, barAttrs.marker);
-        delete marker.pattern;
-        delete marker.cornerradius;
-        return marker;
-      }
-    }
-  });
-
-  // src/traces/funnel/layout_attributes.js
-  var require_layout_attributes7 = __commonJS({
-    "src/traces/funnel/layout_attributes.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        funnelmode: {
-          valType: "enumerated",
-          values: ["stack", "group", "overlay"],
-          dflt: "stack",
-          editType: "calc"
-        },
-        funnelgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          editType: "calc"
-        },
-        funnelgroupgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0,
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/traces/funnel/defaults.js
-  var require_defaults21 = __commonJS({
-    "src/traces/funnel/defaults.js"(exports, module) {
+  // src/traces/histogram2d/calc.js
+  var require_calc6 = __commonJS({
+    "src/traces/histogram2d/calc.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var handleGroupingDefaults = require_grouping_defaults();
-      var handleText = require_defaults19().handleText;
-      var handleXYDefaults = require_xy_defaults();
-      var handlePeriodDefaults = require_period_defaults();
-      var attributes = require_attributes25();
-      var Color2 = require_color();
-      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        coerce("orientation", traceOut.y && !traceOut.x ? "v" : "h");
-        coerce("offset");
-        coerce("width");
-        var text = coerce("text");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        var textposition = coerce("textposition");
-        handleText(traceIn, traceOut, layout, coerce, textposition, {
-          moduleHasSelected: false,
-          moduleHasUnselected: false,
-          moduleHasConstrain: true,
-          moduleHasCliponaxis: true,
-          moduleHasTextangle: true,
-          moduleHasInsideanchor: true
-        });
-        if (traceOut.textposition !== "none" && !traceOut.texttemplate) {
-          coerce("textinfo", Lib.isArrayOrTypedArray(text) ? "text+value" : "value");
-        }
-        var markerColor = coerce("marker.color", defaultColor);
-        coerce("marker.line.color", Color2.defaultLine);
-        coerce("marker.line.width");
-        var connectorVisible = coerce("connector.visible");
-        if (connectorVisible) {
-          coerce("connector.fillcolor", defaultFillColor(markerColor));
-          var connectorLineWidth = coerce("connector.line.width");
-          if (connectorLineWidth) {
-            coerce("connector.line.color");
-            coerce("connector.line.dash");
-          }
-        }
-        coerce("zorder");
-      }
-      function defaultFillColor(markerColor) {
-        var cBase = Lib.isArrayOrTypedArray(markerColor) ? "#000" : markerColor;
-        return Color2.addOpacity(cBase, 0.5 * Color2.opacity(cBase));
-      }
-      function crossTraceDefaults(fullData, fullLayout) {
-        var traceIn, traceOut;
-        function coerce(attr) {
-          return Lib.coerce(traceOut._input, traceOut, attributes, attr);
-        }
-        for (var i = 0; i < fullData.length; i++) {
-          traceOut = fullData[i];
-          if (traceOut.type === "funnel") {
-            traceIn = traceOut._input;
-            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.funnelmode);
-          }
-        }
-      }
-      module.exports = {
-        supplyDefaults,
-        crossTraceDefaults
-      };
-    }
-  });
-
-  // src/traces/funnel/layout_defaults.js
-  var require_layout_defaults6 = __commonJS({
-    "src/traces/funnel/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes7();
-      module.exports = function(layoutIn, layoutOut, fullData) {
-        var hasTraceType = false;
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
-        }
-        for (var i = 0; i < fullData.length; i++) {
-          var trace = fullData[i];
-          if (trace.visible && trace.type === "funnel") {
-            hasTraceType = true;
-            break;
-          }
-        }
-        if (hasTraceType) {
-          coerce("funnelmode");
-          coerce("funnelgap", 0.2);
-          coerce("funnelgroupgap");
-        }
-      };
-    }
-  });
-
-  // src/traces/funnel/arrays_to_calcdata.js
-  var require_arrays_to_calcdata3 = __commonJS({
-    "src/traces/funnel/arrays_to_calcdata.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      module.exports = function arraysToCalcdata(cd, trace) {
-        for (var i = 0; i < cd.length; i++) cd[i].i = i;
-        Lib.mergeArray(trace.text, cd, "tx");
-        Lib.mergeArray(trace.hovertext, cd, "htx");
-        var marker = trace.marker;
-        if (marker) {
-          Lib.mergeArray(marker.opacity, cd, "mo");
-          Lib.mergeArray(marker.color, cd, "mc");
-          var markerLine = marker.line;
-          if (markerLine) {
-            Lib.mergeArray(markerLine.color, cd, "mlc");
-            Lib.mergeArrayCastPositive(markerLine.width, cd, "mlw");
-          }
-        }
-      };
-    }
-  });
-
-  // src/traces/funnel/calc.js
-  var require_calc7 = __commonJS({
-    "src/traces/funnel/calc.js"(exports, module) {
-      "use strict";
       var Axes = require_axes();
-      var alignPeriod = require_align_period();
-      var arraysToCalcdata = require_arrays_to_calcdata3();
-      var calcSelection = require_calc_selection();
-      var BADNUM = require_numerical().BADNUM;
+      var binFunctions = require_bin_functions();
+      var normFunctions = require_norm_functions();
+      var doAvg = require_average();
+      var getBinSpanLabelRound = require_bin_label_vals();
+      var calcAllAutoBins = require_calc5().calcAllAutoBins;
       module.exports = function calc(gd, trace) {
-        var xa = Axes.getFromId(gd, trace.xaxis || "x");
-        var ya = Axes.getFromId(gd, trace.yaxis || "y");
-        var size, pos, origPos, pObj, hasPeriod, pLetter, i, cdi;
-        if (trace.orientation === "h") {
-          size = xa.makeCalcdata(trace, "x");
-          origPos = ya.makeCalcdata(trace, "y");
-          pObj = alignPeriod(trace, ya, "y", origPos);
-          hasPeriod = !!trace.yperiodalignment;
-          pLetter = "y";
-        } else {
-          size = ya.makeCalcdata(trace, "y");
-          origPos = xa.makeCalcdata(trace, "x");
-          pObj = alignPeriod(trace, xa, "x", origPos);
-          hasPeriod = !!trace.xperiodalignment;
-          pLetter = "x";
-        }
-        pos = pObj.vals;
-        var serieslen = Math.min(pos.length, size.length);
-        var cd = new Array(serieslen);
-        trace._base = [];
-        for (i = 0; i < serieslen; i++) {
-          if (size[i] < 0) size[i] = BADNUM;
-          var connectToNext = false;
-          if (size[i] !== BADNUM) {
-            if (i + 1 < serieslen && size[i + 1] !== BADNUM) {
-              connectToNext = true;
-            }
-          }
-          cdi = cd[i] = {
-            p: pos[i],
-            s: size[i],
-            cNext: connectToNext
-          };
-          trace._base[i] = -0.5 * cdi.s;
-          if (hasPeriod) {
-            cd[i].orig_p = origPos[i];
-            cd[i][pLetter + "End"] = pObj.ends[i];
-            cd[i][pLetter + "Start"] = pObj.starts[i];
-          }
-          if (trace.ids) {
-            cdi.id = String(trace.ids[i]);
-          }
-          if (i === 0) cd[0].vTotal = 0;
-          cd[0].vTotal += fixNum(cdi.s);
-          cdi.begR = fixNum(cdi.s) / fixNum(cd[0].s);
-        }
-        var prevGoodNum;
-        for (i = 0; i < serieslen; i++) {
-          cdi = cd[i];
-          if (cdi.s === BADNUM) continue;
-          cdi.sumR = cdi.s / cd[0].vTotal;
-          cdi.difR = prevGoodNum !== void 0 ? cdi.s / prevGoodNum : 1;
-          prevGoodNum = cdi.s;
-        }
-        arraysToCalcdata(cd, trace);
-        calcSelection(cd, trace);
-        return cd;
-      };
-      function fixNum(a) {
-        return a === BADNUM ? 0 : a;
-      }
-    }
-  });
-
-  // src/traces/funnel/cross_trace_calc.js
-  var require_cross_trace_calc3 = __commonJS({
-    "src/traces/funnel/cross_trace_calc.js"(exports, module) {
-      "use strict";
-      var setGroupPositions = require_cross_trace_calc().setGroupPositions;
-      module.exports = function crossTraceCalc(gd, plotinfo) {
-        var fullLayout = gd._fullLayout;
-        var fullData = gd._fullData;
-        var calcdata = gd.calcdata;
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        var funnels = [];
-        var funnelsVert = [];
-        var funnelsHorz = [];
-        var cd, i;
-        for (i = 0; i < fullData.length; i++) {
-          var fullTrace = fullData[i];
-          var isHorizontal = fullTrace.orientation === "h";
-          if (fullTrace.visible === true && fullTrace.xaxis === xa._id && fullTrace.yaxis === ya._id && fullTrace.type === "funnel") {
-            cd = calcdata[i];
-            if (isHorizontal) {
-              funnelsHorz.push(cd);
-            } else {
-              funnelsVert.push(cd);
-            }
-            funnels.push(cd);
-          }
-        }
-        var opts = {
-          mode: fullLayout.funnelmode,
-          norm: fullLayout.funnelnorm,
-          gap: fullLayout.funnelgap,
-          groupgap: fullLayout.funnelgroupgap
+        var xa = Axes.getFromId(gd, trace.xaxis);
+        var ya = Axes.getFromId(gd, trace.yaxis);
+        var xcalendar = trace.xcalendar;
+        var ycalendar = trace.ycalendar;
+        var xr2c = function(v) {
+          return xa.r2c(v, 0, xcalendar);
         };
-        setGroupPositions(gd, xa, ya, funnelsVert, opts);
-        setGroupPositions(gd, ya, xa, funnelsHorz, opts);
-        for (i = 0; i < funnels.length; i++) {
-          cd = funnels[i];
-          for (var j = 0; j < cd.length; j++) {
-            if (j + 1 < cd.length) {
-              cd[j].nextP0 = cd[j + 1].p0;
-              cd[j].nextS0 = cd[j + 1].s0;
-              cd[j].nextP1 = cd[j + 1].p1;
-              cd[j].nextS1 = cd[j + 1].s1;
+        var yr2c = function(v) {
+          return ya.r2c(v, 0, ycalendar);
+        };
+        var xc2r = function(v) {
+          return xa.c2r(v, 0, xcalendar);
+        };
+        var yc2r = function(v) {
+          return ya.c2r(v, 0, ycalendar);
+        };
+        var i, j, n, m;
+        var xBinsAndPos = calcAllAutoBins(gd, trace, xa, "x");
+        var xBinSpec = xBinsAndPos[0];
+        var xPos0 = xBinsAndPos[1];
+        var yBinsAndPos = calcAllAutoBins(gd, trace, ya, "y");
+        var yBinSpec = yBinsAndPos[0];
+        var yPos0 = yBinsAndPos[1];
+        var serieslen = trace._length;
+        if (xPos0.length > serieslen) xPos0.splice(serieslen, xPos0.length - serieslen);
+        if (yPos0.length > serieslen) yPos0.splice(serieslen, yPos0.length - serieslen);
+        var z = [];
+        var onecol = [];
+        var zerocol = [];
+        var nonuniformBinsX = typeof xBinSpec.size === "string";
+        var nonuniformBinsY = typeof yBinSpec.size === "string";
+        var xEdges = [];
+        var yEdges = [];
+        var xbins = nonuniformBinsX ? xEdges : xBinSpec;
+        var ybins = nonuniformBinsY ? yEdges : yBinSpec;
+        var total = 0;
+        var counts = [];
+        var inputPoints = [];
+        var norm = trace.histnorm;
+        var func = trace.histfunc;
+        var densitynorm = norm.indexOf("density") !== -1;
+        var extremefunc = func === "max" || func === "min";
+        var sizeinit = extremefunc ? null : 0;
+        var binfunc = binFunctions.count;
+        var normfunc = normFunctions[norm];
+        var doavg = false;
+        var xinc = [];
+        var yinc = [];
+        var rawCounterData = "z" in trace ? trace.z : "marker" in trace && Array.isArray(trace.marker.color) ? trace.marker.color : "";
+        if (rawCounterData && func !== "count") {
+          doavg = func === "avg";
+          binfunc = binFunctions[func];
+        }
+        var xBinSize = xBinSpec.size;
+        var xBinStart = xr2c(xBinSpec.start);
+        var xBinEnd = xr2c(xBinSpec.end) + (xBinStart - Axes.tickIncrement(xBinStart, xBinSize, false, xcalendar)) / 1e6;
+        for (i = xBinStart; i < xBinEnd; i = Axes.tickIncrement(i, xBinSize, false, xcalendar)) {
+          onecol.push(sizeinit);
+          xEdges.push(i);
+          if (doavg) zerocol.push(0);
+        }
+        xEdges.push(i);
+        var nx = onecol.length;
+        var dx = (i - xBinStart) / nx;
+        var x0 = xc2r(xBinStart + dx / 2);
+        var yBinSize = yBinSpec.size;
+        var yBinStart = yr2c(yBinSpec.start);
+        var yBinEnd = yr2c(yBinSpec.end) + (yBinStart - Axes.tickIncrement(yBinStart, yBinSize, false, ycalendar)) / 1e6;
+        for (i = yBinStart; i < yBinEnd; i = Axes.tickIncrement(i, yBinSize, false, ycalendar)) {
+          z.push(onecol.slice());
+          yEdges.push(i);
+          var ipCol = new Array(nx);
+          for (j = 0; j < nx; j++) ipCol[j] = [];
+          inputPoints.push(ipCol);
+          if (doavg) counts.push(zerocol.slice());
+        }
+        yEdges.push(i);
+        var ny = z.length;
+        var dy = (i - yBinStart) / ny;
+        var y0 = yc2r(yBinStart + dy / 2);
+        if (densitynorm) {
+          xinc = makeIncrements(onecol.length, xbins, dx, nonuniformBinsX);
+          yinc = makeIncrements(z.length, ybins, dy, nonuniformBinsY);
+        }
+        if (!nonuniformBinsX && xa.type === "date") xbins = binsToCalc(xr2c, xbins);
+        if (!nonuniformBinsY && ya.type === "date") ybins = binsToCalc(yr2c, ybins);
+        var uniqueValsPerX = true;
+        var uniqueValsPerY = true;
+        var xVals = new Array(nx);
+        var yVals = new Array(ny);
+        var xGapLow = Infinity;
+        var xGapHigh = Infinity;
+        var yGapLow = Infinity;
+        var yGapHigh = Infinity;
+        for (i = 0; i < serieslen; i++) {
+          var xi = xPos0[i];
+          var yi = yPos0[i];
+          n = Lib.findBin(xi, xbins);
+          m = Lib.findBin(yi, ybins);
+          if (n >= 0 && n < nx && m >= 0 && m < ny) {
+            total += binfunc(n, i, z[m], rawCounterData, counts[m]);
+            inputPoints[m][n].push(i);
+            if (uniqueValsPerX) {
+              if (xVals[n] === void 0) xVals[n] = xi;
+              else if (xVals[n] !== xi) uniqueValsPerX = false;
             }
+            if (uniqueValsPerY) {
+              if (yVals[m] === void 0) yVals[m] = yi;
+              else if (yVals[m] !== yi) uniqueValsPerY = false;
+            }
+            xGapLow = Math.min(xGapLow, xi - xEdges[n]);
+            xGapHigh = Math.min(xGapHigh, xEdges[n + 1] - xi);
+            yGapLow = Math.min(yGapLow, yi - yEdges[m]);
+            yGapHigh = Math.min(yGapHigh, yEdges[m + 1] - yi);
           }
         }
-      };
-    }
-  });
-
-  // src/traces/funnel/plot.js
-  var require_plot4 = __commonJS({
-    "src/traces/funnel/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var Drawing = require_drawing();
-      var BADNUM = require_numerical().BADNUM;
-      var barPlot = require_plot3();
-      var clearMinTextSize = require_uniform_text().clearMinTextSize;
-      module.exports = function plot(gd, plotinfo, cdModule, traceLayer) {
-        var fullLayout = gd._fullLayout;
-        clearMinTextSize("funnel", fullLayout);
-        plotConnectorRegions(gd, plotinfo, cdModule, traceLayer);
-        plotConnectorLines(gd, plotinfo, cdModule, traceLayer);
-        barPlot.plot(gd, plotinfo, cdModule, traceLayer, {
-          mode: fullLayout.funnelmode,
-          norm: fullLayout.funnelmode,
-          gap: fullLayout.funnelgap,
-          groupgap: fullLayout.funnelgroupgap
-        });
-      };
-      function plotConnectorRegions(gd, plotinfo, cdModule, traceLayer) {
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        Lib.makeTraceGroups(traceLayer, cdModule, "trace bars").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var trace = cd[0].trace;
-          var group = Lib.ensureSingle(plotGroup, "g", "regions");
-          if (!trace.connector || !trace.connector.visible) {
-            group.remove();
-            return;
-          }
-          var isHorizontal = trace.orientation === "h";
-          var connectors = group.selectAll("g.region").data(Lib.identity);
-          connectors.enter().append("g").classed("region", true);
-          connectors.exit().remove();
-          var len = connectors.size();
-          connectors.each(function(di, i) {
-            if (i !== len - 1 && !di.cNext) return;
-            var xy = getXY(di, xa, ya, isHorizontal);
-            var x = xy[0];
-            var y = xy[1];
-            var shape = "";
-            if (x[0] !== BADNUM && y[0] !== BADNUM && x[1] !== BADNUM && y[1] !== BADNUM && x[2] !== BADNUM && y[2] !== BADNUM && x[3] !== BADNUM && y[3] !== BADNUM) {
-              if (isHorizontal) {
-                shape += "M" + x[0] + "," + y[1] + "L" + x[2] + "," + y[2] + "H" + x[3] + "L" + x[1] + "," + y[1] + "Z";
-              } else {
-                shape += "M" + x[1] + "," + y[1] + "L" + x[2] + "," + y[3] + "V" + y[2] + "L" + x[1] + "," + y[0] + "Z";
-              }
-            }
-            if (shape === "") shape = "M0,0Z";
-            Lib.ensureSingle(d3.select(this), "path").attr("d", shape).call(Drawing.setClipUrl, plotinfo.layerClipId, gd);
-          });
-        });
-      }
-      function plotConnectorLines(gd, plotinfo, cdModule, traceLayer) {
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        Lib.makeTraceGroups(traceLayer, cdModule, "trace bars").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var trace = cd[0].trace;
-          var group = Lib.ensureSingle(plotGroup, "g", "lines");
-          if (!trace.connector || !trace.connector.visible || !trace.connector.line.width) {
-            group.remove();
-            return;
-          }
-          var isHorizontal = trace.orientation === "h";
-          var connectors = group.selectAll("g.line").data(Lib.identity);
-          connectors.enter().append("g").classed("line", true);
-          connectors.exit().remove();
-          var len = connectors.size();
-          connectors.each(function(di, i) {
-            if (i !== len - 1 && !di.cNext) return;
-            var xy = getXY(di, xa, ya, isHorizontal);
-            var x = xy[0];
-            var y = xy[1];
-            var shape = "";
-            if (x[3] !== void 0 && y[3] !== void 0) {
-              if (isHorizontal) {
-                shape += "M" + x[0] + "," + y[1] + "L" + x[2] + "," + y[2];
-                shape += "M" + x[1] + "," + y[1] + "L" + x[3] + "," + y[2];
-              } else {
-                shape += "M" + x[1] + "," + y[1] + "L" + x[2] + "," + y[3];
-                shape += "M" + x[1] + "," + y[0] + "L" + x[2] + "," + y[2];
-              }
-            }
-            if (shape === "") shape = "M0,0Z";
-            Lib.ensureSingle(d3.select(this), "path").attr("d", shape).call(Drawing.setClipUrl, plotinfo.layerClipId, gd);
-          });
-        });
-      }
-      function getXY(di, xa, ya, isHorizontal) {
-        var s = [];
-        var p = [];
-        var sAxis = isHorizontal ? xa : ya;
-        var pAxis = isHorizontal ? ya : xa;
-        s[0] = sAxis.c2p(di.s0, true);
-        p[0] = pAxis.c2p(di.p0, true);
-        s[1] = sAxis.c2p(di.s1, true);
-        p[1] = pAxis.c2p(di.p1, true);
-        s[2] = sAxis.c2p(di.nextS0, true);
-        p[2] = pAxis.c2p(di.nextP0, true);
-        s[3] = sAxis.c2p(di.nextS1, true);
-        p[3] = pAxis.c2p(di.nextP1, true);
-        return isHorizontal ? [s, p] : [p, s];
-      }
-    }
-  });
-
-  // src/traces/funnel/style.js
-  var require_style5 = __commonJS({
-    "src/traces/funnel/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Drawing = require_drawing();
-      var Color2 = require_color();
-      var DESELECTDIM = require_interactions().DESELECTDIM;
-      var barStyle = require_style4();
-      var resizeText = require_uniform_text().resizeText;
-      var styleTextPoints = barStyle.styleTextPoints;
-      function style(gd, cd, sel) {
-        var s = sel ? sel : d3.select(gd).selectAll('g[class^="funnellayer"]').selectAll("g.trace");
-        resizeText(gd, s, "funnel");
-        s.style("opacity", function(d) {
-          return d[0].trace.opacity;
-        });
-        s.each(function(d) {
-          var gTrace = d3.select(this);
-          var trace = d[0].trace;
-          gTrace.selectAll(".point > path").each(function(di) {
-            if (!di.isBlank) {
-              var cont = trace.marker;
-              d3.select(this).call(Color2.fill, di.mc || cont.color).call(Color2.stroke, di.mlc || cont.line.color).call(Drawing.dashLine, cont.line.dash, di.mlw || cont.line.width).style("opacity", trace.selectedpoints && !di.selected ? DESELECTDIM : 1);
-            }
-          });
-          styleTextPoints(gTrace, trace, gd);
-          gTrace.selectAll(".regions").each(function() {
-            d3.select(this).selectAll("path").style("stroke-width", 0).call(Color2.fill, trace.connector.fillcolor);
-          });
-          gTrace.selectAll(".lines").each(function() {
-            var cont = trace.connector.line;
-            Drawing.lineGroupStyle(
-              d3.select(this).selectAll("path"),
-              cont.width,
-              cont.color,
-              cont.dash
-            );
-          });
-        });
-      }
-      module.exports = {
-        style
-      };
-    }
-  });
-
-  // src/traces/funnel/hover.js
-  var require_hover5 = __commonJS({
-    "src/traces/funnel/hover.js"(exports, module) {
-      "use strict";
-      var opacity = require_color().opacity;
-      var hoverOnBars = require_hover3().hoverOnBars;
-      var formatPercent = require_lib().formatPercent;
-      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
-        var point = hoverOnBars(pointData, xval, yval, hovermode, opts);
-        if (!point) return;
-        var cd = point.cd;
-        var trace = cd[0].trace;
-        var isHorizontal = trace.orientation === "h";
-        var index = point.index;
-        var di = cd[index];
-        var sizeLetter = isHorizontal ? "x" : "y";
-        point[sizeLetter + "LabelVal"] = di.s;
-        point.percentInitial = di.begR;
-        point.percentInitialLabel = formatPercent(di.begR, 1);
-        point.percentPrevious = di.difR;
-        point.percentPreviousLabel = formatPercent(di.difR, 1);
-        point.percentTotal = di.sumR;
-        point.percentTotalLabel = formatPercent(di.sumR, 1);
-        var hoverinfo = di.hi || trace.hoverinfo;
-        var text = [];
-        if (hoverinfo && hoverinfo !== "none" && hoverinfo !== "skip") {
-          var isAll = hoverinfo === "all";
-          var parts = hoverinfo.split("+");
-          var hasFlag = function(flag) {
-            return isAll || parts.indexOf(flag) !== -1;
-          };
-          if (hasFlag("percent initial")) {
-            text.push(point.percentInitialLabel + " of initial");
-          }
-          if (hasFlag("percent previous")) {
-            text.push(point.percentPreviousLabel + " of previous");
-          }
-          if (hasFlag("percent total")) {
-            text.push(point.percentTotalLabel + " of total");
-          }
+        if (doavg) {
+          for (m = 0; m < ny; m++) total += doAvg(z[m], counts[m]);
         }
-        point.extraText = text.join("<br>");
-        point.color = getTraceColor(trace, di);
-        return [point];
-      };
-      function getTraceColor(trace, di) {
-        var cont = trace.marker;
-        var mc = di.mc || cont.color;
-        var mlc = di.mlc || cont.line.color;
-        var mlw = di.mlw || cont.line.width;
-        if (opacity(mc)) return mc;
-        else if (opacity(mlc) && mlw) return mlc;
-      }
-    }
-  });
-
-  // src/traces/funnel/event_data.js
-  var require_event_data3 = __commonJS({
-    "src/traces/funnel/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt) {
-        out.x = "xVal" in pt ? pt.xVal : pt.x;
-        out.y = "yVal" in pt ? pt.yVal : pt.y;
-        if ("percentInitial" in pt) out.percentInitial = pt.percentInitial;
-        if ("percentPrevious" in pt) out.percentPrevious = pt.percentPrevious;
-        if ("percentTotal" in pt) out.percentTotal = pt.percentTotal;
-        if (pt.xa) out.xaxis = pt.xa;
-        if (pt.ya) out.yaxis = pt.ya;
-        return out;
-      };
-    }
-  });
-
-  // src/traces/funnel/index.js
-  var require_funnel = __commonJS({
-    "src/traces/funnel/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes25(),
-        layoutAttributes: require_layout_attributes7(),
-        supplyDefaults: require_defaults21().supplyDefaults,
-        crossTraceDefaults: require_defaults21().crossTraceDefaults,
-        supplyLayoutDefaults: require_layout_defaults6(),
-        calc: require_calc7(),
-        crossTraceCalc: require_cross_trace_calc3(),
-        plot: require_plot4(),
-        style: require_style5().style,
-        hoverPoints: require_hover5(),
-        eventData: require_event_data3(),
-        selectPoints: require_select3(),
-        moduleType: "trace",
-        name: "funnel",
-        basePlotModule: require_cartesian(),
-        categories: ["bar-like", "cartesian", "svg", "oriented", "showLegend", "zoomScale"],
-        meta: {}
-      };
-    }
-  });
-
-  // lib/funnel.js
-  var require_funnel2 = __commonJS({
-    "lib/funnel.js"(exports, module) {
-      "use strict";
-      module.exports = require_funnel();
-    }
-  });
-
-  // src/traces/waterfall/constants.js
-  var require_constants17 = __commonJS({
-    "src/traces/waterfall/constants.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        eventDataKeys: [
-          "initial",
-          "delta",
-          "final"
-        ]
-      };
-    }
-  });
-
-  // src/traces/waterfall/attributes.js
-  var require_attributes26 = __commonJS({
-    "src/traces/waterfall/attributes.js"(exports, module) {
-      "use strict";
-      var barAttrs = require_attributes23();
-      var lineAttrs = require_attributes12().line;
-      var baseAttrs = require_attributes2();
-      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
-      var constants = require_constants17();
-      var extendFlat = require_extend().extendFlat;
-      var Color2 = require_color();
-      function directionAttrs(dirTxt) {
+        if (normfunc) {
+          for (m = 0; m < ny; m++) normfunc(z[m], total, xinc, yinc[m]);
+        }
         return {
-          marker: {
-            color: extendFlat({}, barAttrs.marker.color, {
-              arrayOk: false,
-              editType: "style"
-            }),
-            line: {
-              color: extendFlat({}, barAttrs.marker.line.color, {
-                arrayOk: false,
-                editType: "style"
-              }),
-              width: extendFlat({}, barAttrs.marker.line.width, {
-                arrayOk: false,
-                editType: "style"
-              }),
-              editType: "style"
-            },
-            editType: "style"
-          },
-          editType: "style"
+          x: xPos0,
+          xRanges: getRanges(xEdges, uniqueValsPerX && xVals, xGapLow, xGapHigh, xa, xcalendar),
+          x0,
+          dx,
+          y: yPos0,
+          yRanges: getRanges(yEdges, uniqueValsPerY && yVals, yGapLow, yGapHigh, ya, ycalendar),
+          y0,
+          dy,
+          z,
+          pts: inputPoints
         };
-      }
-      module.exports = {
-        measure: {
-          valType: "data_array",
-          dflt: [],
-          editType: "calc"
-        },
-        base: {
-          valType: "number",
-          dflt: null,
-          arrayOk: false,
-          editType: "calc"
-        },
-        x: barAttrs.x,
-        x0: barAttrs.x0,
-        dx: barAttrs.dx,
-        y: barAttrs.y,
-        y0: barAttrs.y0,
-        dy: barAttrs.dy,
-        xperiod: barAttrs.xperiod,
-        yperiod: barAttrs.yperiod,
-        xperiod0: barAttrs.xperiod0,
-        yperiod0: barAttrs.yperiod0,
-        xperiodalignment: barAttrs.xperiodalignment,
-        yperiodalignment: barAttrs.yperiodalignment,
-        xhoverformat: axisHoverFormat("x"),
-        yhoverformat: axisHoverFormat("y"),
-        hovertext: barAttrs.hovertext,
-        hovertemplate: hovertemplateAttrs({}, {
-          keys: constants.eventDataKeys
-        }),
-        hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-          flags: ["name", "x", "y", "text", "initial", "delta", "final"]
-        }),
-        textinfo: {
-          valType: "flaglist",
-          flags: ["label", "text", "initial", "delta", "final"],
-          extras: ["none"],
-          editType: "plot",
-          arrayOk: false
-        },
-        // TODO: incorporate `label` and `value` in the eventData
-        texttemplate: texttemplateAttrs({ editType: "plot" }, {
-          keys: constants.eventDataKeys.concat(["label"])
-        }),
-        text: barAttrs.text,
-        textposition: barAttrs.textposition,
-        insidetextanchor: barAttrs.insidetextanchor,
-        textangle: barAttrs.textangle,
-        textfont: barAttrs.textfont,
-        insidetextfont: barAttrs.insidetextfont,
-        outsidetextfont: barAttrs.outsidetextfont,
-        constraintext: barAttrs.constraintext,
-        cliponaxis: barAttrs.cliponaxis,
-        orientation: barAttrs.orientation,
-        offset: barAttrs.offset,
-        width: barAttrs.width,
-        increasing: directionAttrs("increasing"),
-        decreasing: directionAttrs("decreasing"),
-        totals: directionAttrs("intermediate sums and total"),
-        connector: {
-          line: {
-            color: extendFlat({}, lineAttrs.color, { dflt: Color2.defaultLine }),
-            width: extendFlat({}, lineAttrs.width, {
-              editType: "plot"
-              // i.e. to adjust bars is mode: 'between'. See https://github.com/plotly/plotly.js/issues/3787
-            }),
-            dash: lineAttrs.dash,
-            editType: "plot"
-          },
-          mode: {
-            valType: "enumerated",
-            values: ["spanning", "between"],
-            dflt: "between",
-            editType: "plot"
-          },
-          visible: {
-            valType: "boolean",
-            dflt: true,
-            editType: "plot"
-          },
-          editType: "plot"
-        },
-        offsetgroup: barAttrs.offsetgroup,
-        alignmentgroup: barAttrs.alignmentgroup,
-        zorder: barAttrs.zorder
       };
-    }
-  });
-
-  // src/traces/waterfall/layout_attributes.js
-  var require_layout_attributes8 = __commonJS({
-    "src/traces/waterfall/layout_attributes.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        waterfallmode: {
-          valType: "enumerated",
-          values: ["group", "overlay"],
-          dflt: "group",
-          editType: "calc"
-        },
-        waterfallgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          editType: "calc"
-        },
-        waterfallgroupgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0,
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/constants/delta.js
-  var require_delta = __commonJS({
-    "src/constants/delta.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        INCREASING: {
-          COLOR: "#3D9970",
-          SYMBOL: "\u25B2"
-        },
-        DECREASING: {
-          COLOR: "#FF4136",
-          SYMBOL: "\u25BC"
-        }
-      };
-    }
-  });
-
-  // src/traces/waterfall/defaults.js
-  var require_defaults22 = __commonJS({
-    "src/traces/waterfall/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var handleGroupingDefaults = require_grouping_defaults();
-      var handleText = require_defaults19().handleText;
-      var handleXYDefaults = require_xy_defaults();
-      var handlePeriodDefaults = require_period_defaults();
-      var attributes = require_attributes26();
-      var Color2 = require_color();
-      var delta = require_delta();
-      var INCREASING_COLOR = delta.INCREASING.COLOR;
-      var DECREASING_COLOR = delta.DECREASING.COLOR;
-      var TOTALS_COLOR = "#4499FF";
-      function handleDirection(coerce, direction, defaultColor) {
-        coerce(direction + ".marker.color", defaultColor);
-        coerce(direction + ".marker.line.color", Color2.defaultLine);
-        coerce(direction + ".marker.line.width");
-      }
-      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        coerce("measure");
-        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
-        coerce("base");
-        coerce("offset");
-        coerce("width");
-        coerce("text");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        var textposition = coerce("textposition");
-        handleText(traceIn, traceOut, layout, coerce, textposition, {
-          moduleHasSelected: false,
-          moduleHasUnselected: false,
-          moduleHasConstrain: true,
-          moduleHasCliponaxis: true,
-          moduleHasTextangle: true,
-          moduleHasInsideanchor: true
-        });
-        if (traceOut.textposition !== "none") {
-          coerce("texttemplate");
-          if (!traceOut.texttemplate) coerce("textinfo");
-        }
-        handleDirection(coerce, "increasing", INCREASING_COLOR);
-        handleDirection(coerce, "decreasing", DECREASING_COLOR);
-        handleDirection(coerce, "totals", TOTALS_COLOR);
-        var connectorVisible = coerce("connector.visible");
-        if (connectorVisible) {
-          coerce("connector.mode");
-          var connectorLineWidth = coerce("connector.line.width");
-          if (connectorLineWidth) {
-            coerce("connector.line.color");
-            coerce("connector.line.dash");
-          }
-        }
-        coerce("zorder");
-      }
-      function crossTraceDefaults(fullData, fullLayout) {
-        var traceIn, traceOut;
-        function coerce(attr) {
-          return Lib.coerce(traceOut._input, traceOut, attributes, attr);
-        }
-        if (fullLayout.waterfallmode === "group") {
-          for (var i = 0; i < fullData.length; i++) {
-            traceOut = fullData[i];
-            traceIn = traceOut._input;
-            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.waterfallmode);
-          }
-        }
-      }
-      module.exports = {
-        supplyDefaults,
-        crossTraceDefaults
-      };
-    }
-  });
-
-  // src/traces/waterfall/layout_defaults.js
-  var require_layout_defaults7 = __commonJS({
-    "src/traces/waterfall/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes8();
-      module.exports = function(layoutIn, layoutOut, fullData) {
-        var hasTraceType = false;
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
-        }
-        for (var i = 0; i < fullData.length; i++) {
-          var trace = fullData[i];
-          if (trace.visible && trace.type === "waterfall") {
-            hasTraceType = true;
-            break;
-          }
-        }
-        if (hasTraceType) {
-          coerce("waterfallmode");
-          coerce("waterfallgap", 0.2);
-          coerce("waterfallgroupgap");
-        }
-      };
-    }
-  });
-
-  // src/traces/waterfall/calc.js
-  var require_calc8 = __commonJS({
-    "src/traces/waterfall/calc.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      var alignPeriod = require_align_period();
-      var mergeArray = require_lib().mergeArray;
-      var calcSelection = require_calc_selection();
-      var BADNUM = require_numerical().BADNUM;
-      function isAbsolute(a) {
-        return a === "a" || a === "absolute";
-      }
-      function isTotal(a) {
-        return a === "t" || a === "total";
-      }
-      module.exports = function calc(gd, trace) {
-        var xa = Axes.getFromId(gd, trace.xaxis || "x");
-        var ya = Axes.getFromId(gd, trace.yaxis || "y");
-        var size, pos, origPos, pObj, hasPeriod, pLetter;
-        if (trace.orientation === "h") {
-          size = xa.makeCalcdata(trace, "x");
-          origPos = ya.makeCalcdata(trace, "y");
-          pObj = alignPeriod(trace, ya, "y", origPos);
-          hasPeriod = !!trace.yperiodalignment;
-          pLetter = "y";
+      function makeIncrements(len, bins, dv, nonuniform) {
+        var out = new Array(len);
+        var i;
+        if (nonuniform) {
+          for (i = 0; i < len; i++) out[i] = 1 / (bins[i + 1] - bins[i]);
         } else {
-          size = ya.makeCalcdata(trace, "y");
-          origPos = xa.makeCalcdata(trace, "x");
-          pObj = alignPeriod(trace, xa, "x", origPos);
-          hasPeriod = !!trace.xperiodalignment;
-          pLetter = "x";
+          var inc = 1 / dv;
+          for (i = 0; i < len; i++) out[i] = inc;
         }
-        pos = pObj.vals;
-        var serieslen = Math.min(pos.length, size.length);
-        var cd = new Array(serieslen);
-        var previousSum = 0;
-        var newSize;
-        var hasTotals = false;
-        for (var i = 0; i < serieslen; i++) {
-          var amount = size[i] || 0;
-          var connectToNext = false;
-          if (size[i] !== BADNUM || isTotal(trace.measure[i]) || isAbsolute(trace.measure[i])) {
-            if (i + 1 < serieslen && (size[i + 1] !== BADNUM || isTotal(trace.measure[i + 1]) || isAbsolute(trace.measure[i + 1]))) {
-              connectToNext = true;
-            }
-          }
-          var cdi = cd[i] = {
-            i,
-            p: pos[i],
-            s: amount,
-            rawS: amount,
-            cNext: connectToNext
-          };
-          if (isAbsolute(trace.measure[i])) {
-            previousSum = cdi.s;
-            cdi.isSum = true;
-            cdi.dir = "totals";
-            cdi.s = previousSum;
-          } else if (isTotal(trace.measure[i])) {
-            cdi.isSum = true;
-            cdi.dir = "totals";
-            cdi.s = previousSum;
-          } else {
-            cdi.isSum = false;
-            cdi.dir = cdi.rawS < 0 ? "decreasing" : "increasing";
-            newSize = cdi.s;
-            cdi.s = previousSum + newSize;
-            previousSum += newSize;
-          }
-          if (cdi.dir === "totals") {
-            hasTotals = true;
-          }
-          if (hasPeriod) {
-            cd[i].orig_p = origPos[i];
-            cd[i][pLetter + "End"] = pObj.ends[i];
-            cd[i][pLetter + "Start"] = pObj.starts[i];
-          }
-          if (trace.ids) {
-            cdi.id = String(trace.ids[i]);
-          }
-          cdi.v = (trace.base || 0) + previousSum;
-        }
-        if (cd.length) cd[0].hasTotals = hasTotals;
-        mergeArray(trace.text, cd, "tx");
-        mergeArray(trace.hovertext, cd, "htx");
-        calcSelection(cd, trace);
-        return cd;
-      };
-    }
-  });
-
-  // src/traces/waterfall/cross_trace_calc.js
-  var require_cross_trace_calc4 = __commonJS({
-    "src/traces/waterfall/cross_trace_calc.js"(exports, module) {
-      "use strict";
-      var setGroupPositions = require_cross_trace_calc().setGroupPositions;
-      module.exports = function crossTraceCalc(gd, plotinfo) {
-        var fullLayout = gd._fullLayout;
-        var fullData = gd._fullData;
-        var calcdata = gd.calcdata;
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        var waterfalls = [];
-        var waterfallsVert = [];
-        var waterfallsHorz = [];
-        var cd, i;
-        for (i = 0; i < fullData.length; i++) {
-          var fullTrace = fullData[i];
-          if (fullTrace.visible === true && fullTrace.xaxis === xa._id && fullTrace.yaxis === ya._id && fullTrace.type === "waterfall") {
-            cd = calcdata[i];
-            if (fullTrace.orientation === "h") {
-              waterfallsHorz.push(cd);
-            } else {
-              waterfallsVert.push(cd);
-            }
-            waterfalls.push(cd);
-          }
-        }
-        var opts = {
-          mode: fullLayout.waterfallmode,
-          norm: fullLayout.waterfallnorm,
-          gap: fullLayout.waterfallgap,
-          groupgap: fullLayout.waterfallgroupgap
-        };
-        setGroupPositions(gd, xa, ya, waterfallsVert, opts);
-        setGroupPositions(gd, ya, xa, waterfallsHorz, opts);
-        for (i = 0; i < waterfalls.length; i++) {
-          cd = waterfalls[i];
-          for (var j = 0; j < cd.length; j++) {
-            var di = cd[j];
-            if (di.isSum === false) {
-              di.s0 += j === 0 ? 0 : cd[j - 1].s;
-            }
-            if (j + 1 < cd.length) {
-              cd[j].nextP0 = cd[j + 1].p0;
-              cd[j].nextS0 = cd[j + 1].s0;
-            }
-          }
-        }
-      };
-    }
-  });
-
-  // src/traces/waterfall/plot.js
-  var require_plot5 = __commonJS({
-    "src/traces/waterfall/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var Drawing = require_drawing();
-      var BADNUM = require_numerical().BADNUM;
-      var barPlot = require_plot3();
-      var clearMinTextSize = require_uniform_text().clearMinTextSize;
-      module.exports = function plot(gd, plotinfo, cdModule, traceLayer) {
-        var fullLayout = gd._fullLayout;
-        clearMinTextSize("waterfall", fullLayout);
-        barPlot.plot(gd, plotinfo, cdModule, traceLayer, {
-          mode: fullLayout.waterfallmode,
-          norm: fullLayout.waterfallmode,
-          gap: fullLayout.waterfallgap,
-          groupgap: fullLayout.waterfallgroupgap
-        });
-        plotConnectors(gd, plotinfo, cdModule, traceLayer);
-      };
-      function plotConnectors(gd, plotinfo, cdModule, traceLayer) {
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        Lib.makeTraceGroups(traceLayer, cdModule, "trace bars").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var trace = cd[0].trace;
-          var group = Lib.ensureSingle(plotGroup, "g", "lines");
-          if (!trace.connector || !trace.connector.visible) {
-            group.remove();
-            return;
-          }
-          var isHorizontal = trace.orientation === "h";
-          var mode = trace.connector.mode;
-          var connectors = group.selectAll("g.line").data(Lib.identity);
-          connectors.enter().append("g").classed("line", true);
-          connectors.exit().remove();
-          var len = connectors.size();
-          connectors.each(function(di, i) {
-            if (i !== len - 1 && !di.cNext) return;
-            var xy = getXY(di, xa, ya, isHorizontal);
-            var x = xy[0];
-            var y = xy[1];
-            var shape = "";
-            if (x[0] !== BADNUM && y[0] !== BADNUM && x[1] !== BADNUM && y[1] !== BADNUM) {
-              if (mode === "spanning") {
-                if (!di.isSum && i > 0) {
-                  if (isHorizontal) {
-                    shape += "M" + x[0] + "," + y[1] + "V" + y[0];
-                  } else {
-                    shape += "M" + x[1] + "," + y[0] + "H" + x[0];
-                  }
-                }
-              }
-              if (mode !== "between") {
-                if (di.isSum || i < len - 1) {
-                  if (isHorizontal) {
-                    shape += "M" + x[1] + "," + y[0] + "V" + y[1];
-                  } else {
-                    shape += "M" + x[0] + "," + y[1] + "H" + x[1];
-                  }
-                }
-              }
-              if (x[2] !== BADNUM && y[2] !== BADNUM) {
-                if (isHorizontal) {
-                  shape += "M" + x[1] + "," + y[1] + "V" + y[2];
-                } else {
-                  shape += "M" + x[1] + "," + y[1] + "H" + x[2];
-                }
-              }
-            }
-            if (shape === "") shape = "M0,0Z";
-            Lib.ensureSingle(d3.select(this), "path").attr("d", shape).call(Drawing.setClipUrl, plotinfo.layerClipId, gd);
-          });
-        });
-      }
-      function getXY(di, xa, ya, isHorizontal) {
-        var s = [];
-        var p = [];
-        var sAxis = isHorizontal ? xa : ya;
-        var pAxis = isHorizontal ? ya : xa;
-        s[0] = sAxis.c2p(di.s0, true);
-        p[0] = pAxis.c2p(di.p0, true);
-        s[1] = sAxis.c2p(di.s1, true);
-        p[1] = pAxis.c2p(di.p1, true);
-        s[2] = sAxis.c2p(di.nextS0, true);
-        p[2] = pAxis.c2p(di.nextP0, true);
-        return isHorizontal ? [s, p] : [p, s];
-      }
-    }
-  });
-
-  // src/traces/waterfall/style.js
-  var require_style6 = __commonJS({
-    "src/traces/waterfall/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Drawing = require_drawing();
-      var Color2 = require_color();
-      var DESELECTDIM = require_interactions().DESELECTDIM;
-      var barStyle = require_style4();
-      var resizeText = require_uniform_text().resizeText;
-      var styleTextPoints = barStyle.styleTextPoints;
-      function style(gd, cd, sel) {
-        var s = sel ? sel : d3.select(gd).selectAll('g[class^="waterfalllayer"]').selectAll("g.trace");
-        resizeText(gd, s, "waterfall");
-        s.style("opacity", function(d) {
-          return d[0].trace.opacity;
-        });
-        s.each(function(d) {
-          var gTrace = d3.select(this);
-          var trace = d[0].trace;
-          gTrace.selectAll(".point > path").each(function(di) {
-            if (!di.isBlank) {
-              var cont = trace[di.dir].marker;
-              d3.select(this).call(Color2.fill, cont.color).call(Color2.stroke, cont.line.color).call(Drawing.dashLine, cont.line.dash, cont.line.width).style("opacity", trace.selectedpoints && !di.selected ? DESELECTDIM : 1);
-            }
-          });
-          styleTextPoints(gTrace, trace, gd);
-          gTrace.selectAll(".lines").each(function() {
-            var cont = trace.connector.line;
-            Drawing.lineGroupStyle(
-              d3.select(this).selectAll("path"),
-              cont.width,
-              cont.color,
-              cont.dash
-            );
-          });
-        });
-      }
-      module.exports = {
-        style
-      };
-    }
-  });
-
-  // src/traces/waterfall/hover.js
-  var require_hover6 = __commonJS({
-    "src/traces/waterfall/hover.js"(exports, module) {
-      "use strict";
-      var hoverLabelText = require_axes().hoverLabelText;
-      var opacity = require_color().opacity;
-      var hoverOnBars = require_hover3().hoverOnBars;
-      var delta = require_delta();
-      var DIRSYMBOL = {
-        increasing: delta.INCREASING.SYMBOL,
-        decreasing: delta.DECREASING.SYMBOL
-      };
-      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
-        var point = hoverOnBars(pointData, xval, yval, hovermode, opts);
-        if (!point) return;
-        var cd = point.cd;
-        var trace = cd[0].trace;
-        var isHorizontal = trace.orientation === "h";
-        var vLetter = isHorizontal ? "x" : "y";
-        var vAxis = isHorizontal ? pointData.xa : pointData.ya;
-        function formatNumber(a) {
-          return hoverLabelText(vAxis, a, trace[vLetter + "hoverformat"]);
-        }
-        var index = point.index;
-        var di = cd[index];
-        var size = di.isSum ? di.b + di.s : di.rawS;
-        point.initial = di.b + di.s - size;
-        point.delta = size;
-        point.final = point.initial + point.delta;
-        var v = formatNumber(Math.abs(point.delta));
-        point.deltaLabel = size < 0 ? "(" + v + ")" : v;
-        point.finalLabel = formatNumber(point.final);
-        point.initialLabel = formatNumber(point.initial);
-        var hoverinfo = di.hi || trace.hoverinfo;
-        var text = [];
-        if (hoverinfo && hoverinfo !== "none" && hoverinfo !== "skip") {
-          var isAll = hoverinfo === "all";
-          var parts = hoverinfo.split("+");
-          var hasFlag = function(flag) {
-            return isAll || parts.indexOf(flag) !== -1;
-          };
-          if (!di.isSum) {
-            if (hasFlag("final") && (isHorizontal ? !hasFlag("x") : !hasFlag("y"))) {
-              text.push(point.finalLabel);
-            }
-            if (hasFlag("delta")) {
-              if (size < 0) {
-                text.push(point.deltaLabel + " " + DIRSYMBOL.decreasing);
-              } else {
-                text.push(point.deltaLabel + " " + DIRSYMBOL.increasing);
-              }
-            }
-            if (hasFlag("initial")) {
-              text.push("Initial: " + point.initialLabel);
-            }
-          }
-        }
-        if (text.length) point.extraText = text.join("<br>");
-        point.color = getTraceColor(trace, di);
-        return [point];
-      };
-      function getTraceColor(trace, di) {
-        var cont = trace[di.dir].marker;
-        var mc = cont.color;
-        var mlc = cont.line.color;
-        var mlw = cont.line.width;
-        if (opacity(mc)) return mc;
-        else if (opacity(mlc) && mlw) return mlc;
-      }
-    }
-  });
-
-  // src/traces/waterfall/event_data.js
-  var require_event_data4 = __commonJS({
-    "src/traces/waterfall/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt) {
-        out.x = "xVal" in pt ? pt.xVal : pt.x;
-        out.y = "yVal" in pt ? pt.yVal : pt.y;
-        if ("initial" in pt) out.initial = pt.initial;
-        if ("delta" in pt) out.delta = pt.delta;
-        if ("final" in pt) out.final = pt.final;
-        if (pt.xa) out.xaxis = pt.xa;
-        if (pt.ya) out.yaxis = pt.ya;
         return out;
-      };
-    }
-  });
-
-  // src/traces/waterfall/index.js
-  var require_waterfall = __commonJS({
-    "src/traces/waterfall/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes26(),
-        layoutAttributes: require_layout_attributes8(),
-        supplyDefaults: require_defaults22().supplyDefaults,
-        crossTraceDefaults: require_defaults22().crossTraceDefaults,
-        supplyLayoutDefaults: require_layout_defaults7(),
-        calc: require_calc8(),
-        crossTraceCalc: require_cross_trace_calc4(),
-        plot: require_plot5(),
-        style: require_style6().style,
-        hoverPoints: require_hover6(),
-        eventData: require_event_data4(),
-        selectPoints: require_select3(),
-        moduleType: "trace",
-        name: "waterfall",
-        basePlotModule: require_cartesian(),
-        categories: ["bar-like", "cartesian", "svg", "oriented", "showLegend", "zoomScale"],
-        meta: {}
-      };
-    }
-  });
-
-  // lib/waterfall.js
-  var require_waterfall2 = __commonJS({
-    "lib/waterfall.js"(exports, module) {
-      "use strict";
-      module.exports = require_waterfall();
-    }
-  });
-
-  // src/traces/pie/attributes.js
-  var require_attributes27 = __commonJS({
-    "src/traces/pie/attributes.js"(exports, module) {
-      "use strict";
-      var baseAttrs = require_attributes2();
-      var domainAttrs = require_domain().attributes;
-      var fontAttrs = require_font_attributes();
-      var colorAttrs = require_attributes3();
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
-      var extendFlat = require_extend().extendFlat;
-      var pattern = require_attributes4().pattern;
-      var textFontAttrs = fontAttrs({
-        editType: "plot",
-        arrayOk: true,
-        colorEditType: "plot"
-      });
-      module.exports = {
-        labels: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        // equivalent of x0 and dx, if label is missing
-        label0: {
-          valType: "number",
-          dflt: 0,
-          editType: "calc"
-        },
-        dlabel: {
-          valType: "number",
-          dflt: 1,
-          editType: "calc"
-        },
-        values: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        marker: {
-          colors: {
-            valType: "data_array",
-            // TODO 'color_array' ?
-            editType: "calc"
-          },
-          line: {
-            color: {
-              valType: "color",
-              dflt: colorAttrs.defaultLine,
-              arrayOk: true,
-              editType: "style"
-            },
-            width: {
-              valType: "number",
-              min: 0,
-              dflt: 0,
-              arrayOk: true,
-              editType: "style"
-            },
-            editType: "calc"
-          },
-          pattern,
-          editType: "calc"
-        },
-        text: {
-          valType: "data_array",
-          editType: "plot"
-        },
-        hovertext: {
-          valType: "string",
-          dflt: "",
-          arrayOk: true,
-          editType: "style"
-        },
-        // 'see eg:'
-        // 'https://www.e-education.psu.edu/natureofgeoinfo/sites/www.e-education.psu.edu.natureofgeoinfo/files/image/hisp_pies.gif',
-        // '(this example involves a map too - may someday be a whole trace type',
-        // 'of its own. but the point is the size of the whole pie is important.)'
-        scalegroup: {
-          valType: "string",
-          dflt: "",
-          editType: "calc"
-        },
-        // labels (legend is handled by plots.attributes.showlegend and layout.hiddenlabels)
-        textinfo: {
-          valType: "flaglist",
-          flags: ["label", "text", "value", "percent"],
-          extras: ["none"],
-          editType: "calc"
-        },
-        hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-          flags: ["label", "text", "value", "percent", "name"]
-        }),
-        hovertemplate: hovertemplateAttrs({}, {
-          keys: ["label", "color", "value", "percent", "text"]
-        }),
-        texttemplate: texttemplateAttrs({ editType: "plot" }, {
-          keys: ["label", "color", "value", "percent", "text"]
-        }),
-        textposition: {
-          valType: "enumerated",
-          values: ["inside", "outside", "auto", "none"],
-          dflt: "auto",
-          arrayOk: true,
-          editType: "plot"
-        },
-        textfont: extendFlat({}, textFontAttrs, {}),
-        insidetextorientation: {
-          valType: "enumerated",
-          values: ["horizontal", "radial", "tangential", "auto"],
-          dflt: "auto",
-          editType: "plot"
-        },
-        insidetextfont: extendFlat({}, textFontAttrs, {}),
-        outsidetextfont: extendFlat({}, textFontAttrs, {}),
-        automargin: {
-          valType: "boolean",
-          dflt: false,
-          editType: "plot"
-        },
-        title: {
-          text: {
-            valType: "string",
-            dflt: "",
-            editType: "plot"
-          },
-          font: extendFlat({}, textFontAttrs, {}),
-          position: {
-            valType: "enumerated",
-            values: [
-              "top left",
-              "top center",
-              "top right",
-              "middle center",
-              "bottom left",
-              "bottom center",
-              "bottom right"
-            ],
-            editType: "plot"
-          },
-          editType: "plot"
-        },
-        // position and shape
-        domain: domainAttrs({ name: "pie", trace: true, editType: "calc" }),
-        hole: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0,
-          editType: "calc"
-        },
-        // ordering and direction
-        sort: {
-          valType: "boolean",
-          dflt: true,
-          editType: "calc"
-        },
-        direction: {
-          /**
-           * there are two common conventions, both of which place the first
-           * (largest, if sorted) slice with its left edge at 12 o'clock but
-           * succeeding slices follow either cw or ccw from there.
-           *
-           * see http://visage.co/data-visualization-101-pie-charts/
-           */
-          valType: "enumerated",
-          values: ["clockwise", "counterclockwise"],
-          dflt: "counterclockwise",
-          editType: "calc"
-        },
-        rotation: {
-          valType: "angle",
-          dflt: 0,
-          editType: "calc"
-        },
-        pull: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0,
-          arrayOk: true,
-          editType: "calc"
+      }
+      function binsToCalc(r2c, bins) {
+        return {
+          start: r2c(bins.start),
+          end: r2c(bins.end),
+          size: bins.size
+        };
+      }
+      function getRanges(edges, uniqueVals, gapLow, gapHigh, ax, calendar) {
+        var i;
+        var len = edges.length - 1;
+        var out = new Array(len);
+        var roundFn = getBinSpanLabelRound(gapLow, gapHigh, edges, ax, calendar);
+        for (i = 0; i < len; i++) {
+          var v = (uniqueVals || [])[i];
+          out[i] = v === void 0 ? [roundFn(edges[i]), roundFn(edges[i + 1], true)] : [v, v];
         }
+        return out;
+      }
+    }
+  });
+
+  // src/traces/heatmap/convert_column_xyz.js
+  var require_convert_column_xyz = __commonJS({
+    "src/traces/heatmap/convert_column_xyz.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var BADNUM = require_numerical().BADNUM;
+      var alignPeriod = require_align_period();
+      module.exports = function convertColumnData(trace, ax1, ax2, var1Name, var2Name, arrayVarNames) {
+        var colLen = trace._length;
+        var col1 = ax1.makeCalcdata(trace, var1Name);
+        var col2 = ax2.makeCalcdata(trace, var2Name);
+        col1 = alignPeriod(trace, ax1, var1Name, col1).vals;
+        col2 = alignPeriod(trace, ax2, var2Name, col2).vals;
+        var textCol = trace.text;
+        var hasColumnText = textCol !== void 0 && Lib.isArray1D(textCol);
+        var hoverTextCol = trace.hovertext;
+        var hasColumnHoverText = hoverTextCol !== void 0 && Lib.isArray1D(hoverTextCol);
+        var i, j;
+        var col1dv = Lib.distinctVals(col1);
+        var col1vals = col1dv.vals;
+        var col2dv = Lib.distinctVals(col2);
+        var col2vals = col2dv.vals;
+        var newArrays = [];
+        var text;
+        var hovertext;
+        var nI = col2vals.length;
+        var nJ = col1vals.length;
+        for (i = 0; i < arrayVarNames.length; i++) {
+          newArrays[i] = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnText) {
+          text = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnHoverText) {
+          hovertext = Lib.init2dArray(nI, nJ);
+        }
+        var after2before = Lib.init2dArray(nI, nJ);
+        for (i = 0; i < colLen; i++) {
+          if (col1[i] !== BADNUM && col2[i] !== BADNUM) {
+            var i1 = Lib.findBin(col1[i] + col1dv.minDiff / 2, col1vals);
+            var i2 = Lib.findBin(col2[i] + col2dv.minDiff / 2, col2vals);
+            for (j = 0; j < arrayVarNames.length; j++) {
+              var arrayVarName = arrayVarNames[j];
+              var arrayVar = trace[arrayVarName];
+              var newArray = newArrays[j];
+              newArray[i2][i1] = arrayVar[i];
+              after2before[i2][i1] = i;
+            }
+            if (hasColumnText) text[i2][i1] = textCol[i];
+            if (hasColumnHoverText) hovertext[i2][i1] = hoverTextCol[i];
+          }
+        }
+        trace["_" + var1Name] = col1vals;
+        trace["_" + var2Name] = col2vals;
+        for (j = 0; j < arrayVarNames.length; j++) {
+          trace["_" + arrayVarNames[j]] = newArrays[j];
+        }
+        if (hasColumnText) trace._text = text;
+        if (hasColumnHoverText) trace._hovertext = hovertext;
+        if (ax1 && ax1.type === "category") {
+          trace["_" + var1Name + "CategoryMap"] = col1vals.map(function(v) {
+            return ax1._categories[v];
+          });
+        }
+        if (ax2 && ax2.type === "category") {
+          trace["_" + var2Name + "CategoryMap"] = col2vals.map(function(v) {
+            return ax2._categories[v];
+          });
+        }
+        trace._after2before = after2before;
       };
     }
   });
 
-  // src/traces/pie/defaults.js
-  var require_defaults23 = __commonJS({
-    "src/traces/pie/defaults.js"(exports, module) {
+  // src/traces/heatmap/clean_2d_array.js
+  var require_clean_2d_array = __commonJS({
+    "src/traces/heatmap/clean_2d_array.js"(exports, module) {
       "use strict";
       var isNumeric = require_fast_isnumeric();
       var Lib = require_lib();
-      var attributes = require_attributes27();
-      var handleDomainDefaults = require_domain().defaults;
-      var handleText = require_defaults19().handleText;
-      var coercePattern = require_lib().coercePattern;
-      function handleLabelsAndValues(labels, values) {
-        var hasLabels = Lib.isArrayOrTypedArray(labels);
-        var hasValues = Lib.isArrayOrTypedArray(values);
-        var len = Math.min(
-          hasLabels ? labels.length : Infinity,
-          hasValues ? values.length : Infinity
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function clean2dArray(zOld, trace, xa, ya) {
+        var rowlen, collen, getCollen, old2new, i, j;
+        function cleanZvalue(v) {
+          if (!isNumeric(v)) return void 0;
+          return +v;
+        }
+        if (trace && trace.transpose) {
+          rowlen = 0;
+          for (i = 0; i < zOld.length; i++) rowlen = Math.max(rowlen, zOld[i].length);
+          if (rowlen === 0) return false;
+          getCollen = function(zOld2) {
+            return zOld2.length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[j2] || [])[i2];
+          };
+        } else {
+          rowlen = zOld.length;
+          getCollen = function(zOld2, i2) {
+            return zOld2[i2].length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[i2] || [])[j2];
+          };
+        }
+        var padOld2new = function(zOld2, i2, j2) {
+          if (i2 === BADNUM || j2 === BADNUM) return BADNUM;
+          return old2new(zOld2, i2, j2);
+        };
+        function axisMapping(ax) {
+          if (trace && trace.type !== "carpet" && trace.type !== "contourcarpet" && ax && ax.type === "category" && trace["_" + ax._id.charAt(0)].length) {
+            var axLetter = ax._id.charAt(0);
+            var axMapping = {};
+            var traceCategories = trace["_" + axLetter + "CategoryMap"] || trace[axLetter];
+            for (i = 0; i < traceCategories.length; i++) {
+              axMapping[traceCategories[i]] = i;
+            }
+            return function(i2) {
+              var ind = axMapping[ax._categories[i2]];
+              return ind + 1 ? ind : BADNUM;
+            };
+          } else {
+            return Lib.identity;
+          }
+        }
+        var xMap = axisMapping(xa);
+        var yMap = axisMapping(ya);
+        if (ya && ya.type === "category") rowlen = ya._categories.length;
+        var zNew = new Array(rowlen);
+        for (i = 0; i < rowlen; i++) {
+          if (xa && xa.type === "category") {
+            collen = xa._categories.length;
+          } else {
+            collen = getCollen(zOld, i);
+          }
+          zNew[i] = new Array(collen);
+          for (j = 0; j < collen; j++) zNew[i][j] = cleanZvalue(padOld2new(zOld, yMap(i), xMap(j)));
+        }
+        return zNew;
+      };
+    }
+  });
+
+  // src/traces/heatmap/interp2d.js
+  var require_interp2d = __commonJS({
+    "src/traces/heatmap/interp2d.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var INTERPTHRESHOLD = 0.01;
+      var NEIGHBORSHIFTS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      function correctionOvershoot(maxFractionalChange) {
+        return 0.5 - 0.25 * Math.min(1, maxFractionalChange * 0.5);
+      }
+      module.exports = function interp2d(z, emptyPoints) {
+        var maxFractionalChange = 1;
+        var i;
+        iterateInterp2d(z, emptyPoints);
+        for (i = 0; i < emptyPoints.length; i++) {
+          if (emptyPoints[i][2] < 4) break;
+        }
+        emptyPoints = emptyPoints.slice(i);
+        for (i = 0; i < 100 && maxFractionalChange > INTERPTHRESHOLD; i++) {
+          maxFractionalChange = iterateInterp2d(
+            z,
+            emptyPoints,
+            correctionOvershoot(maxFractionalChange)
+          );
+        }
+        if (maxFractionalChange > INTERPTHRESHOLD) {
+          Lib.log("interp2d didn't converge quickly", maxFractionalChange);
+        }
+        return z;
+      };
+      function iterateInterp2d(z, emptyPoints, overshoot) {
+        var maxFractionalChange = 0;
+        var thisPt;
+        var i;
+        var j;
+        var p;
+        var q;
+        var neighborShift;
+        var neighborRow;
+        var neighborVal;
+        var neighborCount;
+        var neighborSum;
+        var initialVal;
+        var minNeighbor;
+        var maxNeighbor;
+        for (p = 0; p < emptyPoints.length; p++) {
+          thisPt = emptyPoints[p];
+          i = thisPt[0];
+          j = thisPt[1];
+          initialVal = z[i][j];
+          neighborSum = 0;
+          neighborCount = 0;
+          for (q = 0; q < 4; q++) {
+            neighborShift = NEIGHBORSHIFTS[q];
+            neighborRow = z[i + neighborShift[0]];
+            if (!neighborRow) continue;
+            neighborVal = neighborRow[j + neighborShift[1]];
+            if (neighborVal !== void 0) {
+              if (neighborSum === 0) {
+                minNeighbor = maxNeighbor = neighborVal;
+              } else {
+                minNeighbor = Math.min(minNeighbor, neighborVal);
+                maxNeighbor = Math.max(maxNeighbor, neighborVal);
+              }
+              neighborCount++;
+              neighborSum += neighborVal;
+            }
+          }
+          if (neighborCount === 0) {
+            throw "iterateInterp2d order is wrong: no defined neighbors";
+          }
+          z[i][j] = neighborSum / neighborCount;
+          if (initialVal === void 0) {
+            if (neighborCount < 4) maxFractionalChange = 1;
+          } else {
+            z[i][j] = (1 + overshoot) * z[i][j] - overshoot * initialVal;
+            if (maxNeighbor > minNeighbor) {
+              maxFractionalChange = Math.max(
+                maxFractionalChange,
+                Math.abs(z[i][j] - initialVal) / (maxNeighbor - minNeighbor)
+              );
+            }
+          }
+        }
+        return maxFractionalChange;
+      }
+    }
+  });
+
+  // src/traces/heatmap/find_empties.js
+  var require_find_empties = __commonJS({
+    "src/traces/heatmap/find_empties.js"(exports, module) {
+      "use strict";
+      var maxRowLength = require_lib().maxRowLength;
+      module.exports = function findEmpties(z) {
+        var empties = [];
+        var neighborHash = {};
+        var noNeighborList = [];
+        var nextRow = z[0];
+        var row = [];
+        var blank = [0, 0, 0];
+        var rowLength = maxRowLength(z);
+        var prevRow;
+        var i;
+        var j;
+        var thisPt;
+        var p;
+        var neighborCount;
+        var newNeighborHash;
+        var foundNewNeighbors;
+        for (i = 0; i < z.length; i++) {
+          prevRow = row;
+          row = nextRow;
+          nextRow = z[i + 1] || [];
+          for (j = 0; j < rowLength; j++) {
+            if (row[j] === void 0) {
+              neighborCount = (row[j - 1] !== void 0 ? 1 : 0) + (row[j + 1] !== void 0 ? 1 : 0) + (prevRow[j] !== void 0 ? 1 : 0) + (nextRow[j] !== void 0 ? 1 : 0);
+              if (neighborCount) {
+                if (i === 0) neighborCount++;
+                if (j === 0) neighborCount++;
+                if (i === z.length - 1) neighborCount++;
+                if (j === row.length - 1) neighborCount++;
+                if (neighborCount < 4) {
+                  neighborHash[[i, j]] = [i, j, neighborCount];
+                }
+                empties.push([i, j, neighborCount]);
+              } else noNeighborList.push([i, j]);
+            }
+          }
+        }
+        while (noNeighborList.length) {
+          newNeighborHash = {};
+          foundNewNeighbors = false;
+          for (p = noNeighborList.length - 1; p >= 0; p--) {
+            thisPt = noNeighborList[p];
+            i = thisPt[0];
+            j = thisPt[1];
+            neighborCount = ((neighborHash[[i - 1, j]] || blank)[2] + (neighborHash[[i + 1, j]] || blank)[2] + (neighborHash[[i, j - 1]] || blank)[2] + (neighborHash[[i, j + 1]] || blank)[2]) / 20;
+            if (neighborCount) {
+              newNeighborHash[thisPt] = [i, j, neighborCount];
+              noNeighborList.splice(p, 1);
+              foundNewNeighbors = true;
+            }
+          }
+          if (!foundNewNeighbors) {
+            throw "findEmpties iterated with no new neighbors";
+          }
+          for (thisPt in newNeighborHash) {
+            neighborHash[thisPt] = newNeighborHash[thisPt];
+            empties.push(newNeighborHash[thisPt]);
+          }
+        }
+        return empties.sort(function(a, b) {
+          return b[2] - a[2];
+        });
+      };
+    }
+  });
+
+  // src/traces/heatmap/make_bound_array.js
+  var require_make_bound_array = __commonJS({
+    "src/traces/heatmap/make_bound_array.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
+      module.exports = function makeBoundArray(trace, arrayIn, v0In, dvIn, numbricks, ax) {
+        var arrayOut = [];
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var v0;
+        var dv;
+        var i;
+        var isArrayOfTwoItemsOrMore = isArrayOrTypedArray(arrayIn) && arrayIn.length > 1;
+        if (isArrayOfTwoItemsOrMore && !isHist && ax.type !== "category") {
+          var len = arrayIn.length;
+          if (len <= numbricks) {
+            if (isContour) arrayOut = Array.from(arrayIn).slice(0, numbricks);
+            else if (numbricks === 1) {
+              if (ax.type === "log") {
+                arrayOut = [0.5 * arrayIn[0], 2 * arrayIn[0]];
+              } else {
+                arrayOut = [arrayIn[0] - 0.5, arrayIn[0] + 0.5];
+              }
+            } else if (ax.type === "log") {
+              arrayOut = [Math.pow(arrayIn[0], 1.5) / Math.pow(arrayIn[1], 0.5)];
+              for (i = 1; i < len; i++) {
+                arrayOut.push(Math.sqrt(arrayIn[i - 1] * arrayIn[i]));
+              }
+              arrayOut.push(Math.pow(arrayIn[len - 1], 1.5) / Math.pow(arrayIn[len - 2], 0.5));
+            } else {
+              arrayOut = [1.5 * arrayIn[0] - 0.5 * arrayIn[1]];
+              for (i = 1; i < len; i++) {
+                arrayOut.push((arrayIn[i - 1] + arrayIn[i]) * 0.5);
+              }
+              arrayOut.push(1.5 * arrayIn[len - 1] - 0.5 * arrayIn[len - 2]);
+            }
+            if (len < numbricks) {
+              var lastPt = arrayOut[arrayOut.length - 1];
+              var delta;
+              if (ax.type === "log") {
+                delta = lastPt / arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt *= delta;
+                  arrayOut.push(lastPt);
+                }
+              } else {
+                delta = lastPt - arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt += delta;
+                  arrayOut.push(lastPt);
+                }
+              }
+            }
+          } else {
+            return isContour ? arrayIn.slice(0, numbricks) : (
+              // we must be strict for contours
+              arrayIn.slice(0, numbricks + 1)
+            );
+          }
+        } else {
+          var calendar = trace[ax._id.charAt(0) + "calendar"];
+          if (isHist) {
+            v0 = ax.r2c(v0In, 0, calendar);
+          } else {
+            if (isArrayOrTypedArray(arrayIn) && arrayIn.length === 1) {
+              v0 = arrayIn[0];
+            } else if (v0In === void 0) {
+              v0 = 0;
+            } else {
+              var fn = ax.type === "log" ? ax.d2c : ax.r2c;
+              v0 = fn(v0In, 0, calendar);
+            }
+          }
+          dv = dvIn || 1;
+          for (i = isContour ? 0 : -0.5; i < numbricks; i++) {
+            arrayOut.push(v0 + dv * i);
+          }
+        }
+        return arrayOut;
+      };
+    }
+  });
+
+  // src/traces/heatmap/calc.js
+  var require_calc7 = __commonJS({
+    "src/traces/heatmap/calc.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      var Axes = require_axes();
+      var alignPeriod = require_align_period();
+      var histogram2dCalc = require_calc6();
+      var colorscaleCalc = require_calc();
+      var convertColumnData = require_convert_column_xyz();
+      var clean2dArray = require_clean_2d_array();
+      var interp2d = require_interp2d();
+      var findEmpties = require_find_empties();
+      var makeBoundArray = require_make_bound_array();
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function calc(gd, trace) {
+        var xa = Axes.getFromId(gd, trace.xaxis || "x");
+        var ya = Axes.getFromId(gd, trace.yaxis || "y");
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var zsmooth = isContour ? "best" : trace.zsmooth;
+        var x, x0, dx, origX;
+        var y, y0, dy, origY;
+        var z, i, binned;
+        xa._minDtick = 0;
+        ya._minDtick = 0;
+        if (isHist) {
+          binned = histogram2dCalc(gd, trace);
+          origX = binned.orig_x;
+          x = binned.x;
+          x0 = binned.x0;
+          dx = binned.dx;
+          origY = binned.orig_y;
+          y = binned.y;
+          y0 = binned.y0;
+          dy = binned.dy;
+          z = binned.z;
+        } else {
+          var zIn = trace.z;
+          if (Lib.isArray1D(zIn)) {
+            convertColumnData(trace, xa, ya, "x", "y", ["z"]);
+            x = trace._x;
+            y = trace._y;
+            zIn = trace._z;
+          } else {
+            origX = trace.x ? xa.makeCalcdata(trace, "x") : [];
+            origY = trace.y ? ya.makeCalcdata(trace, "y") : [];
+            x = alignPeriod(trace, xa, "x", origX).vals;
+            y = alignPeriod(trace, ya, "y", origY).vals;
+            trace._x = x;
+            trace._y = y;
+          }
+          x0 = trace.x0;
+          dx = trace.dx;
+          y0 = trace.y0;
+          dy = trace.dy;
+          z = clean2dArray(zIn, trace, xa, ya);
+        }
+        if (xa.rangebreaks || ya.rangebreaks) {
+          z = dropZonBreaks(x, y, z);
+          if (!isHist) {
+            x = skipBreaks(x);
+            y = skipBreaks(y);
+            trace._x = x;
+            trace._y = y;
+          }
+        }
+        if (!isHist && (isContour || trace.connectgaps)) {
+          trace._emptypoints = findEmpties(z);
+          interp2d(z, trace._emptypoints);
+        }
+        function noZsmooth(msg) {
+          zsmooth = trace._input.zsmooth = trace.zsmooth = false;
+          Lib.warn('cannot use zsmooth: "fast": ' + msg);
+        }
+        function scaleIsLinear(s) {
+          if (s.length > 1) {
+            var avgdx = (s[s.length - 1] - s[0]) / (s.length - 1);
+            var maxErrX = Math.abs(avgdx / 100);
+            for (i = 0; i < s.length - 1; i++) {
+              if (Math.abs(s[i + 1] - s[i] - avgdx) > maxErrX) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+        trace._islinear = false;
+        if (xa.type === "log" || ya.type === "log") {
+          if (zsmooth === "fast") {
+            noZsmooth("log axis found");
+          }
+        } else if (!scaleIsLinear(x)) {
+          if (zsmooth === "fast") noZsmooth("x scale is not linear");
+        } else if (!scaleIsLinear(y)) {
+          if (zsmooth === "fast") noZsmooth("y scale is not linear");
+        } else {
+          trace._islinear = true;
+        }
+        var xlen = Lib.maxRowLength(z);
+        var xIn = trace.xtype === "scaled" ? "" : x;
+        var xArray = makeBoundArray(trace, xIn, x0, dx, xlen, xa);
+        var yIn = trace.ytype === "scaled" ? "" : y;
+        var yArray = makeBoundArray(trace, yIn, y0, dy, z.length, ya);
+        trace._extremes[xa._id] = Axes.findExtremes(xa, xArray);
+        trace._extremes[ya._id] = Axes.findExtremes(ya, yArray);
+        var cd0 = {
+          x: xArray,
+          y: yArray,
+          z,
+          text: trace._text || trace.text,
+          hovertext: trace._hovertext || trace.hovertext
+        };
+        if (trace.xperiodalignment && origX) {
+          cd0.orig_x = origX;
+        }
+        if (trace.yperiodalignment && origY) {
+          cd0.orig_y = origY;
+        }
+        if (xIn && xIn.length === xArray.length - 1) cd0.xCenter = xIn;
+        if (yIn && yIn.length === yArray.length - 1) cd0.yCenter = yIn;
+        if (isHist) {
+          cd0.xRanges = binned.xRanges;
+          cd0.yRanges = binned.yRanges;
+          cd0.pts = binned.pts;
+        }
+        if (!isContour) {
+          colorscaleCalc(gd, trace, { vals: z, cLetter: "z" });
+        }
+        if (isContour && trace.contours && trace.contours.coloring === "heatmap") {
+          var dummyTrace = {
+            type: trace.type === "contour" ? "heatmap" : "histogram2d",
+            xcalendar: trace.xcalendar,
+            ycalendar: trace.ycalendar
+          };
+          cd0.xfill = makeBoundArray(dummyTrace, xIn, x0, dx, xlen, xa);
+          cd0.yfill = makeBoundArray(dummyTrace, yIn, y0, dy, z.length, ya);
+        }
+        return [cd0];
+      };
+      function skipBreaks(a) {
+        var b = [];
+        var len = a.length;
+        for (var i = 0; i < len; i++) {
+          var v = a[i];
+          if (v !== BADNUM) b.push(v);
+        }
+        return b;
+      }
+      function dropZonBreaks(x, y, z) {
+        var newZ = [];
+        var k = -1;
+        for (var i = 0; i < z.length; i++) {
+          if (y[i] === BADNUM) continue;
+          k++;
+          newZ[k] = [];
+          for (var j = 0; j < z[i].length; j++) {
+            if (x[j] === BADNUM) continue;
+            newZ[k].push(z[i][j]);
+          }
+        }
+        return newZ;
+      }
+    }
+  });
+
+  // src/traces/contour/set_contours.js
+  var require_set_contours = __commonJS({
+    "src/traces/contour/set_contours.js"(exports, module) {
+      "use strict";
+      var Axes = require_axes();
+      var Lib = require_lib();
+      module.exports = function setContours(trace, vals) {
+        var contours = trace.contours;
+        if (contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+          var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+          });
+          thresholds = thresholds.filter(function(val) {
+            return typeof val === "number" && !isNaN(val) && isFinite(val);
+          });
+          if (thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null;
+            contours._levels = thresholds;
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Processing (including restyle) ===");
+              console.log("Using custom thresholds:", thresholds);
+              console.log("Data range:", dataMin, "to", dataMax);
+              console.log("Input start/end:", contours.start, "/", contours.end);
+              console.log("Trace zmin/zmax:", trace.zmin, "/", trace.zmax);
+              console.log("Thresholds within data range:", thresholds.filter(function(t) {
+                return t >= dataMin && t <= dataMax;
+              }));
+              console.log("Thresholds outside data range:", thresholds.filter(function(t) {
+                return t < dataMin || t > dataMax;
+              }));
+              console.log("=== End Custom Thresholds Processing ===");
+            }
+            if (!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            return;
+          }
+        }
+        if (trace.autocontour) {
+          var zmin = trace.zmin;
+          var zmax = trace.zmax;
+          if (trace.zauto || zmin === void 0) {
+            zmin = Lib.aggNums(Math.min, null, vals);
+          }
+          if (trace.zauto || zmax === void 0) {
+            zmax = Lib.aggNums(Math.max, null, vals);
+          }
+          var dummyAx = autoContours(zmin, zmax, trace.ncontours);
+          contours.size = dummyAx.dtick;
+          contours.start = Axes.tickFirst(dummyAx);
+          dummyAx.range.reverse();
+          contours.end = Axes.tickFirst(dummyAx);
+          if (contours.start === zmin) contours.start += contours.size;
+          if (contours.end === zmax) contours.end -= contours.size;
+          if (contours.start > contours.end) {
+            contours.start = contours.end = (contours.start + contours.end) / 2;
+          }
+          if (!trace._input.contours) trace._input.contours = {};
+          Lib.extendFlat(trace._input.contours, {
+            start: contours.start,
+            end: contours.end,
+            size: contours.size
+          });
+          trace._input.autocontour = true;
+        } else if (contours.type !== "constraint") {
+          var start = contours.start;
+          var end = contours.end;
+          var inputContours = trace._input.contours;
+          if (start > end) {
+            contours.start = inputContours.start = end;
+            end = contours.end = inputContours.end = start;
+            start = contours.start;
+          }
+          if (!(contours.size > 0)) {
+            var sizeOut;
+            if (start === end) sizeOut = 1;
+            else sizeOut = autoContours(start, end, trace.ncontours).dtick;
+            inputContours.size = contours.size = sizeOut;
+          }
+        }
+      };
+      function autoContours(start, end, ncontours) {
+        var dummyAx = {
+          type: "linear",
+          range: [start, end]
+        };
+        Axes.autoTicks(
+          dummyAx,
+          (end - start) / (ncontours || 15)
         );
-        if (!isFinite(len)) len = 0;
-        if (len && hasValues) {
-          var hasPositive;
-          for (var i = 0; i < len; i++) {
-            var v = values[i];
-            if (isNumeric(v) && v > 0) {
-              hasPositive = true;
+        return dummyAx;
+      }
+    }
+  });
+
+  // src/traces/contour/end_plus.js
+  var require_end_plus = __commonJS({
+    "src/traces/contour/end_plus.js"(exports, module) {
+      "use strict";
+      module.exports = function endPlus(contours) {
+        return contours.end + contours.size / 1e6;
+      };
+    }
+  });
+
+  // src/traces/contour/calc.js
+  var require_calc8 = __commonJS({
+    "src/traces/contour/calc.js"(exports, module) {
+      "use strict";
+      var Colorscale = require_colorscale();
+      var heatmapCalc = require_calc7();
+      var setContours = require_set_contours();
+      var endPlus = require_end_plus();
+      module.exports = function calc(gd, trace) {
+        var cd = heatmapCalc(gd, trace);
+        var zOut = cd[0].z;
+        setContours(trace, zOut);
+        var contours = trace.contours;
+        var cOpts = Colorscale.extractOpts(trace);
+        var cVals;
+        if (contours.coloring === "heatmap" && cOpts.auto && trace.autocontour === false) {
+          var start = contours.start;
+          var end = endPlus(contours);
+          var cs = contours.size || 1;
+          var nc = Math.floor((end - start) / cs) + 1;
+          if (contours._levels && contours._levels.length > 0) {
+            var levels = contours._levels;
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+          } else {
+            if (!isFinite(cs)) {
+              cs = 1;
+              nc = 1;
+            }
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
+          }
+        } else {
+          cVals = zOut;
+        }
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== Colorscale.calc in contour/calc.js ===");
+          console.log("Has custom thresholds:", !!(contours._levels && contours._levels.length > 0));
+          console.log("cVals type:", Array.isArray(cVals) ? "array[" + cVals.length + "]" : typeof cVals);
+          console.log("Using cVals:", Array.isArray(cVals) && cVals.length <= 10 ? cVals : "large array");
+        }
+        Colorscale.calc(gd, trace, { vals: cVals, cLetter: "z" });
+        return cd;
+      };
+    }
+  });
+
+  // src/constants/pixelated_image.js
+  var require_pixelated_image = __commonJS({
+    "src/constants/pixelated_image.js"(exports) {
+      "use strict";
+      exports.CSS_DECLARATIONS = [
+        ["image-rendering", "optimizeSpeed"],
+        ["image-rendering", "-moz-crisp-edges"],
+        ["image-rendering", "-o-crisp-edges"],
+        ["image-rendering", "-webkit-optimize-contrast"],
+        ["image-rendering", "optimize-contrast"],
+        ["image-rendering", "crisp-edges"],
+        ["image-rendering", "pixelated"]
+      ];
+      exports.STYLE = exports.CSS_DECLARATIONS.map(function(d) {
+        return d.join(": ") + "; ";
+      }).join("");
+    }
+  });
+
+  // src/lib/supports_pixelated_image.js
+  var require_supports_pixelated_image = __commonJS({
+    "src/lib/supports_pixelated_image.js"(exports, module) {
+      "use strict";
+      var constants = require_pixelated_image();
+      var Drawing = require_drawing();
+      var Lib = require_lib();
+      var _supportsPixelated = null;
+      function supportsPixelatedImage() {
+        if (_supportsPixelated !== null) {
+          return _supportsPixelated;
+        }
+        _supportsPixelated = false;
+        var unsupportedBrowser = Lib.isSafari() || Lib.isIOS();
+        if (window.navigator.userAgent && !unsupportedBrowser) {
+          var declarations = Array.from(constants.CSS_DECLARATIONS).reverse();
+          var supports = window.CSS && window.CSS.supports || window.supportsCSS;
+          if (typeof supports === "function") {
+            _supportsPixelated = declarations.some(function(d) {
+              return supports.apply(null, d);
+            });
+          } else {
+            var image3 = Drawing.tester.append("image").attr("style", constants.STYLE);
+            var cStyles = window.getComputedStyle(image3.node());
+            var imageRendering = cStyles.imageRendering;
+            _supportsPixelated = declarations.some(function(d) {
+              var value = d[1];
+              return imageRendering === value || imageRendering === value.toLowerCase();
+            });
+            image3.remove();
+          }
+        }
+        return _supportsPixelated;
+      }
+      module.exports = supportsPixelatedImage;
+    }
+  });
+
+  // src/traces/heatmap/plot.js
+  var require_plot3 = __commonJS({
+    "src/traces/heatmap/plot.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var tinycolor = require_tinycolor();
+      var Registry = require_registry();
+      var Drawing = require_drawing();
+      var Axes = require_axes();
+      var Lib = require_lib();
+      var svgTextUtils = require_svg_text_utils();
+      var formatLabels = require_format_labels();
+      var Color = require_color();
+      var extractOpts = require_colorscale().extractOpts;
+      var makeColorScaleFuncFromTrace = require_colorscale().makeColorScaleFuncFromTrace;
+      var xmlnsNamespaces = require_xmlns_namespaces();
+      var alignmentConstants = require_alignment();
+      var LINE_SPACING = alignmentConstants.LINE_SPACING;
+      var supportsPixelatedImage = require_supports_pixelated_image();
+      var PIXELATED_IMAGE_STYLE = require_pixelated_image().STYLE;
+      var labelClass = "heatmap-label";
+      function selectLabels(plotGroup) {
+        return plotGroup.selectAll("g." + labelClass);
+      }
+      function removeLabels(plotGroup) {
+        selectLabels(plotGroup).remove();
+      }
+      module.exports = function(gd, plotinfo, cdheatmaps, heatmapLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(heatmapLayer, cdheatmaps, "hm").each(function(cd) {
+          var plotGroup = d3.select(this);
+          var cd0 = cd[0];
+          var trace = cd0.trace;
+          var xGap = trace.xgap || 0;
+          var yGap = trace.ygap || 0;
+          var z = cd0.z;
+          var x = cd0.x;
+          var y = cd0.y;
+          var xc = cd0.xCenter;
+          var yc = cd0.yCenter;
+          var isContour = Registry.traceIs(trace, "contour");
+          var zsmooth = isContour ? "best" : trace.zsmooth;
+          var m = z.length;
+          var n = Lib.maxRowLength(z);
+          var xrev = false;
+          var yrev = false;
+          var left, right, temp, top, bottom, i, j, k;
+          i = 0;
+          while (left === void 0 && i < x.length - 1) {
+            left = xa.c2p(x[i]);
+            i++;
+          }
+          i = x.length - 1;
+          while (right === void 0 && i > 0) {
+            right = xa.c2p(x[i]);
+            i--;
+          }
+          if (right < left) {
+            temp = right;
+            right = left;
+            left = temp;
+            xrev = true;
+          }
+          i = 0;
+          while (top === void 0 && i < y.length - 1) {
+            top = ya.c2p(y[i]);
+            i++;
+          }
+          i = y.length - 1;
+          while (bottom === void 0 && i > 0) {
+            bottom = ya.c2p(y[i]);
+            i--;
+          }
+          if (bottom < top) {
+            temp = top;
+            top = bottom;
+            bottom = temp;
+            yrev = true;
+          }
+          if (isContour) {
+            xc = x;
+            yc = y;
+            x = cd0.xfill;
+            y = cd0.yfill;
+          }
+          var drawingMethod = "default";
+          if (zsmooth) {
+            drawingMethod = zsmooth === "best" ? "smooth" : "fast";
+          } else if (trace._islinear && xGap === 0 && yGap === 0 && supportsPixelatedImage()) {
+            drawingMethod = "fast";
+          }
+          if (drawingMethod !== "fast") {
+            var extra = zsmooth === "best" ? 0 : 0.5;
+            left = Math.max(-extra * xa._length, left);
+            right = Math.min((1 + extra) * xa._length, right);
+            top = Math.max(-extra * ya._length, top);
+            bottom = Math.min((1 + extra) * ya._length, bottom);
+          }
+          var imageWidth = Math.round(right - left);
+          var imageHeight = Math.round(bottom - top);
+          var isOffScreen = left >= xa._length || right <= 0 || top >= ya._length || bottom <= 0;
+          if (isOffScreen) {
+            var noImage = plotGroup.selectAll("image").data([]);
+            noImage.exit().remove();
+            removeLabels(plotGroup);
+            return;
+          }
+          var canvasW, canvasH;
+          if (drawingMethod === "fast") {
+            canvasW = n;
+            canvasH = m;
+          } else {
+            canvasW = imageWidth;
+            canvasH = imageHeight;
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = canvasW;
+          canvas.height = canvasH;
+          var context = canvas.getContext("2d", { willReadFrequently: true });
+          var sclFunc = makeColorScaleFuncFromTrace(trace, { noNumericCheck: true, returnArray: true });
+          var xpx, ypx;
+          if (drawingMethod === "fast") {
+            xpx = xrev ? function(index) {
+              return n - 1 - index;
+            } : Lib.identity;
+            ypx = yrev ? function(index) {
+              return m - 1 - index;
+            } : Lib.identity;
+          } else {
+            xpx = function(index) {
+              return Lib.constrain(
+                Math.round(xa.c2p(x[index]) - left),
+                0,
+                imageWidth
+              );
+            };
+            ypx = function(index) {
+              return Lib.constrain(
+                Math.round(ya.c2p(y[index]) - top),
+                0,
+                imageHeight
+              );
+            };
+          }
+          var yi = ypx(0);
+          var yb = [yi, yi];
+          var xbi = xrev ? 0 : 1;
+          var ybi = yrev ? 0 : 1;
+          var pixcount = 0;
+          var rcount = 0;
+          var gcount = 0;
+          var bcount = 0;
+          var xb, xi, v, row, c;
+          function setColor(v2, pixsize) {
+            if (v2 !== void 0) {
+              var c2 = sclFunc(v2);
+              c2[0] = Math.round(c2[0]);
+              c2[1] = Math.round(c2[1]);
+              c2[2] = Math.round(c2[2]);
+              pixcount += pixsize;
+              rcount += c2[0] * pixsize;
+              gcount += c2[1] * pixsize;
+              bcount += c2[2] * pixsize;
+              return c2;
+            }
+            return [0, 0, 0, 0];
+          }
+          function interpColor(r02, r12, xinterp, yinterp2) {
+            var z00 = r02[xinterp.bin0];
+            if (z00 === void 0) return setColor(void 0, 1);
+            var z01 = r02[xinterp.bin1];
+            var z10 = r12[xinterp.bin0];
+            var z11 = r12[xinterp.bin1];
+            var dx2 = z01 - z00 || 0;
+            var dy2 = z10 - z00 || 0;
+            var dxy;
+            if (z01 === void 0) {
+              if (z11 === void 0) dxy = 0;
+              else if (z10 === void 0) dxy = 2 * (z11 - z00);
+              else dxy = (2 * z11 - z10 - z00) * 2 / 3;
+            } else if (z11 === void 0) {
+              if (z10 === void 0) dxy = 0;
+              else dxy = (2 * z00 - z01 - z10) * 2 / 3;
+            } else if (z10 === void 0) dxy = (2 * z11 - z01 - z00) * 2 / 3;
+            else dxy = z11 + z00 - z01 - z10;
+            return setColor(z00 + xinterp.frac * dx2 + yinterp2.frac * (dy2 + xinterp.frac * dxy));
+          }
+          if (drawingMethod !== "default") {
+            var pxIndex = 0;
+            var pixels;
+            try {
+              pixels = new Uint8Array(canvasW * canvasH * 4);
+            } catch (e) {
+              pixels = new Array(canvasW * canvasH * 4);
+            }
+            if (drawingMethod === "smooth") {
+              var xForPx = xc || x;
+              var yForPx = yc || y;
+              var xPixArray = new Array(xForPx.length);
+              var yPixArray = new Array(yForPx.length);
+              var xinterpArray = new Array(imageWidth);
+              var findInterpX = xc ? findInterpFromCenters : findInterp;
+              var findInterpY = yc ? findInterpFromCenters : findInterp;
+              var yinterp, r0, r1;
+              for (i = 0; i < xForPx.length; i++) xPixArray[i] = Math.round(xa.c2p(xForPx[i]) - left);
+              for (i = 0; i < yForPx.length; i++) yPixArray[i] = Math.round(ya.c2p(yForPx[i]) - top);
+              for (i = 0; i < imageWidth; i++) xinterpArray[i] = findInterpX(i, xPixArray);
+              for (j = 0; j < imageHeight; j++) {
+                yinterp = findInterpY(j, yPixArray);
+                r0 = z[yinterp.bin0];
+                r1 = z[yinterp.bin1];
+                for (i = 0; i < imageWidth; i++, pxIndex += 4) {
+                  c = interpColor(r0, r1, xinterpArray[i], yinterp);
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            } else {
+              for (j = 0; j < m; j++) {
+                row = z[j];
+                yb = ypx(j);
+                for (i = 0; i < n; i++) {
+                  c = setColor(row[i], 1);
+                  pxIndex = (yb * n + xpx(i)) * 4;
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            }
+            var imageData = context.createImageData(canvasW, canvasH);
+            try {
+              imageData.data.set(pixels);
+            } catch (e) {
+              var pxArray = imageData.data;
+              var dlen = pxArray.length;
+              for (j = 0; j < dlen; j++) {
+                pxArray[j] = pixels[j];
+              }
+            }
+            context.putImageData(imageData, 0, 0);
+          } else {
+            var xGapLeft = Math.floor(xGap / 2);
+            var yGapTop = Math.floor(yGap / 2);
+            for (j = 0; j < m; j++) {
+              row = z[j];
+              yb.reverse();
+              yb[ybi] = ypx(j + 1);
+              if (yb[0] === yb[1] || yb[0] === void 0 || yb[1] === void 0) {
+                continue;
+              }
+              xi = xpx(0);
+              xb = [xi, xi];
+              for (i = 0; i < n; i++) {
+                xb.reverse();
+                xb[xbi] = xpx(i + 1);
+                if (xb[0] === xb[1] || xb[0] === void 0 || xb[1] === void 0) {
+                  continue;
+                }
+                v = row[i];
+                c = setColor(v, (xb[1] - xb[0]) * (yb[1] - yb[0]));
+                context.fillStyle = "rgba(" + c.join(",") + ")";
+                context.fillRect(
+                  xb[0] + xGapLeft,
+                  yb[0] + yGapTop,
+                  xb[1] - xb[0] - xGap,
+                  yb[1] - yb[0] - yGap
+                );
+              }
+            }
+          }
+          rcount = Math.round(rcount / pixcount);
+          gcount = Math.round(gcount / pixcount);
+          bcount = Math.round(bcount / pixcount);
+          var avgColor = tinycolor("rgb(" + rcount + "," + gcount + "," + bcount + ")");
+          gd._hmpixcount = (gd._hmpixcount || 0) + pixcount;
+          gd._hmlumcount = (gd._hmlumcount || 0) + pixcount * avgColor.getLuminance();
+          var image3 = plotGroup.selectAll("image").data(cd);
+          image3.enter().append("svg:image").attr({
+            xmlns: xmlnsNamespaces.svg,
+            preserveAspectRatio: "none"
+          });
+          image3.attr({
+            height: imageHeight,
+            width: imageWidth,
+            x: left,
+            y: top,
+            "xlink:href": canvas.toDataURL("image/png")
+          });
+          if (drawingMethod === "fast" && !zsmooth) {
+            image3.attr("style", PIXELATED_IMAGE_STYLE);
+          }
+          removeLabels(plotGroup);
+          var texttemplate = trace.texttemplate;
+          if (texttemplate) {
+            var cOpts = extractOpts(trace);
+            var dummyAx = {
+              type: "linear",
+              range: [cOpts.min, cOpts.max],
+              _separators: xa._separators,
+              _numFormat: xa._numFormat
+            };
+            var aHistogram2dContour = trace.type === "histogram2dcontour";
+            var aContour = trace.type === "contour";
+            var iStart = aContour ? 1 : 0;
+            var iStop = aContour ? m - 1 : m;
+            var jStart = aContour ? 1 : 0;
+            var jStop = aContour ? n - 1 : n;
+            var textData = [];
+            for (i = iStart; i < iStop; i++) {
+              var yVal;
+              if (aContour) {
+                yVal = cd0.y[i];
+              } else if (aHistogram2dContour) {
+                if (i === 0 || i === m - 1) continue;
+                yVal = cd0.y[i];
+              } else if (cd0.yCenter) {
+                yVal = cd0.yCenter[i];
+              } else {
+                if (i + 1 === m && cd0.y[i + 1] === void 0) continue;
+                yVal = (cd0.y[i] + cd0.y[i + 1]) / 2;
+              }
+              var _y = Math.round(ya.c2p(yVal));
+              if (0 > _y || _y > ya._length) continue;
+              for (j = jStart; j < jStop; j++) {
+                var xVal;
+                if (aContour) {
+                  xVal = cd0.x[j];
+                } else if (aHistogram2dContour) {
+                  if (j === 0 || j === n - 1) continue;
+                  xVal = cd0.x[j];
+                } else if (cd0.xCenter) {
+                  xVal = cd0.xCenter[j];
+                } else {
+                  if (j + 1 === n && cd0.x[j + 1] === void 0) continue;
+                  xVal = (cd0.x[j] + cd0.x[j + 1]) / 2;
+                }
+                var _x = Math.round(xa.c2p(xVal));
+                if (0 > _x || _x > xa._length) continue;
+                var obj = formatLabels({
+                  x: xVal,
+                  y: yVal
+                }, trace, gd._fullLayout);
+                obj.x = xVal;
+                obj.y = yVal;
+                var zVal = cd0.z[i][j];
+                if (zVal === void 0) {
+                  obj.z = "";
+                  obj.zLabel = "";
+                } else {
+                  obj.z = zVal;
+                  obj.zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+                }
+                var theText = cd0.text && cd0.text[i] && cd0.text[i][j];
+                if (theText === void 0 || theText === false) theText = "";
+                obj.text = theText;
+                var _t = Lib.texttemplateString(texttemplate, obj, gd._fullLayout._d3locale, obj, trace._meta || {});
+                if (!_t) continue;
+                var lines = _t.split("<br>");
+                var nL = lines.length;
+                var nC = 0;
+                for (k = 0; k < nL; k++) {
+                  nC = Math.max(nC, lines[k].length);
+                }
+                textData.push({
+                  l: nL,
+                  // number of lines
+                  c: nC,
+                  // maximum number of chars in a line
+                  t: _t,
+                  // text
+                  x: _x,
+                  y: _y,
+                  z: zVal
+                });
+              }
+            }
+            var font = trace.textfont;
+            var fontSize = font.size;
+            var globalFontSize = gd._fullLayout.font.size;
+            if (!fontSize || fontSize === "auto") {
+              var minW = Infinity;
+              var minH = Infinity;
+              var maxL = 0;
+              var maxC = 0;
+              for (k = 0; k < textData.length; k++) {
+                var d = textData[k];
+                maxL = Math.max(maxL, d.l);
+                maxC = Math.max(maxC, d.c);
+                if (k < textData.length - 1) {
+                  var nextD = textData[k + 1];
+                  var dx = Math.abs(nextD.x - d.x);
+                  var dy = Math.abs(nextD.y - d.y);
+                  if (dx) minW = Math.min(minW, dx);
+                  if (dy) minH = Math.min(minH, dy);
+                }
+              }
+              if (!isFinite(minW) || !isFinite(minH)) {
+                fontSize = globalFontSize;
+              } else {
+                minW -= xGap;
+                minH -= yGap;
+                minW /= maxC;
+                minH /= maxL;
+                minW /= LINE_SPACING / 2;
+                minH /= LINE_SPACING;
+                fontSize = Math.min(
+                  Math.floor(minW),
+                  Math.floor(minH),
+                  globalFontSize
+                );
+              }
+            }
+            if (fontSize <= 0 || !isFinite(fontSize)) return;
+            var xFn = function(d2) {
+              return d2.x;
+            };
+            var yFn = function(d2) {
+              return d2.y - fontSize * (d2.l * LINE_SPACING / 2 - 1);
+            };
+            var labels = selectLabels(plotGroup).data(textData);
+            labels.enter().append("g").classed(labelClass, 1).append("text").attr("text-anchor", "middle").each(function(d2) {
+              var thisLabel = d3.select(this);
+              var fontColor = font.color;
+              if (!fontColor || fontColor === "auto") {
+                fontColor = Color.contrast(
+                  d2.z === void 0 ? gd._fullLayout.plot_bgcolor : "rgba(" + sclFunc(d2.z).join() + ")"
+                );
+              }
+              thisLabel.attr("data-notex", 1).call(svgTextUtils.positionText, xFn(d2), yFn(d2)).call(Drawing.font, {
+                family: font.family,
+                size: fontSize,
+                color: fontColor,
+                weight: font.weight,
+                style: font.style,
+                variant: font.variant,
+                textcase: font.textcase,
+                lineposition: font.lineposition,
+                shadow: font.shadow
+              }).text(d2.t).call(svgTextUtils.convertToTspans, gd);
+            });
+          }
+        });
+      };
+      function findInterp(pixel, pixArray) {
+        var maxBin = pixArray.length - 2;
+        var bin = Lib.constrain(Lib.findBin(pixel, pixArray), 0, maxBin);
+        var pix0 = pixArray[bin];
+        var pix1 = pixArray[bin + 1];
+        var interp = Lib.constrain(bin + (pixel - pix0) / (pix1 - pix0) - 0.5, 0, maxBin);
+        var bin0 = Math.round(interp);
+        var frac = Math.abs(interp - bin0);
+        if (!interp || interp === maxBin || !frac) {
+          return {
+            bin0,
+            bin1: bin0,
+            frac: 0
+          };
+        }
+        return {
+          bin0,
+          frac,
+          bin1: Math.round(bin0 + frac / (interp - bin0))
+        };
+      }
+      function findInterpFromCenters(pixel, centerPixArray) {
+        var maxBin = centerPixArray.length - 1;
+        var bin = Lib.constrain(Lib.findBin(pixel, centerPixArray), 0, maxBin);
+        var pix0 = centerPixArray[bin];
+        var pix1 = centerPixArray[bin + 1];
+        var frac = (pixel - pix0) / (pix1 - pix0) || 0;
+        if (frac <= 0) {
+          return {
+            bin0: bin,
+            bin1: bin,
+            frac: 0
+          };
+        }
+        if (frac < 0.5) {
+          return {
+            bin0: bin,
+            bin1: bin + 1,
+            frac
+          };
+        }
+        return {
+          bin0: bin + 1,
+          bin1: bin,
+          frac: 1 - frac
+        };
+      }
+      function putColor(pixels, pxIndex, c) {
+        pixels[pxIndex] = c[0];
+        pixels[pxIndex + 1] = c[1];
+        pixels[pxIndex + 2] = c[2];
+        pixels[pxIndex + 3] = Math.round(c[3] * 255);
+      }
+    }
+  });
+
+  // src/traces/contour/constants.js
+  var require_constants16 = __commonJS({
+    "src/traces/contour/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // some constants to help with marching squares algorithm
+        // where does the path start for each index?
+        BOTTOMSTART: [1, 9, 13, 104, 713],
+        TOPSTART: [4, 6, 7, 104, 713],
+        LEFTSTART: [8, 12, 14, 208, 1114],
+        RIGHTSTART: [2, 3, 11, 208, 1114],
+        // which way [dx,dy] do we leave a given index?
+        // saddles are already disambiguated
+        NEWDELTA: [
+          null,
+          [-1, 0],
+          [0, -1],
+          [-1, 0],
+          [1, 0],
+          null,
+          [0, -1],
+          [-1, 0],
+          [0, 1],
+          [0, 1],
+          null,
+          [0, 1],
+          [1, 0],
+          [1, 0],
+          [0, -1]
+        ],
+        // for each saddle, the first index here is used
+        // for dx||dy<0, the second for dx||dy>0
+        CHOOSESADDLE: {
+          104: [4, 1],
+          208: [2, 8],
+          713: [7, 13],
+          1114: [11, 14]
+        },
+        // after one index has been used for a saddle, which do we
+        // substitute to be used up later?
+        SADDLEREMAINDER: { 1: 4, 2: 8, 4: 1, 7: 13, 8: 2, 11: 14, 13: 7, 14: 11 },
+        // length of a contour, as a multiple of the plot area diagonal, per label
+        LABELDISTANCE: 2,
+        // number of contour levels after which we start increasing the number of
+        // labels we draw. Many contours means they will generally be close
+        // together, so it will be harder to follow a long way to find a label
+        LABELINCREASE: 10,
+        // minimum length of a contour line, as a multiple of the label length,
+        // at which we draw *any* labels
+        LABELMIN: 3,
+        // max number of labels to draw on a single contour path, no matter how long
+        LABELMAX: 10,
+        // constants for the label position cost function
+        LABELOPTIMIZER: {
+          // weight given to edge proximity
+          EDGECOST: 1,
+          // weight given to the angle off horizontal
+          ANGLECOST: 1,
+          // weight given to distance from already-placed labels
+          NEIGHBORCOST: 5,
+          // cost multiplier for labels on the same level
+          SAMELEVELFACTOR: 10,
+          // minimum distance (as a multiple of the label length)
+          // for labels on the same level
+          SAMELEVELDISTANCE: 5,
+          // maximum cost before we won't even place the label
+          MAXCOST: 100,
+          // number of evenly spaced points to look at in the first
+          // iteration of the search
+          INITIALSEARCHPOINTS: 10,
+          // number of binary search iterations after the initial wide search
+          ITERATIONS: 5
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/make_crossings.js
+  var require_make_crossings = __commonJS({
+    "src/traces/contour/make_crossings.js"(exports, module) {
+      "use strict";
+      var constants = require_constants16();
+      module.exports = function makeCrossings(pathinfo) {
+        var z = pathinfo[0].z;
+        var m = z.length;
+        var n = z[0].length;
+        var twoWide = m === 2 || n === 2;
+        var xi;
+        var yi;
+        var startIndices;
+        var ystartIndices;
+        var label;
+        var corners;
+        var mi;
+        var pi;
+        var i;
+        for (yi = 0; yi < m - 1; yi++) {
+          ystartIndices = [];
+          if (yi === 0) ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
+          if (yi === m - 2) ystartIndices = ystartIndices.concat(constants.TOPSTART);
+          for (xi = 0; xi < n - 1; xi++) {
+            startIndices = ystartIndices.slice();
+            if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
+            if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
+            label = xi + "," + yi;
+            corners = [
+              [z[yi][xi], z[yi][xi + 1]],
+              [z[yi + 1][xi], z[yi + 1][xi + 1]]
+            ];
+            for (i = 0; i < pathinfo.length; i++) {
+              pi = pathinfo[i];
+              mi = getMarchingIndex(pi.level, corners);
+              if (!mi) continue;
+              pi.crossings[label] = mi;
+              if (startIndices.indexOf(mi) !== -1) {
+                pi.starts.push([xi, yi]);
+                if (twoWide && startIndices.indexOf(
+                  mi,
+                  startIndices.indexOf(mi) + 1
+                ) !== -1) {
+                  pi.starts.push([xi, yi]);
+                }
+              }
+            }
+          }
+        }
+      };
+      function getMarchingIndex(val, corners) {
+        var mi = (corners[0][0] > val ? 0 : 1) + (corners[0][1] > val ? 0 : 2) + (corners[1][1] > val ? 0 : 4) + (corners[1][0] > val ? 0 : 8);
+        if (mi === 5 || mi === 10) {
+          var avg = (corners[0][0] + corners[0][1] + corners[1][0] + corners[1][1]) / 4;
+          if (val > avg) return mi === 5 ? 713 : 1114;
+          return mi === 5 ? 104 : 208;
+        }
+        return mi === 15 ? 0 : mi;
+      }
+    }
+  });
+
+  // src/traces/contour/find_all_paths.js
+  var require_find_all_paths = __commonJS({
+    "src/traces/contour/find_all_paths.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constants = require_constants16();
+      module.exports = function findAllPaths(pathinfo, xtol, ytol) {
+        var cnt, startLoc, i, pi, j;
+        xtol = xtol || 0.01;
+        ytol = ytol || 0.01;
+        for (i = 0; i < pathinfo.length; i++) {
+          pi = pathinfo[i];
+          for (j = 0; j < pi.starts.length; j++) {
+            startLoc = pi.starts[j];
+            makePath(pi, startLoc, "edge", xtol, ytol);
+          }
+          cnt = 0;
+          while (Object.keys(pi.crossings).length && cnt < 1e4) {
+            cnt++;
+            startLoc = Object.keys(pi.crossings)[0].split(",").map(Number);
+            makePath(pi, startLoc, void 0, xtol, ytol);
+          }
+          if (cnt === 1e4) Lib.log("Infinite loop in contour?");
+        }
+      };
+      function equalPts(pt1, pt2, xtol, ytol) {
+        return Math.abs(pt1[0] - pt2[0]) < xtol && Math.abs(pt1[1] - pt2[1]) < ytol;
+      }
+      function ptDist(pt1, pt2) {
+        var dx = pt1[2] - pt2[2];
+        var dy = pt1[3] - pt2[3];
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      function makePath(pi, loc, edgeflag, xtol, ytol) {
+        var locStr = loc.join(",");
+        var mi = pi.crossings[locStr];
+        var marchStep = getStartStep(mi, edgeflag, loc);
+        var pts = [getInterpPx(pi, loc, [-marchStep[0], -marchStep[1]])];
+        var m = pi.z.length;
+        var n = pi.z[0].length;
+        var startLoc = loc.slice();
+        var startStep = marchStep.slice();
+        var cnt;
+        for (cnt = 0; cnt < 1e4; cnt++) {
+          if (mi > 20) {
+            mi = constants.CHOOSESADDLE[mi][(marchStep[0] || marchStep[1]) < 0 ? 0 : 1];
+            pi.crossings[locStr] = constants.SADDLEREMAINDER[mi];
+          } else {
+            delete pi.crossings[locStr];
+          }
+          marchStep = constants.NEWDELTA[mi];
+          if (!marchStep) {
+            Lib.log("Found bad marching index:", mi, loc, pi.level);
+            break;
+          }
+          pts.push(getInterpPx(pi, loc, marchStep));
+          loc[0] += marchStep[0];
+          loc[1] += marchStep[1];
+          locStr = loc.join(",");
+          if (equalPts(pts[pts.length - 1], pts[pts.length - 2], xtol, ytol)) pts.pop();
+          var atEdge = marchStep[0] && (loc[0] < 0 || loc[0] > n - 2) || marchStep[1] && (loc[1] < 0 || loc[1] > m - 2);
+          var closedLoop = loc[0] === startLoc[0] && loc[1] === startLoc[1] && marchStep[0] === startStep[0] && marchStep[1] === startStep[1];
+          if (closedLoop || edgeflag && atEdge) break;
+          mi = pi.crossings[locStr];
+        }
+        if (cnt === 1e4) {
+          Lib.log("Infinite loop in contour?");
+        }
+        var closedpath = equalPts(pts[0], pts[pts.length - 1], xtol, ytol);
+        var totaldist = 0;
+        var distThresholdFactor = 0.2 * pi.smoothing;
+        var alldists = [];
+        var cropstart = 0;
+        var distgroup, cnt2, cnt3, newpt, ptcnt, ptavg, thisdist, i, j, edgepathi, edgepathj;
+        for (cnt = 1; cnt < pts.length; cnt++) {
+          thisdist = ptDist(pts[cnt], pts[cnt - 1]);
+          totaldist += thisdist;
+          alldists.push(thisdist);
+        }
+        var distThreshold = totaldist / alldists.length * distThresholdFactor;
+        function getpt(i2) {
+          return pts[i2 % pts.length];
+        }
+        for (cnt = pts.length - 2; cnt >= cropstart; cnt--) {
+          distgroup = alldists[cnt];
+          if (distgroup < distThreshold) {
+            cnt3 = 0;
+            for (cnt2 = cnt - 1; cnt2 >= cropstart; cnt2--) {
+              if (distgroup + alldists[cnt2] < distThreshold) {
+                distgroup += alldists[cnt2];
+              } else break;
+            }
+            if (closedpath && cnt === pts.length - 2) {
+              for (cnt3 = 0; cnt3 < cnt2; cnt3++) {
+                if (distgroup + alldists[cnt3] < distThreshold) {
+                  distgroup += alldists[cnt3];
+                } else break;
+              }
+            }
+            ptcnt = cnt - cnt2 + cnt3 + 1;
+            ptavg = Math.floor((cnt + cnt2 + cnt3 + 2) / 2);
+            if (!closedpath && cnt === pts.length - 2) newpt = pts[pts.length - 1];
+            else if (!closedpath && cnt2 === -1) newpt = pts[0];
+            else if (ptcnt % 2) newpt = getpt(ptavg);
+            else {
+              newpt = [
+                (getpt(ptavg)[0] + getpt(ptavg + 1)[0]) / 2,
+                (getpt(ptavg)[1] + getpt(ptavg + 1)[1]) / 2
+              ];
+            }
+            pts.splice(cnt2 + 1, cnt - cnt2 + 1, newpt);
+            cnt = cnt2 + 1;
+            if (cnt3) cropstart = cnt3;
+            if (closedpath) {
+              if (cnt === pts.length - 2) pts[cnt3] = pts[pts.length - 1];
+              else if (cnt === 0) pts[pts.length - 1] = pts[0];
+            }
+          }
+        }
+        pts.splice(0, cropstart);
+        for (cnt = 0; cnt < pts.length; cnt++) pts[cnt].length = 2;
+        if (pts.length < 2) return;
+        else if (closedpath) {
+          pts.pop();
+          pi.paths.push(pts);
+        } else {
+          if (!edgeflag) {
+            Lib.log(
+              "Unclosed interior contour?",
+              pi.level,
+              startLoc.join(","),
+              pts.join("L")
+            );
+          }
+          var merged = false;
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            edgepathi = pi.edgepaths[i];
+            if (!merged && equalPts(edgepathi[0], pts[pts.length - 1], xtol, ytol)) {
+              pts.pop();
+              merged = true;
+              var doublemerged = false;
+              for (j = 0; j < pi.edgepaths.length; j++) {
+                edgepathj = pi.edgepaths[j];
+                if (equalPts(edgepathj[edgepathj.length - 1], pts[0], xtol, ytol)) {
+                  doublemerged = true;
+                  pts.shift();
+                  pi.edgepaths.splice(i, 1);
+                  if (j === i) {
+                    pi.paths.push(pts.concat(edgepathj));
+                  } else {
+                    if (j > i) j--;
+                    pi.edgepaths[j] = edgepathj.concat(pts, edgepathi);
+                  }
+                  break;
+                }
+              }
+              if (!doublemerged) {
+                pi.edgepaths[i] = pts.concat(edgepathi);
+              }
+            }
+          }
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            if (merged) break;
+            edgepathi = pi.edgepaths[i];
+            if (equalPts(edgepathi[edgepathi.length - 1], pts[0], xtol, ytol)) {
+              pts.shift();
+              pi.edgepaths[i] = edgepathi.concat(pts);
+              merged = true;
+            }
+          }
+          if (!merged) pi.edgepaths.push(pts);
+        }
+      }
+      function getStartStep(mi, edgeflag, loc) {
+        var dx = 0;
+        var dy = 0;
+        if (mi > 20 && edgeflag) {
+          if (mi === 208 || mi === 1114) {
+            dx = loc[0] === 0 ? 1 : -1;
+          } else {
+            dy = loc[1] === 0 ? 1 : -1;
+          }
+        } else if (constants.BOTTOMSTART.indexOf(mi) !== -1) dy = 1;
+        else if (constants.LEFTSTART.indexOf(mi) !== -1) dx = 1;
+        else if (constants.TOPSTART.indexOf(mi) !== -1) dy = -1;
+        else dx = -1;
+        return [dx, dy];
+      }
+      function getInterpPx(pi, loc, step) {
+        var locx = loc[0] + Math.max(step[0], 0);
+        var locy = loc[1] + Math.max(step[1], 0);
+        var zxy = pi.z[locy][locx];
+        var xa = pi.xaxis;
+        var ya = pi.yaxis;
+        if (step[1]) {
+          var dx = (pi.level - zxy) / (pi.z[locy][locx + 1] - zxy);
+          var dxl = (dx !== 1 ? (1 - dx) * xa.c2l(pi.x[locx]) : 0) + (dx !== 0 ? dx * xa.c2l(pi.x[locx + 1]) : 0);
+          return [
+            xa.c2p(xa.l2c(dxl), true),
+            ya.c2p(pi.y[locy], true),
+            locx + dx,
+            locy
+          ];
+        } else {
+          var dy = (pi.level - zxy) / (pi.z[locy + 1][locx] - zxy);
+          var dyl = (dy !== 1 ? (1 - dy) * ya.c2l(pi.y[locy]) : 0) + (dy !== 0 ? dy * ya.c2l(pi.y[locy + 1]) : 0);
+          return [
+            xa.c2p(pi.x[locx], true),
+            ya.c2p(ya.l2c(dyl), true),
+            locx,
+            locy + dy
+          ];
+        }
+      }
+    }
+  });
+
+  // src/traces/contour/constraint_mapping.js
+  var require_constraint_mapping = __commonJS({
+    "src/traces/contour/constraint_mapping.js"(exports, module) {
+      "use strict";
+      var filterOps = require_filter_ops();
+      var isNumeric = require_fast_isnumeric();
+      module.exports = {
+        "[]": makeRangeSettings("[]"),
+        "][": makeRangeSettings("]["),
+        ">": makeInequalitySettings(">"),
+        "<": makeInequalitySettings("<"),
+        "=": makeInequalitySettings("=")
+      };
+      function coerceValue(operation, value) {
+        var hasArrayValue = Array.isArray(value);
+        var coercedValue;
+        function coerce(value2) {
+          return isNumeric(value2) ? +value2 : null;
+        }
+        if (filterOps.COMPARISON_OPS2.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? coerce(value[0]) : coerce(value);
+        } else if (filterOps.INTERVAL_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? [coerce(value[0]), coerce(value[1])] : [coerce(value), coerce(value)];
+        } else if (filterOps.SET_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? value.map(coerce) : [coerce(value)];
+        }
+        return coercedValue;
+      }
+      function makeRangeSettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          var min = Math.min(value[0], value[1]);
+          var max = Math.max(value[0], value[1]);
+          return {
+            start: min,
+            end: max,
+            size: max - min
+          };
+        };
+      }
+      function makeInequalitySettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          return {
+            start: value,
+            end: Infinity,
+            size: Infinity
+          };
+        };
+      }
+    }
+  });
+
+  // src/traces/contour/empty_pathinfo.js
+  var require_empty_pathinfo = __commonJS({
+    "src/traces/contour/empty_pathinfo.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constraintMapping = require_constraint_mapping();
+      var endPlus = require_end_plus();
+      module.exports = function emptyPathinfo(contours, plotinfo, cd0) {
+        var contoursFinal = contours.type === "constraint" ? constraintMapping[contours._operation](contours.value) : contours;
+        var cs = contoursFinal.size;
+        var pathinfo = [];
+        var end = endPlus(contoursFinal);
+        var carpet = cd0.trace._carpetTrace;
+        var basePathinfo = carpet ? {
+          // store axes so we can convert to px
+          xaxis: carpet.aaxis,
+          yaxis: carpet.baxis,
+          // full data arrays to use for interpolation
+          x: cd0.a,
+          y: cd0.b
+        } : {
+          xaxis: plotinfo.xaxis,
+          yaxis: plotinfo.yaxis,
+          x: cd0.x,
+          y: cd0.y
+        };
+        if (contoursFinal._levels && contoursFinal._levels.length > 0) {
+          var levels = contoursFinal._levels;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Processing custom levels in pathinfo:", levels);
+          }
+          for (var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+              level: levels[i],
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
               break;
             }
           }
-          if (!hasPositive) len = 0;
-        }
-        return {
-          hasLabels,
-          hasValues,
-          len
-        };
-      }
-      function handleMarkerDefaults(traceIn, traceOut, layout, coerce, isPie) {
-        var lineWidth = coerce("marker.line.width");
-        if (lineWidth) {
-          coerce(
-            "marker.line.color",
-            isPie ? void 0 : layout.paper_bgcolor
-            // case of funnelarea, sunburst, icicle, treemap
-          );
-        }
-        var markerColors = coerce("marker.colors");
-        coercePattern(coerce, "marker.pattern", markerColors);
-        if (traceIn.marker && !traceOut.marker.pattern.fgcolor) traceOut.marker.pattern.fgcolor = traceIn.marker.colors;
-        if (!traceOut.marker.pattern.bgcolor) traceOut.marker.pattern.bgcolor = layout.paper_bgcolor;
-      }
-      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var labels = coerce("labels");
-        var values = coerce("values");
-        var res = handleLabelsAndValues(labels, values);
-        var len = res.len;
-        traceOut._hasLabels = res.hasLabels;
-        traceOut._hasValues = res.hasValues;
-        if (!traceOut._hasLabels && traceOut._hasValues) {
-          coerce("label0");
-          coerce("dlabel");
-        }
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        traceOut._length = len;
-        handleMarkerDefaults(traceIn, traceOut, layout, coerce, true);
-        coerce("scalegroup");
-        var textData = coerce("text");
-        var textTemplate = coerce("texttemplate");
-        var textInfo;
-        if (!textTemplate) textInfo = coerce("textinfo", Lib.isArrayOrTypedArray(textData) ? "text+percent" : "percent");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        if (textTemplate || textInfo && textInfo !== "none") {
-          var textposition = coerce("textposition");
-          handleText(traceIn, traceOut, layout, coerce, textposition, {
-            moduleHasSelected: false,
-            moduleHasUnselected: false,
-            moduleHasConstrain: false,
-            moduleHasCliponaxis: false,
-            moduleHasTextangle: false,
-            moduleHasInsideanchor: false
-          });
-          var hasBoth = Array.isArray(textposition) || textposition === "auto";
-          var hasOutside = hasBoth || textposition === "outside";
-          if (hasOutside) {
-            coerce("automargin");
+        } else {
+          for (var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+              level: ci,
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
           }
-          if (textposition === "inside" || textposition === "auto" || Array.isArray(textposition)) {
-            coerce("insidetextorientation");
-          }
-        } else if (textInfo === "none") {
-          coerce("textposition", "none");
         }
-        handleDomainDefaults(traceOut, layout, coerce);
-        var hole = coerce("hole");
-        var title = coerce("title.text");
-        if (title) {
-          var titlePosition = coerce("title.position", hole ? "middle center" : "top center");
-          if (!hole && titlePosition === "middle center") traceOut.title.position = "top center";
-          Lib.coerceFont(coerce, "title.font", layout.font);
-        }
-        coerce("sort");
-        coerce("direction");
-        coerce("rotation");
-        coerce("pull");
-      }
-      module.exports = {
-        handleLabelsAndValues,
-        handleMarkerDefaults,
-        supplyDefaults
+        return pathinfo;
       };
     }
   });
 
-  // src/traces/pie/layout_attributes.js
-  var require_layout_attributes9 = __commonJS({
-    "src/traces/pie/layout_attributes.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        hiddenlabels: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        piecolorway: {
-          valType: "colorlist",
-          editType: "calc"
-        },
-        extendpiecolors: {
-          valType: "boolean",
-          dflt: true,
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/traces/pie/layout_defaults.js
-  var require_layout_defaults8 = __commonJS({
-    "src/traces/pie/layout_defaults.js"(exports, module) {
+  // src/traces/contour/convert_to_constraints.js
+  var require_convert_to_constraints = __commonJS({
+    "src/traces/contour/convert_to_constraints.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes9();
-      module.exports = function supplyLayoutDefaults(layoutIn, layoutOut) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
+      module.exports = function(pathinfo, operation) {
+        var i, pi0, pi1;
+        var op0 = function(arr) {
+          return arr.reverse();
+        };
+        var op1 = function(arr) {
+          return arr;
+        };
+        switch (operation) {
+          case "=":
+          case "<":
+            return pathinfo;
+          case ">":
+            if (pathinfo.length !== 1) {
+              Lib.warn("Contour data invalid for the specified inequality operation.");
+            }
+            pi0 = pathinfo[0];
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            return pathinfo;
+          case "][":
+            var tmp = op0;
+            op0 = op1;
+            op1 = tmp;
+          // It's a nice rule, except this definitely *is* what's intended here.
+          /* eslint-disable: no-fallthrough */
+          case "[]":
+            if (pathinfo.length !== 2) {
+              Lib.warn("Contour data invalid for the specified inequality range operation.");
+            }
+            pi0 = copyPathinfo(pathinfo[0]);
+            pi1 = copyPathinfo(pathinfo[1]);
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            while (pi1.edgepaths.length) {
+              pi0.edgepaths.push(op1(pi1.edgepaths.shift()));
+            }
+            while (pi1.paths.length) {
+              pi0.paths.push(op1(pi1.paths.shift()));
+            }
+            while (pi1.starts.length) {
+              pi0.starts.push(op1(pi1.starts.shift()));
+            }
+            return [pi0];
         }
-        coerce("hiddenlabels");
-        coerce("piecolorway", layoutOut.colorway);
-        coerce("extendpiecolors");
       };
+      function copyPathinfo(pi) {
+        return Lib.extendFlat({}, pi, {
+          edgepaths: Lib.extendDeep([], pi.edgepaths),
+          paths: Lib.extendDeep([], pi.paths),
+          starts: Lib.extendDeep([], pi.starts)
+        });
+      }
     }
   });
 
-  // src/traces/pie/calc.js
-  var require_calc9 = __commonJS({
-    "src/traces/pie/calc.js"(exports, module) {
+  // src/traces/contour/close_boundaries.js
+  var require_close_boundaries = __commonJS({
+    "src/traces/contour/close_boundaries.js"(exports, module) {
       "use strict";
-      var isNumeric = require_fast_isnumeric();
-      var tinycolor = require_tinycolor();
-      var Color2 = require_color();
-      var extendedColorWayList = {};
-      function calc(gd, trace) {
-        var cd = [];
-        var fullLayout = gd._fullLayout;
-        var hiddenLabels = fullLayout.hiddenlabels || [];
-        var labels = trace.labels;
-        var colors = trace.marker.colors || [];
-        var vals = trace.values;
-        var len = trace._length;
-        var hasValues = trace._hasValues && len;
-        var i, pt;
-        if (trace.dlabel) {
-          labels = new Array(len);
-          for (i = 0; i < len; i++) {
-            labels[i] = String(trace.label0 + i * trace.dlabel);
-          }
-        }
-        var allThisTraceLabels = {};
-        var pullColor = makePullColorFn(fullLayout["_" + trace.type + "colormap"]);
-        var vTotal = 0;
-        var isAggregated = false;
-        for (i = 0; i < len; i++) {
-          var v, label, hidden;
-          if (hasValues) {
-            v = vals[i];
-            if (!isNumeric(v)) continue;
-            v = +v;
-          } else v = 1;
-          label = labels[i];
-          if (label === void 0 || label === "") label = i;
-          label = String(label);
-          var thisLabelIndex = allThisTraceLabels[label];
-          if (thisLabelIndex === void 0) {
-            allThisTraceLabels[label] = cd.length;
-            hidden = hiddenLabels.indexOf(label) !== -1;
-            if (!hidden) vTotal += v;
-            cd.push({
-              v,
-              label,
-              color: pullColor(colors[i], label),
-              i,
-              pts: [i],
-              hidden
-            });
-          } else {
-            isAggregated = true;
-            pt = cd[thisLabelIndex];
-            pt.v += v;
-            pt.pts.push(i);
-            if (!pt.hidden) vTotal += v;
-            if (pt.color === false && colors[i]) {
-              pt.color = pullColor(colors[i], label);
-            }
-          }
-        }
-        cd = cd.filter(function(elem) {
-          return elem.v >= 0;
-        });
-        var shouldSort = trace.type === "funnelarea" ? isAggregated : trace.sort;
-        if (shouldSort) cd.sort(function(a, b) {
-          return b.v - a.v;
-        });
-        if (cd[0]) cd[0].vTotal = vTotal;
-        return cd;
-      }
-      function makePullColorFn(colorMap) {
-        return function pullColor(color2, id) {
-          if (!color2) return false;
-          color2 = tinycolor(color2);
-          if (!color2.isValid()) return false;
-          color2 = Color2.addOpacity(color2, color2.getAlpha());
-          if (!colorMap[id]) colorMap[id] = color2;
-          return color2;
-        };
-      }
-      function crossTraceCalc(gd, plotinfo) {
-        var desiredType = (plotinfo || {}).type;
-        if (!desiredType) desiredType = "pie";
-        var fullLayout = gd._fullLayout;
-        var calcdata = gd.calcdata;
-        var colorWay = fullLayout[desiredType + "colorway"];
-        var colorMap = fullLayout["_" + desiredType + "colormap"];
-        if (fullLayout["extend" + desiredType + "colors"]) {
-          colorWay = generateExtendedColors(colorWay, extendedColorWayList);
-        }
-        var dfltColorCount = 0;
-        for (var i = 0; i < calcdata.length; i++) {
-          var cd = calcdata[i];
-          var traceType = cd[0].trace.type;
-          if (traceType !== desiredType) continue;
-          for (var j = 0; j < cd.length; j++) {
-            var pt = cd[j];
-            if (pt.color === false) {
-              if (colorMap[pt.label]) {
-                pt.color = colorMap[pt.label];
-              } else {
-                colorMap[pt.label] = pt.color = colorWay[dfltColorCount % colorWay.length];
-                dfltColorCount++;
-              }
-            }
-          }
-        }
-      }
-      function generateExtendedColors(colorList, extendedColorWays) {
+      module.exports = function(pathinfo, contours) {
+        var pi0 = pathinfo[0];
+        var z = pi0.z;
         var i;
-        var colorString = JSON.stringify(colorList);
-        var colors = extendedColorWays[colorString];
-        if (!colors) {
-          colors = colorList.slice();
-          for (i = 0; i < colorList.length; i++) {
-            colors.push(tinycolor(colorList[i]).lighten(20).toHexString());
-          }
-          for (i = 0; i < colorList.length; i++) {
-            colors.push(tinycolor(colorList[i]).darken(20).toHexString());
-          }
-          extendedColorWays[colorString] = colors;
+        switch (contours.type) {
+          case "levels":
+            var edgeVal2 = Math.min(z[0][0], z[0][1]);
+            for (i = 0; i < pathinfo.length; i++) {
+              var pi = pathinfo[i];
+              pi.prefixBoundary = !pi.edgepaths.length && (edgeVal2 > pi.level || pi.starts.length && edgeVal2 === pi.level);
+            }
+            break;
+          case "constraint":
+            pi0.prefixBoundary = false;
+            if (pi0.edgepaths.length) return;
+            var na = pi0.x.length;
+            var nb = pi0.y.length;
+            var boundaryMax = -Infinity;
+            var boundaryMin = Infinity;
+            for (i = 0; i < nb; i++) {
+              boundaryMin = Math.min(boundaryMin, z[i][0]);
+              boundaryMin = Math.min(boundaryMin, z[i][na - 1]);
+              boundaryMax = Math.max(boundaryMax, z[i][0]);
+              boundaryMax = Math.max(boundaryMax, z[i][na - 1]);
+            }
+            for (i = 1; i < na - 1; i++) {
+              boundaryMin = Math.min(boundaryMin, z[0][i]);
+              boundaryMin = Math.min(boundaryMin, z[nb - 1][i]);
+              boundaryMax = Math.max(boundaryMax, z[0][i]);
+              boundaryMax = Math.max(boundaryMax, z[nb - 1][i]);
+            }
+            var contoursValue = contours.value;
+            var v1, v2;
+            switch (contours._operation) {
+              case ">":
+                if (contoursValue > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "<":
+                if (contoursValue < boundaryMin || pi0.starts.length && contoursValue === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "[]":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v2 < boundaryMin || v1 > boundaryMax || pi0.starts.length && v2 === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "][":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v1 < boundaryMin && v2 > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+            }
+            break;
         }
-        return colors;
-      }
-      module.exports = {
-        calc,
-        crossTraceCalc,
-        makePullColorFn,
-        generateExtendedColors
       };
     }
   });
 
-  // src/traces/pie/event_data.js
-  var require_event_data5 = __commonJS({
-    "src/traces/pie/event_data.js"(exports, module) {
-      "use strict";
-      var appendArrayMultiPointValues = require_helpers2().appendArrayMultiPointValues;
-      module.exports = function eventData(pt, trace) {
-        var out = {
-          curveNumber: trace.index,
-          pointNumbers: pt.pts,
-          data: trace._input,
-          fullData: trace,
-          label: pt.label,
-          color: pt.color,
-          value: pt.v,
-          percent: pt.percent,
-          text: pt.text,
-          bbox: pt.bbox,
-          // pt.v (and pt.i below) for backward compatibility
-          v: pt.v
-        };
-        if (pt.pts.length === 1) out.pointNumber = out.i = pt.pts[0];
-        appendArrayMultiPointValues(out, trace, pt.pts);
-        if (trace.type === "funnelarea") {
-          delete out.v;
-          delete out.i;
-        }
-        return out;
-      };
-    }
-  });
-
-  // src/traces/pie/plot.js
-  var require_plot6 = __commonJS({
-    "src/traces/pie/plot.js"(exports, module) {
+  // src/traces/contour/plot.js
+  var require_plot4 = __commonJS({
+    "src/traces/contour/plot.js"(exports) {
       "use strict";
       var d3 = require_d3();
-      var Plots = require_plots();
-      var Fx = require_fx();
-      var Color2 = require_color();
-      var Drawing = require_drawing();
       var Lib = require_lib();
-      var strScale = Lib.strScale;
-      var strTranslate = Lib.strTranslate;
+      var Drawing = require_drawing();
+      var Colorscale = require_colorscale();
       var svgTextUtils = require_svg_text_utils();
-      var uniformText = require_uniform_text();
-      var recordMinTextSize = uniformText.recordMinTextSize;
-      var clearMinTextSize = uniformText.clearMinTextSize;
-      var TEXTPAD = require_constants14().TEXTPAD;
-      var helpers = require_helpers4();
-      var eventData = require_event_data5();
-      var isValidTextValue = require_lib().isValidTextValue;
-      function plot(gd, cdModule) {
-        var isStatic = gd._context.staticPlot;
-        var fullLayout = gd._fullLayout;
-        var gs = fullLayout._size;
-        clearMinTextSize("pie", fullLayout);
-        prerenderTitles(cdModule, gd);
-        layoutAreas(cdModule, gs);
-        var plotGroups = Lib.makeTraceGroups(fullLayout._pielayer, cdModule, "trace").each(function(cd) {
+      var Axes = require_axes();
+      var setConvert = require_set_convert();
+      var heatmapPlot = require_plot3();
+      var makeCrossings = require_make_crossings();
+      var findAllPaths = require_find_all_paths();
+      var emptyPathinfo = require_empty_pathinfo();
+      var convertToConstraints = require_convert_to_constraints();
+      var closeBoundaries = require_close_boundaries();
+      var constants = require_constants16();
+      var costConstants = constants.LABELOPTIMIZER;
+      exports.plot = function plot(gd, plotinfo, cdcontours, contourLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(contourLayer, cdcontours, "contour").each(function(cd) {
           var plotGroup = d3.select(this);
           var cd0 = cd[0];
           var trace = cd0.trace;
-          setCoords(cd);
-          plotGroup.attr("stroke-linejoin", "round");
-          plotGroup.each(function() {
-            var slices = d3.select(this).selectAll("g.slice").data(cd);
-            slices.enter().append("g").classed("slice", true);
-            slices.exit().remove();
-            var quadrants = [
-              [[], []],
-              // y<0: x<0, x>=0
-              [[], []]
-              // y>=0: x<0, x>=0
-            ];
-            var hasOutsideText = false;
-            slices.each(function(pt, i) {
-              if (pt.hidden) {
-                d3.select(this).selectAll("path,g").remove();
-                return;
-              }
-              pt.pointNumber = pt.i;
-              pt.curveNumber = trace.index;
-              quadrants[pt.pxmid[1] < 0 ? 0 : 1][pt.pxmid[0] < 0 ? 0 : 1].push(pt);
-              var cx = cd0.cx;
-              var cy = cd0.cy;
-              var sliceTop = d3.select(this);
-              var slicePath = sliceTop.selectAll("path.surface").data([pt]);
-              slicePath.enter().append("path").classed("surface", true).style({ "pointer-events": isStatic ? "none" : "all" });
-              sliceTop.call(attachFxHandlers, gd, cd);
-              if (trace.pull) {
-                var pull = +helpers.castOption(trace.pull, pt.pts) || 0;
-                if (pull > 0) {
-                  cx += pull * pt.pxmid[0];
-                  cy += pull * pt.pxmid[1];
-                }
-              }
-              pt.cxFinal = cx;
-              pt.cyFinal = cy;
-              function arc(start, finish, cw, scale) {
-                var dx = scale * (finish[0] - start[0]);
-                var dy = scale * (finish[1] - start[1]);
-                return "a" + scale * cd0.r + "," + scale * cd0.r + " 0 " + pt.largeArc + (cw ? " 1 " : " 0 ") + dx + "," + dy;
-              }
-              var hole = trace.hole;
-              if (pt.v === cd0.vTotal) {
-                var outerCircle = "M" + (cx + pt.px0[0]) + "," + (cy + pt.px0[1]) + arc(pt.px0, pt.pxmid, true, 1) + arc(pt.pxmid, pt.px0, true, 1) + "Z";
-                if (hole) {
-                  slicePath.attr(
-                    "d",
-                    "M" + (cx + hole * pt.px0[0]) + "," + (cy + hole * pt.px0[1]) + arc(pt.px0, pt.pxmid, false, hole) + arc(pt.pxmid, pt.px0, false, hole) + "Z" + outerCircle
-                  );
-                } else slicePath.attr("d", outerCircle);
-              } else {
-                var outerArc = arc(pt.px0, pt.px1, true, 1);
-                if (hole) {
-                  var rim = 1 - hole;
-                  slicePath.attr(
-                    "d",
-                    "M" + (cx + hole * pt.px1[0]) + "," + (cy + hole * pt.px1[1]) + arc(pt.px1, pt.px0, false, hole) + "l" + rim * pt.px0[0] + "," + rim * pt.px0[1] + outerArc + "Z"
-                  );
-                } else {
-                  slicePath.attr(
-                    "d",
-                    "M" + cx + "," + cy + "l" + pt.px0[0] + "," + pt.px0[1] + outerArc + "Z"
-                  );
-                }
-              }
-              formatSliceLabel(gd, pt, cd0);
-              var textPosition = helpers.castOption(trace.textposition, pt.pts);
-              var sliceTextGroup = sliceTop.selectAll("g.slicetext").data(pt.text && textPosition !== "none" ? [0] : []);
-              sliceTextGroup.enter().append("g").classed("slicetext", true);
-              sliceTextGroup.exit().remove();
-              sliceTextGroup.each(function() {
-                var sliceText = Lib.ensureSingle(d3.select(this), "text", "", function(s) {
-                  s.attr("data-notex", 1);
-                });
-                var font = Lib.ensureUniformFontSize(
-                  gd,
-                  textPosition === "outside" ? determineOutsideTextFont(trace, pt, fullLayout.font) : determineInsideTextFont(trace, pt, fullLayout.font)
-                );
-                sliceText.text(pt.text).attr({
-                  class: "slicetext",
-                  transform: "",
-                  "text-anchor": "middle"
-                }).call(Drawing.font, font).call(svgTextUtils.convertToTspans, gd);
-                var textBB = Drawing.bBox(sliceText.node());
-                var transform;
-                if (textPosition === "outside") {
-                  transform = transformOutsideText(textBB, pt);
-                } else {
-                  transform = transformInsideText(textBB, pt, cd0);
-                  if (textPosition === "auto" && transform.scale < 1) {
-                    var newFont = Lib.ensureUniformFontSize(gd, trace.outsidetextfont);
-                    sliceText.call(Drawing.font, newFont);
-                    textBB = Drawing.bBox(sliceText.node());
-                    transform = transformOutsideText(textBB, pt);
-                  }
-                }
-                var textPosAngle = transform.textPosAngle;
-                var textXY = textPosAngle === void 0 ? pt.pxmid : getCoords(cd0.r, textPosAngle);
-                transform.targetX = cx + textXY[0] * transform.rCenter + (transform.x || 0);
-                transform.targetY = cy + textXY[1] * transform.rCenter + (transform.y || 0);
-                computeTransform(transform, textBB);
-                if (transform.outside) {
-                  var targetY = transform.targetY;
-                  pt.yLabelMin = targetY - textBB.height / 2;
-                  pt.yLabelMid = targetY;
-                  pt.yLabelMax = targetY + textBB.height / 2;
-                  pt.labelExtraX = 0;
-                  pt.labelExtraY = 0;
-                  hasOutsideText = true;
-                }
-                transform.fontSize = font.size;
-                recordMinTextSize(trace.type, transform, fullLayout);
-                cd[i].transform = transform;
-                Lib.setTransormAndDisplay(sliceText, transform);
-              });
-            });
-            var titleTextGroup = d3.select(this).selectAll("g.titletext").data(trace.title.text ? [0] : []);
-            titleTextGroup.enter().append("g").classed("titletext", true);
-            titleTextGroup.exit().remove();
-            titleTextGroup.each(function() {
-              var titleText = Lib.ensureSingle(d3.select(this), "text", "", function(s) {
-                s.attr("data-notex", 1);
-              });
-              var txt = trace.title.text;
-              if (trace._meta) {
-                txt = Lib.templateString(txt, trace._meta);
-              }
-              titleText.text(txt).attr({
-                class: "titletext",
-                transform: "",
-                "text-anchor": "middle"
-              }).call(Drawing.font, trace.title.font).call(svgTextUtils.convertToTspans, gd);
-              var transform;
-              if (trace.title.position === "middle center") {
-                transform = positionTitleInside(cd0);
-              } else {
-                transform = positionTitleOutside(cd0, gs);
-              }
-              titleText.attr(
-                "transform",
-                strTranslate(transform.x, transform.y) + strScale(Math.min(1, transform.scale)) + strTranslate(transform.tx, transform.ty)
-              );
-            });
-            if (hasOutsideText) scootLabels(quadrants, trace);
-            plotTextLines(slices, trace);
-            if (hasOutsideText && trace.automargin) {
-              var traceBbox = Drawing.bBox(plotGroup.node());
-              var domain = trace.domain;
-              var vpw = gs.w * (domain.x[1] - domain.x[0]);
-              var vph = gs.h * (domain.y[1] - domain.y[0]);
-              var xgap = (0.5 * vpw - cd0.r) / gs.w;
-              var ygap = (0.5 * vph - cd0.r) / gs.h;
-              Plots.autoMargin(gd, "pie." + trace.uid + ".automargin", {
-                xl: domain.x[0] - xgap,
-                xr: domain.x[1] + xgap,
-                yb: domain.y[0] - ygap,
-                yt: domain.y[1] + ygap,
-                l: Math.max(cd0.cx - cd0.r - traceBbox.left, 0),
-                r: Math.max(traceBbox.right - (cd0.cx + cd0.r), 0),
-                b: Math.max(traceBbox.bottom - (cd0.cy + cd0.r), 0),
-                t: Math.max(cd0.cy - cd0.r - traceBbox.top, 0),
-                pad: 5
-              });
-            }
-          });
-        });
-        setTimeout(function() {
-          plotGroups.selectAll("tspan").each(function() {
-            var s = d3.select(this);
-            if (s.attr("dy")) s.attr("dy", s.attr("dy"));
-          });
-        }, 0);
-      }
-      function plotTextLines(slices, trace) {
-        slices.each(function(pt) {
-          var sliceTop = d3.select(this);
-          if (!pt.labelExtraX && !pt.labelExtraY) {
-            sliceTop.select("path.textline").remove();
-            return;
+          var x = cd0.x;
+          var y = cd0.y;
+          var contours = trace.contours;
+          var pathinfo = emptyPathinfo(contours, plotinfo, cd0);
+          var heatmapColoringLayer = Lib.ensureSingle(plotGroup, "g", "heatmapcoloring");
+          var cdheatmaps = [];
+          if (contours.coloring === "heatmap") {
+            cdheatmaps = [cd];
           }
-          var sliceText = sliceTop.select("g.slicetext text");
-          pt.transform.targetX += pt.labelExtraX;
-          pt.transform.targetY += pt.labelExtraY;
-          Lib.setTransormAndDisplay(sliceText, pt.transform);
-          var lineStartX = pt.cxFinal + pt.pxmid[0];
-          var lineStartY = pt.cyFinal + pt.pxmid[1];
-          var textLinePath = "M" + lineStartX + "," + lineStartY;
-          var finalX = (pt.yLabelMax - pt.yLabelMin) * (pt.pxmid[0] < 0 ? -1 : 1) / 4;
-          if (pt.labelExtraX) {
-            var yFromX = pt.labelExtraX * pt.pxmid[1] / pt.pxmid[0];
-            var yNet = pt.yLabelMid + pt.labelExtraY - (pt.cyFinal + pt.pxmid[1]);
-            if (Math.abs(yFromX) > Math.abs(yNet)) {
-              textLinePath += "l" + yNet * pt.pxmid[0] / pt.pxmid[1] + "," + yNet + "H" + (lineStartX + pt.labelExtraX + finalX);
-            } else {
-              textLinePath += "l" + pt.labelExtraX + "," + yFromX + "v" + (yNet - yFromX) + "h" + finalX;
-            }
+          heatmapPlot(gd, plotinfo, cdheatmaps, heatmapColoringLayer);
+          makeCrossings(pathinfo);
+          findAllPaths(pathinfo);
+          var leftedge = xa.c2p(x[0], true);
+          var rightedge = xa.c2p(x[x.length - 1], true);
+          var bottomedge = ya.c2p(y[0], true);
+          var topedge = ya.c2p(y[y.length - 1], true);
+          var perimeter = [
+            [leftedge, topedge],
+            [rightedge, topedge],
+            [rightedge, bottomedge],
+            [leftedge, bottomedge]
+          ];
+          var fillPathinfo = pathinfo;
+          if (contours.type === "constraint") {
+            fillPathinfo = convertToConstraints(pathinfo, contours._operation);
+          }
+          makeBackground(plotGroup, perimeter, contours);
+          makeFills(plotGroup, fillPathinfo, perimeter, contours);
+          makeLinesAndLabels(plotGroup, pathinfo, gd, cd0, contours);
+          clipGaps(plotGroup, plotinfo, gd, cd0, perimeter);
+        });
+      };
+      function makeBackground(plotgroup, perimeter, contours) {
+        var bggroup = Lib.ensureSingle(plotgroup, "g", "contourbg");
+        var bgfill = bggroup.selectAll("path").data(contours.coloring === "fill" ? [0] : []);
+        bgfill.enter().append("path");
+        bgfill.exit().remove();
+        bgfill.attr("d", "M" + perimeter.join("L") + "Z").style("stroke", "none");
+      }
+      function makeFills(plotgroup, pathinfo, perimeter, contours) {
+        var hasFills = contours.coloring === "fill" || contours.type === "constraint" && contours._operation !== "=";
+        var boundaryPath = "M" + perimeter.join("L") + "Z";
+        if (hasFills) {
+          closeBoundaries(pathinfo, contours);
+        }
+        var fillgroup = Lib.ensureSingle(plotgroup, "g", "contourfill");
+        var fillitems = fillgroup.selectAll("path").data(hasFills ? pathinfo : []);
+        fillitems.enter().append("path");
+        fillitems.exit().remove();
+        fillitems.each(function(pi) {
+          var fullpath = (pi.prefixBoundary ? boundaryPath : "") + joinAllPaths(pi, perimeter);
+          if (!fullpath) {
+            d3.select(this).remove();
           } else {
-            textLinePath += "V" + (pt.yLabelMid + pt.labelExtraY) + "h" + finalX;
+            d3.select(this).attr("d", fullpath).style("stroke", "none");
           }
-          Lib.ensureSingle(sliceTop, "path", "textline").call(Color2.stroke, trace.outsidetextfont.color).attr({
-            "stroke-width": Math.min(2, trace.outsidetextfont.size / 8),
-            d: textLinePath,
-            fill: "none"
-          });
         });
       }
-      function attachFxHandlers(sliceTop, gd, cd) {
-        var cd0 = cd[0];
-        var cx = cd0.cx;
-        var cy = cd0.cy;
-        var trace = cd0.trace;
-        var isFunnelArea = trace.type === "funnelarea";
-        if (!("_hasHoverLabel" in trace)) trace._hasHoverLabel = false;
-        if (!("_hasHoverEvent" in trace)) trace._hasHoverEvent = false;
-        sliceTop.on("mouseover", function(pt) {
-          var fullLayout2 = gd._fullLayout;
-          var trace2 = gd._fullData[trace.index];
-          if (gd._dragging || fullLayout2.hovermode === false) return;
-          var hoverinfo = trace2.hoverinfo;
-          if (Array.isArray(hoverinfo)) {
-            hoverinfo = Fx.castHoverinfo({
-              hoverinfo: [helpers.castOption(hoverinfo, pt.pts)],
-              _module: trace._module
-            }, fullLayout2, 0);
-          }
-          if (hoverinfo === "all") hoverinfo = "label+text+value+percent+name";
-          if (trace2.hovertemplate || hoverinfo !== "none" && hoverinfo !== "skip" && hoverinfo) {
-            var rInscribed = pt.rInscribed || 0;
-            var hoverCenterX = cx + pt.pxmid[0] * (1 - rInscribed);
-            var hoverCenterY = cy + pt.pxmid[1] * (1 - rInscribed);
-            var separators = fullLayout2.separators;
-            var text = [];
-            if (hoverinfo && hoverinfo.indexOf("label") !== -1) text.push(pt.label);
-            pt.text = helpers.castOption(trace2.hovertext || trace2.text, pt.pts);
-            if (hoverinfo && hoverinfo.indexOf("text") !== -1) {
-              var tx = pt.text;
-              if (Lib.isValidTextValue(tx)) text.push(tx);
+      function joinAllPaths(pi, perimeter) {
+        var fullpath = "";
+        var i = 0;
+        var startsleft = pi.edgepaths.map(function(v, i2) {
+          return i2;
+        });
+        var newloop = true;
+        var endpt;
+        var newendpt;
+        var cnt;
+        var nexti;
+        var possiblei;
+        var addpath;
+        function istop(pt) {
+          return Math.abs(pt[1] - perimeter[0][1]) < 0.01;
+        }
+        function isbottom(pt) {
+          return Math.abs(pt[1] - perimeter[2][1]) < 0.01;
+        }
+        function isleft(pt) {
+          return Math.abs(pt[0] - perimeter[0][0]) < 0.01;
+        }
+        function isright(pt) {
+          return Math.abs(pt[0] - perimeter[2][0]) < 0.01;
+        }
+        while (startsleft.length) {
+          addpath = Drawing.smoothopen(pi.edgepaths[i], pi.smoothing);
+          fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+          startsleft.splice(startsleft.indexOf(i), 1);
+          endpt = pi.edgepaths[i][pi.edgepaths[i].length - 1];
+          nexti = -1;
+          for (cnt = 0; cnt < 4; cnt++) {
+            if (!endpt) {
+              Lib.log("Missing end?", i, pi);
+              break;
             }
-            pt.value = pt.v;
-            pt.valueLabel = helpers.formatPieValue(pt.v, separators);
-            if (hoverinfo && hoverinfo.indexOf("value") !== -1) text.push(pt.valueLabel);
-            pt.percent = pt.v / cd0.vTotal;
-            pt.percentLabel = helpers.formatPiePercent(pt.percent, separators);
-            if (hoverinfo && hoverinfo.indexOf("percent") !== -1) text.push(pt.percentLabel);
-            var hoverLabel = trace2.hoverlabel;
-            var hoverFont = hoverLabel.font;
-            var bbox = [];
-            Fx.loneHover({
-              trace,
-              x0: hoverCenterX - rInscribed * cd0.r,
-              x1: hoverCenterX + rInscribed * cd0.r,
-              y: hoverCenterY,
-              _x0: isFunnelArea ? cx + pt.TL[0] : hoverCenterX - rInscribed * cd0.r,
-              _x1: isFunnelArea ? cx + pt.TR[0] : hoverCenterX + rInscribed * cd0.r,
-              _y0: isFunnelArea ? cy + pt.TL[1] : hoverCenterY - rInscribed * cd0.r,
-              _y1: isFunnelArea ? cy + pt.BL[1] : hoverCenterY + rInscribed * cd0.r,
-              text: text.join("<br>"),
-              name: trace2.hovertemplate || hoverinfo.indexOf("name") !== -1 ? trace2.name : void 0,
-              idealAlign: pt.pxmid[0] < 0 ? "left" : "right",
-              color: helpers.castOption(hoverLabel.bgcolor, pt.pts) || pt.color,
-              borderColor: helpers.castOption(hoverLabel.bordercolor, pt.pts),
-              fontFamily: helpers.castOption(hoverFont.family, pt.pts),
-              fontSize: helpers.castOption(hoverFont.size, pt.pts),
-              fontColor: helpers.castOption(hoverFont.color, pt.pts),
-              nameLength: helpers.castOption(hoverLabel.namelength, pt.pts),
-              textAlign: helpers.castOption(hoverLabel.align, pt.pts),
-              hovertemplate: helpers.castOption(trace2.hovertemplate, pt.pts),
-              hovertemplateLabels: pt,
-              eventData: [eventData(pt, trace2)]
-            }, {
-              container: fullLayout2._hoverlayer.node(),
-              outerContainer: fullLayout2._paper.node(),
-              gd,
-              inOut_bbox: bbox
-            });
-            pt.bbox = bbox[0];
-            trace._hasHoverLabel = true;
-          }
-          trace._hasHoverEvent = true;
-          gd.emit("plotly_hover", {
-            points: [eventData(pt, trace2)],
-            event: d3.event
-          });
-        });
-        sliceTop.on("mouseout", function(evt) {
-          var fullLayout2 = gd._fullLayout;
-          var trace2 = gd._fullData[trace.index];
-          var pt = d3.select(this).datum();
-          if (trace._hasHoverEvent) {
-            evt.originalEvent = d3.event;
-            gd.emit("plotly_unhover", {
-              points: [eventData(pt, trace2)],
-              event: d3.event
-            });
-            trace._hasHoverEvent = false;
-          }
-          if (trace._hasHoverLabel) {
-            Fx.loneUnhover(fullLayout2._hoverlayer.node());
-            trace._hasHoverLabel = false;
-          }
-        });
-        sliceTop.on("click", function(pt) {
-          var fullLayout2 = gd._fullLayout;
-          var trace2 = gd._fullData[trace.index];
-          if (gd._dragging || fullLayout2.hovermode === false) return;
-          gd._hoverdata = [eventData(pt, trace2)];
-          Fx.click(gd, d3.event);
-        });
-      }
-      function determineOutsideTextFont(trace, pt, layoutFont) {
-        var color2 = helpers.castOption(trace.outsidetextfont.color, pt.pts) || helpers.castOption(trace.textfont.color, pt.pts) || layoutFont.color;
-        var family = helpers.castOption(trace.outsidetextfont.family, pt.pts) || helpers.castOption(trace.textfont.family, pt.pts) || layoutFont.family;
-        var size = helpers.castOption(trace.outsidetextfont.size, pt.pts) || helpers.castOption(trace.textfont.size, pt.pts) || layoutFont.size;
-        var weight = helpers.castOption(trace.outsidetextfont.weight, pt.pts) || helpers.castOption(trace.textfont.weight, pt.pts) || layoutFont.weight;
-        var style = helpers.castOption(trace.outsidetextfont.style, pt.pts) || helpers.castOption(trace.textfont.style, pt.pts) || layoutFont.style;
-        var variant = helpers.castOption(trace.outsidetextfont.variant, pt.pts) || helpers.castOption(trace.textfont.variant, pt.pts) || layoutFont.variant;
-        var textcase = helpers.castOption(trace.outsidetextfont.textcase, pt.pts) || helpers.castOption(trace.textfont.textcase, pt.pts) || layoutFont.textcase;
-        var lineposition = helpers.castOption(trace.outsidetextfont.lineposition, pt.pts) || helpers.castOption(trace.textfont.lineposition, pt.pts) || layoutFont.lineposition;
-        var shadow = helpers.castOption(trace.outsidetextfont.shadow, pt.pts) || helpers.castOption(trace.textfont.shadow, pt.pts) || layoutFont.shadow;
-        return {
-          color: color2,
-          family,
-          size,
-          weight,
-          style,
-          variant,
-          textcase,
-          lineposition,
-          shadow
-        };
-      }
-      function determineInsideTextFont(trace, pt, layoutFont) {
-        var customColor = helpers.castOption(trace.insidetextfont.color, pt.pts);
-        if (!customColor && trace._input.textfont) {
-          customColor = helpers.castOption(trace._input.textfont.color, pt.pts);
-        }
-        var family = helpers.castOption(trace.insidetextfont.family, pt.pts) || helpers.castOption(trace.textfont.family, pt.pts) || layoutFont.family;
-        var size = helpers.castOption(trace.insidetextfont.size, pt.pts) || helpers.castOption(trace.textfont.size, pt.pts) || layoutFont.size;
-        var weight = helpers.castOption(trace.insidetextfont.weight, pt.pts) || helpers.castOption(trace.textfont.weight, pt.pts) || layoutFont.weight;
-        var style = helpers.castOption(trace.insidetextfont.style, pt.pts) || helpers.castOption(trace.textfont.style, pt.pts) || layoutFont.style;
-        var variant = helpers.castOption(trace.insidetextfont.variant, pt.pts) || helpers.castOption(trace.textfont.variant, pt.pts) || layoutFont.variant;
-        var textcase = helpers.castOption(trace.insidetextfont.textcase, pt.pts) || helpers.castOption(trace.textfont.textcase, pt.pts) || layoutFont.textcase;
-        var lineposition = helpers.castOption(trace.insidetextfont.lineposition, pt.pts) || helpers.castOption(trace.textfont.lineposition, pt.pts) || layoutFont.lineposition;
-        var shadow = helpers.castOption(trace.insidetextfont.shadow, pt.pts) || helpers.castOption(trace.textfont.shadow, pt.pts) || layoutFont.shadow;
-        return {
-          color: customColor || Color2.contrast(pt.color),
-          family,
-          size,
-          weight,
-          style,
-          variant,
-          textcase,
-          lineposition,
-          shadow
-        };
-      }
-      function prerenderTitles(cdModule, gd) {
-        var cd0, trace;
-        for (var i = 0; i < cdModule.length; i++) {
-          cd0 = cdModule[i][0];
-          trace = cd0.trace;
-          if (trace.title.text) {
-            var txt = trace.title.text;
-            if (trace._meta) {
-              txt = Lib.templateString(txt, trace._meta);
-            }
-            var dummyTitle = Drawing.tester.append("text").attr("data-notex", 1).text(txt).call(Drawing.font, trace.title.font).call(svgTextUtils.convertToTspans, gd);
-            var bBox = Drawing.bBox(dummyTitle.node(), true);
-            cd0.titleBox = {
-              width: bBox.width,
-              height: bBox.height
-            };
-            dummyTitle.remove();
-          }
-        }
-      }
-      function transformInsideText(textBB, pt, cd0) {
-        var r = cd0.r || pt.rpx1;
-        var rInscribed = pt.rInscribed;
-        var isEmpty = pt.startangle === pt.stopangle;
-        if (isEmpty) {
-          return {
-            rCenter: 1 - rInscribed,
-            scale: 0,
-            rotate: 0,
-            textPosAngle: 0
-          };
-        }
-        var ring = pt.ring;
-        var isCircle = ring === 1 && Math.abs(pt.startangle - pt.stopangle) === Math.PI * 2;
-        var halfAngle = pt.halfangle;
-        var midAngle = pt.midangle;
-        var orientation = cd0.trace.insidetextorientation;
-        var isHorizontal = orientation === "horizontal";
-        var isTangential = orientation === "tangential";
-        var isRadial = orientation === "radial";
-        var isAuto = orientation === "auto";
-        var allTransforms = [];
-        var newT;
-        if (!isAuto) {
-          var considerCrossing = function(angle, key) {
-            if (isCrossing(pt, angle)) {
-              var dStart = Math.abs(angle - pt.startangle);
-              var dStop = Math.abs(angle - pt.stopangle);
-              var closestEdge = dStart < dStop ? dStart : dStop;
-              if (key === "tan") {
-                newT = calcTanTransform(textBB, r, ring, closestEdge, 0);
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+            else if (isleft(endpt)) newendpt = perimeter[0];
+            else if (isbottom(endpt)) newendpt = perimeter[3];
+            else if (isright(endpt)) newendpt = perimeter[2];
+            for (possiblei = 0; possiblei < pi.edgepaths.length; possiblei++) {
+              var ptNew = pi.edgepaths[possiblei][0];
+              if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
+                if (Math.abs(endpt[0] - ptNew[0]) < 0.01 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
+                if (Math.abs(endpt[1] - ptNew[1]) < 0.01 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
               } else {
-                newT = calcRadTransform(textBB, r, ring, closestEdge, Math.PI / 2);
+                Lib.log(
+                  "endpt to newendpt is not vert. or horz.",
+                  endpt,
+                  newendpt,
+                  ptNew
+                );
               }
-              newT.textPosAngle = angle;
-              allTransforms.push(newT);
             }
-          };
-          var i;
-          if (isHorizontal || isTangential) {
-            for (i = 4; i >= -4; i -= 2) considerCrossing(Math.PI * i, "tan");
-            for (i = 4; i >= -4; i -= 2) considerCrossing(Math.PI * (i + 1), "tan");
+            endpt = newendpt;
+            if (nexti >= 0) break;
+            fullpath += "L" + newendpt;
           }
-          if (isHorizontal || isRadial) {
-            for (i = 4; i >= -4; i -= 2) considerCrossing(Math.PI * (i + 1.5), "rad");
-            for (i = 4; i >= -4; i -= 2) considerCrossing(Math.PI * (i + 0.5), "rad");
-          }
-        }
-        if (isCircle || isAuto || isHorizontal) {
-          var textDiameter = Math.sqrt(textBB.width * textBB.width + textBB.height * textBB.height);
-          newT = {
-            scale: rInscribed * r * 2 / textDiameter,
-            // and the center position and rotation in this case
-            rCenter: 1 - rInscribed,
-            rotate: 0
-          };
-          newT.textPosAngle = (pt.startangle + pt.stopangle) / 2;
-          if (newT.scale >= 1) return newT;
-          allTransforms.push(newT);
-        }
-        if (isAuto || isRadial) {
-          newT = calcRadTransform(textBB, r, ring, halfAngle, midAngle);
-          newT.textPosAngle = (pt.startangle + pt.stopangle) / 2;
-          allTransforms.push(newT);
-        }
-        if (isAuto || isTangential) {
-          newT = calcTanTransform(textBB, r, ring, halfAngle, midAngle);
-          newT.textPosAngle = (pt.startangle + pt.stopangle) / 2;
-          allTransforms.push(newT);
-        }
-        var id = 0;
-        var maxScale = 0;
-        for (var k = 0; k < allTransforms.length; k++) {
-          var s = allTransforms[k].scale;
-          if (maxScale < s) {
-            maxScale = s;
-            id = k;
-          }
-          if (!isAuto && maxScale >= 1) {
+          if (nexti === pi.edgepaths.length) {
+            Lib.log("unclosed perimeter path");
             break;
           }
-        }
-        return allTransforms[id];
-      }
-      function isCrossing(pt, angle) {
-        var start = pt.startangle;
-        var stop = pt.stopangle;
-        return start > angle && angle > stop || start < angle && angle < stop;
-      }
-      function calcRadTransform(textBB, r, ring, halfAngle, midAngle) {
-        r = Math.max(0, r - 2 * TEXTPAD);
-        var a = textBB.width / textBB.height;
-        var s = calcMaxHalfSize(a, halfAngle, r, ring);
-        return {
-          scale: s * 2 / textBB.height,
-          rCenter: calcRCenter(a, s / r),
-          rotate: calcRotate(midAngle)
-        };
-      }
-      function calcTanTransform(textBB, r, ring, halfAngle, midAngle) {
-        r = Math.max(0, r - 2 * TEXTPAD);
-        var a = textBB.height / textBB.width;
-        var s = calcMaxHalfSize(a, halfAngle, r, ring);
-        return {
-          scale: s * 2 / textBB.width,
-          rCenter: calcRCenter(a, s / r),
-          rotate: calcRotate(midAngle + Math.PI / 2)
-        };
-      }
-      function calcRCenter(a, b) {
-        return Math.cos(b) - a * b;
-      }
-      function calcRotate(t) {
-        return (180 / Math.PI * t + 720) % 180 - 90;
-      }
-      function calcMaxHalfSize(a, halfAngle, r, ring) {
-        var q = a + 1 / (2 * Math.tan(halfAngle));
-        return r * Math.min(
-          1 / (Math.sqrt(q * q + 0.5) + q),
-          ring / (Math.sqrt(a * a + ring / 2) + a)
-        );
-      }
-      function getInscribedRadiusFraction(pt, cd0) {
-        if (pt.v === cd0.vTotal && !cd0.trace.hole) return 1;
-        return Math.min(1 / (1 + 1 / Math.sin(pt.halfangle)), pt.ring / 2);
-      }
-      function transformOutsideText(textBB, pt) {
-        var x = pt.pxmid[0];
-        var y = pt.pxmid[1];
-        var dx = textBB.width / 2;
-        var dy = textBB.height / 2;
-        if (x < 0) dx *= -1;
-        if (y < 0) dy *= -1;
-        return {
-          scale: 1,
-          rCenter: 1,
-          rotate: 0,
-          x: dx + Math.abs(dy) * (dx > 0 ? 1 : -1) / 2,
-          y: dy / (1 + x * x / (y * y)),
-          outside: true
-        };
-      }
-      function positionTitleInside(cd0) {
-        var textDiameter = Math.sqrt(cd0.titleBox.width * cd0.titleBox.width + cd0.titleBox.height * cd0.titleBox.height);
-        return {
-          x: cd0.cx,
-          y: cd0.cy,
-          scale: cd0.trace.hole * cd0.r * 2 / textDiameter,
-          tx: 0,
-          ty: -cd0.titleBox.height / 2 + cd0.trace.title.font.size
-        };
-      }
-      function positionTitleOutside(cd0, plotSize) {
-        var scaleX = 1;
-        var scaleY = 1;
-        var maxPull;
-        var trace = cd0.trace;
-        var topMiddle = {
-          x: cd0.cx,
-          y: cd0.cy
-        };
-        var translate = {
-          tx: 0,
-          ty: 0
-        };
-        translate.ty += trace.title.font.size;
-        maxPull = getMaxPull(trace);
-        if (trace.title.position.indexOf("top") !== -1) {
-          topMiddle.y -= (1 + maxPull) * cd0.r;
-          translate.ty -= cd0.titleBox.height;
-        } else if (trace.title.position.indexOf("bottom") !== -1) {
-          topMiddle.y += (1 + maxPull) * cd0.r;
-        }
-        var rx = applyAspectRatio(cd0.r, cd0.trace.aspectratio);
-        var maxWidth = plotSize.w * (trace.domain.x[1] - trace.domain.x[0]) / 2;
-        if (trace.title.position.indexOf("left") !== -1) {
-          maxWidth = maxWidth + rx;
-          topMiddle.x -= (1 + maxPull) * rx;
-          translate.tx += cd0.titleBox.width / 2;
-        } else if (trace.title.position.indexOf("center") !== -1) {
-          maxWidth *= 2;
-        } else if (trace.title.position.indexOf("right") !== -1) {
-          maxWidth = maxWidth + rx;
-          topMiddle.x += (1 + maxPull) * rx;
-          translate.tx -= cd0.titleBox.width / 2;
-        }
-        scaleX = maxWidth / cd0.titleBox.width;
-        scaleY = getTitleSpace(cd0, plotSize) / cd0.titleBox.height;
-        return {
-          x: topMiddle.x,
-          y: topMiddle.y,
-          scale: Math.min(scaleX, scaleY),
-          tx: translate.tx,
-          ty: translate.ty
-        };
-      }
-      function applyAspectRatio(x, aspectratio) {
-        return x / (aspectratio === void 0 ? 1 : aspectratio);
-      }
-      function getTitleSpace(cd0, plotSize) {
-        var trace = cd0.trace;
-        var pieBoxHeight = plotSize.h * (trace.domain.y[1] - trace.domain.y[0]);
-        return Math.min(cd0.titleBox.height, pieBoxHeight / 2);
-      }
-      function getMaxPull(trace) {
-        var maxPull = trace.pull;
-        if (!maxPull) return 0;
-        var j;
-        if (Lib.isArrayOrTypedArray(maxPull)) {
-          maxPull = 0;
-          for (j = 0; j < trace.pull.length; j++) {
-            if (trace.pull[j] > maxPull) maxPull = trace.pull[j];
+          i = nexti;
+          newloop = startsleft.indexOf(i) === -1;
+          if (newloop) {
+            i = startsleft[0];
+            fullpath += "Z";
           }
         }
-        return maxPull;
+        for (i = 0; i < pi.paths.length; i++) {
+          fullpath += Drawing.smoothclosed(pi.paths[i], pi.smoothing);
+        }
+        return fullpath;
       }
-      function scootLabels(quadrants, trace) {
-        var xHalf, yHalf, equatorFirst, farthestX, farthestY, xDiffSign, yDiffSign, thisQuad, oppositeQuad, wholeSide, i, thisQuadOutside, firstOppositeOutsidePt;
-        function topFirst(a, b) {
-          return a.pxmid[1] - b.pxmid[1];
-        }
-        function bottomFirst(a, b) {
-          return b.pxmid[1] - a.pxmid[1];
-        }
-        function scootOneLabel(thisPt, prevPt2) {
-          if (!prevPt2) prevPt2 = {};
-          var prevOuterY = prevPt2.labelExtraY + (yHalf ? prevPt2.yLabelMax : prevPt2.yLabelMin);
-          var thisInnerY = yHalf ? thisPt.yLabelMin : thisPt.yLabelMax;
-          var thisOuterY = yHalf ? thisPt.yLabelMax : thisPt.yLabelMin;
-          var thisSliceOuterY = thisPt.cyFinal + farthestY(thisPt.px0[1], thisPt.px1[1]);
-          var newExtraY = prevOuterY - thisInnerY;
-          var xBuffer, i2, otherPt, otherOuterY, otherOuterX, newExtraX;
-          if (newExtraY * yDiffSign > 0) thisPt.labelExtraY = newExtraY;
-          if (!Lib.isArrayOrTypedArray(trace.pull)) return;
-          for (i2 = 0; i2 < wholeSide.length; i2++) {
-            otherPt = wholeSide[i2];
-            if (otherPt === thisPt || (helpers.castOption(trace.pull, thisPt.pts) || 0) >= (helpers.castOption(trace.pull, otherPt.pts) || 0)) {
-              continue;
-            }
-            if ((thisPt.pxmid[1] - otherPt.pxmid[1]) * yDiffSign > 0) {
-              otherOuterY = otherPt.cyFinal + farthestY(otherPt.px0[1], otherPt.px1[1]);
-              newExtraY = otherOuterY - thisInnerY - thisPt.labelExtraY;
-              if (newExtraY * yDiffSign > 0) thisPt.labelExtraY += newExtraY;
-            } else if ((thisOuterY + thisPt.labelExtraY - thisSliceOuterY) * yDiffSign > 0) {
-              xBuffer = 3 * xDiffSign * Math.abs(i2 - wholeSide.indexOf(thisPt));
-              otherOuterX = otherPt.cxFinal + farthestX(otherPt.px0[0], otherPt.px1[0]);
-              newExtraX = otherOuterX + xBuffer - (thisPt.cxFinal + thisPt.pxmid[0]) - thisPt.labelExtraX;
-              if (newExtraX * xDiffSign > 0) thisPt.labelExtraX += newExtraX;
-            }
+      function makeLinesAndLabels(plotgroup, pathinfo, gd, cd0, contours) {
+        var isStatic = gd._context.staticPlot;
+        var lineContainer = Lib.ensureSingle(plotgroup, "g", "contourlines");
+        var showLines = contours.showlines !== false;
+        var showLabels = contours.showlabels;
+        var clipLinesForLabels = showLines && showLabels;
+        var linegroup = exports.createLines(lineContainer, showLines || showLabels, pathinfo, isStatic);
+        var lineClip = exports.createLineClip(lineContainer, clipLinesForLabels, gd, cd0.trace.uid);
+        var labelGroup = plotgroup.selectAll("g.contourlabels").data(showLabels ? [0] : []);
+        labelGroup.exit().remove();
+        labelGroup.enter().append("g").classed("contourlabels", true);
+        if (showLabels) {
+          var labelClipPathData = [];
+          var labelData = [];
+          Lib.clearLocationCache();
+          var contourFormat = exports.labelFormatter(gd, cd0);
+          var dummyText = Drawing.tester.append("text").attr("data-notex", 1).call(Drawing.font, contours.labelfont);
+          var xa = pathinfo[0].xaxis;
+          var ya = pathinfo[0].yaxis;
+          var xLen = xa._length;
+          var yLen = ya._length;
+          var xRng = xa.range;
+          var yRng = ya.range;
+          var xMin = Lib.aggNums(Math.min, null, cd0.x);
+          var xMax = Lib.aggNums(Math.max, null, cd0.x);
+          var yMin = Lib.aggNums(Math.min, null, cd0.y);
+          var yMax = Lib.aggNums(Math.max, null, cd0.y);
+          var x0 = Math.max(xa.c2p(xMin, true), 0);
+          var x1 = Math.min(xa.c2p(xMax, true), xLen);
+          var y0 = Math.max(ya.c2p(yMax, true), 0);
+          var y1 = Math.min(ya.c2p(yMin, true), yLen);
+          var bounds = {};
+          if (xRng[0] < xRng[1]) {
+            bounds.left = x0;
+            bounds.right = x1;
+          } else {
+            bounds.left = x1;
+            bounds.right = x0;
           }
-        }
-        for (yHalf = 0; yHalf < 2; yHalf++) {
-          equatorFirst = yHalf ? topFirst : bottomFirst;
-          farthestY = yHalf ? Math.max : Math.min;
-          yDiffSign = yHalf ? 1 : -1;
-          for (xHalf = 0; xHalf < 2; xHalf++) {
-            farthestX = xHalf ? Math.max : Math.min;
-            xDiffSign = xHalf ? 1 : -1;
-            thisQuad = quadrants[yHalf][xHalf];
-            thisQuad.sort(equatorFirst);
-            oppositeQuad = quadrants[1 - yHalf][xHalf];
-            wholeSide = oppositeQuad.concat(thisQuad);
-            thisQuadOutside = [];
-            for (i = 0; i < thisQuad.length; i++) {
-              if (thisQuad[i].yLabelMid !== void 0) thisQuadOutside.push(thisQuad[i]);
-            }
-            firstOppositeOutsidePt = false;
-            for (i = 0; yHalf && i < oppositeQuad.length; i++) {
-              if (oppositeQuad[i].yLabelMid !== void 0) {
-                firstOppositeOutsidePt = oppositeQuad[i];
-                break;
+          if (yRng[0] < yRng[1]) {
+            bounds.top = y0;
+            bounds.bottom = y1;
+          } else {
+            bounds.top = y1;
+            bounds.bottom = y0;
+          }
+          bounds.middle = (bounds.top + bounds.bottom) / 2;
+          bounds.center = (bounds.left + bounds.right) / 2;
+          labelClipPathData.push([
+            [bounds.left, bounds.top],
+            [bounds.right, bounds.top],
+            [bounds.right, bounds.bottom],
+            [bounds.left, bounds.bottom]
+          ]);
+          var plotDiagonal = Math.sqrt(xLen * xLen + yLen * yLen);
+          var normLength = constants.LABELDISTANCE * plotDiagonal / Math.max(1, pathinfo.length / constants.LABELINCREASE);
+          linegroup.each(function(d) {
+            var textOpts = exports.calcTextOpts(d.level, contourFormat, dummyText, gd);
+            d3.select(this).selectAll("path").each(function() {
+              var path = this;
+              var pathBounds = Lib.getVisibleSegment(path, bounds, textOpts.height / 2);
+              if (!pathBounds) return;
+              if (pathBounds.len < (textOpts.width + textOpts.height) * constants.LABELMIN) return;
+              var maxLabels = Math.min(
+                Math.ceil(pathBounds.len / normLength),
+                constants.LABELMAX
+              );
+              for (var i = 0; i < maxLabels; i++) {
+                var loc = exports.findBestTextLocation(
+                  path,
+                  pathBounds,
+                  textOpts,
+                  labelData,
+                  bounds
+                );
+                if (!loc) break;
+                exports.addLabelData(loc, textOpts, labelData, labelClipPathData);
               }
-            }
-            for (i = 0; i < thisQuadOutside.length; i++) {
-              var prevPt = i && thisQuadOutside[i - 1];
-              if (firstOppositeOutsidePt && !i) prevPt = firstOppositeOutsidePt;
-              scootOneLabel(thisQuadOutside[i], prevPt);
-            }
-          }
+            });
+          });
+          dummyText.remove();
+          exports.drawLabels(
+            labelGroup,
+            labelData,
+            gd,
+            lineClip,
+            clipLinesForLabels ? labelClipPathData : null
+          );
         }
+        if (showLabels && !showLines) linegroup.remove();
       }
-      function layoutAreas(cdModule, plotSize) {
-        var scaleGroups = [];
-        for (var i = 0; i < cdModule.length; i++) {
-          var cd0 = cdModule[i][0];
-          var trace = cd0.trace;
-          var domain = trace.domain;
-          var width = plotSize.w * (domain.x[1] - domain.x[0]);
-          var height = plotSize.h * (domain.y[1] - domain.y[0]);
-          if (trace.title.text && trace.title.position !== "middle center") {
-            height -= getTitleSpace(cd0, plotSize);
-          }
-          var rx = width / 2;
-          var ry = height / 2;
-          if (trace.type === "funnelarea" && !trace.scalegroup) {
-            ry /= trace.aspectratio;
-          }
-          cd0.r = Math.min(rx, ry) / (1 + getMaxPull(trace));
-          cd0.cx = plotSize.l + plotSize.w * (trace.domain.x[1] + trace.domain.x[0]) / 2;
-          cd0.cy = plotSize.t + plotSize.h * (1 - trace.domain.y[0]) - height / 2;
-          if (trace.title.text && trace.title.position.indexOf("bottom") !== -1) {
-            cd0.cy -= getTitleSpace(cd0, plotSize);
-          }
-          if (trace.scalegroup && scaleGroups.indexOf(trace.scalegroup) === -1) {
-            scaleGroups.push(trace.scalegroup);
-          }
+      exports.createLines = function(lineContainer, makeLines, pathinfo, isStatic) {
+        var smoothing = pathinfo[0].smoothing;
+        var linegroup = lineContainer.selectAll("g.contourlevel").data(makeLines ? pathinfo : []);
+        linegroup.exit().remove();
+        linegroup.enter().append("g").classed("contourlevel", true);
+        if (makeLines) {
+          var opencontourlines = linegroup.selectAll("path.openline").data(function(d) {
+            return d.pedgepaths || d.edgepaths;
+          });
+          opencontourlines.exit().remove();
+          opencontourlines.enter().append("path").classed("openline", true);
+          opencontourlines.attr("d", function(d) {
+            return Drawing.smoothopen(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
+          var closedcontourlines = linegroup.selectAll("path.closedline").data(function(d) {
+            return d.ppaths || d.paths;
+          });
+          closedcontourlines.exit().remove();
+          closedcontourlines.enter().append("path").classed("closedline", true);
+          closedcontourlines.attr("d", function(d) {
+            return Drawing.smoothclosed(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
         }
-        groupScale(cdModule, scaleGroups);
-      }
-      function groupScale(cdModule, scaleGroups) {
-        var cd0, i, trace;
-        for (var k = 0; k < scaleGroups.length; k++) {
-          var min = Infinity;
-          var g = scaleGroups[k];
-          for (i = 0; i < cdModule.length; i++) {
-            cd0 = cdModule[i][0];
-            trace = cd0.trace;
-            if (trace.scalegroup === g) {
-              var area;
-              if (trace.type === "pie") {
-                area = cd0.r * cd0.r;
-              } else if (trace.type === "funnelarea") {
-                var rx, ry;
-                if (trace.aspectratio > 1) {
-                  rx = cd0.r;
-                  ry = rx / trace.aspectratio;
-                } else {
-                  ry = cd0.r;
-                  rx = ry * trace.aspectratio;
-                }
-                rx *= (1 + trace.baseratio) / 2;
-                area = rx * ry;
-              }
-              min = Math.min(min, area / cd0.vTotal);
-            }
-          }
-          for (i = 0; i < cdModule.length; i++) {
-            cd0 = cdModule[i][0];
-            trace = cd0.trace;
-            if (trace.scalegroup === g) {
-              var v = min * cd0.vTotal;
-              if (trace.type === "funnelarea") {
-                v /= (1 + trace.baseratio) / 2;
-                v /= trace.aspectratio;
-              }
-              cd0.r = Math.sqrt(v);
-            }
-          }
-        }
-      }
-      function setCoords(cd) {
-        var cd0 = cd[0];
-        var r = cd0.r;
-        var trace = cd0.trace;
-        var currentAngle = helpers.getRotationAngle(trace.rotation);
-        var angleFactor = 2 * Math.PI / cd0.vTotal;
-        var firstPt = "px0";
-        var lastPt = "px1";
-        var i, cdi, currentCoords;
-        if (trace.direction === "counterclockwise") {
-          for (i = 0; i < cd.length; i++) {
-            if (!cd[i].hidden) break;
-          }
-          if (i === cd.length) return;
-          currentAngle += angleFactor * cd[i].v;
-          angleFactor *= -1;
-          firstPt = "px1";
-          lastPt = "px0";
-        }
-        currentCoords = getCoords(r, currentAngle);
-        for (i = 0; i < cd.length; i++) {
-          cdi = cd[i];
-          if (cdi.hidden) continue;
-          cdi[firstPt] = currentCoords;
-          cdi.startangle = currentAngle;
-          currentAngle += angleFactor * cdi.v / 2;
-          cdi.pxmid = getCoords(r, currentAngle);
-          cdi.midangle = currentAngle;
-          currentAngle += angleFactor * cdi.v / 2;
-          currentCoords = getCoords(r, currentAngle);
-          cdi.stopangle = currentAngle;
-          cdi[lastPt] = currentCoords;
-          cdi.largeArc = cdi.v > cd0.vTotal / 2 ? 1 : 0;
-          cdi.halfangle = Math.PI * Math.min(cdi.v / cd0.vTotal, 0.5);
-          cdi.ring = 1 - trace.hole;
-          cdi.rInscribed = getInscribedRadiusFraction(cdi, cd0);
-        }
-      }
-      function getCoords(r, angle) {
-        return [r * Math.sin(angle), -r * Math.cos(angle)];
-      }
-      function formatSliceLabel(gd, pt, cd0) {
+        return linegroup;
+      };
+      exports.createLineClip = function(lineContainer, clipLinesForLabels, gd, uid) {
+        var clips = gd._fullLayout._clips;
+        var clipId = clipLinesForLabels ? "clipline" + uid : null;
+        var lineClip = clips.selectAll("#" + clipId).data(clipLinesForLabels ? [0] : []);
+        lineClip.exit().remove();
+        lineClip.enter().append("clipPath").classed("contourlineclip", true).attr("id", clipId);
+        Drawing.setClipUrl(lineContainer, clipId, gd);
+        return lineClip;
+      };
+      exports.labelFormatter = function(gd, cd0) {
         var fullLayout = gd._fullLayout;
         var trace = cd0.trace;
-        var texttemplate = trace.texttemplate;
-        var textinfo = trace.textinfo;
-        if (!texttemplate && textinfo && textinfo !== "none") {
-          var parts = textinfo.split("+");
-          var hasFlag = function(flag) {
-            return parts.indexOf(flag) !== -1;
-          };
-          var hasLabel = hasFlag("label");
-          var hasText = hasFlag("text");
-          var hasValue = hasFlag("value");
-          var hasPercent = hasFlag("percent");
-          var separators = fullLayout.separators;
-          var text;
-          text = hasLabel ? [pt.label] : [];
-          if (hasText) {
-            var tx = helpers.getFirstFilled(trace.text, pt.pts);
-            if (isValidTextValue(tx)) text.push(tx);
-          }
-          if (hasValue) text.push(helpers.formatPieValue(pt.v, separators));
-          if (hasPercent) text.push(helpers.formatPiePercent(pt.v / cd0.vTotal, separators));
-          pt.text = text.join("<br>");
-        }
-        function makeTemplateVariables(pt2) {
-          return {
-            label: pt2.label,
-            value: pt2.v,
-            valueLabel: helpers.formatPieValue(pt2.v, fullLayout.separators),
-            percent: pt2.v / cd0.vTotal,
-            percentLabel: helpers.formatPiePercent(pt2.v / cd0.vTotal, fullLayout.separators),
-            color: pt2.color,
-            text: pt2.text,
-            customdata: Lib.castOption(trace, pt2.i, "customdata")
-          };
-        }
-        if (texttemplate) {
-          var txt = Lib.castOption(trace, pt.i, "texttemplate");
-          if (!txt) {
-            pt.text = "";
+        var contours = trace.contours;
+        var formatAxis = {
+          type: "linear",
+          _id: "ycontour",
+          showexponent: "all",
+          exponentformat: "B"
+        };
+        if (contours.labelformat) {
+          formatAxis.tickformat = contours.labelformat;
+          setConvert(formatAxis, fullLayout);
+        } else {
+          var cOpts = Colorscale.extractOpts(trace);
+          if (cOpts && cOpts.colorbar && cOpts.colorbar._axis) {
+            formatAxis = cOpts.colorbar._axis;
           } else {
-            var obj = makeTemplateVariables(pt);
-            var ptTx = helpers.getFirstFilled(trace.text, pt.pts);
-            if (isValidTextValue(ptTx) || ptTx === "") obj.text = ptTx;
-            pt.text = Lib.texttemplateString(txt, obj, gd._fullLayout._d3locale, obj, trace._meta || {});
+            if (contours.type === "constraint") {
+              var value = contours.value;
+              if (Lib.isArrayOrTypedArray(value)) {
+                formatAxis.range = [value[0], value[value.length - 1]];
+              } else formatAxis.range = [value, value];
+            } else {
+              formatAxis.range = [contours.start, contours.end];
+              formatAxis.nticks = (contours.end - contours.start) / contours.size;
+            }
+            if (formatAxis.range[0] === formatAxis.range[1]) {
+              formatAxis.range[1] += formatAxis.range[0] || 1;
+            }
+            if (!formatAxis.nticks) formatAxis.nticks = 1e3;
+            setConvert(formatAxis, fullLayout);
+            Axes.prepTicks(formatAxis);
+            formatAxis._tmin = null;
+            formatAxis._tmax = null;
           }
         }
-      }
-      function computeTransform(transform, textBB) {
-        var a = transform.rotate * Math.PI / 180;
-        var cosA = Math.cos(a);
-        var sinA = Math.sin(a);
-        var midX = (textBB.left + textBB.right) / 2;
-        var midY = (textBB.top + textBB.bottom) / 2;
-        transform.textX = midX * cosA - midY * sinA;
-        transform.textY = midX * sinA + midY * cosA;
-        transform.noCenter = true;
-      }
-      module.exports = {
-        plot,
-        formatSliceLabel,
-        transformInsideText,
-        determineInsideTextFont,
-        positionTitleOutside,
-        prerenderTitles,
-        layoutAreas,
-        attachFxHandlers,
-        computeTransform
+        return function(v) {
+          return Axes.tickText(formatAxis, v).text;
+        };
       };
+      exports.calcTextOpts = function(level, contourFormat, dummyText, gd) {
+        var text = contourFormat(level);
+        dummyText.text(text).call(svgTextUtils.convertToTspans, gd);
+        var el = dummyText.node();
+        var bBox = Drawing.bBox(el, true);
+        return {
+          text,
+          width: bBox.width,
+          height: bBox.height,
+          fontSize: +el.style["font-size"].replace("px", ""),
+          level,
+          dy: (bBox.top + bBox.bottom) / 2
+        };
+      };
+      exports.findBestTextLocation = function(path, pathBounds, textOpts, labelData, plotBounds) {
+        var textWidth = textOpts.width;
+        var p0, dp, pMax, pMin, loc;
+        if (pathBounds.isClosed) {
+          dp = pathBounds.len / costConstants.INITIALSEARCHPOINTS;
+          p0 = pathBounds.min + dp / 2;
+          pMax = pathBounds.max;
+        } else {
+          dp = (pathBounds.len - textWidth) / (costConstants.INITIALSEARCHPOINTS + 1);
+          p0 = pathBounds.min + dp + textWidth / 2;
+          pMax = pathBounds.max - (dp + textWidth) / 2;
+        }
+        var cost = Infinity;
+        for (var j = 0; j < costConstants.ITERATIONS; j++) {
+          for (var p = p0; p < pMax; p += dp) {
+            var newLocation = Lib.getTextLocation(path, pathBounds.total, p, textWidth);
+            var newCost = locationCost(newLocation, textOpts, labelData, plotBounds);
+            if (newCost < cost) {
+              cost = newCost;
+              loc = newLocation;
+              pMin = p;
+            }
+          }
+          if (cost > costConstants.MAXCOST * 2) break;
+          if (j) dp /= 2;
+          p0 = pMin - dp / 2;
+          pMax = p0 + dp * 1.5;
+        }
+        if (cost <= costConstants.MAXCOST) return loc;
+      };
+      function locationCost(loc, textOpts, labelData, bounds) {
+        var halfWidth = textOpts.width / 2;
+        var halfHeight = textOpts.height / 2;
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var dx = Math.cos(theta) * halfWidth;
+        var dy = Math.sin(theta) * halfWidth;
+        var normX = (x > bounds.center ? bounds.right - x : x - bounds.left) / (dx + Math.abs(Math.sin(theta) * halfHeight));
+        var normY = (y > bounds.middle ? bounds.bottom - y : y - bounds.top) / (Math.abs(dy) + Math.cos(theta) * halfHeight);
+        if (normX < 1 || normY < 1) return Infinity;
+        var cost = costConstants.EDGECOST * (1 / (normX - 1) + 1 / (normY - 1));
+        cost += costConstants.ANGLECOST * theta * theta;
+        var x1 = x - dx;
+        var y1 = y - dy;
+        var x2 = x + dx;
+        var y2 = y + dy;
+        for (var i = 0; i < labelData.length; i++) {
+          var labeli = labelData[i];
+          var dxd = Math.cos(labeli.theta) * labeli.width / 2;
+          var dyd = Math.sin(labeli.theta) * labeli.width / 2;
+          var dist = Lib.segmentDistance(
+            x1,
+            y1,
+            x2,
+            y2,
+            labeli.x - dxd,
+            labeli.y - dyd,
+            labeli.x + dxd,
+            labeli.y + dyd
+          ) * 2 / (textOpts.height + labeli.height);
+          var sameLevel = labeli.level === textOpts.level;
+          var distOffset = sameLevel ? costConstants.SAMELEVELDISTANCE : 1;
+          if (dist <= distOffset) return Infinity;
+          var distFactor = costConstants.NEIGHBORCOST * (sameLevel ? costConstants.SAMELEVELFACTOR : 1);
+          cost += distFactor / (dist - distOffset);
+        }
+        return cost;
+      }
+      exports.addLabelData = function(loc, textOpts, labelData, labelClipPathData) {
+        var fontSize = textOpts.fontSize;
+        var w = textOpts.width + fontSize / 3;
+        var h = Math.max(0, textOpts.height - fontSize / 3);
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var sin = Math.sin(theta);
+        var cos = Math.cos(theta);
+        var rotateXY = function(dx, dy) {
+          return [
+            x + dx * cos - dy * sin,
+            y + dx * sin + dy * cos
+          ];
+        };
+        var bBoxPts = [
+          rotateXY(-w / 2, -h / 2),
+          rotateXY(-w / 2, h / 2),
+          rotateXY(w / 2, h / 2),
+          rotateXY(w / 2, -h / 2)
+        ];
+        labelData.push({
+          text: textOpts.text,
+          x,
+          y,
+          dy: textOpts.dy,
+          theta,
+          level: textOpts.level,
+          width: w,
+          height: h
+        });
+        labelClipPathData.push(bBoxPts);
+      };
+      exports.drawLabels = function(labelGroup, labelData, gd, lineClip, labelClipPathData) {
+        var labels = labelGroup.selectAll("text").data(labelData, function(d) {
+          return d.text + "," + d.x + "," + d.y + "," + d.theta;
+        });
+        labels.exit().remove();
+        labels.enter().append("text").attr({
+          "data-notex": 1,
+          "text-anchor": "middle"
+        }).each(function(d) {
+          var x = d.x + Math.sin(d.theta) * d.dy;
+          var y = d.y - Math.cos(d.theta) * d.dy;
+          d3.select(this).text(d.text).attr({
+            x,
+            y,
+            transform: "rotate(" + 180 * d.theta / Math.PI + " " + x + " " + y + ")"
+          }).call(svgTextUtils.convertToTspans, gd);
+        });
+        if (labelClipPathData) {
+          var clipPath = "";
+          for (var i = 0; i < labelClipPathData.length; i++) {
+            clipPath += "M" + labelClipPathData[i].join("L") + "Z";
+          }
+          var lineClipPath = Lib.ensureSingle(lineClip, "path", "");
+          lineClipPath.attr("d", clipPath);
+        }
+      };
+      function clipGaps(plotGroup, plotinfo, gd, cd0, perimeter) {
+        var trace = cd0.trace;
+        var clips = gd._fullLayout._clips;
+        var clipId = "clip" + trace.uid;
+        var clipPath = clips.selectAll("#" + clipId).data(trace.connectgaps ? [] : [0]);
+        clipPath.enter().append("clipPath").classed("contourclip", true).attr("id", clipId);
+        clipPath.exit().remove();
+        if (trace.connectgaps === false) {
+          var clipPathInfo = {
+            // fraction of the way from missing to present point
+            // to draw the boundary.
+            // if you make this 1 (or 1-epsilon) then a point in
+            // a sea of missing data will disappear entirely.
+            level: 0.9,
+            crossings: {},
+            starts: [],
+            edgepaths: [],
+            paths: [],
+            xaxis: plotinfo.xaxis,
+            yaxis: plotinfo.yaxis,
+            x: cd0.x,
+            y: cd0.y,
+            // 0 = no data, 1 = data
+            z: makeClipMask(cd0),
+            smoothing: 0
+          };
+          makeCrossings([clipPathInfo]);
+          findAllPaths([clipPathInfo]);
+          closeBoundaries([clipPathInfo], { type: "levels" });
+          var path = Lib.ensureSingle(clipPath, "path", "");
+          path.attr(
+            "d",
+            (clipPathInfo.prefixBoundary ? "M" + perimeter.join("L") + "Z" : "") + joinAllPaths(clipPathInfo, perimeter)
+          );
+        } else clipId = null;
+        Drawing.setClipUrl(plotGroup, clipId, gd);
+      }
+      function makeClipMask(cd0) {
+        var empties = cd0.trace._emptypoints;
+        var z = [];
+        var m = cd0.z.length;
+        var n = cd0.z[0].length;
+        var i;
+        var row = [];
+        var emptyPoint;
+        for (i = 0; i < n; i++) row.push(1);
+        for (i = 0; i < m; i++) z.push(row.slice());
+        for (i = 0; i < empties.length; i++) {
+          emptyPoint = empties[i];
+          z[emptyPoint[0]][emptyPoint[1]] = 0;
+        }
+        cd0.zmask = z;
+        return z;
+      }
     }
   });
 
-  // src/traces/pie/style.js
-  var require_style7 = __commonJS({
-    "src/traces/pie/style.js"(exports, module) {
+  // src/traces/heatmap/style.js
+  var require_style4 = __commonJS({
+    "src/traces/heatmap/style.js"(exports, module) {
       "use strict";
       var d3 = require_d3();
-      var styleOne = require_style_one();
-      var resizeText = require_uniform_text().resizeText;
       module.exports = function style(gd) {
-        var s = gd._fullLayout._pielayer.selectAll(".trace");
-        resizeText(gd, s, "pie");
-        s.each(function(cd) {
-          var cd0 = cd[0];
-          var trace = cd0.trace;
-          var traceSelection = d3.select(this);
-          traceSelection.style({ opacity: trace.opacity });
-          traceSelection.selectAll("path.surface").each(function(pt) {
-            d3.select(this).call(styleOne, pt, trace, gd);
-          });
+        d3.select(gd).selectAll(".hm image").style("opacity", function(d) {
+          return d.trace.opacity;
         });
       };
     }
   });
 
-  // src/traces/pie/base_plot.js
-  var require_base_plot = __commonJS({
-    "src/traces/pie/base_plot.js"(exports) {
+  // src/traces/contour/make_color_map.js
+  var require_make_color_map = __commonJS({
+    "src/traces/contour/make_color_map.js"(exports, module) {
       "use strict";
-      var plots = require_plots();
-      exports.name = "pie";
-      exports.plot = function(gd, traces, transitionOpts, makeOnCompleteCallback) {
-        plots.plotBasePlot(exports.name, gd, traces, transitionOpts, makeOnCompleteCallback);
-      };
-      exports.clean = function(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        plots.cleanBasePlot(exports.name, newFullData, newFullLayout, oldFullData, oldFullLayout);
-      };
-    }
-  });
-
-  // src/traces/pie/index.js
-  var require_pie = __commonJS({
-    "src/traces/pie/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes27(),
-        supplyDefaults: require_defaults23().supplyDefaults,
-        supplyLayoutDefaults: require_layout_defaults8(),
-        layoutAttributes: require_layout_attributes9(),
-        calc: require_calc9().calc,
-        crossTraceCalc: require_calc9().crossTraceCalc,
-        plot: require_plot6().plot,
-        style: require_style7(),
-        styleOne: require_style_one(),
-        moduleType: "trace",
-        name: "pie",
-        basePlotModule: require_base_plot(),
-        categories: ["pie-like", "pie", "showLegend"],
-        meta: {}
-      };
-    }
-  });
-
-  // lib/pie.js
-  var require_pie2 = __commonJS({
-    "lib/pie.js"(exports, module) {
-      "use strict";
-      module.exports = require_pie();
-    }
-  });
-
-  // src/traces/funnelarea/base_plot.js
-  var require_base_plot2 = __commonJS({
-    "src/traces/funnelarea/base_plot.js"(exports) {
-      "use strict";
-      var plots = require_plots();
-      exports.name = "funnelarea";
-      exports.plot = function(gd, traces, transitionOpts, makeOnCompleteCallback) {
-        plots.plotBasePlot(exports.name, gd, traces, transitionOpts, makeOnCompleteCallback);
-      };
-      exports.clean = function(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        plots.cleanBasePlot(exports.name, newFullData, newFullLayout, oldFullData, oldFullLayout);
-      };
-    }
-  });
-
-  // src/traces/funnelarea/attributes.js
-  var require_attributes28 = __commonJS({
-    "src/traces/funnelarea/attributes.js"(exports, module) {
-      "use strict";
-      var pieAttrs = require_attributes27();
-      var baseAttrs = require_attributes2();
-      var domainAttrs = require_domain().attributes;
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
-      var extendFlat = require_extend().extendFlat;
-      module.exports = {
-        labels: pieAttrs.labels,
-        // equivalent of x0 and dx, if label is missing
-        label0: pieAttrs.label0,
-        dlabel: pieAttrs.dlabel,
-        values: pieAttrs.values,
-        marker: {
-          colors: pieAttrs.marker.colors,
-          line: {
-            color: extendFlat({}, pieAttrs.marker.line.color, {
-              dflt: null
-            }),
-            width: extendFlat({}, pieAttrs.marker.line.width, { dflt: 1 }),
-            editType: "calc"
-          },
-          pattern: pieAttrs.marker.pattern,
-          editType: "calc"
-        },
-        text: pieAttrs.text,
-        hovertext: pieAttrs.hovertext,
-        scalegroup: extendFlat({}, pieAttrs.scalegroup, {}),
-        textinfo: extendFlat({}, pieAttrs.textinfo, {
-          flags: ["label", "text", "value", "percent"]
-        }),
-        texttemplate: texttemplateAttrs({ editType: "plot" }, {
-          keys: ["label", "color", "value", "text", "percent"]
-        }),
-        hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-          flags: ["label", "text", "value", "percent", "name"]
-        }),
-        hovertemplate: hovertemplateAttrs({}, {
-          keys: ["label", "color", "value", "text", "percent"]
-        }),
-        textposition: extendFlat({}, pieAttrs.textposition, {
-          values: ["inside", "none"],
-          dflt: "inside"
-        }),
-        textfont: pieAttrs.textfont,
-        insidetextfont: pieAttrs.insidetextfont,
-        title: {
-          text: pieAttrs.title.text,
-          font: pieAttrs.title.font,
-          position: extendFlat({}, pieAttrs.title.position, {
-            values: ["top left", "top center", "top right"],
-            dflt: "top center"
-          }),
-          editType: "plot"
-        },
-        domain: domainAttrs({ name: "funnelarea", trace: true, editType: "calc" }),
-        aspectratio: {
-          valType: "number",
-          min: 0,
-          dflt: 1,
-          editType: "plot"
-        },
-        baseratio: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0.333,
-          editType: "plot"
+      var d3 = require_d3();
+      var Colorscale = require_colorscale();
+      var endPlus = require_end_plus();
+      module.exports = function makeColorMap(trace) {
+        var contours = trace.contours;
+        var start = contours.start;
+        var end = endPlus(contours);
+        var cs = contours.size || 1;
+        var nc = Math.floor((end - start) / cs) + 1;
+        var extra = contours.coloring === "lines" ? 0 : 1;
+        var cOpts = Colorscale.extractOpts(trace);
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== makeColorMap called ===");
+          console.log("Has custom levels:", !!(contours._levels && contours._levels.length > 0));
+          console.log("Contours._levels:", contours._levels);
+          console.log("Contours coloring:", contours.coloring);
+          console.log("Contours start/end/size:", contours.start, contours.end, contours.size);
+          console.log("Trace zmin/zmax:", trace.zmin, trace.zmax);
+          console.log("Trace input thresholds:", trace._input && trace._input.contours && trace._input.contours.thresholds);
         }
+        if (!isFinite(cs)) {
+          cs = 1;
+          nc = 1;
+        }
+        var scl = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+        var len = scl.length;
+        var domain = new Array(len);
+        var range = new Array(len);
+        var si, i;
+        var zmin0 = cOpts.min;
+        var zmax0 = cOpts.max;
+        if (contours.coloring === "heatmap") {
+          for (i = 0; i < len; i++) {
+            si = scl[i];
+            domain[i] = si[0] * (zmax0 - zmin0) + zmin0;
+            range[i] = si[1];
+          }
+          var zRange = d3.extent([
+            zmin0,
+            zmax0,
+            contours.start,
+            contours.start + cs * (nc - 1)
+          ]);
+          var zmin = zRange[zmin0 < zmax0 ? 0 : 1];
+          var zmax = zRange[zmin0 < zmax0 ? 1 : 0];
+          if (zmin !== zmin0) {
+            domain.splice(0, 0, zmin);
+            range.splice(0, 0, range[0]);
+          }
+          if (zmax !== zmax0) {
+            domain.push(zmax);
+            range.push(range[range.length - 1]);
+          }
+        } else {
+          var zRangeInput = trace._input && (typeof trace._input.zmin === "number" && typeof trace._input.zmax === "number");
+          var customLevels = contours._levels;
+          var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+          if (!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) {
+              return a - b;
+            });
+            console.log("makeColorMap: Using fallback to input thresholds:", customLevels);
+          }
+          if (customLevels && customLevels.length > 0) {
+            var levels = customLevels;
+            var nLevels = levels.length;
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            var effectiveMin = zmin0 !== void 0 && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== void 0 && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+              range[i] = si[1];
+            }
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Color Mapping (including restyle) ===");
+              console.log("- Levels:", levels);
+              console.log("- zmin/zmax from colorscale:", zmin0, zmax0);
+              console.log("- Effective range:", effectiveMin, "to", effectiveMax);
+              console.log("- Colorscale length:", len);
+              console.log("- Domain values:", domain);
+              console.log("- Color mapping details:");
+              for (var j = 0; j < len; j++) {
+                console.log("  Position " + scl[j][0].toFixed(4) + " -> Value " + domain[j].toFixed(2) + " -> Color " + range[j]);
+              }
+              console.log("=== End Color Mapping ===");
+            }
+          } else {
+            if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
+              if (start <= zmin0) start = zmin0;
+              if (end >= zmax0) end = zmax0;
+              nc = Math.floor((end - start) / cs) + 1;
+              extra = 0;
+            }
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
+              range[i] = si[1];
+            }
+          }
+          if (!contours._levels && (zRangeInput || trace.autocontour)) {
+            if (domain[0] > zmin0) {
+              domain.unshift(zmin0);
+              range.unshift(range[0]);
+            }
+            if (domain[domain.length - 1] < zmax0) {
+              domain.push(zmax0);
+              range.push(range[range.length - 1]);
+            }
+          }
+        }
+        return Colorscale.makeColorScaleFunc(
+          { domain, range },
+          { noNumericCheck: true }
+        );
       };
     }
   });
 
-  // src/traces/funnelarea/layout_attributes.js
-  var require_layout_attributes10 = __commonJS({
-    "src/traces/funnelarea/layout_attributes.js"(exports, module) {
-      "use strict";
-      var hiddenlabels = require_layout_attributes9().hiddenlabels;
-      module.exports = {
-        hiddenlabels,
-        funnelareacolorway: {
-          valType: "colorlist",
-          editType: "calc"
-        },
-        extendfunnelareacolors: {
-          valType: "boolean",
-          dflt: true,
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/traces/funnelarea/defaults.js
-  var require_defaults24 = __commonJS({
-    "src/traces/funnelarea/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var attributes = require_attributes28();
-      var handleDomainDefaults = require_domain().defaults;
-      var handleText = require_defaults19().handleText;
-      var handleLabelsAndValues = require_defaults23().handleLabelsAndValues;
-      var handleMarkerDefaults = require_defaults23().handleMarkerDefaults;
-      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var labels = coerce("labels");
-        var values = coerce("values");
-        var res = handleLabelsAndValues(labels, values);
-        var len = res.len;
-        traceOut._hasLabels = res.hasLabels;
-        traceOut._hasValues = res.hasValues;
-        if (!traceOut._hasLabels && traceOut._hasValues) {
-          coerce("label0");
-          coerce("dlabel");
-        }
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        traceOut._length = len;
-        handleMarkerDefaults(traceIn, traceOut, layout, coerce);
-        coerce("scalegroup");
-        var textData = coerce("text");
-        var textTemplate = coerce("texttemplate");
-        var textInfo;
-        if (!textTemplate) textInfo = coerce("textinfo", Array.isArray(textData) ? "text+percent" : "percent");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        if (textTemplate || textInfo && textInfo !== "none") {
-          var textposition = coerce("textposition");
-          handleText(traceIn, traceOut, layout, coerce, textposition, {
-            moduleHasSelected: false,
-            moduleHasUnselected: false,
-            moduleHasConstrain: false,
-            moduleHasCliponaxis: false,
-            moduleHasTextangle: false,
-            moduleHasInsideanchor: false
-          });
-        } else if (textInfo === "none") {
-          coerce("textposition", "none");
-        }
-        handleDomainDefaults(traceOut, layout, coerce);
-        var title = coerce("title.text");
-        if (title) {
-          coerce("title.position");
-          Lib.coerceFont(coerce, "title.font", layout.font);
-        }
-        coerce("aspectratio");
-        coerce("baseratio");
-      };
-    }
-  });
-
-  // src/traces/funnelarea/layout_defaults.js
-  var require_layout_defaults9 = __commonJS({
-    "src/traces/funnelarea/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes10();
-      module.exports = function supplyLayoutDefaults(layoutIn, layoutOut) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
-        }
-        coerce("hiddenlabels");
-        coerce("funnelareacolorway", layoutOut.colorway);
-        coerce("extendfunnelareacolors");
-      };
-    }
-  });
-
-  // src/traces/funnelarea/calc.js
-  var require_calc10 = __commonJS({
-    "src/traces/funnelarea/calc.js"(exports, module) {
-      "use strict";
-      var pieCalc = require_calc9();
-      function calc(gd, trace) {
-        return pieCalc.calc(gd, trace);
-      }
-      function crossTraceCalc(gd) {
-        pieCalc.crossTraceCalc(gd, { type: "funnelarea" });
-      }
-      module.exports = {
-        calc,
-        crossTraceCalc
-      };
-    }
-  });
-
-  // src/traces/funnelarea/plot.js
-  var require_plot7 = __commonJS({
-    "src/traces/funnelarea/plot.js"(exports, module) {
+  // src/traces/contour/style.js
+  var require_style5 = __commonJS({
+    "src/traces/contour/style.js"(exports, module) {
       "use strict";
       var d3 = require_d3();
       var Drawing = require_drawing();
-      var Lib = require_lib();
-      var strScale = Lib.strScale;
-      var strTranslate = Lib.strTranslate;
-      var svgTextUtils = require_svg_text_utils();
-      var barPlot = require_plot3();
-      var toMoveInsideBar = barPlot.toMoveInsideBar;
-      var uniformText = require_uniform_text();
-      var recordMinTextSize = uniformText.recordMinTextSize;
-      var clearMinTextSize = uniformText.clearMinTextSize;
-      var pieHelpers = require_helpers4();
-      var piePlot = require_plot6();
-      var attachFxHandlers = piePlot.attachFxHandlers;
-      var determineInsideTextFont = piePlot.determineInsideTextFont;
-      var layoutAreas = piePlot.layoutAreas;
-      var prerenderTitles = piePlot.prerenderTitles;
-      var positionTitleOutside = piePlot.positionTitleOutside;
-      var formatSliceLabel = piePlot.formatSliceLabel;
-      module.exports = function plot(gd, cdModule) {
-        var isStatic = gd._context.staticPlot;
-        var fullLayout = gd._fullLayout;
-        clearMinTextSize("funnelarea", fullLayout);
-        prerenderTitles(cdModule, gd);
-        layoutAreas(cdModule, fullLayout._size);
-        Lib.makeTraceGroups(fullLayout._funnelarealayer, cdModule, "trace").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var cd0 = cd[0];
-          var trace = cd0.trace;
-          setCoords(cd);
-          plotGroup.each(function() {
-            var slices = d3.select(this).selectAll("g.slice").data(cd);
-            slices.enter().append("g").classed("slice", true);
-            slices.exit().remove();
-            slices.each(function(pt, i) {
-              if (pt.hidden) {
-                d3.select(this).selectAll("path,g").remove();
-                return;
-              }
-              pt.pointNumber = pt.i;
-              pt.curveNumber = trace.index;
-              var cx = cd0.cx;
-              var cy = cd0.cy;
-              var sliceTop = d3.select(this);
-              var slicePath = sliceTop.selectAll("path.surface").data([pt]);
-              slicePath.enter().append("path").classed("surface", true).style({ "pointer-events": isStatic ? "none" : "all" });
-              sliceTop.call(attachFxHandlers, gd, cd);
-              var shape = "M" + (cx + pt.TR[0]) + "," + (cy + pt.TR[1]) + line(pt.TR, pt.BR) + line(pt.BR, pt.BL) + line(pt.BL, pt.TL) + "Z";
-              slicePath.attr("d", shape);
-              formatSliceLabel(gd, pt, cd0);
-              var textPosition = pieHelpers.castOption(trace.textposition, pt.pts);
-              var sliceTextGroup = sliceTop.selectAll("g.slicetext").data(pt.text && textPosition !== "none" ? [0] : []);
-              sliceTextGroup.enter().append("g").classed("slicetext", true);
-              sliceTextGroup.exit().remove();
-              sliceTextGroup.each(function() {
-                var sliceText = Lib.ensureSingle(d3.select(this), "text", "", function(s) {
-                  s.attr("data-notex", 1);
-                });
-                var font = Lib.ensureUniformFontSize(gd, determineInsideTextFont(trace, pt, fullLayout.font));
-                sliceText.text(pt.text).attr({
-                  class: "slicetext",
-                  transform: "",
-                  "text-anchor": "middle"
-                }).call(Drawing.font, font).call(svgTextUtils.convertToTspans, gd);
-                var textBB = Drawing.bBox(sliceText.node());
-                var transform;
-                var x0, x1;
-                var y0 = Math.min(pt.BL[1], pt.BR[1]) + cy;
-                var y1 = Math.max(pt.TL[1], pt.TR[1]) + cy;
-                x0 = Math.max(pt.TL[0], pt.BL[0]) + cx;
-                x1 = Math.min(pt.TR[0], pt.BR[0]) + cx;
-                transform = toMoveInsideBar(x0, x1, y0, y1, textBB, {
-                  isHorizontal: true,
-                  constrained: true,
-                  angle: 0,
-                  anchor: "middle"
-                });
-                transform.fontSize = font.size;
-                recordMinTextSize(trace.type, transform, fullLayout);
-                cd[i].transform = transform;
-                Lib.setTransormAndDisplay(sliceText, transform);
-              });
-            });
-            var titleTextGroup = d3.select(this).selectAll("g.titletext").data(trace.title.text ? [0] : []);
-            titleTextGroup.enter().append("g").classed("titletext", true);
-            titleTextGroup.exit().remove();
-            titleTextGroup.each(function() {
-              var titleText = Lib.ensureSingle(d3.select(this), "text", "", function(s) {
-                s.attr("data-notex", 1);
-              });
-              var txt = trace.title.text;
-              if (trace._meta) {
-                txt = Lib.templateString(txt, trace._meta);
-              }
-              titleText.text(txt).attr({
-                class: "titletext",
-                transform: "",
-                "text-anchor": "middle"
-              }).call(Drawing.font, trace.title.font).call(svgTextUtils.convertToTspans, gd);
-              var transform = positionTitleOutside(cd0, fullLayout._size);
-              titleText.attr(
-                "transform",
-                strTranslate(transform.x, transform.y) + strScale(Math.min(1, transform.scale)) + strTranslate(transform.tx, transform.ty)
-              );
-            });
-          });
-        });
-      };
-      function line(a, b) {
-        var dx = b[0] - a[0];
-        var dy = b[1] - a[1];
-        return "l" + dx + "," + dy;
-      }
-      function getBetween(a, b) {
-        return [
-          0.5 * (a[0] + b[0]),
-          0.5 * (a[1] + b[1])
-        ];
-      }
-      function setCoords(cd) {
-        if (!cd.length) return;
-        var cd0 = cd[0];
-        var trace = cd0.trace;
-        var aspectratio = trace.aspectratio;
-        var h = trace.baseratio;
-        if (h > 0.999) h = 0.999;
-        var h2 = Math.pow(h, 2);
-        var v1 = cd0.vTotal;
-        var v0 = v1 * h2 / (1 - h2);
-        var totalValues = v1;
-        var sumSteps = v0 / v1;
-        function calcPos() {
-          var q = Math.sqrt(sumSteps);
-          return {
-            x: q,
-            y: -q
-          };
-        }
-        function getPoint() {
-          var pos = calcPos();
-          return [pos.x, pos.y];
-        }
-        var p;
-        var allPoints = [];
-        allPoints.push(getPoint());
-        var i, cdi;
-        for (i = cd.length - 1; i > -1; i--) {
-          cdi = cd[i];
-          if (cdi.hidden) continue;
-          var step = cdi.v / totalValues;
-          sumSteps += step;
-          allPoints.push(getPoint());
-        }
-        var minY = Infinity;
-        var maxY = -Infinity;
-        for (i = 0; i < allPoints.length; i++) {
-          p = allPoints[i];
-          minY = Math.min(minY, p[1]);
-          maxY = Math.max(maxY, p[1]);
-        }
-        for (i = 0; i < allPoints.length; i++) {
-          allPoints[i][1] -= (maxY + minY) / 2;
-        }
-        var lastX = allPoints[allPoints.length - 1][0];
-        var r = cd0.r;
-        var rY = (maxY - minY) / 2;
-        var scaleX = r / lastX;
-        var scaleY = r / rY * aspectratio;
-        cd0.r = scaleY * rY;
-        for (i = 0; i < allPoints.length; i++) {
-          allPoints[i][0] *= scaleX;
-          allPoints[i][1] *= scaleY;
-        }
-        p = allPoints[0];
-        var prevLeft = [-p[0], p[1]];
-        var prevRight = [p[0], p[1]];
-        var n = 0;
-        for (i = cd.length - 1; i > -1; i--) {
-          cdi = cd[i];
-          if (cdi.hidden) continue;
-          n += 1;
-          var x = allPoints[n][0];
-          var y = allPoints[n][1];
-          cdi.TL = [-x, y];
-          cdi.TR = [x, y];
-          cdi.BL = prevLeft;
-          cdi.BR = prevRight;
-          cdi.pxmid = getBetween(cdi.TR, cdi.BR);
-          prevLeft = cdi.TL;
-          prevRight = cdi.TR;
-        }
-      }
-    }
-  });
-
-  // src/traces/funnelarea/style.js
-  var require_style8 = __commonJS({
-    "src/traces/funnelarea/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var styleOne = require_style_one();
-      var resizeText = require_uniform_text().resizeText;
+      var heatmapStyle = require_style4();
+      var makeColorMap = require_make_color_map();
       module.exports = function style(gd) {
-        var s = gd._fullLayout._funnelarealayer.selectAll(".trace");
-        resizeText(gd, s, "funnelarea");
-        s.each(function(cd) {
-          var cd0 = cd[0];
-          var trace = cd0.trace;
-          var traceSelection = d3.select(this);
-          traceSelection.style({ opacity: trace.opacity });
-          traceSelection.selectAll("path.surface").each(function(pt) {
-            d3.select(this).call(styleOne, pt, trace, gd);
-          });
+        var contours = d3.select(gd).selectAll("g.contour");
+        contours.style("opacity", function(d) {
+          return d[0].trace.opacity;
         });
-      };
-    }
-  });
-
-  // src/traces/funnelarea/index.js
-  var require_funnelarea = __commonJS({
-    "src/traces/funnelarea/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        moduleType: "trace",
-        name: "funnelarea",
-        basePlotModule: require_base_plot2(),
-        categories: ["pie-like", "funnelarea", "showLegend"],
-        attributes: require_attributes28(),
-        layoutAttributes: require_layout_attributes10(),
-        supplyDefaults: require_defaults24(),
-        supplyLayoutDefaults: require_layout_defaults9(),
-        calc: require_calc10().calc,
-        crossTraceCalc: require_calc10().crossTraceCalc,
-        plot: require_plot7(),
-        style: require_style8(),
-        styleOne: require_style_one(),
-        meta: {}
-      };
-    }
-  });
-
-  // lib/funnelarea.js
-  var require_funnelarea2 = __commonJS({
-    "lib/funnelarea.js"(exports, module) {
-      "use strict";
-      module.exports = require_funnelarea();
-    }
-  });
-
-  // src/traces/indicator/base_plot.js
-  var require_base_plot3 = __commonJS({
-    "src/traces/indicator/base_plot.js"(exports) {
-      "use strict";
-      var plots = require_plots();
-      exports.name = "indicator";
-      exports.plot = function(gd, traces, transitionOpts, makeOnCompleteCallback) {
-        plots.plotBasePlot(exports.name, gd, traces, transitionOpts, makeOnCompleteCallback);
-      };
-      exports.clean = function(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        plots.cleanBasePlot(exports.name, newFullData, newFullLayout, oldFullData, oldFullLayout);
-      };
-    }
-  });
-
-  // src/traces/indicator/attributes.js
-  var require_attributes29 = __commonJS({
-    "src/traces/indicator/attributes.js"(exports, module) {
-      "use strict";
-      var extendFlat = require_extend().extendFlat;
-      var extendDeep = require_extend().extendDeep;
-      var overrideAll = require_edit_types().overrideAll;
-      var fontAttrs = require_font_attributes();
-      var colorAttrs = require_attributes3();
-      var domainAttrs = require_domain().attributes;
-      var axesAttrs = require_layout_attributes4();
-      var templatedArray = require_plot_template().templatedArray;
-      var delta = require_delta();
-      var descriptionOnlyNumbers = require_axis_format_attributes().descriptionOnlyNumbers;
-      var textFontAttrs = fontAttrs({
-        editType: "plot",
-        colorEditType: "plot"
-      });
-      var gaugeBarAttrs = {
-        color: {
-          valType: "color",
-          editType: "plot"
-        },
-        line: {
-          color: {
-            valType: "color",
-            dflt: colorAttrs.defaultLine,
-            editType: "plot"
-          },
-          width: {
-            valType: "number",
-            min: 0,
-            dflt: 0,
-            editType: "plot"
-          },
-          editType: "calc"
-        },
-        thickness: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 1,
-          editType: "plot"
-        },
-        editType: "calc"
-      };
-      var rangeAttr = {
-        valType: "info_array",
-        items: [
-          { valType: "number", editType: "plot" },
-          { valType: "number", editType: "plot" }
-        ],
-        editType: "plot"
-      };
-      var stepsAttrs = templatedArray("step", extendDeep({}, gaugeBarAttrs, {
-        range: rangeAttr
-      }));
-      module.exports = {
-        mode: {
-          valType: "flaglist",
-          editType: "calc",
-          flags: ["number", "delta", "gauge"],
-          dflt: "number"
-        },
-        value: {
-          valType: "number",
-          editType: "calc",
-          anim: true
-        },
-        align: {
-          valType: "enumerated",
-          values: ["left", "center", "right"],
-          editType: "plot"
-        },
-        // position
-        domain: domainAttrs({ name: "indicator", trace: true, editType: "calc" }),
-        title: {
-          text: {
-            valType: "string",
-            editType: "plot"
-          },
-          align: {
-            valType: "enumerated",
-            values: ["left", "center", "right"],
-            editType: "plot"
-          },
-          font: extendFlat({}, textFontAttrs, {}),
-          editType: "plot"
-        },
-        number: {
-          valueformat: {
-            valType: "string",
-            dflt: "",
-            editType: "plot",
-            description: descriptionOnlyNumbers("value")
-          },
-          font: extendFlat({}, textFontAttrs, {}),
-          prefix: {
-            valType: "string",
-            dflt: "",
-            editType: "plot"
-          },
-          suffix: {
-            valType: "string",
-            dflt: "",
-            editType: "plot"
-          },
-          editType: "plot"
-        },
-        delta: {
-          reference: {
-            valType: "number",
-            editType: "calc"
-          },
-          position: {
-            valType: "enumerated",
-            values: ["top", "bottom", "left", "right"],
-            dflt: "bottom",
-            editType: "plot"
-          },
-          relative: {
-            valType: "boolean",
-            editType: "plot",
-            dflt: false
-          },
-          valueformat: {
-            valType: "string",
-            editType: "plot",
-            description: descriptionOnlyNumbers("value")
-          },
-          increasing: {
-            symbol: {
-              valType: "string",
-              dflt: delta.INCREASING.SYMBOL,
-              editType: "plot"
-            },
-            color: {
-              valType: "color",
-              dflt: delta.INCREASING.COLOR,
-              editType: "plot"
-            },
-            // TODO: add attribute to show sign
-            editType: "plot"
-          },
-          decreasing: {
-            symbol: {
-              valType: "string",
-              dflt: delta.DECREASING.SYMBOL,
-              editType: "plot"
-            },
-            color: {
-              valType: "color",
-              dflt: delta.DECREASING.COLOR,
-              editType: "plot"
-            },
-            // TODO: add attribute to hide sign
-            editType: "plot"
-          },
-          font: extendFlat({}, textFontAttrs, {}),
-          prefix: {
-            valType: "string",
-            dflt: "",
-            editType: "plot"
-          },
-          suffix: {
-            valType: "string",
-            dflt: "",
-            editType: "plot"
-          },
-          editType: "calc"
-        },
-        gauge: {
-          shape: {
-            valType: "enumerated",
-            editType: "plot",
-            dflt: "angular",
-            values: ["angular", "bullet"]
-          },
-          bar: extendDeep({}, gaugeBarAttrs, {
-            color: { dflt: "green" }
-          }),
-          // Background of the gauge
-          bgcolor: {
-            valType: "color",
-            editType: "plot"
-          },
-          bordercolor: {
-            valType: "color",
-            dflt: colorAttrs.defaultLine,
-            editType: "plot"
-          },
-          borderwidth: {
-            valType: "number",
-            min: 0,
-            dflt: 1,
-            editType: "plot"
-          },
-          axis: overrideAll({
-            range: rangeAttr,
-            visible: extendFlat({}, axesAttrs.visible, {
-              dflt: true
-            }),
-            // tick and title properties named and function exactly as in axes
-            tickmode: axesAttrs.minor.tickmode,
-            nticks: axesAttrs.nticks,
-            tick0: axesAttrs.tick0,
-            dtick: axesAttrs.dtick,
-            tickvals: axesAttrs.tickvals,
-            ticktext: axesAttrs.ticktext,
-            ticks: extendFlat({}, axesAttrs.ticks, { dflt: "outside" }),
-            ticklen: axesAttrs.ticklen,
-            tickwidth: axesAttrs.tickwidth,
-            tickcolor: axesAttrs.tickcolor,
-            ticklabelstep: axesAttrs.ticklabelstep,
-            showticklabels: axesAttrs.showticklabels,
-            labelalias: axesAttrs.labelalias,
-            tickfont: fontAttrs({}),
-            tickangle: axesAttrs.tickangle,
-            tickformat: axesAttrs.tickformat,
-            tickformatstops: axesAttrs.tickformatstops,
-            tickprefix: axesAttrs.tickprefix,
-            showtickprefix: axesAttrs.showtickprefix,
-            ticksuffix: axesAttrs.ticksuffix,
-            showticksuffix: axesAttrs.showticksuffix,
-            separatethousands: axesAttrs.separatethousands,
-            exponentformat: axesAttrs.exponentformat,
-            minexponent: axesAttrs.minexponent,
-            showexponent: axesAttrs.showexponent,
-            editType: "plot"
-          }, "plot"),
-          // Steps (or ranges) and thresholds
-          steps: stepsAttrs,
-          threshold: {
-            line: {
-              color: extendFlat({}, gaugeBarAttrs.line.color, {}),
-              width: extendFlat({}, gaugeBarAttrs.line.width, {
-                dflt: 1
-              }),
-              editType: "plot"
-            },
-            thickness: extendFlat({}, gaugeBarAttrs.thickness, {
-              dflt: 0.85
-            }),
-            value: {
-              valType: "number",
-              editType: "calc",
-              dflt: false
-            },
-            editType: "plot"
-          },
-          editType: "plot"
-          // TODO: in future version, add marker: (bar|needle)
-        }
-      };
-    }
-  });
-
-  // src/traces/indicator/constants.js
-  var require_constants18 = __commonJS({
-    "src/traces/indicator/constants.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        // Defaults for delta
-        defaultNumberFontSize: 80,
-        bulletNumberDomainSize: 0.25,
-        bulletPadding: 0.025,
-        innerRadius: 0.75,
-        valueThickness: 0.5,
-        // thickness of value bars relative to full thickness,
-        titlePadding: 5,
-        horizontalPadding: 10
-      };
-    }
-  });
-
-  // src/traces/indicator/defaults.js
-  var require_defaults25 = __commonJS({
-    "src/traces/indicator/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var attributes = require_attributes29();
-      var handleDomainDefaults = require_domain().defaults;
-      var Template = require_plot_template();
-      var handleArrayContainerDefaults = require_array_container_defaults();
-      var cn = require_constants18();
-      var handleTickValueDefaults = require_tick_value_defaults();
-      var handleTickMarkDefaults = require_tick_mark_defaults();
-      var handleTickLabelDefaults = require_tick_label_defaults();
-      var handlePrefixSuffixDefaults = require_prefix_suffix_defaults();
-      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        handleDomainDefaults(traceOut, layout, coerce);
-        coerce("mode");
-        traceOut._hasNumber = traceOut.mode.indexOf("number") !== -1;
-        traceOut._hasDelta = traceOut.mode.indexOf("delta") !== -1;
-        traceOut._hasGauge = traceOut.mode.indexOf("gauge") !== -1;
-        var value = coerce("value");
-        traceOut._range = [0, typeof value === "number" ? 1.5 * value : 1];
-        var auto = new Array(2);
-        var bignumberFontSize;
-        if (traceOut._hasNumber) {
-          coerce("number.valueformat");
-          var numberFontDflt = Lib.extendFlat({}, layout.font);
-          numberFontDflt.size = void 0;
-          Lib.coerceFont(coerce, "number.font", numberFontDflt);
-          if (traceOut.number.font.size === void 0) {
-            traceOut.number.font.size = cn.defaultNumberFontSize;
-            auto[0] = true;
+        contours.each(function(d) {
+          var c = d3.select(this);
+          var trace = d[0].trace;
+          var contours2 = trace.contours;
+          var line = trace.line;
+          var cs = contours2.size || 1;
+          var start = contours2.start;
+          var hasCustomLevels = !!(contours2._levels && contours2._levels.length > 0);
+          var isConstraintType = contours2.type === "constraint";
+          var colorLines = !isConstraintType && contours2.coloring === "lines";
+          var colorFills = !isConstraintType && contours2.coloring === "fill";
+          var colorMap = colorLines || colorFills ? makeColorMap(trace) : null;
+          if (typeof console !== "undefined" && console.log && colorMap) {
+            console.log("=== Contour styling ===");
+            console.log("Has custom levels:", hasCustomLevels);
+            console.log("cs (contour size):", cs);
+            console.log("Custom levels:", contours2._levels);
           }
-          coerce("number.prefix");
-          coerce("number.suffix");
-          bignumberFontSize = traceOut.number.font.size;
-        }
-        var deltaFontSize;
-        if (traceOut._hasDelta) {
-          var deltaFontDflt = Lib.extendFlat({}, layout.font);
-          deltaFontDflt.size = void 0;
-          Lib.coerceFont(coerce, "delta.font", deltaFontDflt);
-          if (traceOut.delta.font.size === void 0) {
-            traceOut.delta.font.size = (traceOut._hasNumber ? 0.5 : 1) * (bignumberFontSize || cn.defaultNumberFontSize);
-            auto[1] = true;
-          }
-          coerce("delta.reference", traceOut.value);
-          coerce("delta.relative");
-          coerce("delta.valueformat", traceOut.delta.relative ? "2%" : "");
-          coerce("delta.increasing.symbol");
-          coerce("delta.increasing.color");
-          coerce("delta.decreasing.symbol");
-          coerce("delta.decreasing.color");
-          coerce("delta.position");
-          coerce("delta.prefix");
-          coerce("delta.suffix");
-          deltaFontSize = traceOut.delta.font.size;
-        }
-        traceOut._scaleNumbers = (!traceOut._hasNumber || auto[0]) && (!traceOut._hasDelta || auto[1]) || false;
-        var titleFontDflt = Lib.extendFlat({}, layout.font);
-        titleFontDflt.size = 0.25 * (bignumberFontSize || deltaFontSize || cn.defaultNumberFontSize);
-        Lib.coerceFont(coerce, "title.font", titleFontDflt);
-        coerce("title.text");
-        var gaugeIn, gaugeOut, axisIn, axisOut;
-        function coerceGauge(attr, dflt) {
-          return Lib.coerce(gaugeIn, gaugeOut, attributes.gauge, attr, dflt);
-        }
-        function coerceGaugeAxis(attr, dflt) {
-          return Lib.coerce(axisIn, axisOut, attributes.gauge.axis, attr, dflt);
-        }
-        if (traceOut._hasGauge) {
-          gaugeIn = traceIn.gauge;
-          if (!gaugeIn) gaugeIn = {};
-          gaugeOut = Template.newContainer(traceOut, "gauge");
-          coerceGauge("shape");
-          var isBullet = traceOut._isBullet = traceOut.gauge.shape === "bullet";
-          if (!isBullet) {
-            coerce("title.align", "center");
-          }
-          var isAngular = traceOut._isAngular = traceOut.gauge.shape === "angular";
-          if (!isAngular) {
-            coerce("align", "center");
-          }
-          coerceGauge("bgcolor", layout.paper_bgcolor);
-          coerceGauge("borderwidth");
-          coerceGauge("bordercolor");
-          coerceGauge("bar.color");
-          coerceGauge("bar.line.color");
-          coerceGauge("bar.line.width");
-          var defaultBarThickness = cn.valueThickness * (traceOut.gauge.shape === "bullet" ? 0.5 : 1);
-          coerceGauge("bar.thickness", defaultBarThickness);
-          handleArrayContainerDefaults(gaugeIn, gaugeOut, {
-            name: "steps",
-            handleItemDefaults: stepDefaults
+          c.selectAll("g.contourlevel").each(function(d2) {
+            d3.select(this).selectAll("path").call(
+              Drawing.lineGroupStyle,
+              line.width,
+              colorLines ? colorMap(d2.level) : line.color,
+              line.dash
+            );
           });
-          coerceGauge("threshold.value");
-          coerceGauge("threshold.thickness");
-          coerceGauge("threshold.line.width");
-          coerceGauge("threshold.line.color");
-          axisIn = {};
-          if (gaugeIn) axisIn = gaugeIn.axis || {};
-          axisOut = Template.newContainer(gaugeOut, "axis");
-          coerceGaugeAxis("visible");
-          traceOut._range = coerceGaugeAxis("range", traceOut._range);
-          var opts = {
-            font: layout.font,
-            noAutotickangles: true,
-            outerTicks: true,
-            noTicklabelshift: true,
-            noTicklabelstandoff: true
-          };
-          handleTickValueDefaults(axisIn, axisOut, coerceGaugeAxis, "linear");
-          handlePrefixSuffixDefaults(axisIn, axisOut, coerceGaugeAxis, "linear", opts);
-          handleTickLabelDefaults(axisIn, axisOut, coerceGaugeAxis, "linear", opts);
-          handleTickMarkDefaults(axisIn, axisOut, coerceGaugeAxis, opts);
-        } else {
-          coerce("title.align", "center");
-          coerce("align", "center");
-          traceOut._isAngular = traceOut._isBullet = false;
-        }
-        traceOut._length = null;
-      }
-      function stepDefaults(stepIn, stepOut) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(stepIn, stepOut, attributes.gauge.steps, attr, dflt);
-        }
-        coerce("color");
-        coerce("line.color");
-        coerce("line.width");
-        coerce("range");
-        coerce("thickness");
-      }
-      module.exports = {
-        supplyDefaults
+          var labelFont = contours2.labelfont;
+          c.selectAll("g.contourlabels text").each(function(d2) {
+            Drawing.font(d3.select(this), {
+              weight: labelFont.weight,
+              style: labelFont.style,
+              variant: labelFont.variant,
+              textcase: labelFont.textcase,
+              lineposition: labelFont.lineposition,
+              shadow: labelFont.shadow,
+              family: labelFont.family,
+              size: labelFont.size,
+              color: labelFont.color || (colorLines ? colorMap(d2.level) : line.color)
+            });
+          });
+          if (isConstraintType) {
+            c.selectAll("g.contourfill path").style("fill", trace.fillcolor);
+          } else if (colorFills) {
+            var firstFill;
+            c.selectAll("g.contourfill path").style("fill", function(d2) {
+              if (firstFill === void 0) firstFill = d2.level;
+              if (hasCustomLevels) {
+                return colorMap(d2.level);
+              } else {
+                return colorMap(d2.level + 0.5 * cs);
+              }
+            });
+            if (firstFill === void 0) firstFill = start;
+            c.selectAll("g.contourbg path").style("fill", function() {
+              if (hasCustomLevels && contours2._levels && contours2._levels.length > 0) {
+                return colorMap(contours2._levels[0]);
+              } else {
+                return colorMap(firstFill - 0.5 * cs);
+              }
+            });
+          }
+        });
+        heatmapStyle(gd);
       };
     }
   });
 
-  // src/traces/indicator/calc.js
-  var require_calc11 = __commonJS({
-    "src/traces/indicator/calc.js"(exports, module) {
+  // src/traces/contour/colorbar.js
+  var require_colorbar2 = __commonJS({
+    "src/traces/contour/colorbar.js"(exports, module) {
       "use strict";
-      function calc(gd, trace) {
-        var cd = [];
-        var lastReading = trace.value;
-        if (!(typeof trace._lastValue === "number")) trace._lastValue = trace.value;
-        var secondLastReading = trace._lastValue;
-        var deltaRef = secondLastReading;
-        if (trace._hasDelta && typeof trace.delta.reference === "number") {
-          deltaRef = trace.delta.reference;
+      var Colorscale = require_colorscale();
+      var makeColorMap = require_make_color_map();
+      var endPlus = require_end_plus();
+      function calc(gd, trace, opts) {
+        var contours = trace.contours;
+        var line = trace.line;
+        var cs = contours.size || 1;
+        var coloring = contours.coloring;
+        var colorMap = makeColorMap(trace, { isColorbar: true });
+        if (coloring === "heatmap") {
+          var cOpts = Colorscale.extractOpts(trace);
+          opts._fillgradient = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+          opts._zrange = [cOpts.min, cOpts.max];
+        } else if (coloring === "fill") {
+          opts._fillcolor = colorMap;
         }
-        cd[0] = {
-          y: lastReading,
-          lastY: secondLastReading,
-          delta: lastReading - deltaRef,
-          relativeDelta: (lastReading - deltaRef) / deltaRef
+        opts._line = {
+          color: coloring === "lines" ? colorMap : line.color,
+          width: contours.showlines !== false ? line.width : 0,
+          dash: line.dash
         };
-        return cd;
+        opts._levels = {
+          start: contours.start,
+          end: endPlus(contours),
+          size: cs
+        };
       }
       module.exports = {
+        min: "zmin",
+        max: "zmax",
         calc
       };
     }
   });
 
-  // node_modules/d3-color/src/define.js
-  function define_default(constructor, factory, prototype) {
-    constructor.prototype = factory.prototype = prototype;
-    prototype.constructor = constructor;
-  }
-  function extend(parent, definition) {
-    var prototype = Object.create(parent.prototype);
-    for (var key in definition) prototype[key] = definition[key];
-    return prototype;
-  }
-  var init_define = __esm({
-    "node_modules/d3-color/src/define.js"() {
-    }
-  });
-
-  // node_modules/d3-color/src/color.js
-  function Color() {
-  }
-  function color_formatHex() {
-    return this.rgb().formatHex();
-  }
-  function color_formatHex8() {
-    return this.rgb().formatHex8();
-  }
-  function color_formatHsl() {
-    return hslConvert(this).formatHsl();
-  }
-  function color_formatRgb() {
-    return this.rgb().formatRgb();
-  }
-  function color(format) {
-    var m, l;
-    format = (format + "").trim().toLowerCase();
-    return (m = reHex.exec(format)) ? (l = m[1].length, m = parseInt(m[1], 16), l === 6 ? rgbn(m) : l === 3 ? new Rgb(m >> 8 & 15 | m >> 4 & 240, m >> 4 & 15 | m & 240, (m & 15) << 4 | m & 15, 1) : l === 8 ? rgba(m >> 24 & 255, m >> 16 & 255, m >> 8 & 255, (m & 255) / 255) : l === 4 ? rgba(m >> 12 & 15 | m >> 8 & 240, m >> 8 & 15 | m >> 4 & 240, m >> 4 & 15 | m & 240, ((m & 15) << 4 | m & 15) / 255) : null) : (m = reRgbInteger.exec(format)) ? new Rgb(m[1], m[2], m[3], 1) : (m = reRgbPercent.exec(format)) ? new Rgb(m[1] * 255 / 100, m[2] * 255 / 100, m[3] * 255 / 100, 1) : (m = reRgbaInteger.exec(format)) ? rgba(m[1], m[2], m[3], m[4]) : (m = reRgbaPercent.exec(format)) ? rgba(m[1] * 255 / 100, m[2] * 255 / 100, m[3] * 255 / 100, m[4]) : (m = reHslPercent.exec(format)) ? hsla(m[1], m[2] / 100, m[3] / 100, 1) : (m = reHslaPercent.exec(format)) ? hsla(m[1], m[2] / 100, m[3] / 100, m[4]) : named.hasOwnProperty(format) ? rgbn(named[format]) : format === "transparent" ? new Rgb(NaN, NaN, NaN, 0) : null;
-  }
-  function rgbn(n) {
-    return new Rgb(n >> 16 & 255, n >> 8 & 255, n & 255, 1);
-  }
-  function rgba(r, g, b, a) {
-    if (a <= 0) r = g = b = NaN;
-    return new Rgb(r, g, b, a);
-  }
-  function rgbConvert(o) {
-    if (!(o instanceof Color)) o = color(o);
-    if (!o) return new Rgb();
-    o = o.rgb();
-    return new Rgb(o.r, o.g, o.b, o.opacity);
-  }
-  function rgb(r, g, b, opacity) {
-    return arguments.length === 1 ? rgbConvert(r) : new Rgb(r, g, b, opacity == null ? 1 : opacity);
-  }
-  function Rgb(r, g, b, opacity) {
-    this.r = +r;
-    this.g = +g;
-    this.b = +b;
-    this.opacity = +opacity;
-  }
-  function rgb_formatHex() {
-    return `#${hex(this.r)}${hex(this.g)}${hex(this.b)}`;
-  }
-  function rgb_formatHex8() {
-    return `#${hex(this.r)}${hex(this.g)}${hex(this.b)}${hex((isNaN(this.opacity) ? 1 : this.opacity) * 255)}`;
-  }
-  function rgb_formatRgb() {
-    const a = clampa(this.opacity);
-    return `${a === 1 ? "rgb(" : "rgba("}${clampi(this.r)}, ${clampi(this.g)}, ${clampi(this.b)}${a === 1 ? ")" : `, ${a})`}`;
-  }
-  function clampa(opacity) {
-    return isNaN(opacity) ? 1 : Math.max(0, Math.min(1, opacity));
-  }
-  function clampi(value) {
-    return Math.max(0, Math.min(255, Math.round(value) || 0));
-  }
-  function hex(value) {
-    value = clampi(value);
-    return (value < 16 ? "0" : "") + value.toString(16);
-  }
-  function hsla(h, s, l, a) {
-    if (a <= 0) h = s = l = NaN;
-    else if (l <= 0 || l >= 1) h = s = NaN;
-    else if (s <= 0) h = NaN;
-    return new Hsl(h, s, l, a);
-  }
-  function hslConvert(o) {
-    if (o instanceof Hsl) return new Hsl(o.h, o.s, o.l, o.opacity);
-    if (!(o instanceof Color)) o = color(o);
-    if (!o) return new Hsl();
-    if (o instanceof Hsl) return o;
-    o = o.rgb();
-    var r = o.r / 255, g = o.g / 255, b = o.b / 255, min = Math.min(r, g, b), max = Math.max(r, g, b), h = NaN, s = max - min, l = (max + min) / 2;
-    if (s) {
-      if (r === max) h = (g - b) / s + (g < b) * 6;
-      else if (g === max) h = (b - r) / s + 2;
-      else h = (r - g) / s + 4;
-      s /= l < 0.5 ? max + min : 2 - max - min;
-      h *= 60;
-    } else {
-      s = l > 0 && l < 1 ? 0 : h;
-    }
-    return new Hsl(h, s, l, o.opacity);
-  }
-  function hsl(h, s, l, opacity) {
-    return arguments.length === 1 ? hslConvert(h) : new Hsl(h, s, l, opacity == null ? 1 : opacity);
-  }
-  function Hsl(h, s, l, opacity) {
-    this.h = +h;
-    this.s = +s;
-    this.l = +l;
-    this.opacity = +opacity;
-  }
-  function clamph(value) {
-    value = (value || 0) % 360;
-    return value < 0 ? value + 360 : value;
-  }
-  function clampt(value) {
-    return Math.max(0, Math.min(1, value || 0));
-  }
-  function hsl2rgb(h, m1, m2) {
-    return (h < 60 ? m1 + (m2 - m1) * h / 60 : h < 180 ? m2 : h < 240 ? m1 + (m2 - m1) * (240 - h) / 60 : m1) * 255;
-  }
-  var darker, brighter, reI, reN, reP, reHex, reRgbInteger, reRgbPercent, reRgbaInteger, reRgbaPercent, reHslPercent, reHslaPercent, named;
-  var init_color = __esm({
-    "node_modules/d3-color/src/color.js"() {
-      init_define();
-      darker = 0.7;
-      brighter = 1 / darker;
-      reI = "\\s*([+-]?\\d+)\\s*";
-      reN = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)\\s*";
-      reP = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)%\\s*";
-      reHex = /^#([0-9a-f]{3,8})$/;
-      reRgbInteger = new RegExp(`^rgb\\(${reI},${reI},${reI}\\)$`);
-      reRgbPercent = new RegExp(`^rgb\\(${reP},${reP},${reP}\\)$`);
-      reRgbaInteger = new RegExp(`^rgba\\(${reI},${reI},${reI},${reN}\\)$`);
-      reRgbaPercent = new RegExp(`^rgba\\(${reP},${reP},${reP},${reN}\\)$`);
-      reHslPercent = new RegExp(`^hsl\\(${reN},${reP},${reP}\\)$`);
-      reHslaPercent = new RegExp(`^hsla\\(${reN},${reP},${reP},${reN}\\)$`);
-      named = {
-        aliceblue: 15792383,
-        antiquewhite: 16444375,
-        aqua: 65535,
-        aquamarine: 8388564,
-        azure: 15794175,
-        beige: 16119260,
-        bisque: 16770244,
-        black: 0,
-        blanchedalmond: 16772045,
-        blue: 255,
-        blueviolet: 9055202,
-        brown: 10824234,
-        burlywood: 14596231,
-        cadetblue: 6266528,
-        chartreuse: 8388352,
-        chocolate: 13789470,
-        coral: 16744272,
-        cornflowerblue: 6591981,
-        cornsilk: 16775388,
-        crimson: 14423100,
-        cyan: 65535,
-        darkblue: 139,
-        darkcyan: 35723,
-        darkgoldenrod: 12092939,
-        darkgray: 11119017,
-        darkgreen: 25600,
-        darkgrey: 11119017,
-        darkkhaki: 12433259,
-        darkmagenta: 9109643,
-        darkolivegreen: 5597999,
-        darkorange: 16747520,
-        darkorchid: 10040012,
-        darkred: 9109504,
-        darksalmon: 15308410,
-        darkseagreen: 9419919,
-        darkslateblue: 4734347,
-        darkslategray: 3100495,
-        darkslategrey: 3100495,
-        darkturquoise: 52945,
-        darkviolet: 9699539,
-        deeppink: 16716947,
-        deepskyblue: 49151,
-        dimgray: 6908265,
-        dimgrey: 6908265,
-        dodgerblue: 2003199,
-        firebrick: 11674146,
-        floralwhite: 16775920,
-        forestgreen: 2263842,
-        fuchsia: 16711935,
-        gainsboro: 14474460,
-        ghostwhite: 16316671,
-        gold: 16766720,
-        goldenrod: 14329120,
-        gray: 8421504,
-        green: 32768,
-        greenyellow: 11403055,
-        grey: 8421504,
-        honeydew: 15794160,
-        hotpink: 16738740,
-        indianred: 13458524,
-        indigo: 4915330,
-        ivory: 16777200,
-        khaki: 15787660,
-        lavender: 15132410,
-        lavenderblush: 16773365,
-        lawngreen: 8190976,
-        lemonchiffon: 16775885,
-        lightblue: 11393254,
-        lightcoral: 15761536,
-        lightcyan: 14745599,
-        lightgoldenrodyellow: 16448210,
-        lightgray: 13882323,
-        lightgreen: 9498256,
-        lightgrey: 13882323,
-        lightpink: 16758465,
-        lightsalmon: 16752762,
-        lightseagreen: 2142890,
-        lightskyblue: 8900346,
-        lightslategray: 7833753,
-        lightslategrey: 7833753,
-        lightsteelblue: 11584734,
-        lightyellow: 16777184,
-        lime: 65280,
-        limegreen: 3329330,
-        linen: 16445670,
-        magenta: 16711935,
-        maroon: 8388608,
-        mediumaquamarine: 6737322,
-        mediumblue: 205,
-        mediumorchid: 12211667,
-        mediumpurple: 9662683,
-        mediumseagreen: 3978097,
-        mediumslateblue: 8087790,
-        mediumspringgreen: 64154,
-        mediumturquoise: 4772300,
-        mediumvioletred: 13047173,
-        midnightblue: 1644912,
-        mintcream: 16121850,
-        mistyrose: 16770273,
-        moccasin: 16770229,
-        navajowhite: 16768685,
-        navy: 128,
-        oldlace: 16643558,
-        olive: 8421376,
-        olivedrab: 7048739,
-        orange: 16753920,
-        orangered: 16729344,
-        orchid: 14315734,
-        palegoldenrod: 15657130,
-        palegreen: 10025880,
-        paleturquoise: 11529966,
-        palevioletred: 14381203,
-        papayawhip: 16773077,
-        peachpuff: 16767673,
-        peru: 13468991,
-        pink: 16761035,
-        plum: 14524637,
-        powderblue: 11591910,
-        purple: 8388736,
-        rebeccapurple: 6697881,
-        red: 16711680,
-        rosybrown: 12357519,
-        royalblue: 4286945,
-        saddlebrown: 9127187,
-        salmon: 16416882,
-        sandybrown: 16032864,
-        seagreen: 3050327,
-        seashell: 16774638,
-        sienna: 10506797,
-        silver: 12632256,
-        skyblue: 8900331,
-        slateblue: 6970061,
-        slategray: 7372944,
-        slategrey: 7372944,
-        snow: 16775930,
-        springgreen: 65407,
-        steelblue: 4620980,
-        tan: 13808780,
-        teal: 32896,
-        thistle: 14204888,
-        tomato: 16737095,
-        turquoise: 4251856,
-        violet: 15631086,
-        wheat: 16113331,
-        white: 16777215,
-        whitesmoke: 16119285,
-        yellow: 16776960,
-        yellowgreen: 10145074
-      };
-      define_default(Color, color, {
-        copy(channels) {
-          return Object.assign(new this.constructor(), this, channels);
-        },
-        displayable() {
-          return this.rgb().displayable();
-        },
-        hex: color_formatHex,
-        // Deprecated! Use color.formatHex.
-        formatHex: color_formatHex,
-        formatHex8: color_formatHex8,
-        formatHsl: color_formatHsl,
-        formatRgb: color_formatRgb,
-        toString: color_formatRgb
-      });
-      define_default(Rgb, rgb, extend(Color, {
-        brighter(k) {
-          k = k == null ? brighter : Math.pow(brighter, k);
-          return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
-        },
-        darker(k) {
-          k = k == null ? darker : Math.pow(darker, k);
-          return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
-        },
-        rgb() {
-          return this;
-        },
-        clamp() {
-          return new Rgb(clampi(this.r), clampi(this.g), clampi(this.b), clampa(this.opacity));
-        },
-        displayable() {
-          return -0.5 <= this.r && this.r < 255.5 && (-0.5 <= this.g && this.g < 255.5) && (-0.5 <= this.b && this.b < 255.5) && (0 <= this.opacity && this.opacity <= 1);
-        },
-        hex: rgb_formatHex,
-        // Deprecated! Use color.formatHex.
-        formatHex: rgb_formatHex,
-        formatHex8: rgb_formatHex8,
-        formatRgb: rgb_formatRgb,
-        toString: rgb_formatRgb
-      }));
-      define_default(Hsl, hsl, extend(Color, {
-        brighter(k) {
-          k = k == null ? brighter : Math.pow(brighter, k);
-          return new Hsl(this.h, this.s, this.l * k, this.opacity);
-        },
-        darker(k) {
-          k = k == null ? darker : Math.pow(darker, k);
-          return new Hsl(this.h, this.s, this.l * k, this.opacity);
-        },
-        rgb() {
-          var h = this.h % 360 + (this.h < 0) * 360, s = isNaN(h) || isNaN(this.s) ? 0 : this.s, l = this.l, m2 = l + (l < 0.5 ? l : 1 - l) * s, m1 = 2 * l - m2;
-          return new Rgb(
-            hsl2rgb(h >= 240 ? h - 240 : h + 120, m1, m2),
-            hsl2rgb(h, m1, m2),
-            hsl2rgb(h < 120 ? h + 240 : h - 120, m1, m2),
-            this.opacity
-          );
-        },
-        clamp() {
-          return new Hsl(clamph(this.h), clampt(this.s), clampt(this.l), clampa(this.opacity));
-        },
-        displayable() {
-          return (0 <= this.s && this.s <= 1 || isNaN(this.s)) && (0 <= this.l && this.l <= 1) && (0 <= this.opacity && this.opacity <= 1);
-        },
-        formatHsl() {
-          const a = clampa(this.opacity);
-          return `${a === 1 ? "hsl(" : "hsla("}${clamph(this.h)}, ${clampt(this.s) * 100}%, ${clampt(this.l) * 100}%${a === 1 ? ")" : `, ${a})`}`;
-        }
-      }));
-    }
-  });
-
-  // node_modules/d3-color/src/math.js
-  var radians, degrees;
-  var init_math = __esm({
-    "node_modules/d3-color/src/math.js"() {
-      radians = Math.PI / 180;
-      degrees = 180 / Math.PI;
-    }
-  });
-
-  // node_modules/d3-color/src/lab.js
-  function labConvert(o) {
-    if (o instanceof Lab) return new Lab(o.l, o.a, o.b, o.opacity);
-    if (o instanceof Hcl) return hcl2lab(o);
-    if (!(o instanceof Rgb)) o = rgbConvert(o);
-    var r = rgb2lrgb(o.r), g = rgb2lrgb(o.g), b = rgb2lrgb(o.b), y = xyz2lab((0.2225045 * r + 0.7168786 * g + 0.0606169 * b) / Yn), x, z;
-    if (r === g && g === b) x = z = y;
-    else {
-      x = xyz2lab((0.4360747 * r + 0.3850649 * g + 0.1430804 * b) / Xn);
-      z = xyz2lab((0.0139322 * r + 0.0971045 * g + 0.7141733 * b) / Zn);
-    }
-    return new Lab(116 * y - 16, 500 * (x - y), 200 * (y - z), o.opacity);
-  }
-  function lab(l, a, b, opacity) {
-    return arguments.length === 1 ? labConvert(l) : new Lab(l, a, b, opacity == null ? 1 : opacity);
-  }
-  function Lab(l, a, b, opacity) {
-    this.l = +l;
-    this.a = +a;
-    this.b = +b;
-    this.opacity = +opacity;
-  }
-  function xyz2lab(t) {
-    return t > t3 ? Math.pow(t, 1 / 3) : t / t2 + t0;
-  }
-  function lab2xyz(t) {
-    return t > t1 ? t * t * t : t2 * (t - t0);
-  }
-  function lrgb2rgb(x) {
-    return 255 * (x <= 31308e-7 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055);
-  }
-  function rgb2lrgb(x) {
-    return (x /= 255) <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
-  }
-  function hclConvert(o) {
-    if (o instanceof Hcl) return new Hcl(o.h, o.c, o.l, o.opacity);
-    if (!(o instanceof Lab)) o = labConvert(o);
-    if (o.a === 0 && o.b === 0) return new Hcl(NaN, 0 < o.l && o.l < 100 ? 0 : NaN, o.l, o.opacity);
-    var h = Math.atan2(o.b, o.a) * degrees;
-    return new Hcl(h < 0 ? h + 360 : h, Math.sqrt(o.a * o.a + o.b * o.b), o.l, o.opacity);
-  }
-  function hcl(h, c, l, opacity) {
-    return arguments.length === 1 ? hclConvert(h) : new Hcl(h, c, l, opacity == null ? 1 : opacity);
-  }
-  function Hcl(h, c, l, opacity) {
-    this.h = +h;
-    this.c = +c;
-    this.l = +l;
-    this.opacity = +opacity;
-  }
-  function hcl2lab(o) {
-    if (isNaN(o.h)) return new Lab(o.l, 0, 0, o.opacity);
-    var h = o.h * radians;
-    return new Lab(o.l, Math.cos(h) * o.c, Math.sin(h) * o.c, o.opacity);
-  }
-  var K, Xn, Yn, Zn, t0, t1, t2, t3;
-  var init_lab = __esm({
-    "node_modules/d3-color/src/lab.js"() {
-      init_define();
-      init_color();
-      init_math();
-      K = 18;
-      Xn = 0.96422;
-      Yn = 1;
-      Zn = 0.82521;
-      t0 = 4 / 29;
-      t1 = 6 / 29;
-      t2 = 3 * t1 * t1;
-      t3 = t1 * t1 * t1;
-      define_default(Lab, lab, extend(Color, {
-        brighter(k) {
-          return new Lab(this.l + K * (k == null ? 1 : k), this.a, this.b, this.opacity);
-        },
-        darker(k) {
-          return new Lab(this.l - K * (k == null ? 1 : k), this.a, this.b, this.opacity);
-        },
-        rgb() {
-          var y = (this.l + 16) / 116, x = isNaN(this.a) ? y : y + this.a / 500, z = isNaN(this.b) ? y : y - this.b / 200;
-          x = Xn * lab2xyz(x);
-          y = Yn * lab2xyz(y);
-          z = Zn * lab2xyz(z);
-          return new Rgb(
-            lrgb2rgb(3.1338561 * x - 1.6168667 * y - 0.4906146 * z),
-            lrgb2rgb(-0.9787684 * x + 1.9161415 * y + 0.033454 * z),
-            lrgb2rgb(0.0719453 * x - 0.2289914 * y + 1.4052427 * z),
-            this.opacity
-          );
-        }
-      }));
-      define_default(Hcl, hcl, extend(Color, {
-        brighter(k) {
-          return new Hcl(this.h, this.c, this.l + K * (k == null ? 1 : k), this.opacity);
-        },
-        darker(k) {
-          return new Hcl(this.h, this.c, this.l - K * (k == null ? 1 : k), this.opacity);
-        },
-        rgb() {
-          return hcl2lab(this).rgb();
-        }
-      }));
-    }
-  });
-
-  // node_modules/d3-color/src/cubehelix.js
-  function cubehelixConvert(o) {
-    if (o instanceof Cubehelix) return new Cubehelix(o.h, o.s, o.l, o.opacity);
-    if (!(o instanceof Rgb)) o = rgbConvert(o);
-    var r = o.r / 255, g = o.g / 255, b = o.b / 255, l = (BC_DA * b + ED * r - EB * g) / (BC_DA + ED - EB), bl = b - l, k = (E * (g - l) - C * bl) / D, s = Math.sqrt(k * k + bl * bl) / (E * l * (1 - l)), h = s ? Math.atan2(k, bl) * degrees - 120 : NaN;
-    return new Cubehelix(h < 0 ? h + 360 : h, s, l, o.opacity);
-  }
-  function cubehelix(h, s, l, opacity) {
-    return arguments.length === 1 ? cubehelixConvert(h) : new Cubehelix(h, s, l, opacity == null ? 1 : opacity);
-  }
-  function Cubehelix(h, s, l, opacity) {
-    this.h = +h;
-    this.s = +s;
-    this.l = +l;
-    this.opacity = +opacity;
-  }
-  var A, B, C, D, E, ED, EB, BC_DA;
-  var init_cubehelix = __esm({
-    "node_modules/d3-color/src/cubehelix.js"() {
-      init_define();
-      init_color();
-      init_math();
-      A = -0.14861;
-      B = 1.78277;
-      C = -0.29227;
-      D = -0.90649;
-      E = 1.97294;
-      ED = E * D;
-      EB = E * B;
-      BC_DA = B * C - D * A;
-      define_default(Cubehelix, cubehelix, extend(Color, {
-        brighter(k) {
-          k = k == null ? brighter : Math.pow(brighter, k);
-          return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
-        },
-        darker(k) {
-          k = k == null ? darker : Math.pow(darker, k);
-          return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
-        },
-        rgb() {
-          var h = isNaN(this.h) ? 0 : (this.h + 120) * radians, l = +this.l, a = isNaN(this.s) ? 0 : this.s * l * (1 - l), cosh2 = Math.cos(h), sinh2 = Math.sin(h);
-          return new Rgb(
-            255 * (l + a * (A * cosh2 + B * sinh2)),
-            255 * (l + a * (C * cosh2 + D * sinh2)),
-            255 * (l + a * (E * cosh2)),
-            this.opacity
-          );
-        }
-      }));
-    }
-  });
-
-  // node_modules/d3-color/src/index.js
-  var init_src = __esm({
-    "node_modules/d3-color/src/index.js"() {
-      init_color();
-      init_lab();
-      init_cubehelix();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/basis.js
-  function basis(t12, v0, v1, v2, v3) {
-    var t22 = t12 * t12, t32 = t22 * t12;
-    return ((1 - 3 * t12 + 3 * t22 - t32) * v0 + (4 - 6 * t22 + 3 * t32) * v1 + (1 + 3 * t12 + 3 * t22 - 3 * t32) * v2 + t32 * v3) / 6;
-  }
-  function basis_default(values) {
-    var n = values.length - 1;
-    return function(t) {
-      var i = t <= 0 ? t = 0 : t >= 1 ? (t = 1, n - 1) : Math.floor(t * n), v1 = values[i], v2 = values[i + 1], v0 = i > 0 ? values[i - 1] : 2 * v1 - v2, v3 = i < n - 1 ? values[i + 2] : 2 * v2 - v1;
-      return basis((t - i / n) * n, v0, v1, v2, v3);
-    };
-  }
-  var init_basis = __esm({
-    "node_modules/d3-interpolate/src/basis.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/basisClosed.js
-  function basisClosed_default(values) {
-    var n = values.length;
-    return function(t) {
-      var i = Math.floor(((t %= 1) < 0 ? ++t : t) * n), v0 = values[(i + n - 1) % n], v1 = values[i % n], v2 = values[(i + 1) % n], v3 = values[(i + 2) % n];
-      return basis((t - i / n) * n, v0, v1, v2, v3);
-    };
-  }
-  var init_basisClosed = __esm({
-    "node_modules/d3-interpolate/src/basisClosed.js"() {
-      init_basis();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/constant.js
-  var constant_default;
-  var init_constant = __esm({
-    "node_modules/d3-interpolate/src/constant.js"() {
-      constant_default = (x) => () => x;
-    }
-  });
-
-  // node_modules/d3-interpolate/src/color.js
-  function linear(a, d) {
-    return function(t) {
-      return a + t * d;
-    };
-  }
-  function exponential(a, b, y) {
-    return a = Math.pow(a, y), b = Math.pow(b, y) - a, y = 1 / y, function(t) {
-      return Math.pow(a + t * b, y);
-    };
-  }
-  function hue(a, b) {
-    var d = b - a;
-    return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant_default(isNaN(a) ? b : a);
-  }
-  function gamma(y) {
-    return (y = +y) === 1 ? nogamma : function(a, b) {
-      return b - a ? exponential(a, b, y) : constant_default(isNaN(a) ? b : a);
-    };
-  }
-  function nogamma(a, b) {
-    var d = b - a;
-    return d ? linear(a, d) : constant_default(isNaN(a) ? b : a);
-  }
-  var init_color2 = __esm({
-    "node_modules/d3-interpolate/src/color.js"() {
-      init_constant();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/rgb.js
-  function rgbSpline(spline) {
-    return function(colors) {
-      var n = colors.length, r = new Array(n), g = new Array(n), b = new Array(n), i, color2;
-      for (i = 0; i < n; ++i) {
-        color2 = rgb(colors[i]);
-        r[i] = color2.r || 0;
-        g[i] = color2.g || 0;
-        b[i] = color2.b || 0;
-      }
-      r = spline(r);
-      g = spline(g);
-      b = spline(b);
-      color2.opacity = 1;
-      return function(t) {
-        color2.r = r(t);
-        color2.g = g(t);
-        color2.b = b(t);
-        return color2 + "";
-      };
-    };
-  }
-  var rgb_default, rgbBasis, rgbBasisClosed;
-  var init_rgb = __esm({
-    "node_modules/d3-interpolate/src/rgb.js"() {
-      init_src();
-      init_basis();
-      init_basisClosed();
-      init_color2();
-      rgb_default = function rgbGamma(y) {
-        var color2 = gamma(y);
-        function rgb2(start, end) {
-          var r = color2((start = rgb(start)).r, (end = rgb(end)).r), g = color2(start.g, end.g), b = color2(start.b, end.b), opacity = nogamma(start.opacity, end.opacity);
-          return function(t) {
-            start.r = r(t);
-            start.g = g(t);
-            start.b = b(t);
-            start.opacity = opacity(t);
-            return start + "";
-          };
-        }
-        rgb2.gamma = rgbGamma;
-        return rgb2;
-      }(1);
-      rgbBasis = rgbSpline(basis_default);
-      rgbBasisClosed = rgbSpline(basisClosed_default);
-    }
-  });
-
-  // node_modules/d3-interpolate/src/numberArray.js
-  function numberArray_default(a, b) {
-    if (!b) b = [];
-    var n = a ? Math.min(b.length, a.length) : 0, c = b.slice(), i;
-    return function(t) {
-      for (i = 0; i < n; ++i) c[i] = a[i] * (1 - t) + b[i] * t;
-      return c;
-    };
-  }
-  function isNumberArray(x) {
-    return ArrayBuffer.isView(x) && !(x instanceof DataView);
-  }
-  var init_numberArray = __esm({
-    "node_modules/d3-interpolate/src/numberArray.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/array.js
-  function array_default(a, b) {
-    return (isNumberArray(b) ? numberArray_default : genericArray)(a, b);
-  }
-  function genericArray(a, b) {
-    var nb = b ? b.length : 0, na = a ? Math.min(nb, a.length) : 0, x = new Array(na), c = new Array(nb), i;
-    for (i = 0; i < na; ++i) x[i] = value_default(a[i], b[i]);
-    for (; i < nb; ++i) c[i] = b[i];
-    return function(t) {
-      for (i = 0; i < na; ++i) c[i] = x[i](t);
-      return c;
-    };
-  }
-  var init_array = __esm({
-    "node_modules/d3-interpolate/src/array.js"() {
-      init_value();
-      init_numberArray();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/date.js
-  function date_default(a, b) {
-    var d = /* @__PURE__ */ new Date();
-    return a = +a, b = +b, function(t) {
-      return d.setTime(a * (1 - t) + b * t), d;
-    };
-  }
-  var init_date = __esm({
-    "node_modules/d3-interpolate/src/date.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/number.js
-  function number_default(a, b) {
-    return a = +a, b = +b, function(t) {
-      return a * (1 - t) + b * t;
-    };
-  }
-  var init_number = __esm({
-    "node_modules/d3-interpolate/src/number.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/object.js
-  function object_default(a, b) {
-    var i = {}, c = {}, k;
-    if (a === null || typeof a !== "object") a = {};
-    if (b === null || typeof b !== "object") b = {};
-    for (k in b) {
-      if (k in a) {
-        i[k] = value_default(a[k], b[k]);
-      } else {
-        c[k] = b[k];
-      }
-    }
-    return function(t) {
-      for (k in i) c[k] = i[k](t);
-      return c;
-    };
-  }
-  var init_object = __esm({
-    "node_modules/d3-interpolate/src/object.js"() {
-      init_value();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/string.js
-  function zero(b) {
-    return function() {
-      return b;
-    };
-  }
-  function one(b) {
-    return function(t) {
-      return b(t) + "";
-    };
-  }
-  function string_default(a, b) {
-    var bi = reA.lastIndex = reB.lastIndex = 0, am, bm, bs, i = -1, s = [], q = [];
-    a = a + "", b = b + "";
-    while ((am = reA.exec(a)) && (bm = reB.exec(b))) {
-      if ((bs = bm.index) > bi) {
-        bs = b.slice(bi, bs);
-        if (s[i]) s[i] += bs;
-        else s[++i] = bs;
-      }
-      if ((am = am[0]) === (bm = bm[0])) {
-        if (s[i]) s[i] += bm;
-        else s[++i] = bm;
-      } else {
-        s[++i] = null;
-        q.push({ i, x: number_default(am, bm) });
-      }
-      bi = reB.lastIndex;
-    }
-    if (bi < b.length) {
-      bs = b.slice(bi);
-      if (s[i]) s[i] += bs;
-      else s[++i] = bs;
-    }
-    return s.length < 2 ? q[0] ? one(q[0].x) : zero(b) : (b = q.length, function(t) {
-      for (var i2 = 0, o; i2 < b; ++i2) s[(o = q[i2]).i] = o.x(t);
-      return s.join("");
-    });
-  }
-  var reA, reB;
-  var init_string = __esm({
-    "node_modules/d3-interpolate/src/string.js"() {
-      init_number();
-      reA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g;
-      reB = new RegExp(reA.source, "g");
-    }
-  });
-
-  // node_modules/d3-interpolate/src/value.js
-  function value_default(a, b) {
-    var t = typeof b, c;
-    return b == null || t === "boolean" ? constant_default(b) : (t === "number" ? number_default : t === "string" ? (c = color(b)) ? (b = c, rgb_default) : string_default : b instanceof color ? rgb_default : b instanceof Date ? date_default : isNumberArray(b) ? numberArray_default : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object_default : number_default)(a, b);
-  }
-  var init_value = __esm({
-    "node_modules/d3-interpolate/src/value.js"() {
-      init_src();
-      init_rgb();
-      init_array();
-      init_date();
-      init_number();
-      init_object();
-      init_string();
-      init_constant();
-      init_numberArray();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/discrete.js
-  function discrete_default(range) {
-    var n = range.length;
-    return function(t) {
-      return range[Math.max(0, Math.min(n - 1, Math.floor(t * n)))];
-    };
-  }
-  var init_discrete = __esm({
-    "node_modules/d3-interpolate/src/discrete.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/hue.js
-  function hue_default(a, b) {
-    var i = hue(+a, +b);
-    return function(t) {
-      var x = i(t);
-      return x - 360 * Math.floor(x / 360);
-    };
-  }
-  var init_hue = __esm({
-    "node_modules/d3-interpolate/src/hue.js"() {
-      init_color2();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/round.js
-  function round_default(a, b) {
-    return a = +a, b = +b, function(t) {
-      return Math.round(a * (1 - t) + b * t);
-    };
-  }
-  var init_round = __esm({
-    "node_modules/d3-interpolate/src/round.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/transform/decompose.js
-  function decompose_default(a, b, c, d, e, f) {
-    var scaleX, scaleY, skewX;
-    if (scaleX = Math.sqrt(a * a + b * b)) a /= scaleX, b /= scaleX;
-    if (skewX = a * c + b * d) c -= a * skewX, d -= b * skewX;
-    if (scaleY = Math.sqrt(c * c + d * d)) c /= scaleY, d /= scaleY, skewX /= scaleY;
-    if (a * d < b * c) a = -a, b = -b, skewX = -skewX, scaleX = -scaleX;
-    return {
-      translateX: e,
-      translateY: f,
-      rotate: Math.atan2(b, a) * degrees2,
-      skewX: Math.atan(skewX) * degrees2,
-      scaleX,
-      scaleY
-    };
-  }
-  var degrees2, identity;
-  var init_decompose = __esm({
-    "node_modules/d3-interpolate/src/transform/decompose.js"() {
-      degrees2 = 180 / Math.PI;
-      identity = {
-        translateX: 0,
-        translateY: 0,
-        rotate: 0,
-        skewX: 0,
-        scaleX: 1,
-        scaleY: 1
-      };
-    }
-  });
-
-  // node_modules/d3-interpolate/src/transform/parse.js
-  function parseCss(value) {
-    const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
-    return m.isIdentity ? identity : decompose_default(m.a, m.b, m.c, m.d, m.e, m.f);
-  }
-  function parseSvg(value) {
-    if (value == null) return identity;
-    if (!svgNode) svgNode = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    svgNode.setAttribute("transform", value);
-    if (!(value = svgNode.transform.baseVal.consolidate())) return identity;
-    value = value.matrix;
-    return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
-  }
-  var svgNode;
-  var init_parse = __esm({
-    "node_modules/d3-interpolate/src/transform/parse.js"() {
-      init_decompose();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/transform/index.js
-  function interpolateTransform(parse, pxComma, pxParen, degParen) {
-    function pop(s) {
-      return s.length ? s.pop() + " " : "";
-    }
-    function translate(xa, ya, xb, yb, s, q) {
-      if (xa !== xb || ya !== yb) {
-        var i = s.push("translate(", null, pxComma, null, pxParen);
-        q.push({ i: i - 4, x: number_default(xa, xb) }, { i: i - 2, x: number_default(ya, yb) });
-      } else if (xb || yb) {
-        s.push("translate(" + xb + pxComma + yb + pxParen);
-      }
-    }
-    function rotate(a, b, s, q) {
-      if (a !== b) {
-        if (a - b > 180) b += 360;
-        else if (b - a > 180) a += 360;
-        q.push({ i: s.push(pop(s) + "rotate(", null, degParen) - 2, x: number_default(a, b) });
-      } else if (b) {
-        s.push(pop(s) + "rotate(" + b + degParen);
-      }
-    }
-    function skewX(a, b, s, q) {
-      if (a !== b) {
-        q.push({ i: s.push(pop(s) + "skewX(", null, degParen) - 2, x: number_default(a, b) });
-      } else if (b) {
-        s.push(pop(s) + "skewX(" + b + degParen);
-      }
-    }
-    function scale(xa, ya, xb, yb, s, q) {
-      if (xa !== xb || ya !== yb) {
-        var i = s.push(pop(s) + "scale(", null, ",", null, ")");
-        q.push({ i: i - 4, x: number_default(xa, xb) }, { i: i - 2, x: number_default(ya, yb) });
-      } else if (xb !== 1 || yb !== 1) {
-        s.push(pop(s) + "scale(" + xb + "," + yb + ")");
-      }
-    }
-    return function(a, b) {
-      var s = [], q = [];
-      a = parse(a), b = parse(b);
-      translate(a.translateX, a.translateY, b.translateX, b.translateY, s, q);
-      rotate(a.rotate, b.rotate, s, q);
-      skewX(a.skewX, b.skewX, s, q);
-      scale(a.scaleX, a.scaleY, b.scaleX, b.scaleY, s, q);
-      a = b = null;
-      return function(t) {
-        var i = -1, n = q.length, o;
-        while (++i < n) s[(o = q[i]).i] = o.x(t);
-        return s.join("");
-      };
-    };
-  }
-  var interpolateTransformCss, interpolateTransformSvg;
-  var init_transform = __esm({
-    "node_modules/d3-interpolate/src/transform/index.js"() {
-      init_number();
-      init_parse();
-      interpolateTransformCss = interpolateTransform(parseCss, "px, ", "px)", "deg)");
-      interpolateTransformSvg = interpolateTransform(parseSvg, ", ", ")", ")");
-    }
-  });
-
-  // node_modules/d3-interpolate/src/zoom.js
-  function cosh(x) {
-    return ((x = Math.exp(x)) + 1 / x) / 2;
-  }
-  function sinh(x) {
-    return ((x = Math.exp(x)) - 1 / x) / 2;
-  }
-  function tanh(x) {
-    return ((x = Math.exp(2 * x)) - 1) / (x + 1);
-  }
-  var epsilon2, zoom_default;
-  var init_zoom = __esm({
-    "node_modules/d3-interpolate/src/zoom.js"() {
-      epsilon2 = 1e-12;
-      zoom_default = function zoomRho(rho, rho2, rho4) {
-        function zoom(p0, p1) {
-          var ux0 = p0[0], uy0 = p0[1], w0 = p0[2], ux1 = p1[0], uy1 = p1[1], w1 = p1[2], dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy, i, S;
-          if (d2 < epsilon2) {
-            S = Math.log(w1 / w0) / rho;
-            i = function(t) {
-              return [
-                ux0 + t * dx,
-                uy0 + t * dy,
-                w0 * Math.exp(rho * t * S)
-              ];
-            };
-          } else {
-            var d1 = Math.sqrt(d2), b0 = (w1 * w1 - w0 * w0 + rho4 * d2) / (2 * w0 * rho2 * d1), b1 = (w1 * w1 - w0 * w0 - rho4 * d2) / (2 * w1 * rho2 * d1), r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
-            S = (r1 - r0) / rho;
-            i = function(t) {
-              var s = t * S, coshr0 = cosh(r0), u = w0 / (rho2 * d1) * (coshr0 * tanh(rho * s + r0) - sinh(r0));
-              return [
-                ux0 + u * dx,
-                uy0 + u * dy,
-                w0 * coshr0 / cosh(rho * s + r0)
-              ];
-            };
-          }
-          i.duration = S * 1e3 * rho / Math.SQRT2;
-          return i;
-        }
-        zoom.rho = function(_) {
-          var _1 = Math.max(1e-3, +_), _2 = _1 * _1, _4 = _2 * _2;
-          return zoomRho(_1, _2, _4);
-        };
-        return zoom;
-      }(Math.SQRT2, 2, 4);
-    }
-  });
-
-  // node_modules/d3-interpolate/src/hsl.js
-  function hsl2(hue2) {
-    return function(start, end) {
-      var h = hue2((start = hsl(start)).h, (end = hsl(end)).h), s = nogamma(start.s, end.s), l = nogamma(start.l, end.l), opacity = nogamma(start.opacity, end.opacity);
-      return function(t) {
-        start.h = h(t);
-        start.s = s(t);
-        start.l = l(t);
-        start.opacity = opacity(t);
-        return start + "";
-      };
-    };
-  }
-  var hsl_default, hslLong;
-  var init_hsl = __esm({
-    "node_modules/d3-interpolate/src/hsl.js"() {
-      init_src();
-      init_color2();
-      hsl_default = hsl2(hue);
-      hslLong = hsl2(nogamma);
-    }
-  });
-
-  // node_modules/d3-interpolate/src/lab.js
-  function lab2(start, end) {
-    var l = nogamma((start = lab(start)).l, (end = lab(end)).l), a = nogamma(start.a, end.a), b = nogamma(start.b, end.b), opacity = nogamma(start.opacity, end.opacity);
-    return function(t) {
-      start.l = l(t);
-      start.a = a(t);
-      start.b = b(t);
-      start.opacity = opacity(t);
-      return start + "";
-    };
-  }
-  var init_lab2 = __esm({
-    "node_modules/d3-interpolate/src/lab.js"() {
-      init_src();
-      init_color2();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/hcl.js
-  function hcl2(hue2) {
-    return function(start, end) {
-      var h = hue2((start = hcl(start)).h, (end = hcl(end)).h), c = nogamma(start.c, end.c), l = nogamma(start.l, end.l), opacity = nogamma(start.opacity, end.opacity);
-      return function(t) {
-        start.h = h(t);
-        start.c = c(t);
-        start.l = l(t);
-        start.opacity = opacity(t);
-        return start + "";
-      };
-    };
-  }
-  var hcl_default, hclLong;
-  var init_hcl = __esm({
-    "node_modules/d3-interpolate/src/hcl.js"() {
-      init_src();
-      init_color2();
-      hcl_default = hcl2(hue);
-      hclLong = hcl2(nogamma);
-    }
-  });
-
-  // node_modules/d3-interpolate/src/cubehelix.js
-  function cubehelix2(hue2) {
-    return function cubehelixGamma(y) {
-      y = +y;
-      function cubehelix3(start, end) {
-        var h = hue2((start = cubehelix(start)).h, (end = cubehelix(end)).h), s = nogamma(start.s, end.s), l = nogamma(start.l, end.l), opacity = nogamma(start.opacity, end.opacity);
-        return function(t) {
-          start.h = h(t);
-          start.s = s(t);
-          start.l = l(Math.pow(t, y));
-          start.opacity = opacity(t);
-          return start + "";
-        };
-      }
-      cubehelix3.gamma = cubehelixGamma;
-      return cubehelix3;
-    }(1);
-  }
-  var cubehelix_default, cubehelixLong;
-  var init_cubehelix2 = __esm({
-    "node_modules/d3-interpolate/src/cubehelix.js"() {
-      init_src();
-      init_color2();
-      cubehelix_default = cubehelix2(hue);
-      cubehelixLong = cubehelix2(nogamma);
-    }
-  });
-
-  // node_modules/d3-interpolate/src/piecewise.js
-  function piecewise(interpolate, values) {
-    if (values === void 0) values = interpolate, interpolate = value_default;
-    var i = 0, n = values.length - 1, v = values[0], I = new Array(n < 0 ? 0 : n);
-    while (i < n) I[i] = interpolate(v, v = values[++i]);
-    return function(t) {
-      var i2 = Math.max(0, Math.min(n - 1, Math.floor(t *= n)));
-      return I[i2](t - i2);
-    };
-  }
-  var init_piecewise = __esm({
-    "node_modules/d3-interpolate/src/piecewise.js"() {
-      init_value();
-    }
-  });
-
-  // node_modules/d3-interpolate/src/quantize.js
-  function quantize_default(interpolator, n) {
-    var samples = new Array(n);
-    for (var i = 0; i < n; ++i) samples[i] = interpolator(i / (n - 1));
-    return samples;
-  }
-  var init_quantize = __esm({
-    "node_modules/d3-interpolate/src/quantize.js"() {
-    }
-  });
-
-  // node_modules/d3-interpolate/src/index.js
-  var src_exports = {};
-  __export(src_exports, {
-    interpolate: () => value_default,
-    interpolateArray: () => array_default,
-    interpolateBasis: () => basis_default,
-    interpolateBasisClosed: () => basisClosed_default,
-    interpolateCubehelix: () => cubehelix_default,
-    interpolateCubehelixLong: () => cubehelixLong,
-    interpolateDate: () => date_default,
-    interpolateDiscrete: () => discrete_default,
-    interpolateHcl: () => hcl_default,
-    interpolateHclLong: () => hclLong,
-    interpolateHsl: () => hsl_default,
-    interpolateHslLong: () => hslLong,
-    interpolateHue: () => hue_default,
-    interpolateLab: () => lab2,
-    interpolateNumber: () => number_default,
-    interpolateNumberArray: () => numberArray_default,
-    interpolateObject: () => object_default,
-    interpolateRgb: () => rgb_default,
-    interpolateRgbBasis: () => rgbBasis,
-    interpolateRgbBasisClosed: () => rgbBasisClosed,
-    interpolateRound: () => round_default,
-    interpolateString: () => string_default,
-    interpolateTransformCss: () => interpolateTransformCss,
-    interpolateTransformSvg: () => interpolateTransformSvg,
-    interpolateZoom: () => zoom_default,
-    piecewise: () => piecewise,
-    quantize: () => quantize_default
-  });
-  var init_src2 = __esm({
-    "node_modules/d3-interpolate/src/index.js"() {
-      init_value();
-      init_array();
-      init_basis();
-      init_basisClosed();
-      init_date();
-      init_discrete();
-      init_hue();
-      init_number();
-      init_numberArray();
-      init_object();
-      init_round();
-      init_string();
-      init_transform();
-      init_zoom();
-      init_rgb();
-      init_hsl();
-      init_lab2();
-      init_hcl();
-      init_cubehelix2();
-      init_piecewise();
-      init_quantize();
-    }
-  });
-
-  // src/traces/indicator/plot.js
-  var require_plot8 = __commonJS({
-    "src/traces/indicator/plot.js"(exports, module) {
+  // src/traces/heatmap/hover.js
+  var require_hover3 = __commonJS({
+    "src/traces/heatmap/hover.js"(exports, module) {
       "use strict";
-      var d3 = require_d3();
-      var interpolate = (init_src2(), __toCommonJS(src_exports)).interpolate;
-      var interpolateNumber = (init_src2(), __toCommonJS(src_exports)).interpolateNumber;
+      var Fx = require_fx();
       var Lib = require_lib();
-      var strScale = Lib.strScale;
-      var strTranslate = Lib.strTranslate;
-      var rad2deg = Lib.rad2deg;
-      var MID_SHIFT = require_alignment().MID_SHIFT;
-      var Drawing = require_drawing();
-      var cn = require_constants18();
-      var svgTextUtils = require_svg_text_utils();
+      var isArrayOrTypedArray = Lib.isArrayOrTypedArray;
       var Axes = require_axes();
-      var handleAxisDefaults = require_axis_defaults();
-      var handleAxisPositionDefaults = require_position_defaults();
-      var axisLayoutAttrs = require_layout_attributes4();
-      var Color2 = require_color();
-      var anchor = {
-        left: "start",
-        center: "middle",
-        right: "end"
-      };
-      var position = {
-        left: 0,
-        center: 0.5,
-        right: 1
-      };
-      var SI_PREFIX = /[yzafpnµmkMGTPEZY]/;
-      function hasTransition(transitionOpts) {
-        return transitionOpts && transitionOpts.duration > 0;
-      }
-      module.exports = function plot(gd, cdModule, transitionOpts, makeOnCompleteCallback) {
-        var fullLayout = gd._fullLayout;
-        var onComplete;
-        if (hasTransition(transitionOpts)) {
-          if (makeOnCompleteCallback) {
-            onComplete = makeOnCompleteCallback();
+      var extractOpts = require_colorscale().extractOpts;
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        var isContour = opts.isContour;
+        var cd0 = pointData.cd[0];
+        var trace = cd0.trace;
+        var xa = pointData.xa;
+        var ya = pointData.ya;
+        var x = cd0.x;
+        var y = cd0.y;
+        var z = cd0.z;
+        var xc = cd0.xCenter;
+        var yc = cd0.yCenter;
+        var zmask = cd0.zmask;
+        var zhoverformat = trace.zhoverformat;
+        var x2 = x;
+        var y2 = y;
+        var xl, yl, nx, ny;
+        if (pointData.index !== false) {
+          try {
+            nx = Math.round(pointData.index[1]);
+            ny = Math.round(pointData.index[0]);
+          } catch (e) {
+            Lib.error("Error hovering on heatmap, pointNumber must be [row,col], found:", pointData.index);
+            return;
           }
-        }
-        Lib.makeTraceGroups(fullLayout._indicatorlayer, cdModule, "trace").each(function(cd) {
-          var cd0 = cd[0];
-          var trace = cd0.trace;
-          var plotGroup = d3.select(this);
-          var hasGauge = trace._hasGauge;
-          var isAngular = trace._isAngular;
-          var isBullet = trace._isBullet;
-          var domain = trace.domain;
-          var size = {
-            w: fullLayout._size.w * (domain.x[1] - domain.x[0]),
-            h: fullLayout._size.h * (domain.y[1] - domain.y[0]),
-            l: fullLayout._size.l + fullLayout._size.w * domain.x[0],
-            r: fullLayout._size.r + fullLayout._size.w * (1 - domain.x[1]),
-            t: fullLayout._size.t + fullLayout._size.h * (1 - domain.y[1]),
-            b: fullLayout._size.b + fullLayout._size.h * domain.y[0]
-          };
-          var centerX = size.l + size.w / 2;
-          var centerY = size.t + size.h / 2;
-          var radius = Math.min(size.w / 2, size.h);
-          var innerRadius = cn.innerRadius * radius;
-          var numbersX, numbersY, numbersScaler;
-          var numbersAlign = trace.align || "center";
-          numbersY = centerY;
-          if (!hasGauge) {
-            numbersX = size.l + position[numbersAlign] * size.w;
-            numbersScaler = function(el) {
-              return fitTextInsideBox(el, size.w, size.h);
-            };
-          } else {
-            if (isAngular) {
-              numbersX = centerX;
-              numbersY = centerY + radius / 2;
-              numbersScaler = function(el) {
-                return fitTextInsideCircle(el, 0.9 * innerRadius);
-              };
-            }
-            if (isBullet) {
-              var padding = cn.bulletPadding;
-              var p = 1 - cn.bulletNumberDomainSize + padding;
-              numbersX = size.l + (p + (1 - p) * position[numbersAlign]) * size.w;
-              numbersScaler = function(el) {
-                return fitTextInsideBox(el, (cn.bulletNumberDomainSize - padding) * size.w, size.h);
-              };
-            }
+          if (nx < 0 || nx >= z[0].length || ny < 0 || ny > z.length) {
+            return;
           }
-          drawNumbers(gd, plotGroup, cd, {
-            numbersX,
-            numbersY,
-            numbersScaler,
-            transitionOpts,
-            onComplete
-          });
-          var gaugeBg, gaugeOutline;
-          if (hasGauge) {
-            gaugeBg = {
-              range: trace.gauge.axis.range,
-              color: trace.gauge.bgcolor,
-              line: {
-                color: trace.gauge.bordercolor,
-                width: 0
-              },
-              thickness: 1
-            };
-            gaugeOutline = {
-              range: trace.gauge.axis.range,
-              color: "rgba(0, 0, 0, 0)",
-              line: {
-                color: trace.gauge.bordercolor,
-                width: trace.gauge.borderwidth
-              },
-              thickness: 1
-            };
-          }
-          var angularGauge = plotGroup.selectAll("g.angular").data(isAngular ? cd : []);
-          angularGauge.exit().remove();
-          var angularaxisLayer = plotGroup.selectAll("g.angularaxis").data(isAngular ? cd : []);
-          angularaxisLayer.exit().remove();
-          if (isAngular) {
-            drawAngularGauge(gd, plotGroup, cd, {
-              radius,
-              innerRadius,
-              gauge: angularGauge,
-              layer: angularaxisLayer,
-              size,
-              gaugeBg,
-              gaugeOutline,
-              transitionOpts,
-              onComplete
-            });
-          }
-          var bulletGauge = plotGroup.selectAll("g.bullet").data(isBullet ? cd : []);
-          bulletGauge.exit().remove();
-          var bulletaxisLayer = plotGroup.selectAll("g.bulletaxis").data(isBullet ? cd : []);
-          bulletaxisLayer.exit().remove();
-          if (isBullet) {
-            drawBulletGauge(gd, plotGroup, cd, {
-              gauge: bulletGauge,
-              layer: bulletaxisLayer,
-              size,
-              gaugeBg,
-              gaugeOutline,
-              transitionOpts,
-              onComplete
-            });
-          }
-          var title = plotGroup.selectAll("text.title").data(cd);
-          title.exit().remove();
-          title.enter().append("text").classed("title", true);
-          title.attr("text-anchor", function() {
-            return isBullet ? anchor.right : anchor[trace.title.align];
-          }).text(trace.title.text).call(Drawing.font, trace.title.font).call(svgTextUtils.convertToTspans, gd);
-          title.attr("transform", function() {
-            var titleX = size.l + size.w * position[trace.title.align];
-            var titleY;
-            var titlePadding = cn.titlePadding;
-            var titlebBox = Drawing.bBox(title.node());
-            if (hasGauge) {
-              if (isAngular) {
-                if (trace.gauge.axis.visible) {
-                  var bBox = Drawing.bBox(angularaxisLayer.node());
-                  titleY = bBox.top - titlePadding - titlebBox.bottom;
-                } else {
-                  titleY = size.t + size.h / 2 - radius / 2 - titlebBox.bottom - titlePadding;
-                }
-              }
-              if (isBullet) {
-                titleY = numbersY - (titlebBox.top + titlebBox.bottom) / 2;
-                titleX = size.l - cn.bulletPadding * size.w;
-              }
-            } else {
-              titleY = trace._numbersTop - titlePadding - titlebBox.bottom;
-            }
-            return strTranslate(titleX, titleY);
-          });
-        });
-      };
-      function drawBulletGauge(gd, plotGroup, cd, opts) {
-        var trace = cd[0].trace;
-        var bullet = opts.gauge;
-        var axisLayer = opts.layer;
-        var gaugeBg = opts.gaugeBg;
-        var gaugeOutline = opts.gaugeOutline;
-        var size = opts.size;
-        var domain = trace.domain;
-        var transitionOpts = opts.transitionOpts;
-        var onComplete = opts.onComplete;
-        var ax, vals, transFn, tickSign, shift;
-        bullet.enter().append("g").classed("bullet", true);
-        bullet.attr("transform", strTranslate(size.l, size.t));
-        axisLayer.enter().append("g").classed("bulletaxis", true).classed("crisp", true);
-        axisLayer.selectAll("g.xbulletaxistick,path,text").remove();
-        var bulletHeight = size.h;
-        var innerBulletHeight = trace.gauge.bar.thickness * bulletHeight;
-        var bulletLeft = domain.x[0];
-        var bulletRight = domain.x[0] + (domain.x[1] - domain.x[0]) * (trace._hasNumber || trace._hasDelta ? 1 - cn.bulletNumberDomainSize : 1);
-        ax = mockAxis(gd, trace.gauge.axis);
-        ax._id = "xbulletaxis";
-        ax.domain = [bulletLeft, bulletRight];
-        ax.setScale();
-        vals = Axes.calcTicks(ax);
-        transFn = Axes.makeTransTickFn(ax);
-        tickSign = Axes.getTickSigns(ax)[2];
-        shift = size.t + size.h;
-        if (ax.visible) {
-          Axes.drawTicks(gd, ax, {
-            vals: ax.ticks === "inside" ? Axes.clipEnds(ax, vals) : vals,
-            layer: axisLayer,
-            path: Axes.makeTickPath(ax, shift, tickSign),
-            transFn
-          });
-          Axes.drawLabels(gd, ax, {
-            vals,
-            layer: axisLayer,
-            transFn,
-            labelFns: Axes.makeLabelFns(ax, shift)
-          });
-        }
-        function drawRect(s) {
-          s.attr("width", function(d) {
-            return Math.max(0, ax.c2p(d.range[1]) - ax.c2p(d.range[0]));
-          }).attr("x", function(d) {
-            return ax.c2p(d.range[0]);
-          }).attr("y", function(d) {
-            return 0.5 * (1 - d.thickness) * bulletHeight;
-          }).attr("height", function(d) {
-            return d.thickness * bulletHeight;
-          });
-        }
-        var boxes = [gaugeBg].concat(trace.gauge.steps);
-        var bgBullet = bullet.selectAll("g.bg-bullet").data(boxes);
-        bgBullet.enter().append("g").classed("bg-bullet", true).append("rect");
-        bgBullet.select("rect").call(drawRect).call(styleShape);
-        bgBullet.exit().remove();
-        var fgBullet = bullet.selectAll("g.value-bullet").data([trace.gauge.bar]);
-        fgBullet.enter().append("g").classed("value-bullet", true).append("rect");
-        fgBullet.select("rect").attr("height", innerBulletHeight).attr("y", (bulletHeight - innerBulletHeight) / 2).call(styleShape);
-        if (hasTransition(transitionOpts)) {
-          fgBullet.select("rect").transition().duration(transitionOpts.duration).ease(transitionOpts.easing).each("end", function() {
-            onComplete && onComplete();
-          }).each("interrupt", function() {
-            onComplete && onComplete();
-          }).attr("width", Math.max(0, ax.c2p(Math.min(trace.gauge.axis.range[1], cd[0].y))));
+        } else if (Fx.inbox(xval - x[0], xval - x[x.length - 1], 0) > 0 || Fx.inbox(yval - y[0], yval - y[y.length - 1], 0) > 0) {
+          return;
         } else {
-          fgBullet.select("rect").attr("width", typeof cd[0].y === "number" ? Math.max(0, ax.c2p(Math.min(trace.gauge.axis.range[1], cd[0].y))) : 0);
-        }
-        fgBullet.exit().remove();
-        var data = cd.filter(function() {
-          return trace.gauge.threshold.value || trace.gauge.threshold.value === 0;
-        });
-        var threshold = bullet.selectAll("g.threshold-bullet").data(data);
-        threshold.enter().append("g").classed("threshold-bullet", true).append("line");
-        threshold.select("line").attr("x1", ax.c2p(trace.gauge.threshold.value)).attr("x2", ax.c2p(trace.gauge.threshold.value)).attr("y1", (1 - trace.gauge.threshold.thickness) / 2 * bulletHeight).attr("y2", (1 - (1 - trace.gauge.threshold.thickness) / 2) * bulletHeight).call(Color2.stroke, trace.gauge.threshold.line.color).style("stroke-width", trace.gauge.threshold.line.width);
-        threshold.exit().remove();
-        var bulletOutline = bullet.selectAll("g.gauge-outline").data([gaugeOutline]);
-        bulletOutline.enter().append("g").classed("gauge-outline", true).append("rect");
-        bulletOutline.select("rect").call(drawRect).call(styleShape);
-        bulletOutline.exit().remove();
-      }
-      function drawAngularGauge(gd, plotGroup, cd, opts) {
-        var trace = cd[0].trace;
-        var size = opts.size;
-        var radius = opts.radius;
-        var innerRadius = opts.innerRadius;
-        var gaugeBg = opts.gaugeBg;
-        var gaugeOutline = opts.gaugeOutline;
-        var gaugePosition = [size.l + size.w / 2, size.t + size.h / 2 + radius / 2];
-        var gauge = opts.gauge;
-        var axisLayer = opts.layer;
-        var transitionOpts = opts.transitionOpts;
-        var onComplete = opts.onComplete;
-        var theta = Math.PI / 2;
-        function valueToAngle(v2) {
-          var min = trace.gauge.axis.range[0];
-          var max = trace.gauge.axis.range[1];
-          var angle = (v2 - min) / (max - min) * Math.PI - theta;
-          if (angle < -theta) return -theta;
-          if (angle > theta) return theta;
-          return angle;
-        }
-        function arcPathGenerator(size2) {
-          return d3.svg.arc().innerRadius((innerRadius + radius) / 2 - size2 / 2 * (radius - innerRadius)).outerRadius((innerRadius + radius) / 2 + size2 / 2 * (radius - innerRadius)).startAngle(-theta);
-        }
-        function drawArc(p) {
-          p.attr("d", function(d) {
-            return arcPathGenerator(d.thickness).startAngle(valueToAngle(d.range[0])).endAngle(valueToAngle(d.range[1]))();
-          });
-        }
-        var ax, vals, transFn, tickSign;
-        gauge.enter().append("g").classed("angular", true);
-        gauge.attr("transform", strTranslate(gaugePosition[0], gaugePosition[1]));
-        axisLayer.enter().append("g").classed("angularaxis", true).classed("crisp", true);
-        axisLayer.selectAll("g.xangularaxistick,path,text").remove();
-        ax = mockAxis(gd, trace.gauge.axis);
-        ax.type = "linear";
-        ax.range = trace.gauge.axis.range;
-        ax._id = "xangularaxis";
-        ax.ticklabeloverflow = "allow";
-        ax.setScale();
-        var t2g = function(d) {
-          return (ax.range[0] - d.x) / (ax.range[1] - ax.range[0]) * Math.PI + Math.PI;
-        };
-        var labelFns = {};
-        var out = Axes.makeLabelFns(ax, 0);
-        var labelStandoff = out.labelStandoff;
-        labelFns.xFn = function(d) {
-          var rad = t2g(d);
-          return Math.cos(rad) * labelStandoff;
-        };
-        labelFns.yFn = function(d) {
-          var rad = t2g(d);
-          var ff = Math.sin(rad) > 0 ? 0.2 : 1;
-          return -Math.sin(rad) * (labelStandoff + d.fontSize * ff) + Math.abs(Math.cos(rad)) * (d.fontSize * MID_SHIFT);
-        };
-        labelFns.anchorFn = function(d) {
-          var rad = t2g(d);
-          var cos = Math.cos(rad);
-          return Math.abs(cos) < 0.1 ? "middle" : cos > 0 ? "start" : "end";
-        };
-        labelFns.heightFn = function(d, a, h) {
-          var rad = t2g(d);
-          return -0.5 * (1 + Math.sin(rad)) * h;
-        };
-        var _transFn = function(rad) {
-          return strTranslate(
-            gaugePosition[0] + radius * Math.cos(rad),
-            gaugePosition[1] - radius * Math.sin(rad)
-          );
-        };
-        transFn = function(d) {
-          return _transFn(t2g(d));
-        };
-        var transFn2 = function(d) {
-          var rad = t2g(d);
-          return _transFn(rad) + "rotate(" + -rad2deg(rad) + ")";
-        };
-        vals = Axes.calcTicks(ax);
-        tickSign = Axes.getTickSigns(ax)[2];
-        if (ax.visible) {
-          tickSign = ax.ticks === "inside" ? -1 : 1;
-          var pad = (ax.linewidth || 1) / 2;
-          Axes.drawTicks(gd, ax, {
-            vals,
-            layer: axisLayer,
-            path: "M" + tickSign * pad + ",0h" + tickSign * ax.ticklen,
-            transFn: transFn2
-          });
-          Axes.drawLabels(gd, ax, {
-            vals,
-            layer: axisLayer,
-            transFn,
-            labelFns
-          });
-        }
-        var arcs = [gaugeBg].concat(trace.gauge.steps);
-        var bgArc = gauge.selectAll("g.bg-arc").data(arcs);
-        bgArc.enter().append("g").classed("bg-arc", true).append("path");
-        bgArc.select("path").call(drawArc).call(styleShape);
-        bgArc.exit().remove();
-        var valueArcPathGenerator = arcPathGenerator(trace.gauge.bar.thickness);
-        var valueArc = gauge.selectAll("g.value-arc").data([trace.gauge.bar]);
-        valueArc.enter().append("g").classed("value-arc", true).append("path");
-        var valueArcPath = valueArc.select("path");
-        if (hasTransition(transitionOpts)) {
-          valueArcPath.transition().duration(transitionOpts.duration).ease(transitionOpts.easing).each("end", function() {
-            onComplete && onComplete();
-          }).each("interrupt", function() {
-            onComplete && onComplete();
-          }).attrTween("d", arcTween(valueArcPathGenerator, valueToAngle(cd[0].lastY), valueToAngle(cd[0].y)));
-          trace._lastValue = cd[0].y;
-        } else {
-          valueArcPath.attr("d", typeof cd[0].y === "number" ? valueArcPathGenerator.endAngle(valueToAngle(cd[0].y)) : "M0,0Z");
-        }
-        valueArcPath.call(styleShape);
-        valueArc.exit().remove();
-        arcs = [];
-        var v = trace.gauge.threshold.value;
-        if (v || v === 0) {
-          arcs.push({
-            range: [v, v],
-            color: trace.gauge.threshold.color,
-            line: {
-              color: trace.gauge.threshold.line.color,
-              width: trace.gauge.threshold.line.width
-            },
-            thickness: trace.gauge.threshold.thickness
-          });
-        }
-        var thresholdArc = gauge.selectAll("g.threshold-arc").data(arcs);
-        thresholdArc.enter().append("g").classed("threshold-arc", true).append("path");
-        thresholdArc.select("path").call(drawArc).call(styleShape);
-        thresholdArc.exit().remove();
-        var gaugeBorder = gauge.selectAll("g.gauge-outline").data([gaugeOutline]);
-        gaugeBorder.enter().append("g").classed("gauge-outline", true).append("path");
-        gaugeBorder.select("path").call(drawArc).call(styleShape);
-        gaugeBorder.exit().remove();
-      }
-      function drawNumbers(gd, plotGroup, cd, opts) {
-        var trace = cd[0].trace;
-        var numbersX = opts.numbersX;
-        var numbersY = opts.numbersY;
-        var numbersAlign = trace.align || "center";
-        var numbersAnchor = anchor[numbersAlign];
-        var transitionOpts = opts.transitionOpts;
-        var onComplete = opts.onComplete;
-        var numbers = Lib.ensureSingle(plotGroup, "g", "numbers");
-        var bignumberbBox, deltabBox;
-        var numbersbBox;
-        var data = [];
-        if (trace._hasNumber) data.push("number");
-        if (trace._hasDelta) {
-          data.push("delta");
-          if (trace.delta.position === "left") data.reverse();
-        }
-        var sel = numbers.selectAll("text").data(data);
-        sel.enter().append("text");
-        sel.attr("text-anchor", function() {
-          return numbersAnchor;
-        }).attr("class", function(d) {
-          return d;
-        }).attr("x", null).attr("y", null).attr("dx", null).attr("dy", null);
-        sel.exit().remove();
-        function transitionFormat(valueformat, fmt, from, to) {
-          if (valueformat.match("s") && // If using SI prefix
-          from >= 0 !== to >= 0 && // If sign change
-          (!fmt(from).slice(-1).match(SI_PREFIX) && !fmt(to).slice(-1).match(SI_PREFIX))) {
-            var transitionValueFormat = valueformat.slice().replace("s", "f").replace(/\d+/, function(m) {
-              return parseInt(m) - 1;
-            });
-            var transitionAx = mockAxis(gd, { tickformat: transitionValueFormat });
-            return function(v) {
-              if (Math.abs(v) < 1) return Axes.tickText(transitionAx, v).text;
-              return fmt(v);
-            };
-          } else {
-            return fmt;
-          }
-        }
-        function drawBignumber() {
-          var bignumberAx = mockAxis(gd, { tickformat: trace.number.valueformat }, trace._range);
-          bignumberAx.setScale();
-          Axes.prepTicks(bignumberAx);
-          var bignumberFmt = function(v) {
-            return Axes.tickText(bignumberAx, v).text;
-          };
-          var bignumberSuffix = trace.number.suffix;
-          var bignumberPrefix = trace.number.prefix;
-          var number = numbers.select("text.number");
-          function writeNumber() {
-            var txt = typeof cd[0].y === "number" ? bignumberPrefix + bignumberFmt(cd[0].y) + bignumberSuffix : "-";
-            number.text(txt).call(Drawing.font, trace.number.font).call(svgTextUtils.convertToTspans, gd);
-          }
-          if (hasTransition(transitionOpts)) {
-            number.transition().duration(transitionOpts.duration).ease(transitionOpts.easing).each("end", function() {
-              writeNumber();
-              onComplete && onComplete();
-            }).each("interrupt", function() {
-              writeNumber();
-              onComplete && onComplete();
-            }).attrTween("text", function() {
-              var that = d3.select(this);
-              var interpolator = interpolateNumber(cd[0].lastY, cd[0].y);
-              trace._lastValue = cd[0].y;
-              var transitionFmt = transitionFormat(trace.number.valueformat, bignumberFmt, cd[0].lastY, cd[0].y);
-              return function(t) {
-                that.text(bignumberPrefix + transitionFmt(interpolator(t)) + bignumberSuffix);
-              };
-            });
-          } else {
-            writeNumber();
-          }
-          bignumberbBox = measureText(bignumberPrefix + bignumberFmt(cd[0].y) + bignumberSuffix, trace.number.font, numbersAnchor, gd);
-          return number;
-        }
-        function drawDelta() {
-          var deltaAx = mockAxis(gd, { tickformat: trace.delta.valueformat }, trace._range);
-          deltaAx.setScale();
-          Axes.prepTicks(deltaAx);
-          var deltaFmt = function(v) {
-            return Axes.tickText(deltaAx, v).text;
-          };
-          var deltaSuffix = trace.delta.suffix;
-          var deltaPrefix = trace.delta.prefix;
-          var deltaValue = function(d) {
-            var value = trace.delta.relative ? d.relativeDelta : d.delta;
-            return value;
-          };
-          var deltaFormatText = function(value, numberFmt) {
-            if (value === 0 || typeof value !== "number" || isNaN(value)) return "-";
-            return (value > 0 ? trace.delta.increasing.symbol : trace.delta.decreasing.symbol) + deltaPrefix + numberFmt(value) + deltaSuffix;
-          };
-          var deltaFill = function(d) {
-            return d.delta >= 0 ? trace.delta.increasing.color : trace.delta.decreasing.color;
-          };
-          if (trace._deltaLastValue === void 0) {
-            trace._deltaLastValue = deltaValue(cd[0]);
-          }
-          var delta2 = numbers.select("text.delta");
-          delta2.call(Drawing.font, trace.delta.font).call(Color2.fill, deltaFill({ delta: trace._deltaLastValue }));
-          function writeDelta() {
-            delta2.text(deltaFormatText(deltaValue(cd[0]), deltaFmt)).call(Color2.fill, deltaFill(cd[0])).call(svgTextUtils.convertToTspans, gd);
-          }
-          if (hasTransition(transitionOpts)) {
-            delta2.transition().duration(transitionOpts.duration).ease(transitionOpts.easing).tween("text", function() {
-              var that = d3.select(this);
-              var to = deltaValue(cd[0]);
-              var from = trace._deltaLastValue;
-              var transitionFmt = transitionFormat(trace.delta.valueformat, deltaFmt, from, to);
-              var interpolator = interpolateNumber(from, to);
-              trace._deltaLastValue = to;
-              return function(t) {
-                that.text(deltaFormatText(interpolator(t), transitionFmt));
-                that.call(Color2.fill, deltaFill({ delta: interpolator(t) }));
-              };
-            }).each("end", function() {
-              writeDelta();
-              onComplete && onComplete();
-            }).each("interrupt", function() {
-              writeDelta();
-              onComplete && onComplete();
-            });
-          } else {
-            writeDelta();
-          }
-          deltabBox = measureText(deltaFormatText(deltaValue(cd[0]), deltaFmt), trace.delta.font, numbersAnchor, gd);
-          return delta2;
-        }
-        var key = trace.mode + trace.align;
-        var delta;
-        if (trace._hasDelta) {
-          delta = drawDelta();
-          key += trace.delta.position + trace.delta.font.size + trace.delta.font.family + trace.delta.valueformat;
-          key += trace.delta.increasing.symbol + trace.delta.decreasing.symbol;
-          numbersbBox = deltabBox;
-        }
-        if (trace._hasNumber) {
-          drawBignumber();
-          key += trace.number.font.size + trace.number.font.family + trace.number.valueformat + trace.number.suffix + trace.number.prefix;
-          numbersbBox = bignumberbBox;
-        }
-        if (trace._hasDelta && trace._hasNumber) {
-          var bignumberCenter = [
-            (bignumberbBox.left + bignumberbBox.right) / 2,
-            (bignumberbBox.top + bignumberbBox.bottom) / 2
-          ];
-          var deltaCenter = [
-            (deltabBox.left + deltabBox.right) / 2,
-            (deltabBox.top + deltabBox.bottom) / 2
-          ];
-          var dx, dy;
-          var padding = 0.75 * trace.delta.font.size;
-          if (trace.delta.position === "left") {
-            dx = cache(trace, "deltaPos", 0, -1 * (bignumberbBox.width * position[trace.align] + deltabBox.width * (1 - position[trace.align]) + padding), key, Math.min);
-            dy = bignumberCenter[1] - deltaCenter[1];
-            numbersbBox = {
-              width: bignumberbBox.width + deltabBox.width + padding,
-              height: Math.max(bignumberbBox.height, deltabBox.height),
-              left: deltabBox.left + dx,
-              right: bignumberbBox.right,
-              top: Math.min(bignumberbBox.top, deltabBox.top + dy),
-              bottom: Math.max(bignumberbBox.bottom, deltabBox.bottom + dy)
-            };
-          }
-          if (trace.delta.position === "right") {
-            dx = cache(trace, "deltaPos", 0, bignumberbBox.width * (1 - position[trace.align]) + deltabBox.width * position[trace.align] + padding, key, Math.max);
-            dy = bignumberCenter[1] - deltaCenter[1];
-            numbersbBox = {
-              width: bignumberbBox.width + deltabBox.width + padding,
-              height: Math.max(bignumberbBox.height, deltabBox.height),
-              left: bignumberbBox.left,
-              right: deltabBox.right + dx,
-              top: Math.min(bignumberbBox.top, deltabBox.top + dy),
-              bottom: Math.max(bignumberbBox.bottom, deltabBox.bottom + dy)
-            };
-          }
-          if (trace.delta.position === "bottom") {
-            dx = null;
-            dy = deltabBox.height;
-            numbersbBox = {
-              width: Math.max(bignumberbBox.width, deltabBox.width),
-              height: bignumberbBox.height + deltabBox.height,
-              left: Math.min(bignumberbBox.left, deltabBox.left),
-              right: Math.max(bignumberbBox.right, deltabBox.right),
-              top: bignumberbBox.bottom - bignumberbBox.height,
-              bottom: bignumberbBox.bottom + deltabBox.height
-            };
-          }
-          if (trace.delta.position === "top") {
-            dx = null;
-            dy = bignumberbBox.top;
-            numbersbBox = {
-              width: Math.max(bignumberbBox.width, deltabBox.width),
-              height: bignumberbBox.height + deltabBox.height,
-              left: Math.min(bignumberbBox.left, deltabBox.left),
-              right: Math.max(bignumberbBox.right, deltabBox.right),
-              top: bignumberbBox.bottom - bignumberbBox.height - deltabBox.height,
-              bottom: bignumberbBox.bottom
-            };
-          }
-          delta.attr({ dx, dy });
-        }
-        if (trace._hasNumber || trace._hasDelta) {
-          numbers.attr("transform", function() {
-            var m = opts.numbersScaler(numbersbBox);
-            key += m[2];
-            var scaleRatio = cache(trace, "numbersScale", 1, m[0], key, Math.min);
-            var translateY;
-            if (!trace._scaleNumbers) scaleRatio = 1;
-            if (trace._isAngular) {
-              translateY = numbersY - scaleRatio * numbersbBox.bottom;
-            } else {
-              translateY = numbersY - scaleRatio * (numbersbBox.top + numbersbBox.bottom) / 2;
+          if (isContour) {
+            var i2;
+            x2 = [2 * x[0] - x[1]];
+            for (i2 = 1; i2 < x.length; i2++) {
+              x2.push((x[i2] + x[i2 - 1]) / 2);
             }
-            trace._numbersTop = scaleRatio * numbersbBox.top + translateY;
-            var ref = numbersbBox[numbersAlign];
-            if (numbersAlign === "center") ref = (numbersbBox.left + numbersbBox.right) / 2;
-            var translateX = numbersX - scaleRatio * ref;
-            translateX = cache(trace, "numbersTranslate", 0, translateX, key, Math.max);
-            return strTranslate(translateX, translateY) + strScale(scaleRatio);
-          });
+            x2.push([2 * x[x.length - 1] - x[x.length - 2]]);
+            y2 = [2 * y[0] - y[1]];
+            for (i2 = 1; i2 < y.length; i2++) {
+              y2.push((y[i2] + y[i2 - 1]) / 2);
+            }
+            y2.push([2 * y[y.length - 1] - y[y.length - 2]]);
+          }
+          nx = Math.max(0, Math.min(x2.length - 2, Lib.findBin(xval, x2)));
+          ny = Math.max(0, Math.min(y2.length - 2, Lib.findBin(yval, y2)));
         }
-      }
-      function styleShape(p) {
-        p.each(function(d) {
-          Color2.stroke(d3.select(this), d.line.color);
-        }).each(function(d) {
-          Color2.fill(d3.select(this), d.color);
-        }).style("stroke-width", function(d) {
-          return d.line.width;
-        });
-      }
-      function arcTween(arc, endAngle, newAngle) {
-        return function() {
-          var interp = interpolate(endAngle, newAngle);
-          return function(t) {
-            return arc.endAngle(interp(t))();
-          };
-        };
-      }
-      function mockAxis(gd, opts, zrange) {
-        var fullLayout = gd._fullLayout;
-        var axisIn = Lib.extendFlat({
+        var x0 = xa.c2p(x[nx]);
+        var x1 = xa.c2p(x[nx + 1]);
+        var y0 = ya.c2p(y[ny]);
+        var y1 = ya.c2p(y[ny + 1]);
+        var _x, _y;
+        if (isContour) {
+          _x = cd0.orig_x || x;
+          _y = cd0.orig_y || y;
+          x1 = x0;
+          xl = _x[nx];
+          y1 = y0;
+          yl = _y[ny];
+        } else {
+          _x = cd0.orig_x || xc || x;
+          _y = cd0.orig_y || yc || y;
+          xl = xc ? _x[nx] : (_x[nx] + _x[nx + 1]) / 2;
+          yl = yc ? _y[ny] : (_y[ny] + _y[ny + 1]) / 2;
+          if (xa && xa.type === "category") xl = x[nx];
+          if (ya && ya.type === "category") yl = y[ny];
+          if (trace.zsmooth) {
+            x0 = x1 = xa.c2p(xl);
+            y0 = y1 = ya.c2p(yl);
+          }
+        }
+        var zVal = z[ny][nx];
+        if (zmask && !zmask[ny][nx]) zVal = void 0;
+        if (zVal === void 0 && !trace.hoverongaps) return;
+        var text;
+        if (isArrayOrTypedArray(cd0.hovertext) && isArrayOrTypedArray(cd0.hovertext[ny])) {
+          text = cd0.hovertext[ny][nx];
+        } else if (isArrayOrTypedArray(cd0.text) && isArrayOrTypedArray(cd0.text[ny])) {
+          text = cd0.text[ny][nx];
+        }
+        var cOpts = extractOpts(trace);
+        var dummyAx = {
           type: "linear",
-          ticks: "outside",
-          range: zrange,
-          showline: true
-        }, opts);
-        var axisOut = {
-          type: "linear",
-          _id: "x" + opts._id
+          range: [cOpts.min, cOpts.max],
+          hoverformat: zhoverformat,
+          _separators: xa._separators,
+          _numFormat: xa._numFormat
         };
-        var axisOptions = {
-          letter: "x",
-          font: fullLayout.font,
-          noAutotickangles: true,
-          noHover: true,
-          noTickson: true
-        };
-        function coerce(attr, dflt) {
-          return Lib.coerce(axisIn, axisOut, axisLayoutAttrs, attr, dflt);
-        }
-        handleAxisDefaults(axisIn, axisOut, coerce, axisOptions, fullLayout);
-        handleAxisPositionDefaults(axisIn, axisOut, coerce, axisOptions);
-        return axisOut;
-      }
-      function fitTextInsideBox(textBB, width, height) {
-        var ratio = Math.min(width / textBB.width, height / textBB.height);
-        return [ratio, textBB, width + "x" + height];
-      }
-      function fitTextInsideCircle(textBB, radius) {
-        var elRadius = Math.sqrt(textBB.width / 2 * (textBB.width / 2) + textBB.height * textBB.height);
-        var ratio = radius / elRadius;
-        return [ratio, textBB, radius];
-      }
-      function measureText(txt, font, textAnchor, gd) {
-        var element = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        var sel = d3.select(element);
-        sel.text(txt).attr("x", 0).attr("y", 0).attr("text-anchor", textAnchor).attr("data-unformatted", txt).call(svgTextUtils.convertToTspans, gd).call(Drawing.font, font);
-        return Drawing.bBox(sel.node());
-      }
-      function cache(trace, name, initialValue, value, key, fn) {
-        var objName = "_cache" + name;
-        if (!(trace[objName] && trace[objName].key === key)) {
-          trace[objName] = { key, value: initialValue };
-        }
-        var v = Lib.aggNums(fn, null, [trace[objName].value, value], 2);
-        trace[objName].value = v;
-        return v;
-      }
+        var zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+        return [Lib.extendFlat(pointData, {
+          index: trace._after2before ? trace._after2before[ny][nx] : [ny, nx],
+          // never let a 2D override 1D type as closest point
+          distance: pointData.maxHoverDistance,
+          spikeDistance: pointData.maxSpikeDistance,
+          x0,
+          x1,
+          y0,
+          y1,
+          xLabelVal: xl,
+          yLabelVal: yl,
+          zLabelVal: zVal,
+          zLabel,
+          text
+        })];
+      };
     }
   });
 
-  // src/traces/indicator/index.js
-  var require_indicator = __commonJS({
-    "src/traces/indicator/index.js"(exports, module) {
+  // src/traces/contour/hover.js
+  var require_hover4 = __commonJS({
+    "src/traces/contour/hover.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var heatmapHoverPoints = require_hover3();
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        opts.isContour = true;
+        var hoverData = heatmapHoverPoints(pointData, xval, yval, hovermode, opts);
+        if (hoverData) {
+          hoverData.forEach(function(hoverPt) {
+            var trace = hoverPt.trace;
+            if (trace.contours.type === "constraint") {
+              if (trace.fillcolor && Color.opacity(trace.fillcolor)) {
+                hoverPt.color = Color.addOpacity(trace.fillcolor, 1);
+              } else if (trace.contours.showlines && Color.opacity(trace.line.color)) {
+                hoverPt.color = Color.addOpacity(trace.line.color, 1);
+              }
+            }
+          });
+        }
+        return hoverData;
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/index.js
+  var require_histogram2dcontour = __commonJS({
+    "src/traces/histogram2dcontour/index.js"(exports, module) {
       "use strict";
       module.exports = {
+        attributes: require_attributes28(),
+        supplyDefaults: require_defaults19(),
+        crossTraceDefaults: require_cross_trace_defaults3(),
+        calc: require_calc8(),
+        plot: require_plot4().plot,
+        layerName: "contourlayer",
+        style: require_style5(),
+        colorbar: require_colorbar2(),
+        hoverPoints: require_hover4(),
         moduleType: "trace",
-        name: "indicator",
-        basePlotModule: require_base_plot3(),
-        categories: ["svg", "noOpacity", "noHover"],
-        animatable: true,
-        attributes: require_attributes29(),
-        supplyDefaults: require_defaults25().supplyDefaults,
-        calc: require_calc11().calc,
-        plot: require_plot8(),
+        name: "histogram2dcontour",
+        basePlotModule: require_cartesian(),
+        categories: ["cartesian", "svg", "2dMap", "contour", "histogram", "showLegend"],
         meta: {}
       };
     }
   });
 
-  // lib/indicator.js
-  var require_indicator2 = __commonJS({
-    "lib/indicator.js"(exports, module) {
+  // lib/histogram2dcontour.js
+  var require_histogram2dcontour2 = __commonJS({
+    "lib/histogram2dcontour.js"(exports, module) {
       "use strict";
-      module.exports = require_indicator();
-    }
-  });
-
-  // src/traces/ohlc/attributes.js
-  var require_attributes30 = __commonJS({
-    "src/traces/ohlc/attributes.js"(exports, module) {
-      "use strict";
-      var extendFlat = require_lib().extendFlat;
-      var scatterAttrs = require_attributes12();
-      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
-      var dash = require_attributes4().dash;
-      var fxAttrs = require_attributes();
-      var delta = require_delta();
-      var INCREASING_COLOR = delta.INCREASING.COLOR;
-      var DECREASING_COLOR = delta.DECREASING.COLOR;
-      var lineAttrs = scatterAttrs.line;
-      function directionAttrs(lineColorDefault) {
-        return {
-          line: {
-            color: extendFlat({}, lineAttrs.color, { dflt: lineColorDefault }),
-            width: lineAttrs.width,
-            dash,
-            editType: "style"
-          },
-          editType: "style"
-        };
-      }
-      module.exports = {
-        xperiod: scatterAttrs.xperiod,
-        xperiod0: scatterAttrs.xperiod0,
-        xperiodalignment: scatterAttrs.xperiodalignment,
-        xhoverformat: axisHoverFormat("x"),
-        yhoverformat: axisHoverFormat("y"),
-        x: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        open: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        high: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        low: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        close: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        line: {
-          width: extendFlat({}, lineAttrs.width, {}),
-          dash: extendFlat({}, dash, {}),
-          editType: "style"
-        },
-        increasing: directionAttrs(INCREASING_COLOR),
-        decreasing: directionAttrs(DECREASING_COLOR),
-        text: {
-          valType: "string",
-          dflt: "",
-          arrayOk: true,
-          editType: "calc"
-        },
-        hovertext: {
-          valType: "string",
-          dflt: "",
-          arrayOk: true,
-          editType: "calc"
-        },
-        tickwidth: {
-          valType: "number",
-          min: 0,
-          max: 0.5,
-          dflt: 0.3,
-          editType: "calc"
-        },
-        hoverlabel: extendFlat({}, fxAttrs.hoverlabel, {
-          split: {
-            valType: "boolean",
-            dflt: false,
-            editType: "style"
-          }
-        }),
-        zorder: scatterAttrs.zorder
-      };
-    }
-  });
-
-  // src/traces/ohlc/ohlc_defaults.js
-  var require_ohlc_defaults = __commonJS({
-    "src/traces/ohlc/ohlc_defaults.js"(exports, module) {
-      "use strict";
-      var Registry = require_registry();
-      var Lib = require_lib();
-      module.exports = function handleOHLC(traceIn, traceOut, coerce, layout) {
-        var x = coerce("x");
-        var open = coerce("open");
-        var high = coerce("high");
-        var low = coerce("low");
-        var close = coerce("close");
-        coerce("hoverlabel.split");
-        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
-        handleCalendarDefaults(traceIn, traceOut, ["x"], layout);
-        if (!(open && high && low && close)) return;
-        var len = Math.min(open.length, high.length, low.length, close.length);
-        if (x) len = Math.min(len, Lib.minRowLength(x));
-        traceOut._length = len;
-        return len;
-      };
-    }
-  });
-
-  // src/traces/ohlc/defaults.js
-  var require_defaults26 = __commonJS({
-    "src/traces/ohlc/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var handleOHLC = require_ohlc_defaults();
-      var handlePeriodDefaults = require_period_defaults();
-      var attributes = require_attributes30();
-      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var len = handleOHLC(traceIn, traceOut, coerce, layout);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        handlePeriodDefaults(traceIn, traceOut, layout, coerce, { x: true });
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        coerce("line.width");
-        coerce("line.dash");
-        handleDirection(traceIn, traceOut, coerce, "increasing");
-        handleDirection(traceIn, traceOut, coerce, "decreasing");
-        coerce("text");
-        coerce("hovertext");
-        coerce("tickwidth");
-        layout._requestRangeslider[traceOut.xaxis] = true;
-        coerce("zorder");
-      };
-      function handleDirection(traceIn, traceOut, coerce, direction) {
-        coerce(direction + ".line.color");
-        coerce(direction + ".line.width", traceOut.line.width);
-        coerce(direction + ".line.dash", traceOut.line.dash);
-      }
-    }
-  });
-
-  // src/traces/ohlc/calc.js
-  var require_calc12 = __commonJS({
-    "src/traces/ohlc/calc.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var _ = Lib._;
-      var Axes = require_axes();
-      var alignPeriod = require_align_period();
-      var BADNUM = require_numerical().BADNUM;
-      function calc(gd, trace) {
-        var xa = Axes.getFromId(gd, trace.xaxis);
-        var ya = Axes.getFromId(gd, trace.yaxis);
-        var tickLen = convertTickWidth(gd, xa, trace);
-        var minDiff = trace._minDiff;
-        trace._minDiff = null;
-        var origX = trace._origX;
-        trace._origX = null;
-        var x = trace._xcalc;
-        trace._xcalc = null;
-        var cd = calcCommon(gd, trace, origX, x, ya, ptFunc);
-        trace._extremes[xa._id] = Axes.findExtremes(xa, x, { vpad: minDiff / 2 });
-        if (cd.length) {
-          Lib.extendFlat(cd[0].t, {
-            wHover: minDiff / 2,
-            tickLen
-          });
-          return cd;
-        } else {
-          return [{ t: { empty: true } }];
-        }
-      }
-      function ptFunc(o, h, l, c) {
-        return {
-          o,
-          h,
-          l,
-          c
-        };
-      }
-      function calcCommon(gd, trace, origX, x, ya, ptFunc2) {
-        var o = ya.makeCalcdata(trace, "open");
-        var h = ya.makeCalcdata(trace, "high");
-        var l = ya.makeCalcdata(trace, "low");
-        var c = ya.makeCalcdata(trace, "close");
-        var hasTextArray = Lib.isArrayOrTypedArray(trace.text);
-        var hasHovertextArray = Lib.isArrayOrTypedArray(trace.hovertext);
-        var increasing = true;
-        var cPrev = null;
-        var hasPeriod = !!trace.xperiodalignment;
-        var cd = [];
-        for (var i = 0; i < x.length; i++) {
-          var xi = x[i];
-          var oi = o[i];
-          var hi = h[i];
-          var li = l[i];
-          var ci = c[i];
-          if (xi !== BADNUM && oi !== BADNUM && hi !== BADNUM && li !== BADNUM && ci !== BADNUM) {
-            if (ci === oi) {
-              if (cPrev !== null && ci !== cPrev) increasing = ci > cPrev;
-            } else increasing = ci > oi;
-            cPrev = ci;
-            var pt = ptFunc2(oi, hi, li, ci);
-            pt.pos = xi;
-            pt.yc = (oi + ci) / 2;
-            pt.i = i;
-            pt.dir = increasing ? "increasing" : "decreasing";
-            pt.x = pt.pos;
-            pt.y = [li, hi];
-            if (hasPeriod) pt.orig_p = origX[i];
-            if (hasTextArray) pt.tx = trace.text[i];
-            if (hasHovertextArray) pt.htx = trace.hovertext[i];
-            cd.push(pt);
-          } else {
-            cd.push({ pos: xi, empty: true });
-          }
-        }
-        trace._extremes[ya._id] = Axes.findExtremes(ya, Lib.concat(l, h), { padded: true });
-        if (cd.length) {
-          cd[0].t = {
-            labels: {
-              open: _(gd, "open:") + " ",
-              high: _(gd, "high:") + " ",
-              low: _(gd, "low:") + " ",
-              close: _(gd, "close:") + " "
-            }
-          };
-        }
-        return cd;
-      }
-      function convertTickWidth(gd, xa, trace) {
-        var minDiff = trace._minDiff;
-        if (!minDiff) {
-          var fullData = gd._fullData;
-          var ohlcTracesOnThisXaxis = [];
-          minDiff = Infinity;
-          var i;
-          for (i = 0; i < fullData.length; i++) {
-            var tracei = fullData[i];
-            if (tracei.type === "ohlc" && tracei.visible === true && tracei.xaxis === xa._id) {
-              ohlcTracesOnThisXaxis.push(tracei);
-              var origX = xa.makeCalcdata(tracei, "x");
-              tracei._origX = origX;
-              var xcalc = alignPeriod(trace, xa, "x", origX).vals;
-              tracei._xcalc = xcalc;
-              var _minDiff = Lib.distinctVals(xcalc).minDiff;
-              if (_minDiff && isFinite(_minDiff)) {
-                minDiff = Math.min(minDiff, _minDiff);
-              }
-            }
-          }
-          if (minDiff === Infinity) minDiff = 1;
-          for (i = 0; i < ohlcTracesOnThisXaxis.length; i++) {
-            ohlcTracesOnThisXaxis[i]._minDiff = minDiff;
-          }
-        }
-        return minDiff * trace.tickwidth;
-      }
-      module.exports = {
-        calc,
-        calcCommon
-      };
-    }
-  });
-
-  // src/traces/ohlc/plot.js
-  var require_plot9 = __commonJS({
-    "src/traces/ohlc/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      module.exports = function plot(gd, plotinfo, cdOHLC, ohlcLayer) {
-        var ya = plotinfo.yaxis;
-        var xa = plotinfo.xaxis;
-        var posHasRangeBreaks = !!xa.rangebreaks;
-        Lib.makeTraceGroups(ohlcLayer, cdOHLC, "trace ohlc").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var cd0 = cd[0];
-          var t = cd0.t;
-          var trace = cd0.trace;
-          if (trace.visible !== true || t.empty) {
-            plotGroup.remove();
-            return;
-          }
-          var tickLen = t.tickLen;
-          var paths = plotGroup.selectAll("path").data(Lib.identity);
-          paths.enter().append("path");
-          paths.exit().remove();
-          paths.attr("d", function(d) {
-            if (d.empty) return "M0,0Z";
-            var xo = xa.c2p(d.pos - tickLen, true);
-            var xc = xa.c2p(d.pos + tickLen, true);
-            var x = posHasRangeBreaks ? (xo + xc) / 2 : xa.c2p(d.pos, true);
-            var yo = ya.c2p(d.o, true);
-            var yh = ya.c2p(d.h, true);
-            var yl = ya.c2p(d.l, true);
-            var yc = ya.c2p(d.c, true);
-            return "M" + xo + "," + yo + "H" + x + "M" + x + "," + yh + "V" + yl + "M" + xc + "," + yc + "H" + x;
-          });
-        });
-      };
-    }
-  });
-
-  // src/traces/ohlc/style.js
-  var require_style9 = __commonJS({
-    "src/traces/ohlc/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Drawing = require_drawing();
-      var Color2 = require_color();
-      module.exports = function style(gd, cd, sel) {
-        var s = sel ? sel : d3.select(gd).selectAll("g.ohlclayer").selectAll("g.trace");
-        s.style("opacity", function(d) {
-          return d[0].trace.opacity;
-        });
-        s.each(function(d) {
-          var trace = d[0].trace;
-          d3.select(this).selectAll("path").each(function(di) {
-            if (di.empty) return;
-            var dirLine = trace[di.dir].line;
-            d3.select(this).style("fill", "none").call(Color2.stroke, dirLine.color).call(Drawing.dashLine, dirLine.dash, dirLine.width).style("opacity", trace.selectedpoints && !di.selected ? 0.3 : 1);
-          });
-        });
-      };
-    }
-  });
-
-  // src/traces/ohlc/hover.js
-  var require_hover7 = __commonJS({
-    "src/traces/ohlc/hover.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      var Lib = require_lib();
-      var Fx = require_fx();
-      var Color2 = require_color();
-      var fillText = require_lib().fillText;
-      var delta = require_delta();
-      var DIRSYMBOL = {
-        increasing: delta.INCREASING.SYMBOL,
-        decreasing: delta.DECREASING.SYMBOL
-      };
-      function hoverPoints(pointData, xval, yval, hovermode) {
-        var cd = pointData.cd;
-        var trace = cd[0].trace;
-        if (trace.hoverlabel.split) {
-          return hoverSplit(pointData, xval, yval, hovermode);
-        }
-        return hoverOnPoints(pointData, xval, yval, hovermode);
-      }
-      function _getClosestPoint(pointData, xval, yval, hovermode) {
-        var cd = pointData.cd;
-        var xa = pointData.xa;
-        var trace = cd[0].trace;
-        var t = cd[0].t;
-        var type = trace.type;
-        var minAttr = type === "ohlc" ? "l" : "min";
-        var maxAttr = type === "ohlc" ? "h" : "max";
-        var hoverPseudoDistance, spikePseudoDistance;
-        var centerShift = t.bPos || 0;
-        var shiftPos = function(di2) {
-          return di2.pos + centerShift - xval;
-        };
-        var displayHalfWidth = t.bdPos || t.tickLen;
-        var hoverHalfWidth = t.wHover;
-        var pseudoDistance = Math.min(1, displayHalfWidth / Math.abs(xa.r2c(xa.range[1]) - xa.r2c(xa.range[0])));
-        hoverPseudoDistance = pointData.maxHoverDistance - pseudoDistance;
-        spikePseudoDistance = pointData.maxSpikeDistance - pseudoDistance;
-        function dx(di2) {
-          var pos = shiftPos(di2);
-          return Fx.inbox(pos - hoverHalfWidth, pos + hoverHalfWidth, hoverPseudoDistance);
-        }
-        function dy(di2) {
-          var min = di2[minAttr];
-          var max = di2[maxAttr];
-          return min === max || Fx.inbox(min - yval, max - yval, hoverPseudoDistance);
-        }
-        function dxy(di2) {
-          return (dx(di2) + dy(di2)) / 2;
-        }
-        var distfn = Fx.getDistanceFunction(hovermode, dx, dy, dxy);
-        Fx.getClosest(cd, distfn, pointData);
-        if (pointData.index === false) return null;
-        var di = cd[pointData.index];
-        if (di.empty) return null;
-        var dir = di.dir;
-        var container = trace[dir];
-        var lc = container.line.color;
-        if (Color2.opacity(lc) && container.line.width) pointData.color = lc;
-        else pointData.color = container.fillcolor;
-        pointData.x0 = xa.c2p(di.pos + centerShift - displayHalfWidth, true);
-        pointData.x1 = xa.c2p(di.pos + centerShift + displayHalfWidth, true);
-        pointData.xLabelVal = di.orig_p !== void 0 ? di.orig_p : di.pos;
-        pointData.spikeDistance = dxy(di) * spikePseudoDistance / hoverPseudoDistance;
-        pointData.xSpike = xa.c2p(di.pos, true);
-        return pointData;
-      }
-      function hoverSplit(pointData, xval, yval, hovermode) {
-        var cd = pointData.cd;
-        var ya = pointData.ya;
-        var trace = cd[0].trace;
-        var t = cd[0].t;
-        var closeBoxData = [];
-        var closestPoint = _getClosestPoint(pointData, xval, yval, hovermode);
-        if (!closestPoint) return [];
-        var cdIndex = closestPoint.index;
-        var di = cd[cdIndex];
-        var hoverinfo = di.hi || trace.hoverinfo;
-        var hoverParts = hoverinfo.split("+");
-        var isAll = hoverinfo === "all";
-        var hasY = isAll || hoverParts.indexOf("y") !== -1;
-        if (!hasY) return [];
-        var attrs = ["high", "open", "close", "low"];
-        var usedVals = {};
-        for (var i = 0; i < attrs.length; i++) {
-          var attr = attrs[i];
-          var val = trace[attr][closestPoint.index];
-          var valPx = ya.c2p(val, true);
-          var pointData2;
-          if (val in usedVals) {
-            pointData2 = usedVals[val];
-            pointData2.yLabel += "<br>" + t.labels[attr] + Axes.hoverLabelText(ya, val, trace.yhoverformat);
-          } else {
-            pointData2 = Lib.extendFlat({}, closestPoint);
-            pointData2.y0 = pointData2.y1 = valPx;
-            pointData2.yLabelVal = val;
-            pointData2.yLabel = t.labels[attr] + Axes.hoverLabelText(ya, val, trace.yhoverformat);
-            pointData2.name = "";
-            closeBoxData.push(pointData2);
-            usedVals[val] = pointData2;
-          }
-        }
-        return closeBoxData;
-      }
-      function hoverOnPoints(pointData, xval, yval, hovermode) {
-        var cd = pointData.cd;
-        var ya = pointData.ya;
-        var trace = cd[0].trace;
-        var t = cd[0].t;
-        var closestPoint = _getClosestPoint(pointData, xval, yval, hovermode);
-        if (!closestPoint) return [];
-        var cdIndex = closestPoint.index;
-        var di = cd[cdIndex];
-        var i = closestPoint.index = di.i;
-        var dir = di.dir;
-        function getLabelLine(attr) {
-          return t.labels[attr] + Axes.hoverLabelText(ya, trace[attr][i], trace.yhoverformat);
-        }
-        var hoverinfo = di.hi || trace.hoverinfo;
-        var hoverParts = hoverinfo.split("+");
-        var isAll = hoverinfo === "all";
-        var hasY = isAll || hoverParts.indexOf("y") !== -1;
-        var hasText = isAll || hoverParts.indexOf("text") !== -1;
-        var textParts = hasY ? [
-          getLabelLine("open"),
-          getLabelLine("high"),
-          getLabelLine("low"),
-          getLabelLine("close") + "  " + DIRSYMBOL[dir]
-        ] : [];
-        if (hasText) fillText(di, trace, textParts);
-        closestPoint.extraText = textParts.join("<br>");
-        closestPoint.y0 = closestPoint.y1 = ya.c2p(di.yc, true);
-        return [closestPoint];
-      }
-      module.exports = {
-        hoverPoints,
-        hoverSplit,
-        hoverOnPoints
-      };
-    }
-  });
-
-  // src/traces/ohlc/select.js
-  var require_select4 = __commonJS({
-    "src/traces/ohlc/select.js"(exports, module) {
-      "use strict";
-      module.exports = function selectPoints(searchInfo, selectionTester) {
-        var cd = searchInfo.cd;
-        var xa = searchInfo.xaxis;
-        var ya = searchInfo.yaxis;
-        var selection = [];
-        var i;
-        var posOffset = cd[0].t.bPos || 0;
-        if (selectionTester === false) {
-          for (i = 0; i < cd.length; i++) {
-            cd[i].selected = 0;
-          }
-        } else {
-          for (i = 0; i < cd.length; i++) {
-            var di = cd[i];
-            if (selectionTester.contains([xa.c2p(di.pos + posOffset), ya.c2p(di.yc)], null, di.i, searchInfo)) {
-              selection.push({
-                pointNumber: di.i,
-                x: xa.c2d(di.pos),
-                y: ya.c2d(di.yc)
-              });
-              di.selected = 1;
-            } else {
-              di.selected = 0;
-            }
-          }
-        }
-        return selection;
-      };
-    }
-  });
-
-  // src/traces/ohlc/index.js
-  var require_ohlc = __commonJS({
-    "src/traces/ohlc/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        moduleType: "trace",
-        name: "ohlc",
-        basePlotModule: require_cartesian(),
-        categories: ["cartesian", "svg", "showLegend"],
-        meta: {},
-        attributes: require_attributes30(),
-        supplyDefaults: require_defaults26(),
-        calc: require_calc12().calc,
-        plot: require_plot9(),
-        style: require_style9(),
-        hoverPoints: require_hover7().hoverPoints,
-        selectPoints: require_select4()
-      };
-    }
-  });
-
-  // lib/ohlc.js
-  var require_ohlc2 = __commonJS({
-    "lib/ohlc.js"(exports, module) {
-      "use strict";
-      module.exports = require_ohlc();
-    }
-  });
-
-  // src/traces/box/attributes.js
-  var require_attributes31 = __commonJS({
-    "src/traces/box/attributes.js"(exports, module) {
-      "use strict";
-      var makeFillcolorAttr = require_fillcolor_attribute();
-      var scatterAttrs = require_attributes12();
-      var barAttrs = require_attributes23();
-      var colorAttrs = require_attributes3();
-      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var extendFlat = require_extend().extendFlat;
-      var scatterMarkerAttrs = scatterAttrs.marker;
-      var scatterMarkerLineAttrs = scatterMarkerAttrs.line;
-      module.exports = {
-        y: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        x: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        x0: {
-          valType: "any",
-          editType: "calc+clearAxisTypes"
-        },
-        y0: {
-          valType: "any",
-          editType: "calc+clearAxisTypes"
-        },
-        dx: {
-          valType: "number",
-          editType: "calc"
-        },
-        dy: {
-          valType: "number",
-          editType: "calc"
-        },
-        xperiod: scatterAttrs.xperiod,
-        yperiod: scatterAttrs.yperiod,
-        xperiod0: scatterAttrs.xperiod0,
-        yperiod0: scatterAttrs.yperiod0,
-        xperiodalignment: scatterAttrs.xperiodalignment,
-        yperiodalignment: scatterAttrs.yperiodalignment,
-        xhoverformat: axisHoverFormat("x"),
-        yhoverformat: axisHoverFormat("y"),
-        name: {
-          valType: "string",
-          editType: "calc+clearAxisTypes"
-        },
-        q1: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        median: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        q3: {
-          valType: "data_array",
-          editType: "calc+clearAxisTypes"
-        },
-        lowerfence: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        upperfence: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        notched: {
-          valType: "boolean",
-          editType: "calc"
-        },
-        notchwidth: {
-          valType: "number",
-          min: 0,
-          max: 0.5,
-          dflt: 0.25,
-          editType: "calc"
-        },
-        notchspan: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        // TODO
-        // maybe add
-        // - loweroutlierbound / upperoutlierbound
-        // - lowersuspectedoutlierbound / uppersuspectedoutlierbound
-        boxpoints: {
-          valType: "enumerated",
-          values: ["all", "outliers", "suspectedoutliers", false],
-          editType: "calc"
-        },
-        jitter: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          editType: "calc"
-        },
-        pointpos: {
-          valType: "number",
-          min: -2,
-          max: 2,
-          editType: "calc"
-        },
-        sdmultiple: {
-          valType: "number",
-          min: 0,
-          editType: "calc",
-          dflt: 1
-        },
-        sizemode: {
-          valType: "enumerated",
-          values: ["quartiles", "sd"],
-          editType: "calc",
-          dflt: "quartiles"
-        },
-        boxmean: {
-          valType: "enumerated",
-          values: [true, "sd", false],
-          editType: "calc"
-        },
-        mean: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        sd: {
-          valType: "data_array",
-          editType: "calc"
-        },
-        orientation: {
-          valType: "enumerated",
-          values: ["v", "h"],
-          editType: "calc+clearAxisTypes"
-        },
-        quartilemethod: {
-          valType: "enumerated",
-          values: ["linear", "exclusive", "inclusive"],
-          dflt: "linear",
-          editType: "calc"
-        },
-        width: {
-          valType: "number",
-          min: 0,
-          dflt: 0,
-          editType: "calc"
-        },
-        marker: {
-          outliercolor: {
-            valType: "color",
-            dflt: "rgba(0, 0, 0, 0)",
-            editType: "style"
-          },
-          symbol: extendFlat(
-            {},
-            scatterMarkerAttrs.symbol,
-            { arrayOk: false, editType: "plot" }
-          ),
-          opacity: extendFlat(
-            {},
-            scatterMarkerAttrs.opacity,
-            { arrayOk: false, dflt: 1, editType: "style" }
-          ),
-          angle: extendFlat(
-            {},
-            scatterMarkerAttrs.angle,
-            { arrayOk: false, editType: "calc" }
-          ),
-          size: extendFlat(
-            {},
-            scatterMarkerAttrs.size,
-            { arrayOk: false, editType: "calc" }
-          ),
-          color: extendFlat(
-            {},
-            scatterMarkerAttrs.color,
-            { arrayOk: false, editType: "style" }
-          ),
-          line: {
-            color: extendFlat(
-              {},
-              scatterMarkerLineAttrs.color,
-              { arrayOk: false, dflt: colorAttrs.defaultLine, editType: "style" }
-            ),
-            width: extendFlat(
-              {},
-              scatterMarkerLineAttrs.width,
-              { arrayOk: false, dflt: 0, editType: "style" }
-            ),
-            outliercolor: {
-              valType: "color",
-              editType: "style"
-            },
-            outlierwidth: {
-              valType: "number",
-              min: 0,
-              dflt: 1,
-              editType: "style"
-            },
-            editType: "style"
-          },
-          editType: "plot"
-        },
-        line: {
-          color: {
-            valType: "color",
-            editType: "style"
-          },
-          width: {
-            valType: "number",
-            min: 0,
-            dflt: 2,
-            editType: "style"
-          },
-          editType: "plot"
-        },
-        fillcolor: makeFillcolorAttr(),
-        whiskerwidth: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0.5,
-          editType: "calc"
-        },
-        showwhiskers: {
-          valType: "boolean",
-          editType: "calc"
-        },
-        offsetgroup: barAttrs.offsetgroup,
-        alignmentgroup: barAttrs.alignmentgroup,
-        selected: {
-          marker: scatterAttrs.selected.marker,
-          editType: "style"
-        },
-        unselected: {
-          marker: scatterAttrs.unselected.marker,
-          editType: "style"
-        },
-        text: extendFlat({}, scatterAttrs.text, {}),
-        hovertext: extendFlat({}, scatterAttrs.hovertext, {}),
-        hovertemplate: hovertemplateAttrs({}),
-        hoveron: {
-          valType: "flaglist",
-          flags: ["boxes", "points"],
-          dflt: "boxes+points",
-          editType: "style"
-        },
-        zorder: scatterAttrs.zorder
-      };
-    }
-  });
-
-  // src/traces/candlestick/attributes.js
-  var require_attributes32 = __commonJS({
-    "src/traces/candlestick/attributes.js"(exports, module) {
-      "use strict";
-      var extendFlat = require_lib().extendFlat;
-      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
-      var OHLCattrs = require_attributes30();
-      var boxAttrs = require_attributes31();
-      function directionAttrs(lineColorDefault) {
-        return {
-          line: {
-            color: extendFlat({}, boxAttrs.line.color, { dflt: lineColorDefault }),
-            width: boxAttrs.line.width,
-            editType: "style"
-          },
-          fillcolor: boxAttrs.fillcolor,
-          editType: "style"
-        };
-      }
-      module.exports = {
-        xperiod: OHLCattrs.xperiod,
-        xperiod0: OHLCattrs.xperiod0,
-        xperiodalignment: OHLCattrs.xperiodalignment,
-        xhoverformat: axisHoverFormat("x"),
-        yhoverformat: axisHoverFormat("y"),
-        x: OHLCattrs.x,
-        open: OHLCattrs.open,
-        high: OHLCattrs.high,
-        low: OHLCattrs.low,
-        close: OHLCattrs.close,
-        line: {
-          width: extendFlat({}, boxAttrs.line.width, {}),
-          editType: "style"
-        },
-        increasing: directionAttrs(OHLCattrs.increasing.line.color.dflt),
-        decreasing: directionAttrs(OHLCattrs.decreasing.line.color.dflt),
-        text: OHLCattrs.text,
-        hovertext: OHLCattrs.hovertext,
-        whiskerwidth: extendFlat({}, boxAttrs.whiskerwidth, { dflt: 0 }),
-        hoverlabel: OHLCattrs.hoverlabel,
-        zorder: boxAttrs.zorder
-      };
-    }
-  });
-
-  // src/traces/box/layout_attributes.js
-  var require_layout_attributes11 = __commonJS({
-    "src/traces/box/layout_attributes.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        boxmode: {
-          valType: "enumerated",
-          values: ["group", "overlay"],
-          dflt: "overlay",
-          editType: "calc"
-        },
-        boxgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0.3,
-          editType: "calc"
-        },
-        boxgroupgap: {
-          valType: "number",
-          min: 0,
-          max: 1,
-          dflt: 0.3,
-          editType: "calc"
-        }
-      };
-    }
-  });
-
-  // src/traces/box/layout_defaults.js
-  var require_layout_defaults10 = __commonJS({
-    "src/traces/box/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Registry = require_registry();
-      var Lib = require_lib();
-      var layoutAttributes = require_layout_attributes11();
-      function _supply(layoutIn, layoutOut, fullData, coerce, traceType) {
-        var category = traceType + "Layout";
-        var hasTraceType = false;
-        for (var i = 0; i < fullData.length; i++) {
-          var trace = fullData[i];
-          if (Registry.traceIs(trace, category)) {
-            hasTraceType = true;
-            break;
-          }
-        }
-        if (!hasTraceType) return;
-        coerce(traceType + "mode");
-        coerce(traceType + "gap");
-        coerce(traceType + "groupgap");
-      }
-      function supplyLayoutDefaults(layoutIn, layoutOut, fullData) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(layoutIn, layoutOut, layoutAttributes, attr, dflt);
-        }
-        _supply(layoutIn, layoutOut, fullData, coerce, "box");
-      }
-      module.exports = {
-        supplyLayoutDefaults,
-        _supply
-      };
-    }
-  });
-
-  // src/traces/box/cross_trace_calc.js
-  var require_cross_trace_calc5 = __commonJS({
-    "src/traces/box/cross_trace_calc.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      var Lib = require_lib();
-      var getAxisGroup = require_constraints().getAxisGroup;
-      var orientations = ["v", "h"];
-      function crossTraceCalc(gd, plotinfo) {
-        var calcdata = gd.calcdata;
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        for (var i = 0; i < orientations.length; i++) {
-          var orientation = orientations[i];
-          var posAxis = orientation === "h" ? ya : xa;
-          var boxList = [];
-          for (var j = 0; j < calcdata.length; j++) {
-            var cd = calcdata[j];
-            var t = cd[0].t;
-            var trace = cd[0].trace;
-            if (trace.visible === true && (trace.type === "box" || trace.type === "candlestick") && !t.empty && (trace.orientation || "v") === orientation && trace.xaxis === xa._id && trace.yaxis === ya._id) {
-              boxList.push(j);
-            }
-          }
-          setPositionOffset("box", gd, boxList, posAxis);
-        }
-      }
-      function setPositionOffset(traceType, gd, boxList, posAxis) {
-        var calcdata = gd.calcdata;
-        var fullLayout = gd._fullLayout;
-        var axId = posAxis._id;
-        var axLetter = axId.charAt(0);
-        var i, j, calcTrace;
-        var pointList = [];
-        var shownPts = 0;
-        for (i = 0; i < boxList.length; i++) {
-          calcTrace = calcdata[boxList[i]];
-          for (j = 0; j < calcTrace.length; j++) {
-            pointList.push(posAxis.c2l(calcTrace[j].pos, true));
-            shownPts += (calcTrace[j].pts2 || []).length;
-          }
-        }
-        if (!pointList.length) return;
-        var boxdv = Lib.distinctVals(pointList);
-        if (posAxis.type === "category" || posAxis.type === "multicategory") {
-          boxdv.minDiff = 1;
-        }
-        var dPos0 = boxdv.minDiff / 2;
-        Axes.minDtick(posAxis, boxdv.minDiff, boxdv.vals[0], true);
-        var numKey = traceType === "violin" ? "_numViolins" : "_numBoxes";
-        var numTotal = fullLayout[numKey];
-        var group = fullLayout[traceType + "mode"] === "group" && numTotal > 1;
-        var groupFraction = 1 - fullLayout[traceType + "gap"];
-        var groupGapFraction = 1 - fullLayout[traceType + "groupgap"];
-        for (i = 0; i < boxList.length; i++) {
-          calcTrace = calcdata[boxList[i]];
-          var trace = calcTrace[0].trace;
-          var t = calcTrace[0].t;
-          var width = trace.width;
-          var side = trace.side;
-          var dPos;
-          var bdPos;
-          var bPos;
-          var wHover;
-          if (width) {
-            dPos = bdPos = wHover = width / 2;
-            bPos = 0;
-          } else {
-            dPos = dPos0;
-            if (group) {
-              var groupId = getAxisGroup(fullLayout, posAxis._id) + trace.orientation;
-              var alignmentGroups = fullLayout._alignmentOpts[groupId] || {};
-              var alignmentGroupOpts = alignmentGroups[trace.alignmentgroup] || {};
-              var nOffsetGroups = Object.keys(alignmentGroupOpts.offsetGroups || {}).length;
-              var num = nOffsetGroups || numTotal;
-              var shift = nOffsetGroups ? trace._offsetIndex : t.num;
-              bdPos = dPos * groupFraction * groupGapFraction / num;
-              bPos = 2 * dPos * (-0.5 + (shift + 0.5) / num) * groupFraction;
-              wHover = dPos * groupFraction / num;
-            } else {
-              bdPos = dPos * groupFraction * groupGapFraction;
-              bPos = 0;
-              wHover = dPos;
-            }
-          }
-          t.dPos = dPos;
-          t.bPos = bPos;
-          t.bdPos = bdPos;
-          t.wHover = wHover;
-          var pushplus;
-          var pushminus;
-          var edge = bPos + bdPos;
-          var edgeplus;
-          var edgeminus;
-          var vpadplus;
-          var vpadminus;
-          var ppadplus;
-          var ppadminus;
-          var padded = Boolean(width);
-          var hasPts = (trace.boxpoints || trace.points) && shownPts > 0;
-          if (side === "positive") {
-            pushplus = dPos * (width ? 1 : 0.5);
-            edgeplus = edge;
-            pushminus = edgeplus = bPos;
-          } else if (side === "negative") {
-            pushplus = edgeplus = bPos;
-            pushminus = dPos * (width ? 1 : 0.5);
-            edgeminus = edge;
-          } else {
-            pushplus = pushminus = dPos;
-            edgeplus = edgeminus = edge;
-          }
-          if (hasPts) {
-            var pointpos = trace.pointpos;
-            var jitter = trace.jitter;
-            var ms = trace.marker.size / 2;
-            var pp = 0;
-            if (pointpos + jitter >= 0) {
-              pp = edge * (pointpos + jitter);
-              if (pp > pushplus) {
-                padded = true;
-                ppadplus = ms;
-                vpadplus = pp;
-              } else if (pp > edgeplus) {
-                ppadplus = ms;
-                vpadplus = pushplus;
-              }
-            }
-            if (pp <= pushplus) {
-              vpadplus = pushplus;
-            }
-            var pm = 0;
-            if (pointpos - jitter <= 0) {
-              pm = -edge * (pointpos - jitter);
-              if (pm > pushminus) {
-                padded = true;
-                ppadminus = ms;
-                vpadminus = pm;
-              } else if (pm > edgeminus) {
-                ppadminus = ms;
-                vpadminus = pushminus;
-              }
-            }
-            if (pm <= pushminus) {
-              vpadminus = pushminus;
-            }
-          } else {
-            vpadplus = pushplus;
-            vpadminus = pushminus;
-          }
-          var pos = new Array(calcTrace.length);
-          for (j = 0; j < calcTrace.length; j++) {
-            pos[j] = calcTrace[j].pos;
-          }
-          trace._extremes[axId] = Axes.findExtremes(posAxis, pos, {
-            padded,
-            vpadminus,
-            vpadplus,
-            vpadLinearized: true,
-            // N.B. SVG px-space positive/negative
-            ppadminus: { x: ppadminus, y: ppadplus }[axLetter],
-            ppadplus: { x: ppadplus, y: ppadminus }[axLetter]
-          });
-        }
-      }
-      module.exports = {
-        crossTraceCalc,
-        setPositionOffset
-      };
-    }
-  });
-
-  // src/traces/candlestick/defaults.js
-  var require_defaults27 = __commonJS({
-    "src/traces/candlestick/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var Color2 = require_color();
-      var handleOHLC = require_ohlc_defaults();
-      var handlePeriodDefaults = require_period_defaults();
-      var attributes = require_attributes32();
-      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var len = handleOHLC(traceIn, traceOut, coerce, layout);
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        handlePeriodDefaults(traceIn, traceOut, layout, coerce, { x: true });
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        coerce("line.width");
-        handleDirection(traceIn, traceOut, coerce, "increasing");
-        handleDirection(traceIn, traceOut, coerce, "decreasing");
-        coerce("text");
-        coerce("hovertext");
-        coerce("whiskerwidth");
-        layout._requestRangeslider[traceOut.xaxis] = true;
-        coerce("zorder");
-      };
-      function handleDirection(traceIn, traceOut, coerce, direction) {
-        var lineColor = coerce(direction + ".line.color");
-        coerce(direction + ".line.width", traceOut.line.width);
-        coerce(direction + ".fillcolor", Color2.addOpacity(lineColor, 0.5));
-      }
-    }
-  });
-
-  // src/traces/candlestick/calc.js
-  var require_calc13 = __commonJS({
-    "src/traces/candlestick/calc.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var Axes = require_axes();
-      var alignPeriod = require_align_period();
-      var calcCommon = require_calc12().calcCommon;
-      module.exports = function(gd, trace) {
-        var fullLayout = gd._fullLayout;
-        var xa = Axes.getFromId(gd, trace.xaxis);
-        var ya = Axes.getFromId(gd, trace.yaxis);
-        var origX = xa.makeCalcdata(trace, "x");
-        var x = alignPeriod(trace, xa, "x", origX).vals;
-        var cd = calcCommon(gd, trace, origX, x, ya, ptFunc);
-        if (cd.length) {
-          Lib.extendFlat(cd[0].t, {
-            num: fullLayout._numBoxes,
-            dPos: Lib.distinctVals(x).minDiff / 2,
-            posLetter: "x",
-            valLetter: "y"
-          });
-          fullLayout._numBoxes++;
-          return cd;
-        } else {
-          return [{ t: { empty: true } }];
-        }
-      };
-      function ptFunc(o, h, l, c) {
-        return {
-          min: l,
-          q1: Math.min(o, c),
-          med: c,
-          q3: Math.max(o, c),
-          max: h
-        };
-      }
-    }
-  });
-
-  // src/traces/box/plot.js
-  var require_plot10 = __commonJS({
-    "src/traces/box/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var Drawing = require_drawing();
-      var JITTERCOUNT = 5;
-      var JITTERSPREAD = 0.01;
-      function plot(gd, plotinfo, cdbox, boxLayer) {
-        var isStatic = gd._context.staticPlot;
-        var xa = plotinfo.xaxis;
-        var ya = plotinfo.yaxis;
-        Lib.makeTraceGroups(boxLayer, cdbox, "trace boxes").each(function(cd) {
-          var plotGroup = d3.select(this);
-          var cd0 = cd[0];
-          var t = cd0.t;
-          var trace = cd0.trace;
-          t.wdPos = t.bdPos * trace.whiskerwidth;
-          if (trace.visible !== true || t.empty) {
-            plotGroup.remove();
-            return;
-          }
-          var posAxis, valAxis;
-          if (trace.orientation === "h") {
-            posAxis = ya;
-            valAxis = xa;
-          } else {
-            posAxis = xa;
-            valAxis = ya;
-          }
-          plotBoxAndWhiskers(plotGroup, { pos: posAxis, val: valAxis }, trace, t, isStatic);
-          plotPoints(plotGroup, { x: xa, y: ya }, trace, t);
-          plotBoxMean(plotGroup, { pos: posAxis, val: valAxis }, trace, t);
-        });
-      }
-      function plotBoxAndWhiskers(sel, axes, trace, t, isStatic) {
-        var isHorizontal = trace.orientation === "h";
-        var valAxis = axes.val;
-        var posAxis = axes.pos;
-        var posHasRangeBreaks = !!posAxis.rangebreaks;
-        var bPos = t.bPos;
-        var wdPos = t.wdPos || 0;
-        var bPosPxOffset = t.bPosPxOffset || 0;
-        var whiskerWidth = trace.whiskerwidth || 0;
-        var showWhiskers = trace.showwhiskers !== false;
-        var notched = trace.notched || false;
-        var nw = notched ? 1 - 2 * trace.notchwidth : 1;
-        var bdPos0;
-        var bdPos1;
-        if (Array.isArray(t.bdPos)) {
-          bdPos0 = t.bdPos[0];
-          bdPos1 = t.bdPos[1];
-        } else {
-          bdPos0 = t.bdPos;
-          bdPos1 = t.bdPos;
-        }
-        var paths = sel.selectAll("path.box").data(trace.type !== "violin" || trace.box.visible ? Lib.identity : []);
-        paths.enter().append("path").style("vector-effect", isStatic ? "none" : "non-scaling-stroke").attr("class", "box");
-        paths.exit().remove();
-        paths.each(function(d) {
-          if (d.empty) return d3.select(this).attr("d", "M0,0Z");
-          var lcenter = posAxis.c2l(d.pos + bPos, true);
-          var pos0 = posAxis.l2p(lcenter - bdPos0) + bPosPxOffset;
-          var pos1 = posAxis.l2p(lcenter + bdPos1) + bPosPxOffset;
-          var posc = posHasRangeBreaks ? (pos0 + pos1) / 2 : posAxis.l2p(lcenter) + bPosPxOffset;
-          var r = trace.whiskerwidth;
-          var posw0 = posHasRangeBreaks ? pos0 * r + (1 - r) * posc : posAxis.l2p(lcenter - wdPos) + bPosPxOffset;
-          var posw1 = posHasRangeBreaks ? pos1 * r + (1 - r) * posc : posAxis.l2p(lcenter + wdPos) + bPosPxOffset;
-          var posm0 = posAxis.l2p(lcenter - bdPos0 * nw) + bPosPxOffset;
-          var posm1 = posAxis.l2p(lcenter + bdPos1 * nw) + bPosPxOffset;
-          var sdmode = trace.sizemode === "sd";
-          var q1 = valAxis.c2p(sdmode ? d.mean - d.sd : d.q1, true);
-          var q3 = sdmode ? valAxis.c2p(d.mean + d.sd, true) : valAxis.c2p(d.q3, true);
-          var m = Lib.constrain(
-            sdmode ? valAxis.c2p(d.mean, true) : valAxis.c2p(d.med, true),
-            Math.min(q1, q3) + 1,
-            Math.max(q1, q3) - 1
-          );
-          var useExtremes = d.lf === void 0 || trace.boxpoints === false || sdmode;
-          var lf = valAxis.c2p(useExtremes ? d.min : d.lf, true);
-          var uf = valAxis.c2p(useExtremes ? d.max : d.uf, true);
-          var ln = valAxis.c2p(d.ln, true);
-          var un = valAxis.c2p(d.un, true);
-          if (isHorizontal) {
-            d3.select(this).attr(
-              "d",
-              "M" + m + "," + posm0 + "V" + posm1 + // median line
-              "M" + q1 + "," + pos0 + "V" + pos1 + // left edge
-              (notched ? "H" + ln + "L" + m + "," + posm1 + "L" + un + "," + pos1 : "") + // top notched edge
-              "H" + q3 + // end of the top edge
-              "V" + pos0 + // right edge
-              (notched ? "H" + un + "L" + m + "," + posm0 + "L" + ln + "," + pos0 : "") + // bottom notched edge
-              "Z" + // end of the box
-              (showWhiskers ? "M" + q1 + "," + posc + "H" + lf + "M" + q3 + "," + posc + "H" + uf + // whiskers
-              (whiskerWidth === 0 ? "" : (
-                // whisker caps
-                "M" + lf + "," + posw0 + "V" + posw1 + "M" + uf + "," + posw0 + "V" + posw1
-              )) : "")
-            );
-          } else {
-            d3.select(this).attr(
-              "d",
-              "M" + posm0 + "," + m + "H" + posm1 + // median line
-              "M" + pos0 + "," + q1 + "H" + pos1 + // top of the box
-              (notched ? "V" + ln + "L" + posm1 + "," + m + "L" + pos1 + "," + un : "") + // notched right edge
-              "V" + q3 + // end of the right edge
-              "H" + pos0 + // bottom of the box
-              (notched ? "V" + un + "L" + posm0 + "," + m + "L" + pos0 + "," + ln : "") + // notched left edge
-              "Z" + // end of the box
-              (showWhiskers ? "M" + posc + "," + q1 + "V" + lf + "M" + posc + "," + q3 + "V" + uf + // whiskers
-              (whiskerWidth === 0 ? "" : (
-                // whisker caps
-                "M" + posw0 + "," + lf + "H" + posw1 + "M" + posw0 + "," + uf + "H" + posw1
-              )) : "")
-            );
-          }
-        });
-      }
-      function plotPoints(sel, axes, trace, t) {
-        var xa = axes.x;
-        var ya = axes.y;
-        var bdPos = t.bdPos;
-        var bPos = t.bPos;
-        var mode = trace.boxpoints || trace.points;
-        Lib.seedPseudoRandom();
-        var fn = function(d) {
-          d.forEach(function(v) {
-            v.t = t;
-            v.trace = trace;
-          });
-          return d;
-        };
-        var gPoints = sel.selectAll("g.points").data(mode ? fn : []);
-        gPoints.enter().append("g").attr("class", "points");
-        gPoints.exit().remove();
-        var paths = gPoints.selectAll("path").data(function(d) {
-          var i;
-          var pts = d.pts2;
-          var typicalSpread = Math.max((d.max - d.min) / 10, d.q3 - d.q1);
-          var minSpread = typicalSpread * 1e-9;
-          var spreadLimit = typicalSpread * JITTERSPREAD;
-          var jitterFactors = [];
-          var maxJitterFactor = 0;
-          var newJitter;
-          if (trace.jitter) {
-            if (typicalSpread === 0) {
-              maxJitterFactor = 1;
-              jitterFactors = new Array(pts.length);
-              for (i = 0; i < pts.length; i++) {
-                jitterFactors[i] = 1;
-              }
-            } else {
-              for (i = 0; i < pts.length; i++) {
-                var i0 = Math.max(0, i - JITTERCOUNT);
-                var pmin = pts[i0].v;
-                var i1 = Math.min(pts.length - 1, i + JITTERCOUNT);
-                var pmax = pts[i1].v;
-                if (mode !== "all") {
-                  if (pts[i].v < d.lf) pmax = Math.min(pmax, d.lf);
-                  else pmin = Math.max(pmin, d.uf);
-                }
-                var jitterFactor = Math.sqrt(spreadLimit * (i1 - i0) / (pmax - pmin + minSpread)) || 0;
-                jitterFactor = Lib.constrain(Math.abs(jitterFactor), 0, 1);
-                jitterFactors.push(jitterFactor);
-                maxJitterFactor = Math.max(jitterFactor, maxJitterFactor);
-              }
-            }
-            newJitter = trace.jitter * 2 / (maxJitterFactor || 1);
-          }
-          for (i = 0; i < pts.length; i++) {
-            var pt = pts[i];
-            var v = pt.v;
-            var jitterOffset = trace.jitter ? newJitter * jitterFactors[i] * (Lib.pseudoRandom() - 0.5) : 0;
-            var posPx = d.pos + bPos + bdPos * (trace.pointpos + jitterOffset);
-            if (trace.orientation === "h") {
-              pt.y = posPx;
-              pt.x = v;
-            } else {
-              pt.x = posPx;
-              pt.y = v;
-            }
-            if (mode === "suspectedoutliers" && v < d.uo && v > d.lo) {
-              pt.so = true;
-            }
-          }
-          return pts;
-        });
-        paths.enter().append("path").classed("point", true);
-        paths.exit().remove();
-        paths.call(Drawing.translatePoints, xa, ya);
-      }
-      function plotBoxMean(sel, axes, trace, t) {
-        var valAxis = axes.val;
-        var posAxis = axes.pos;
-        var posHasRangeBreaks = !!posAxis.rangebreaks;
-        var bPos = t.bPos;
-        var bPosPxOffset = t.bPosPxOffset || 0;
-        var mode = trace.boxmean || (trace.meanline || {}).visible;
-        var bdPos0;
-        var bdPos1;
-        if (Array.isArray(t.bdPos)) {
-          bdPos0 = t.bdPos[0];
-          bdPos1 = t.bdPos[1];
-        } else {
-          bdPos0 = t.bdPos;
-          bdPos1 = t.bdPos;
-        }
-        var paths = sel.selectAll("path.mean").data(trace.type === "box" && trace.boxmean || trace.type === "violin" && trace.box.visible && trace.meanline.visible ? Lib.identity : []);
-        paths.enter().append("path").attr("class", "mean").style({
-          fill: "none",
-          "vector-effect": "non-scaling-stroke"
-        });
-        paths.exit().remove();
-        paths.each(function(d) {
-          var lcenter = posAxis.c2l(d.pos + bPos, true);
-          var pos0 = posAxis.l2p(lcenter - bdPos0) + bPosPxOffset;
-          var pos1 = posAxis.l2p(lcenter + bdPos1) + bPosPxOffset;
-          var posc = posHasRangeBreaks ? (pos0 + pos1) / 2 : posAxis.l2p(lcenter) + bPosPxOffset;
-          var m = valAxis.c2p(d.mean, true);
-          var sl = valAxis.c2p(d.mean - d.sd, true);
-          var sh = valAxis.c2p(d.mean + d.sd, true);
-          if (trace.orientation === "h") {
-            d3.select(this).attr(
-              "d",
-              "M" + m + "," + pos0 + "V" + pos1 + (mode === "sd" ? "m0,0L" + sl + "," + posc + "L" + m + "," + pos0 + "L" + sh + "," + posc + "Z" : "")
-            );
-          } else {
-            d3.select(this).attr(
-              "d",
-              "M" + pos0 + "," + m + "H" + pos1 + (mode === "sd" ? "m0,0L" + posc + "," + sl + "L" + pos0 + "," + m + "L" + posc + "," + sh + "Z" : "")
-            );
-          }
-        });
-      }
-      module.exports = {
-        plot,
-        plotBoxAndWhiskers,
-        plotPoints,
-        plotBoxMean
-      };
-    }
-  });
-
-  // src/traces/box/style.js
-  var require_style10 = __commonJS({
-    "src/traces/box/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Color2 = require_color();
-      var Drawing = require_drawing();
-      function style(gd, cd, sel) {
-        var s = sel ? sel : d3.select(gd).selectAll("g.trace.boxes");
-        s.style("opacity", function(d) {
-          return d[0].trace.opacity;
-        });
-        s.each(function(d) {
-          var el = d3.select(this);
-          var trace = d[0].trace;
-          var lineWidth = trace.line.width;
-          function styleBox(boxSel, lineWidth2, lineColor, fillColor) {
-            boxSel.style("stroke-width", lineWidth2 + "px").call(Color2.stroke, lineColor).call(Color2.fill, fillColor);
-          }
-          var allBoxes = el.selectAll("path.box");
-          if (trace.type === "candlestick") {
-            allBoxes.each(function(boxData) {
-              if (boxData.empty) return;
-              var thisBox = d3.select(this);
-              var container = trace[boxData.dir];
-              styleBox(thisBox, container.line.width, container.line.color, container.fillcolor);
-              thisBox.style("opacity", trace.selectedpoints && !boxData.selected ? 0.3 : 1);
-            });
-          } else {
-            styleBox(allBoxes, lineWidth, trace.line.color, trace.fillcolor);
-            el.selectAll("path.mean").style({
-              "stroke-width": lineWidth,
-              "stroke-dasharray": 2 * lineWidth + "px," + lineWidth + "px"
-            }).call(Color2.stroke, trace.line.color);
-            var pts = el.selectAll("path.point");
-            Drawing.pointStyle(pts, trace, gd);
-          }
-        });
-      }
-      function styleOnSelect(gd, cd, sel) {
-        var trace = cd[0].trace;
-        var pts = sel.selectAll("path.point");
-        if (trace.selectedpoints) {
-          Drawing.selectedPointStyle(pts, trace);
-        } else {
-          Drawing.pointStyle(pts, trace, gd);
-        }
-      }
-      module.exports = {
-        style,
-        styleOnSelect
-      };
-    }
-  });
-
-  // src/traces/candlestick/index.js
-  var require_candlestick = __commonJS({
-    "src/traces/candlestick/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        moduleType: "trace",
-        name: "candlestick",
-        basePlotModule: require_cartesian(),
-        categories: ["cartesian", "svg", "showLegend", "candlestick", "boxLayout"],
-        meta: {},
-        attributes: require_attributes32(),
-        layoutAttributes: require_layout_attributes11(),
-        supplyLayoutDefaults: require_layout_defaults10().supplyLayoutDefaults,
-        crossTraceCalc: require_cross_trace_calc5().crossTraceCalc,
-        supplyDefaults: require_defaults27(),
-        calc: require_calc13(),
-        plot: require_plot10().plot,
-        layerName: "boxlayer",
-        style: require_style10().style,
-        hoverPoints: require_hover7().hoverPoints,
-        selectPoints: require_select4()
-      };
-    }
-  });
-
-  // lib/candlestick.js
-  var require_candlestick2 = __commonJS({
-    "lib/candlestick.js"(exports, module) {
-      "use strict";
-      module.exports = require_candlestick();
-    }
-  });
-
-  // node_modules/object-assign/index.js
-  var require_object_assign = __commonJS({
-    "node_modules/object-assign/index.js"(exports, module) {
-      "use strict";
-      var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-      var hasOwnProperty = Object.prototype.hasOwnProperty;
-      var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-      function toObject(val) {
-        if (val === null || val === void 0) {
-          throw new TypeError("Object.assign cannot be called with null or undefined");
-        }
-        return Object(val);
-      }
-      function shouldUseNative() {
-        try {
-          if (!Object.assign) {
-            return false;
-          }
-          var test1 = new String("abc");
-          test1[5] = "de";
-          if (Object.getOwnPropertyNames(test1)[0] === "5") {
-            return false;
-          }
-          var test2 = {};
-          for (var i = 0; i < 10; i++) {
-            test2["_" + String.fromCharCode(i)] = i;
-          }
-          var order2 = Object.getOwnPropertyNames(test2).map(function(n) {
-            return test2[n];
-          });
-          if (order2.join("") !== "0123456789") {
-            return false;
-          }
-          var test3 = {};
-          "abcdefghijklmnopqrst".split("").forEach(function(letter) {
-            test3[letter] = letter;
-          });
-          if (Object.keys(Object.assign({}, test3)).join("") !== "abcdefghijklmnopqrst") {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return false;
-        }
-      }
-      module.exports = shouldUseNative() ? Object.assign : function(target, source) {
-        var from;
-        var to = toObject(target);
-        var symbols;
-        for (var s = 1; s < arguments.length; s++) {
-          from = Object(arguments[s]);
-          for (var key in from) {
-            if (hasOwnProperty.call(from, key)) {
-              to[key] = from[key];
-            }
-          }
-          if (getOwnPropertySymbols) {
-            symbols = getOwnPropertySymbols(from);
-            for (var i = 0; i < symbols.length; i++) {
-              if (propIsEnumerable.call(from, symbols[i])) {
-                to[symbols[i]] = from[symbols[i]];
-              }
-            }
-          }
-        }
-        return to;
-      };
-    }
-  });
-
-  // node_modules/world-calendars/dist/main.js
-  var require_main = __commonJS({
-    "node_modules/world-calendars/dist/main.js"(exports, module) {
-      var assign = require_object_assign();
-      function Calendars() {
-        this.regionalOptions = [];
-        this.regionalOptions[""] = {
-          invalidCalendar: "Calendar {0} not found",
-          invalidDate: "Invalid {0} date",
-          invalidMonth: "Invalid {0} month",
-          invalidYear: "Invalid {0} year",
-          differentCalendars: "Cannot mix {0} and {1} dates"
-        };
-        this.local = this.regionalOptions[""];
-        this.calendars = {};
-        this._localCals = {};
-      }
-      assign(Calendars.prototype, {
-        /** Obtain a calendar implementation and localisation.
-            @memberof Calendars
-            @param [name='gregorian'] {string} The name of the calendar, e.g. 'gregorian', 'persian', 'islamic'.
-            @param [language=''] {string} The language code to use for localisation (default is English).
-            @return {Calendar} The calendar and localisation.
-            @throws Error if calendar not found. */
-        instance: function(name, language) {
-          name = (name || "gregorian").toLowerCase();
-          language = language || "";
-          var cal = this._localCals[name + "-" + language];
-          if (!cal && this.calendars[name]) {
-            cal = new this.calendars[name](language);
-            this._localCals[name + "-" + language] = cal;
-          }
-          if (!cal) {
-            throw (this.local.invalidCalendar || this.regionalOptions[""].invalidCalendar).replace(/\{0\}/, name);
-          }
-          return cal;
-        },
-        /** Create a new date - for today if no other parameters given.
-            @memberof Calendars
-            @param year {CDate|number} The date to copy or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @param [calendar='gregorian'] {BaseCalendar|string} The underlying calendar or the name of the calendar.
-            @param [language=''] {string} The language to use for localisation (default English).
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day, calendar, language) {
-          calendar = (year != null && year.year ? year.calendar() : typeof calendar === "string" ? this.instance(calendar, language) : calendar) || this.instance();
-          return calendar.newDate(year, month, day);
-        },
-        /** A simple digit substitution function for localising numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @return {function} The substitution function. */
-        substituteDigits: function(digits) {
-          return function(value) {
-            return (value + "").replace(/[0-9]/g, function(digit) {
-              return digits[digit];
-            });
-          };
-        },
-        /** Digit substitution function for localising Chinese style numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @param powers {string[]} The characters denoting powers of 10, i.e. 1, 10, 100, 1000.
-            @return {function} The substitution function. */
-        substituteChineseDigits: function(digits, powers) {
-          return function(value) {
-            var localNumber = "";
-            var power = 0;
-            while (value > 0) {
-              var units = value % 10;
-              localNumber = (units === 0 ? "" : digits[units] + powers[power]) + localNumber;
-              power++;
-              value = Math.floor(value / 10);
-            }
-            if (localNumber.indexOf(digits[1] + powers[1]) === 0) {
-              localNumber = localNumber.substr(1);
-            }
-            return localNumber || digits[0];
-          };
-        }
-      });
-      function CDate(calendar, year, month, day) {
-        this._calendar = calendar;
-        this._year = year;
-        this._month = month;
-        this._day = day;
-        if (this._calendar._validateLevel === 0 && !this._calendar.isValid(this._year, this._month, this._day)) {
-          throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-        }
-      }
-      function pad(value, length) {
-        value = "" + value;
-        return "000000".substring(0, length - value.length) + value;
-      }
-      assign(CDate.prototype, {
-        /** Create a new date.
-            @memberof CDate
-            @param [year] {CDate|number} The date to copy or the year for the date (default this date).
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day) {
-          return this._calendar.newDate(year == null ? this : year, month, day);
-        },
-        /** Set or retrieve the year for this date.
-            @memberof CDate
-            @param [year] {number} The year for the date.
-            @return {number|CDate} The date's year (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        year: function(year) {
-          return arguments.length === 0 ? this._year : this.set(year, "y");
-        },
-        /** Set or retrieve the month for this date.
-            @memberof CDate
-            @param [month] {number} The month for the date.
-            @return {number|CDate} The date's month (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        month: function(month) {
-          return arguments.length === 0 ? this._month : this.set(month, "m");
-        },
-        /** Set or retrieve the day for this date.
-            @memberof CDate
-            @param [day] {number} The day for the date.
-            @return {number|CData} The date's day (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        day: function(day) {
-          return arguments.length === 0 ? this._day : this.set(day, "d");
-        },
-        /** Set new values for this date.
-            @memberof CDate
-            @param year {number} The year for the date.
-            @param month {number} The month for the date.
-            @param day {number} The day for the date.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date. */
-        date: function(year, month, day) {
-          if (!this._calendar.isValid(year, month, day)) {
-            throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-          }
-          this._year = year;
-          this._month = month;
-          this._day = day;
-          return this;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CDate
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not. */
-        leapYear: function() {
-          return this._calendar.leapYear(this);
-        },
-        /** Retrieve the epoch designator for this date, e.g. BCE or CE.
-            @memberof CDate
-            @return {string} The current epoch. */
-        epoch: function() {
-          return this._calendar.epoch(this);
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof CDate
-            @return {string} The formatted year. */
-        formatYear: function() {
-          return this._calendar.formatYear(this);
-        },
-        /** Retrieve the month of the year for this date,
-            i.e. the month's position within a numbered year.
-            @memberof CDate
-            @return {number} The month of the year: <code>minMonth</code> to months per year. */
-        monthOfYear: function() {
-          return this._calendar.monthOfYear(this);
-        },
-        /** Retrieve the week of the year for this date.
-            @memberof CDate
-            @return {number} The week of the year: 1 to weeks per year. */
-        weekOfYear: function() {
-          return this._calendar.weekOfYear(this);
-        },
-        /** Retrieve the number of days in the year for this date.
-            @memberof CDate
-            @return {number} The number of days in this year. */
-        daysInYear: function() {
-          return this._calendar.daysInYear(this);
-        },
-        /** Retrieve the day of the year for this date.
-            @memberof CDate
-            @return {number} The day of the year: 1 to days per year. */
-        dayOfYear: function() {
-          return this._calendar.dayOfYear(this);
-        },
-        /** Retrieve the number of days in the month for this date.
-            @memberof CDate
-            @return {number} The number of days. */
-        daysInMonth: function() {
-          return this._calendar.daysInMonth(this);
-        },
-        /** Retrieve the day of the week for this date.
-            @memberof CDate
-            @return {number} The day of the week: 0 to number of days - 1. */
-        dayOfWeek: function() {
-          return this._calendar.dayOfWeek(this);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CDate
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not. */
-        weekDay: function() {
-          return this._calendar.weekDay(this);
-        },
-        /** Retrieve additional information about this date.
-            @memberof CDate
-            @return {object} Additional information - contents depends on calendar. */
-        extraInfo: function() {
-          return this._calendar.extraInfo(this);
-        },
-        /** Add period(s) to a date.
-            @memberof CDate
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        add: function(offset, period) {
-          return this._calendar.add(this, offset, period);
-        },
-        /** Set a portion of the date.
-            @memberof CDate
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if not a valid date. */
-        set: function(value, period) {
-          return this._calendar.set(this, value, period);
-        },
-        /** Compare this date to another date.
-            @memberof CDate
-            @param date {CDate} The other date.
-            @return {number} -1 if this date is before the other date,
-                    0 if they are equal, or +1 if this date is after the other date. */
-        compareTo: function(date) {
-          if (this._calendar.name !== date._calendar.name) {
-            throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this._calendar.local.name).replace(/\{1\}/, date._calendar.local.name);
-          }
-          var c = this._year !== date._year ? this._year - date._year : this._month !== date._month ? this.monthOfYear() - date.monthOfYear() : this._day - date._day;
-          return c === 0 ? 0 : c < 0 ? -1 : 1;
-        },
-        /** Retrieve the calendar backing this date.
-            @memberof CDate
-            @return {BaseCalendar} The calendar implementation. */
-        calendar: function() {
-          return this._calendar;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CDate
-            @return {number} The equivalent Julian date. */
-        toJD: function() {
-          return this._calendar.toJD(this);
-        },
-        /** Create a new date from a Julian date.
-            @memberof CDate
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          return this._calendar.fromJD(jd);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @return {Date} The equivalent JavaScript date. */
-        toJSDate: function() {
-          return this._calendar.toJSDate(this);
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this._calendar.fromJSDate(jsd);
-        },
-        /** Convert to a string for display.
-            @memberof CDate
-            @return {string} This date as a string. */
-        toString: function() {
-          return (this.year() < 0 ? "-" : "") + pad(Math.abs(this.year()), 4) + "-" + pad(this.month(), 2) + "-" + pad(this.day(), 2);
-        }
-      });
-      function BaseCalendar() {
-        this.shortYearCutoff = "+10";
-      }
-      assign(BaseCalendar.prototype, {
-        _validateLevel: 0,
-        // "Stack" to turn validation on/off
-        /** Create a new date within this calendar - today if no parameters given.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to duplicate or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if not a valid date or a different calendar used. */
-        newDate: function(year, month, day) {
-          if (year == null) {
-            return this.today();
-          }
-          if (year.year) {
-            this._validate(
-              year,
-              month,
-              day,
-              _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-            );
-            day = year.day();
-            month = year.month();
-            year = year.year();
-          }
-          return new CDate(this, year, month, day);
-        },
-        /** Create a new date for today.
-            @memberof BaseCalendar
-            @return {CDate} Today's date. */
-        today: function() {
-          return this.fromJSDate(/* @__PURE__ */ new Date());
-        },
-        /** Retrieve the epoch designator for this date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {string} The current epoch.
-            @throws Error if an invalid year or a different calendar used. */
-        epoch: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return date.year() < 0 ? this.local.epochs[0] : this.local.epochs[1];
-        },
-        /** Format the year, if not a simple sequential number
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return (date.year() < 0 ? "-" : "") + pad(Math.abs(date.year()), 4);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return 12;
-        },
-        /** Calculate the month's ordinal position within the year -
-            for those calendars that don't start at month 1!
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @return {number} The ordinal position, starting from <code>minMonth</code>.
-            @throws Error if an invalid year/month or a different calendar used. */
-        monthOfYear: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return (date.month() + this.monthsInYear(date) - this.firstMonth) % this.monthsInYear(date) + this.minMonth;
-        },
-        /** Calculate actual month from ordinal position, starting from minMonth.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param ord {number} The month's ordinal position.
-            @return {number} The month's number.
-            @throws Error if an invalid year/month. */
-        fromMonthOfYear: function(year, ord) {
-          var m = (ord + this.firstMonth - 2 * this.minMonth) % this.monthsInYear(year) + this.minMonth;
-          this._validate(
-            year,
-            m,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return m;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return this.leapYear(date) ? 366 : 365;
-        },
-        /** Retrieve the day of the year for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The day of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfYear: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return date.toJD() - this.newDate(
-            date.year(),
-            this.fromMonthOfYear(date.year(), this.minMonth),
-            this.minDay
-          ).toJD() + 1;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof BaseCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 7;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return (Math.floor(this.toJD(date)) + 2) % this.daysInWeek();
-        },
-        /** Retrieve additional information about a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return {};
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return this._correctAdd(date, this._add(date, offset, period), offset, period);
-        },
-        /** Add period(s) to a date.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _add: function(date, offset, period) {
-          this._validateLevel++;
-          if (period === "d" || period === "w") {
-            var jd = date.toJD() + offset * (period === "w" ? this.daysInWeek() : 1);
-            var d = date.calendar().fromJD(jd);
-            this._validateLevel--;
-            return [d.year(), d.month(), d.day()];
-          }
-          try {
-            var y = date.year() + (period === "y" ? offset : 0);
-            var m = date.monthOfYear() + (period === "m" ? offset : 0);
-            var d = date.day();
-            var resyncYearMonth = function(calendar) {
-              while (m < calendar.minMonth) {
-                y--;
-                m += calendar.monthsInYear(y);
-              }
-              var yearMonths = calendar.monthsInYear(y);
-              while (m > yearMonths - 1 + calendar.minMonth) {
-                y++;
-                m -= yearMonths;
-                yearMonths = calendar.monthsInYear(y);
-              }
-            };
-            if (period === "y") {
-              if (date.month() !== this.fromMonthOfYear(y, m)) {
-                m = this.newDate(y, date.month(), this.minDay).monthOfYear();
-              }
-              m = Math.min(m, this.monthsInYear(y));
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            } else if (period === "m") {
-              resyncYearMonth(this);
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            }
-            var ymd = [y, this.fromMonthOfYear(y, m), d];
-            this._validateLevel--;
-            return ymd;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        },
-        /** Correct a candidate date after adding period(s) to a date.
-            Handle no year zero if necessary.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param ymd {number[]} The added date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _correctAdd: function(date, ymd, offset, period) {
-          if (!this.hasYearZero && (period === "y" || period === "m")) {
-            if (ymd[0] === 0 || // In year zero
-            date.year() > 0 !== ymd[0] > 0) {
-              var adj = {
-                y: [1, 1, "y"],
-                m: [1, this.monthsInYear(-1), "m"],
-                w: [this.daysInWeek(), this.daysInYear(-1), "d"],
-                d: [1, this.daysInYear(-1), "d"]
-              }[period];
-              var dir = offset < 0 ? -1 : 1;
-              ymd = this._add(date, offset * adj[0] + dir * adj[1], adj[2]);
-            }
-          }
-          return date.date(ymd[0], ymd[1], ymd[2]);
-        },
-        /** Set a portion of the date.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date or a different calendar used. */
-        set: function(date, value, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var y = period === "y" ? value : date.year();
-          var m = period === "m" ? value : date.month();
-          var d = period === "d" ? value : date.day();
-          if (period === "y" || period === "m") {
-            d = Math.min(d, this.daysInMonth(y, m));
-          }
-          return date.date(y, m, d);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          this._validateLevel++;
-          var valid = this.hasYearZero || year !== 0;
-          if (valid) {
-            var date = this.newDate(year, month, this.minDay);
-            valid = month >= this.minMonth && month - this.minMonth < this.monthsInYear(date) && (day >= this.minDay && day - this.minDay < this.daysInMonth(date));
-          }
-          this._validateLevel--;
-          return valid;
-        },
-        /** Convert the date to a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return _exports.instance().fromJD(this.toJD(date)).toJSDate();
-        },
-        /** Convert the date from a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param jsd {Date} The JavaScript date.
-            @return {CDate} The equivalent calendar date. */
-        fromJSDate: function(jsd) {
-          return this.fromJD(_exports.instance().fromJSDate(jsd).toJD());
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param [month] {number} The month to validate.
-            @param [day] {number} The day to validate.
-            @param error {string} Rrror message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          if (year.year) {
-            if (this._validateLevel === 0 && this.name !== year.calendar().name) {
-              throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this.local.name).replace(/\{1\}/, year.calendar().local.name);
-            }
-            return year;
-          }
-          try {
-            this._validateLevel++;
-            if (this._validateLevel === 1 && !this.isValid(year, month, day)) {
-              throw error.replace(/\{0\}/, this.local.name);
-            }
-            var date = this.newDate(year, month, day);
-            this._validateLevel--;
-            return date;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        }
-      });
-      function GregorianCalendar(language) {
-        this.local = this.regionalOptions[language] || this.regionalOptions[""];
-      }
-      GregorianCalendar.prototype = new BaseCalendar();
-      assign(GregorianCalendar.prototype, {
-        /** The calendar name.
-            @memberof GregorianCalendar */
-        name: "Gregorian",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-           @memberof GregorianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-           @memberof GregorianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof GregorianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof GregorianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-           @memberof GregorianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof GregorianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Gregorian",
-            epochs: ["BCE", "CE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year, starting from 1.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month < 3) {
-            month += 12;
-            year--;
-          }
-          var a = Math.floor(year / 100);
-          var b = 2 - a + Math.floor(a / 4);
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof GregorianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var z = Math.floor(jd + 0.5);
-          var a = Math.floor((z - 186721625e-2) / 36524.25);
-          a = z + 1 + a - Math.floor(a / 4);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var day = b - d - Math.floor(e * 30.6001);
-          var month = e - (e > 13.5 ? 13 : 1);
-          var year = c - (month > 2.5 ? 4716 : 4715);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var jsd = new Date(date.year(), date.month() - 1, date.day());
-          jsd.setHours(0);
-          jsd.setMinutes(0);
-          jsd.setSeconds(0);
-          jsd.setMilliseconds(0);
-          jsd.setHours(jsd.getHours() > 12 ? jsd.getHours() + 2 : 0);
-          return jsd;
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this.newDate(jsd.getFullYear(), jsd.getMonth() + 1, jsd.getDate());
-        }
-      });
-      var _exports = module.exports = new Calendars();
-      _exports.cdate = CDate;
-      _exports.baseCalendar = BaseCalendar;
-      _exports.calendars.gregorian = GregorianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/plus.js
-  var require_plus = __commonJS({
-    "node_modules/world-calendars/dist/plus.js"() {
-      var assign = require_object_assign();
-      var main = require_main();
-      assign(main.regionalOptions[""], {
-        invalidArguments: "Invalid arguments",
-        invalidFormat: "Cannot format a date from another calendar",
-        missingNumberAt: "Missing number at position {0}",
-        unknownNameAt: "Unknown name at position {0}",
-        unexpectedLiteralAt: "Unexpected literal at position {0}",
-        unexpectedText: "Additional text found at end"
-      });
-      main.local = main.regionalOptions[""];
-      assign(main.cdate.prototype, {
-        /** Format this date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof CDate
-            @param [format] {string} The date format to use (see <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a>).
-            @param [settings] {object} Options for the <code>formatDate</code> function.
-            @return {string} The formatted date. */
-        formatDate: function(format, settings) {
-          if (typeof format !== "string") {
-            settings = format;
-            format = "";
-          }
-          return this._calendar.formatDate(format || "", this, settings);
-        }
-      });
-      assign(main.baseCalendar.prototype, {
-        UNIX_EPOCH: main.instance().newDate(1970, 1, 1).toJD(),
-        SECS_PER_DAY: 24 * 60 * 60,
-        TICKS_EPOCH: main.instance().jdEpoch,
-        // 1 January 0001 CE
-        TICKS_PER_DAY: 24 * 60 * 60 * 1e7,
-        /** Date form for ATOM (RFC 3339/ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ATOM: "yyyy-mm-dd",
-        /** Date form for cookies.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        COOKIE: "D, dd M yyyy",
-        /** Date form for full date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        FULL: "DD, MM d, yyyy",
-        /** Date form for ISO 8601.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ISO_8601: "yyyy-mm-dd",
-        /** Date form for Julian date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        JULIAN: "J",
-        /** Date form for RFC 822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_822: "D, d M yy",
-        /** Date form for RFC 850.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_850: "DD, dd-M-yy",
-        /** Date form for RFC 1036.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1036: "D, d M yy",
-        /** Date form for RFC 1123.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1123: "D, d M yyyy",
-        /** Date form for RFC 2822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_2822: "D, d M yyyy",
-        /** Date form for RSS (RFC 822).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RSS: "D, d M yy",
-        /** Date form for Windows ticks.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TICKS: "!",
-        /** Date form for Unix timestamp.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TIMESTAMP: "@",
-        /** Date form for W3c (ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        W3C: "yyyy-mm-dd",
-        /** Format a date object into a string value.
-            The format can be combinations of the following:
-            <ul>
-            <li>d  - day of month (no leading zero)</li>
-            <li>dd - day of month (two digit)</li>
-            <li>o  - day of year (no leading zeros)</li>
-            <li>oo - day of year (three digit)</li>
-            <li>D  - day name short</li>
-            <li>DD - day name long</li>
-            <li>w  - week of year (no leading zero)</li>
-            <li>ww - week of year (two digit)</li>
-            <li>m  - month of year (no leading zero)</li>
-            <li>mm - month of year (two digit)</li>
-            <li>M  - month name short</li>
-            <li>MM - month name long</li>
-            <li>yy - year (two digit)</li>
-            <li>yyyy - year (four digit)</li>
-            <li>YYYY - formatted year</li>
-            <li>J  - Julian date (days since January 1, 4713 BCE Greenwich noon)</li>
-            <li>@  - Unix timestamp (s since 01/01/1970)</li>
-            <li>!  - Windows ticks (100ns since 01/01/0001)</li>
-            <li>'...' - literal text</li>
-            <li>'' - single quote</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param [format] {string} The desired format of the date (defaults to calendar format).
-            @param date {CDate} The date value to format.
-            @param [settings] {object} Addition options, whose attributes include:
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @property [calculateWeek] {CalendarsPickerCalculateWeek} Function that determines week of the year.
-            @property [localNumbers=false] {boolean} <code>true</code> to localise numbers (if available),
-                      <code>false</code> to use normal Arabic numerals.
-            @return {string} The date in the above format.
-            @throws Errors if the date is from a different calendar. */
-        formatDate: function(format, date, settings) {
-          if (typeof format !== "string") {
-            settings = date;
-            date = format;
-            format = "";
-          }
-          if (!date) {
-            return "";
-          }
-          if (date.calendar() !== this) {
-            throw main.local.invalidFormat || main.regionalOptions[""].invalidFormat;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var calculateWeek = settings.calculateWeek || this.local.calculateWeek;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var formatNumber = function(match, value, len, step) {
-            var num = "" + value;
-            if (doubled(match, step)) {
-              while (num.length < len) {
-                num = "0" + num;
-              }
-            }
-            return num;
-          };
-          var formatName = function(match, value, shortNames, longNames) {
-            return doubled(match) ? longNames[value] : shortNames[value];
-          };
-          var calendar = this;
-          var formatMonth = function(date2) {
-            return typeof monthNumbers === "function" ? monthNumbers.call(calendar, date2, doubled("m")) : localiseNumbers(formatNumber("m", date2.month(), 2));
-          };
-          var formatMonthName = function(date2, useLongName) {
-            if (useLongName) {
-              return typeof monthNames === "function" ? monthNames.call(calendar, date2) : monthNames[date2.month() - calendar.minMonth];
-            } else {
-              return typeof monthNamesShort === "function" ? monthNamesShort.call(calendar, date2) : monthNamesShort[date2.month() - calendar.minMonth];
-            }
-          };
-          var digits = this.local.digits;
-          var localiseNumbers = function(value) {
-            return settings.localNumbers && digits ? digits(value) : value;
-          };
-          var output = "";
-          var literal = false;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                output += format.charAt(iFormat);
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  output += localiseNumbers(formatNumber("d", date.day(), 2));
-                  break;
-                case "D":
-                  output += formatName(
-                    "D",
-                    date.dayOfWeek(),
-                    dayNamesShort,
-                    dayNames
-                  );
-                  break;
-                case "o":
-                  output += formatNumber("o", date.dayOfYear(), 3);
-                  break;
-                case "w":
-                  output += formatNumber("w", date.weekOfYear(), 2);
-                  break;
-                case "m":
-                  output += formatMonth(date);
-                  break;
-                case "M":
-                  output += formatMonthName(date, doubled("M"));
-                  break;
-                case "y":
-                  output += doubled("y", 2) ? date.year() : (date.year() % 100 < 10 ? "0" : "") + date.year() % 100;
-                  break;
-                case "Y":
-                  doubled("Y", 2);
-                  output += date.formatYear();
-                  break;
-                case "J":
-                  output += date.toJD();
-                  break;
-                case "@":
-                  output += (date.toJD() - this.UNIX_EPOCH) * this.SECS_PER_DAY;
-                  break;
-                case "!":
-                  output += (date.toJD() - this.TICKS_EPOCH) * this.TICKS_PER_DAY;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    output += "'";
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  output += format.charAt(iFormat);
-              }
-            }
-          }
-          return output;
-        },
-        /** Parse a string value into a date object.
-            See <a href="#formatDate"><code>formatDate</code></a> for the possible formats, plus:
-            <ul>
-            <li>* - ignore rest of string</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param format {string} The expected format of the date ('' for default calendar format).
-            @param value {string} The date in the above format.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The extracted date value or <code>null</code> if value is blank.
-            @throws Errors if the format and/or value are missing,
-                    if the value doesn't match the format, or if the date is invalid. */
-        parseDate: function(format, value, settings) {
-          if (value == null) {
-            throw main.local.invalidArguments || main.regionalOptions[""].invalidArguments;
-          }
-          value = typeof value === "object" ? value.toString() : value + "";
-          if (value === "") {
-            return null;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var shortYearCutoff = settings.shortYearCutoff || this.shortYearCutoff;
-          shortYearCutoff = typeof shortYearCutoff !== "string" ? shortYearCutoff : this.today().year() % 100 + parseInt(shortYearCutoff, 10);
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var parseMonth = settings.parseMonth || this.local.parseMonth;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var jd = -1;
-          var year = -1;
-          var month = -1;
-          var day = -1;
-          var doy = -1;
-          var shortYear = false;
-          var literal = false;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var getNumber = function(match, step) {
-            var isDoubled = doubled(match, step);
-            var size = [2, 3, isDoubled ? 4 : 2, isDoubled ? 4 : 2, 10, 11, 20]["oyYJ@!".indexOf(match) + 1];
-            var digits = new RegExp("^-?\\d{1," + size + "}");
-            var num = value.substring(iValue).match(digits);
-            if (!num) {
-              throw (main.local.missingNumberAt || main.regionalOptions[""].missingNumberAt).replace(/\{0\}/, iValue);
-            }
-            iValue += num[0].length;
-            return parseInt(num[0], 10);
-          };
-          var calendar = this;
-          var getMonthNumber = function() {
-            if (typeof monthNumbers === "function") {
-              doubled("m");
-              var month2 = monthNumbers.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getNumber("m");
-          };
-          var getName = function(match, shortNames, longNames, step) {
-            var names = doubled(match, step) ? longNames : shortNames;
-            for (var i = 0; i < names.length; i++) {
-              if (value.substr(iValue, names[i].length).toLowerCase() === names[i].toLowerCase()) {
-                iValue += names[i].length;
-                return i + calendar.minMonth;
-              }
-            }
-            throw (main.local.unknownNameAt || main.regionalOptions[""].unknownNameAt).replace(/\{0\}/, iValue);
-          };
-          var getMonthName = function() {
-            if (typeof monthNames === "function") {
-              var month2 = doubled("M") ? monthNames.call(calendar, value.substring(iValue)) : monthNamesShort.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getName("M", monthNamesShort, monthNames);
-          };
-          var checkLiteral = function() {
-            if (value.charAt(iValue) !== format.charAt(iFormat)) {
-              throw (main.local.unexpectedLiteralAt || main.regionalOptions[""].unexpectedLiteralAt).replace(/\{0\}/, iValue);
-            }
-            iValue++;
-          };
-          var iValue = 0;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                checkLiteral();
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  day = getNumber("d");
-                  break;
-                case "D":
-                  getName("D", dayNamesShort, dayNames);
-                  break;
-                case "o":
-                  doy = getNumber("o");
-                  break;
-                case "w":
-                  getNumber("w");
-                  break;
-                case "m":
-                  month = getMonthNumber();
-                  break;
-                case "M":
-                  month = getMonthName();
-                  break;
-                case "y":
-                  var iSave = iFormat;
-                  shortYear = !doubled("y", 2);
-                  iFormat = iSave;
-                  year = getNumber("y", 2);
-                  break;
-                case "Y":
-                  year = getNumber("Y", 2);
-                  break;
-                case "J":
-                  jd = getNumber("J") + 0.5;
-                  if (value.charAt(iValue) === ".") {
-                    iValue++;
-                    getNumber("J");
-                  }
-                  break;
-                case "@":
-                  jd = getNumber("@") / this.SECS_PER_DAY + this.UNIX_EPOCH;
-                  break;
-                case "!":
-                  jd = getNumber("!") / this.TICKS_PER_DAY + this.TICKS_EPOCH;
-                  break;
-                case "*":
-                  iValue = value.length;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    checkLiteral();
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  checkLiteral();
-              }
-            }
-          }
-          if (iValue < value.length) {
-            throw main.local.unexpectedText || main.regionalOptions[""].unexpectedText;
-          }
-          if (year === -1) {
-            year = this.today().year();
-          } else if (year < 100 && shortYear) {
-            year += shortYearCutoff === -1 ? 1900 : this.today().year() - this.today().year() % 100 - (year <= shortYearCutoff ? 0 : 100);
-          }
-          if (typeof month === "string") {
-            month = parseMonth.call(this, year, month);
-          }
-          if (doy > -1) {
-            month = 1;
-            day = doy;
-            for (var dim = this.daysInMonth(year, month); day > dim; dim = this.daysInMonth(year, month)) {
-              month++;
-              day -= dim;
-            }
-          }
-          return jd > -1 ? this.fromJD(jd) : this.newDate(year, month, day);
-        },
-        /** A date may be specified as an exact value or a relative one.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param dateSpec {CDate|number|string} The date as an object or string in the given format or
-                    an offset - numeric days from today, or string amounts and periods, e.g. '+1m +2w'.
-            @param defaultDate {CDate} The date to use if no other supplied, may be <code>null</code>.
-            @param currentDate {CDate} The current date as a possible basis for relative dates,
-                    if <code>null</code> today is used (optional)
-            @param [dateFormat] {string} The expected date format - see <a href="#formatDate"><code>formatDate</code></a>.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The decoded date. */
-        determineDate: function(dateSpec, defaultDate, currentDate, dateFormat, settings) {
-          if (currentDate && typeof currentDate !== "object") {
-            settings = dateFormat;
-            dateFormat = currentDate;
-            currentDate = null;
-          }
-          if (typeof dateFormat !== "string") {
-            settings = dateFormat;
-            dateFormat = "";
-          }
-          var calendar = this;
-          var offsetString = function(offset) {
-            try {
-              return calendar.parseDate(dateFormat, offset, settings);
-            } catch (e) {
-            }
-            offset = offset.toLowerCase();
-            var date = (offset.match(/^c/) && currentDate ? currentDate.newDate() : null) || calendar.today();
-            var pattern = /([+-]?[0-9]+)\s*(d|w|m|y)?/g;
-            var matches = pattern.exec(offset);
-            while (matches) {
-              date.add(parseInt(matches[1], 10), matches[2] || "d");
-              matches = pattern.exec(offset);
-            }
-            return date;
-          };
-          defaultDate = defaultDate ? defaultDate.newDate() : null;
-          dateSpec = dateSpec == null ? defaultDate : typeof dateSpec === "string" ? offsetString(dateSpec) : typeof dateSpec === "number" ? isNaN(dateSpec) || dateSpec === Infinity || dateSpec === -Infinity ? defaultDate : calendar.today().add(dateSpec, "d") : calendar.newDate(dateSpec);
-          return dateSpec;
-        }
-      });
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/chinese.js
-  var require_chinese = __commonJS({
-    "node_modules/world-calendars/dist/calendars/chinese.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ChineseCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ChineseCalendar.prototype = new main.baseCalendar();
-      assign(ChineseCalendar.prototype, {
-        /** The calendar name.
-            @memberof ChineseCalendar */
-        name: "Chinese",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ChineseCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof ChineseCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ChineseCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Chinese",
-            epochs: ["BEC", "EC"],
-            monthNumbers: function(date, padded) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NUMBER_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = "" + this.toChineseMonth(year, monthIndex);
-              if (padded && month.length < 2) {
-                month = "0" + month;
-              }
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                month += "i";
-              }
-              return month;
-            },
-            monthNames: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00\u6708",
-                "\u4E8C\u6708",
-                "\u4E09\u6708",
-                "\u56DB\u6708",
-                "\u4E94\u6708",
-                "\u516D\u6708",
-                "\u4E03\u6708",
-                "\u516B\u6708",
-                "\u4E5D\u6708",
-                "\u5341\u6708",
-                "\u5341\u4E00\u6708",
-                "\u5341\u4E8C\u6708"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            monthNamesShort: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_SHORT_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00",
-                "\u4E8C",
-                "\u4E09",
-                "\u56DB",
-                "\u4E94",
-                "\u516D",
-                "\u4E03",
-                "\u516B",
-                "\u4E5D",
-                "\u5341",
-                "\u5341\u4E00",
-                "\u5341\u4E8C"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            parseMonth: function(year, monthString) {
-              year = this._validateYear(year);
-              var month = parseInt(monthString);
-              var isIntercalary;
-              if (!isNaN(month)) {
-                var i = monthString[monthString.length - 1];
-                isIntercalary = i === "i" || i === "I";
-              } else {
-                if (monthString[0] === "\u95F0") {
-                  isIntercalary = true;
-                  monthString = monthString.substring(1);
-                }
-                if (monthString[monthString.length - 1] === "\u6708") {
-                  monthString = monthString.substring(0, monthString.length - 1);
-                }
-                month = 1 + [
-                  "\u4E00",
-                  "\u4E8C",
-                  "\u4E09",
-                  "\u56DB",
-                  "\u4E94",
-                  "\u516D",
-                  "\u4E03",
-                  "\u516B",
-                  "\u4E5D",
-                  "\u5341",
-                  "\u5341\u4E00",
-                  "\u5341\u4E8C"
-                ].indexOf(monthString);
-              }
-              var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-              return monthIndex;
-            },
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date or the year to validate.
-            @param error {string} Error message if invalid.
-            @return {number} The year.
-            @throws Error if year out of range. */
-        _validateYear: function(year, error) {
-          if (year.year) {
-            year = year.year();
-          }
-          if (typeof year !== "number" || year < 1888 || year > 2111) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return year;
-        },
-        /** Retrieve the month index (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {number} The year.
-            @param month {number} The month (1 for first month).
-            @param [isIntercalary=false] {boolean} If month is intercalary.
-            @return {number} The month index (0 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toMonthIndex: function(year, month, isIntercalary) {
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var invalidIntercalaryMonth = isIntercalary && month !== intercalaryMonth;
-          if (invalidIntercalaryMonth || month < 1 || month > 12) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var monthIndex;
-          if (!intercalaryMonth) {
-            monthIndex = month - 1;
-          } else if (!isIntercalary && month <= intercalaryMonth) {
-            monthIndex = month - 1;
-          } else {
-            monthIndex = month;
-          }
-          return monthIndex;
-        },
-        /** Retrieve the month (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date or the year to examine.
-            @param monthIndex {number} The month index (0 for first month).
-            @return {number} The month (1 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toChineseMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex < 0 || monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var month;
-          if (!intercalaryMonth) {
-            month = monthIndex + 1;
-          } else if (monthIndex < intercalaryMonth) {
-            month = monthIndex + 1;
-          } else {
-            month = monthIndex;
-          }
-          return month;
-        },
-        /** Determine the intercalary month of a year (if any).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The intercalary month number, or 0 if none.
-            @throws Error if an invalid year or a different calendar used. */
-        intercalaryMonth: function(year) {
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          return intercalaryMonth;
-        },
-        /** Determine whether this date is an intercalary month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @return {boolean} <code>true</code> if this is an intercalary month, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        isIntercalaryMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          return !!intercalaryMonth && intercalaryMonth === monthIndex;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.intercalaryMonth(year) !== 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, monthIndex, day) {
-          var validatedYear = this._validateYear(year, main.local.invalidyear);
-          var packedDate = CHINESE_NEW_YEAR[validatedYear - CHINESE_NEW_YEAR[0]];
-          var y = packedDate >> 9 & 4095;
-          var m = packedDate >> 5 & 15;
-          var d = packedDate & 31;
-          var firstThursday;
-          firstThursday = gregorianCalendar.newDate(y, m, d);
-          firstThursday.add(4 - (firstThursday.dayOfWeek() || 7), "d");
-          var offset = this.toJD(year, monthIndex, day) - firstThursday.toJD();
-          return 1 + Math.floor(offset / 7);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          return this.leapYear(year) ? 13 : 12;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [monthIndex] {number} The month index.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, monthIndex) {
-          if (year.year) {
-            monthIndex = year.month();
-            year = year.year();
-          }
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var daysInMonth = monthDaysTable & 1 << 12 - monthIndex ? 30 : 29;
-          return daysInMonth;
-        },
-        /** Determine whether this date is a week day.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, monthIndex, day) {
-          return (this.dayOfWeek(year, monthIndex, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [monthIndex] {number} The month index to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, monthIndex, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = this._validateYear(date.year());
-          monthIndex = date.month();
-          day = date.day();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var solar = toSolar(year, month, day, isIntercalary);
-          return gregorianCalendar.toJD(solar.year, solar.month, solar.day);
-        },
-        /** Create a new date from a Julian date.
-            @memberof ChineseCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var lunar = toLunar(date.year(), date.month(), date.day());
-          var monthIndex = this.toMonthIndex(
-            lunar.year,
-            lunar.month,
-            lunar.isIntercalary
-          );
-          return this.newDate(lunar.year, monthIndex, lunar.day);
-        },
-        /** Create a new date from a string.
-            @memberof ChineseCalendar
-            @param dateString {string} String representing a Chinese date
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        fromString: function(dateString) {
-          var match = dateString.match(DATE_REGEXP);
-          var year = this._validateYear(+match[1]);
-          var month = +match[2];
-          var isIntercalary = !!match[3];
-          var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-          var day = +match[4];
-          return this.newDate(year, monthIndex, day);
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof ChineseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          var year = date.year();
-          var monthIndex = date.month();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var cdate = Object.getPrototypeOf(ChineseCalendar.prototype).add.call(this, date, offset, period);
-          if (period === "y") {
-            var resultYear = cdate.year();
-            var resultMonthIndex = cdate.month();
-            var resultCanBeIntercalaryMonth = this.isIntercalaryMonth(resultYear, month);
-            var correctedMonthIndex = isIntercalary && resultCanBeIntercalaryMonth ? this.toMonthIndex(resultYear, month, true) : this.toMonthIndex(resultYear, month, false);
-            if (correctedMonthIndex !== resultMonthIndex) {
-              cdate.month(correctedMonthIndex);
-            }
-          }
-          return cdate;
-        }
-      });
-      var DATE_REGEXP = /^\s*(-?\d\d\d\d|\d\d)[-/](\d?\d)([iI]?)[-/](\d?\d)/m;
-      var MONTH_NUMBER_REGEXP = /^\d?\d[iI]?/m;
-      var MONTH_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?月/m;
-      var MONTH_SHORT_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?/m;
-      main.calendars.chinese = ChineseCalendar;
-      var LUNAR_MONTH_DAYS = [
-        1887,
-        5780,
-        5802,
-        19157,
-        2742,
-        50359,
-        1198,
-        2646,
-        46378,
-        7466,
-        3412,
-        30122,
-        5482,
-        67949,
-        2396,
-        5294,
-        43597,
-        6732,
-        6954,
-        36181,
-        2772,
-        4954,
-        18781,
-        2396,
-        54427,
-        5274,
-        6730,
-        47781,
-        5800,
-        6868,
-        21210,
-        4790,
-        59703,
-        2350,
-        5270,
-        46667,
-        3402,
-        3496,
-        38325,
-        1388,
-        4782,
-        18735,
-        2350,
-        52374,
-        6804,
-        7498,
-        44457,
-        2906,
-        1388,
-        29294,
-        4700,
-        63789,
-        6442,
-        6804,
-        56138,
-        5802,
-        2772,
-        38235,
-        1210,
-        4698,
-        22827,
-        5418,
-        63125,
-        3476,
-        5802,
-        43701,
-        2484,
-        5302,
-        27223,
-        2646,
-        70954,
-        7466,
-        3412,
-        54698,
-        5482,
-        2412,
-        38062,
-        5294,
-        2636,
-        32038,
-        6954,
-        60245,
-        2772,
-        4826,
-        43357,
-        2394,
-        5274,
-        39501,
-        6730,
-        72357,
-        5800,
-        5844,
-        53978,
-        4790,
-        2358,
-        38039,
-        5270,
-        87627,
-        3402,
-        3496,
-        54708,
-        5484,
-        4782,
-        43311,
-        2350,
-        3222,
-        27978,
-        7498,
-        68965,
-        2904,
-        5484,
-        45677,
-        4700,
-        6444,
-        39573,
-        6804,
-        6986,
-        19285,
-        2772,
-        62811,
-        1210,
-        4698,
-        47403,
-        5418,
-        5780,
-        38570,
-        5546,
-        76469,
-        2420,
-        5302,
-        51799,
-        2646,
-        5414,
-        36501,
-        3412,
-        5546,
-        18869,
-        2412,
-        54446,
-        5276,
-        6732,
-        48422,
-        6822,
-        2900,
-        28010,
-        4826,
-        92509,
-        2394,
-        5274,
-        55883,
-        6730,
-        6820,
-        47956,
-        5812,
-        2778,
-        18779,
-        2358,
-        62615,
-        5270,
-        5450,
-        46757,
-        3492,
-        5556,
-        27318,
-        4718,
-        67887,
-        2350,
-        3222,
-        52554,
-        7498,
-        3428,
-        38252,
-        5468,
-        4700,
-        31022,
-        6444,
-        64149,
-        6804,
-        6986,
-        43861,
-        2772,
-        5338,
-        35421,
-        2650,
-        70955,
-        5418,
-        5780,
-        54954,
-        5546,
-        2740,
-        38074,
-        5302,
-        2646,
-        29991,
-        3366,
-        61011,
-        3412,
-        5546,
-        43445,
-        2412,
-        5294,
-        35406,
-        6732,
-        72998,
-        6820,
-        6996,
-        52586,
-        2778,
-        2396,
-        38045,
-        5274,
-        6698,
-        23333,
-        6820,
-        64338,
-        5812,
-        2746,
-        43355,
-        2358,
-        5270,
-        39499,
-        5450,
-        79525,
-        3492,
-        5548
-      ];
-      var CHINESE_NEW_YEAR = [
-        1887,
-        966732,
-        967231,
-        967733,
-        968265,
-        968766,
-        969297,
-        969798,
-        970298,
-        970829,
-        971330,
-        971830,
-        972362,
-        972863,
-        973395,
-        973896,
-        974397,
-        974928,
-        975428,
-        975929,
-        976461,
-        976962,
-        977462,
-        977994,
-        978494,
-        979026,
-        979526,
-        980026,
-        980558,
-        981059,
-        981559,
-        982091,
-        982593,
-        983124,
-        983624,
-        984124,
-        984656,
-        985157,
-        985656,
-        986189,
-        986690,
-        987191,
-        987722,
-        988222,
-        988753,
-        989254,
-        989754,
-        990286,
-        990788,
-        991288,
-        991819,
-        992319,
-        992851,
-        993352,
-        993851,
-        994383,
-        994885,
-        995385,
-        995917,
-        996418,
-        996918,
-        997450,
-        997949,
-        998481,
-        998982,
-        999483,
-        1000014,
-        1000515,
-        1001016,
-        1001548,
-        1002047,
-        1002578,
-        1003080,
-        1003580,
-        1004111,
-        1004613,
-        1005113,
-        1005645,
-        1006146,
-        1006645,
-        1007177,
-        1007678,
-        1008209,
-        1008710,
-        1009211,
-        1009743,
-        1010243,
-        1010743,
-        1011275,
-        1011775,
-        1012306,
-        1012807,
-        1013308,
-        1013840,
-        1014341,
-        1014841,
-        1015373,
-        1015874,
-        1016404,
-        1016905,
-        1017405,
-        1017937,
-        1018438,
-        1018939,
-        1019471,
-        1019972,
-        1020471,
-        1021002,
-        1021503,
-        1022035,
-        1022535,
-        1023036,
-        1023568,
-        1024069,
-        1024568,
-        1025100,
-        1025601,
-        1026102,
-        1026633,
-        1027133,
-        1027666,
-        1028167,
-        1028666,
-        1029198,
-        1029699,
-        1030199,
-        1030730,
-        1031231,
-        1031763,
-        1032264,
-        1032764,
-        1033296,
-        1033797,
-        1034297,
-        1034828,
-        1035329,
-        1035830,
-        1036362,
-        1036861,
-        1037393,
-        1037894,
-        1038394,
-        1038925,
-        1039427,
-        1039927,
-        1040459,
-        1040959,
-        1041491,
-        1041992,
-        1042492,
-        1043023,
-        1043524,
-        1044024,
-        1044556,
-        1045057,
-        1045558,
-        1046090,
-        1046590,
-        1047121,
-        1047622,
-        1048122,
-        1048654,
-        1049154,
-        1049655,
-        1050187,
-        1050689,
-        1051219,
-        1051720,
-        1052220,
-        1052751,
-        1053252,
-        1053752,
-        1054284,
-        1054786,
-        1055285,
-        1055817,
-        1056317,
-        1056849,
-        1057349,
-        1057850,
-        1058382,
-        1058883,
-        1059383,
-        1059915,
-        1060415,
-        1060947,
-        1061447,
-        1061947,
-        1062479,
-        1062981,
-        1063480,
-        1064012,
-        1064514,
-        1065014,
-        1065545,
-        1066045,
-        1066577,
-        1067078,
-        1067578,
-        1068110,
-        1068611,
-        1069112,
-        1069642,
-        1070142,
-        1070674,
-        1071175,
-        1071675,
-        1072207,
-        1072709,
-        1073209,
-        1073740,
-        1074241,
-        1074741,
-        1075273,
-        1075773,
-        1076305,
-        1076807,
-        1077308,
-        1077839,
-        1078340,
-        1078840,
-        1079372,
-        1079871,
-        1080403,
-        1080904
-      ];
-      function toLunar(yearOrDate, monthOrResult, day, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          solarDate = yearOrDate;
-          lunarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Solar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Solar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 31;
-          if (!isValidDay)
-            throw new Error("Solar day outside range 1 - 31");
-          solarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day
-          };
-          lunarDate = result || {};
-        }
-        var chineseNewYearPackedDate = CHINESE_NEW_YEAR[solarDate.year - CHINESE_NEW_YEAR[0]];
-        var packedDate = solarDate.year << 9 | solarDate.month << 5 | solarDate.day;
-        lunarDate.year = packedDate >= chineseNewYearPackedDate ? solarDate.year : solarDate.year - 1;
-        chineseNewYearPackedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = chineseNewYearPackedDate >> 9 & 4095;
-        var m = chineseNewYearPackedDate >> 5 & 15;
-        var d = chineseNewYearPackedDate & 31;
-        var daysFromNewYear;
-        var chineseNewYearJSDate = new Date(y, m - 1, d);
-        var jsDate = new Date(solarDate.year, solarDate.month - 1, solarDate.day);
-        daysFromNewYear = Math.round(
-          (jsDate - chineseNewYearJSDate) / (24 * 3600 * 1e3)
-        );
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var i;
-        for (i = 0; i < 13; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          if (daysFromNewYear < daysInMonth) {
-            break;
-          }
-          daysFromNewYear -= daysInMonth;
-        }
-        var intercalaryMonth = monthDaysTable >> 13;
-        if (!intercalaryMonth || i < intercalaryMonth) {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = 1 + i;
-        } else if (i === intercalaryMonth) {
-          lunarDate.isIntercalary = true;
-          lunarDate.month = i;
-        } else {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = i;
-        }
-        lunarDate.day = 1 + daysFromNewYear;
-        return lunarDate;
-      }
-      function toSolar(yearOrDate, monthOrResult, day, isIntercalaryOrResult, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          lunarDate = yearOrDate;
-          solarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Lunar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Lunar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 30;
-          if (!isValidDay)
-            throw new Error("Lunar day outside range 1 - 30");
-          var isIntercalary;
-          if (typeof isIntercalaryOrResult === "object") {
-            isIntercalary = false;
-            solarDate = isIntercalaryOrResult;
-          } else {
-            isIntercalary = !!isIntercalaryOrResult;
-            solarDate = result || {};
-          }
-          lunarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day,
-            isIntercalary
-          };
-        }
-        var daysFromNewYear;
-        daysFromNewYear = lunarDate.day - 1;
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var intercalaryMonth = monthDaysTable >> 13;
-        var monthsFromNewYear;
-        if (!intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month - 1;
-        } else if (lunarDate.month > intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month;
-        } else if (lunarDate.isIntercalary) {
-          monthsFromNewYear = lunarDate.month;
-        } else {
-          monthsFromNewYear = lunarDate.month - 1;
-        }
-        for (var i = 0; i < monthsFromNewYear; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          daysFromNewYear += daysInMonth;
-        }
-        var packedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = packedDate >> 9 & 4095;
-        var m = packedDate >> 5 & 15;
-        var d = packedDate & 31;
-        var jsDate = new Date(y, m - 1, d + daysFromNewYear);
-        solarDate.year = jsDate.getFullYear();
-        solarDate.month = 1 + jsDate.getMonth();
-        solarDate.day = jsDate.getDate();
-        return solarDate;
-      }
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/coptic.js
-  var require_coptic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/coptic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function CopticCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      CopticCalendar.prototype = new main.baseCalendar();
-      assign(CopticCalendar.prototype, {
-        /** The calendar name.
-            @memberof CopticCalendar */
-        name: "Coptic",
-        /** Julian date of start of Coptic epoch: 29 August 284 CE (Gregorian).
-            @memberof CopticCalendar */
-        jdEpoch: 18250295e-1,
-        /** Days per month in a common year.
-            @memberof CopticCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof CopticCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof CopticCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof CopticCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof CopticCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof CopticCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Coptic",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Thout",
-              "Paopi",
-              "Hathor",
-              "Koiak",
-              "Tobi",
-              "Meshir",
-              "Paremhat",
-              "Paremoude",
-              "Pashons",
-              "Paoni",
-              "Epip",
-              "Mesori",
-              "Pi Kogi Enavot"
-            ],
-            monthNamesShort: [
-              "Tho",
-              "Pao",
-              "Hath",
-              "Koi",
-              "Tob",
-              "Mesh",
-              "Pat",
-              "Pad",
-              "Pash",
-              "Pao",
-              "Epi",
-              "Meso",
-              "PiK"
-            ],
-            dayNames: ["Tkyriaka", "Pesnau", "Pshoment", "Peftoou", "Ptiou", "Psoou", "Psabbaton"],
-            dayNamesShort: ["Tky", "Pes", "Psh", "Pef", "Pti", "Pso", "Psa"],
-            dayNamesMin: ["Tk", "Pes", "Psh", "Pef", "Pt", "Pso", "Psa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number) the month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number) the month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof CopticCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.coptic = CopticCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/discworld.js
-  var require_discworld = __commonJS({
-    "node_modules/world-calendars/dist/calendars/discworld.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function DiscworldCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      DiscworldCalendar.prototype = new main.baseCalendar();
-      assign(DiscworldCalendar.prototype, {
-        /** The calendar name.
-            @memberof DiscworldCalendar */
-        name: "Discworld",
-        /** Julian date of start of Discworld epoch: 1 January 0001 CE.
-            @memberof DiscworldCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-            @memberof DiscworldCalendar */
-        daysPerMonth: [16, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof DiscworldCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof DiscworldCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof DiscworldCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof DiscworldCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof DiscworldCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Discworld",
-            epochs: ["BUC", "UC"],
-            monthNames: [
-              "Ick",
-              "Offle",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "Grune",
-              "August",
-              "Spune",
-              "Sektober",
-              "Ember",
-              "December"
-            ],
-            monthNamesShort: ["Ick", "Off", "Feb", "Mar", "Apr", "May", "Jun", "Gru", "Aug", "Spu", "Sek", "Emb", "Dec"],
-            dayNames: ["Sunday", "Octeday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Oct", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Oc", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 2,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 13;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 400;
-        },
-        /** Determine the week of the year for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 8) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1];
-        },
-        /** Retrieve the number of days in a week.
-            @memberof DiscworldCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 8;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return (date.day() + 1) % 8;
-        },
-        /** Determine whether this date is a week day.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          var dow = this.dayOfWeek(year, month, day);
-          return dow >= 2 && dow <= 6;
-        },
-        /** Retrieve additional information about a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { century: centuries[Math.floor((date.year() - 1) / 100) + 1] || "" };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year() + (date.year() < 0 ? 1 : 0);
-          month = date.month();
-          day = date.day();
-          return day + (month > 1 ? 16 : 0) + (month > 2 ? (month - 2) * 32 : 0) + (year - 1) * 400 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof DiscworldCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5) - Math.floor(this.jdEpoch) - 1;
-          var year = Math.floor(jd / 400) + 1;
-          jd -= (year - 1) * 400;
-          jd += jd > 15 ? 16 : 0;
-          var month = Math.floor(jd / 32) + 1;
-          var day = jd - (month - 1) * 32 + 1;
-          return this.newDate(year <= 0 ? year - 1 : year, month, day);
-        }
-      });
-      var centuries = {
-        20: "Fruitbat",
-        21: "Anchovy"
-      };
-      main.calendars.discworld = DiscworldCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ethiopian.js
-  var require_ethiopian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ethiopian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function EthiopianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      EthiopianCalendar.prototype = new main.baseCalendar();
-      assign(EthiopianCalendar.prototype, {
-        /** The calendar name.
-            @memberof EthiopianCalendar */
-        name: "Ethiopian",
-        /** Julian date of start of Ethiopian epoch: 27 August 8 CE (Gregorian).
-            @memberof EthiopianCalendar */
-        jdEpoch: 17242205e-1,
-        /** Days per month in a common year.
-            @memberof EthiopianCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof EthiopianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof EthiopianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof EthiopianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof EthiopianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof EthiopianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Ethiopian",
-            epochs: ["BEE", "EE"],
-            monthNames: [
-              "Meskerem",
-              "Tikemet",
-              "Hidar",
-              "Tahesas",
-              "Tir",
-              "Yekatit",
-              "Megabit",
-              "Miazia",
-              "Genbot",
-              "Sene",
-              "Hamle",
-              "Nehase",
-              "Pagume"
-            ],
-            monthNamesShort: [
-              "Mes",
-              "Tik",
-              "Hid",
-              "Tah",
-              "Tir",
-              "Yek",
-              "Meg",
-              "Mia",
-              "Gen",
-              "Sen",
-              "Ham",
-              "Neh",
-              "Pag"
-            ],
-            dayNames: ["Ehud", "Segno", "Maksegno", "Irob", "Hamus", "Arb", "Kidame"],
-            dayNamesShort: ["Ehu", "Seg", "Mak", "Iro", "Ham", "Arb", "Kid"],
-            dayNamesMin: ["Eh", "Se", "Ma", "Ir", "Ha", "Ar", "Ki"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof EthiopianCalendar
-            @param jd {number} the Julian date to convert.
-            @return {CDate} the equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.ethiopian = EthiopianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/hebrew.js
-  var require_hebrew = __commonJS({
-    "node_modules/world-calendars/dist/calendars/hebrew.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function HebrewCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      HebrewCalendar.prototype = new main.baseCalendar();
-      assign(HebrewCalendar.prototype, {
-        /** The calendar name.
-            @memberof HebrewCalendar */
-        name: "Hebrew",
-        /** Julian date of start of Hebrew epoch: 7 October 3761 BCE.
-            @memberof HebrewCalendar */
-        jdEpoch: 347995.5,
-        /** Days per month in a common year.
-            @memberof HebrewCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof HebrewCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof HebrewCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof HebrewCalendar */
-        firstMonth: 7,
-        /** The minimum day number.
-            @memberof HebrewCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof HebrewCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Hebrew",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Nisan",
-              "Iyar",
-              "Sivan",
-              "Tammuz",
-              "Av",
-              "Elul",
-              "Tishrei",
-              "Cheshvan",
-              "Kislev",
-              "Tevet",
-              "Shevat",
-              "Adar",
-              "Adar II"
-            ],
-            monthNamesShort: ["Nis", "Iya", "Siv", "Tam", "Av", "Elu", "Tis", "Che", "Kis", "Tev", "She", "Ada", "Ad2"],
-            dayNames: ["Yom Rishon", "Yom Sheni", "Yom Shlishi", "Yom Revi'i", "Yom Chamishi", "Yom Shishi", "Yom Shabbat"],
-            dayNamesShort: ["Ris", "She", "Shl", "Rev", "Cha", "Shi", "Sha"],
-            dayNamesMin: ["Ri", "She", "Shl", "Re", "Ch", "Shi", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(date.year());
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        _leapYear: function(year) {
-          year = year < 0 ? year + 1 : year;
-          return mod(year * 7 + 1, 19) < 7;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(year.year ? year.year() : year) ? 13 : 12;
-        },
-        /** Determine the week of the year for a date.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          return this.toJD(year === -1 ? 1 : year + 1, 7, 1) - this.toJD(year, 7, 1);
-        },
-        /** Retrieve the number of days in a month.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return month === 12 && this.leapYear(year) ? 30 : (
-            // Adar I
-            month === 8 && mod(this.daysInYear(year), 10) === 5 ? 30 : (
-              // Cheshvan in shlemah year
-              month === 9 && mod(this.daysInYear(year), 10) === 3 ? 29 : (
-                // Kislev in chaserah year
-                this.daysPerMonth[month - 1]
-              )
-            )
-          );
-        },
-        /** Determine whether this date is a week day.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve additional information about a date - year type.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { yearType: (this.leapYear(date) ? "embolismic" : "common") + " " + ["deficient", "regular", "complete"][this.daysInYear(date) % 10 - 3] };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof HebrewCalendar
-            @param year {CDate)|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var adjYear = year <= 0 ? year + 1 : year;
-          var jd = this.jdEpoch + this._delay1(adjYear) + this._delay2(adjYear) + day + 1;
-          if (month < 7) {
-            for (var m = 7; m <= this.monthsInYear(year); m++) {
-              jd += this.daysInMonth(year, m);
-            }
-            for (var m = 1; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          } else {
-            for (var m = 7; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          }
-          return jd;
-        },
-        /** Test for delay of start of new year and to avoid
-            Sunday, Wednesday, or Friday as start of the new year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay1: function(year) {
-          var months = Math.floor((235 * year - 234) / 19);
-          var parts = 12084 + 13753 * months;
-          var day = months * 29 + Math.floor(parts / 25920);
-          if (mod(3 * (day + 1), 7) < 3) {
-            day++;
-          }
-          return day;
-        },
-        /** Check for delay in start of new year due to length of adjacent years.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay2: function(year) {
-          var last = this._delay1(year - 1);
-          var present = this._delay1(year);
-          var next = this._delay1(year + 1);
-          return next - present === 356 ? 2 : present - last === 382 ? 1 : 0;
-        },
-        /** Create a new date from a Julian date.
-            @memberof HebrewCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((jd - this.jdEpoch) * 98496 / 35975351) - 1;
-          while (jd >= this.toJD(year === -1 ? 1 : year + 1, 7, 1)) {
-            year++;
-          }
-          var month = jd < this.toJD(year, 1, 1) ? 7 : 1;
-          while (jd > this.toJD(year, month, this.daysInMonth(year, month))) {
-            month++;
-          }
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.hebrew = HebrewCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/islamic.js
-  var require_islamic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/islamic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function IslamicCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      IslamicCalendar.prototype = new main.baseCalendar();
-      assign(IslamicCalendar.prototype, {
-        /** The calendar name.
-            @memberof IslamicCalendar */
-        name: "Islamic",
-        /** Julian date of start of Islamic epoch: 16 July 622 CE.
-            @memberof IslamicCalendar */
-        jdEpoch: 19484395e-1,
-        /** Days per month in a common year.
-            @memberof IslamicCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof IslamicCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof IslamicCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof IslamicCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof IslamicCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof IslamicCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Islamic",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' al-thani",
-              "Jumada al-awwal",
-              "Jumada al-thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: [
-              "Yawm al-ahad",
-              "Yawm al-ithnayn",
-              "Yawm ath-thulaathaa'",
-              "Yawm al-arbi'aa'",
-              "Yawm al-kham\u012Bs",
-              "Yawm al-jum'a",
-              "Yawm as-sabt"
-            ],
-            dayNamesShort: ["Aha", "Ith", "Thu", "Arb", "Kha", "Jum", "Sab"],
-            dayNamesMin: ["Ah", "It", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return (date.year() * 11 + 14) % 30 < 11;
-        },
-        /** Determine the week of the year for a date.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          return this.leapYear(year) ? 355 : 354;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          year = year <= 0 ? year + 1 : year;
-          return day + Math.ceil(29.5 * (month - 1)) + (year - 1) * 354 + Math.floor((3 + 11 * year) / 30) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof IslamicCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((30 * (jd - this.jdEpoch) + 10646) / 10631);
-          year = year <= 0 ? year - 1 : year;
-          var month = Math.min(12, Math.ceil((jd - 29 - this.toJD(year, 1, 1)) / 29.5) + 1);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.islamic = IslamicCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/julian.js
-  var require_julian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/julian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function JulianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      JulianCalendar.prototype = new main.baseCalendar();
-      assign(JulianCalendar.prototype, {
-        /** The calendar name.
-            @memberof JulianCalendar */
-        name: "Julian",
-        /** Julian date of start of Julian epoch: 1 January 0001 AD = 30 December 0001 BCE.
-            @memberof JulianCalendar */
-        jdEpoch: 17214235e-1,
-        /** Days per month in a common year.
-            @memberof JulianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof JulianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof JulianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof JulianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof JulianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof JulianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Julian",
-            epochs: ["BC", "AD"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() < 0 ? date.year() + 1 : date.year();
-          return year % 4 === 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} True if a week day, false if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month <= 2) {
-            year--;
-            month += 12;
-          }
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof JulianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var a = Math.floor(jd + 0.5);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var month = e - Math.floor(e < 14 ? 1 : 13);
-          var year = c - Math.floor(month > 2 ? 4716 : 4715);
-          var day = b - d - Math.floor(30.6001 * e);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.julian = JulianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/mayan.js
-  var require_mayan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/mayan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function MayanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      MayanCalendar.prototype = new main.baseCalendar();
-      assign(MayanCalendar.prototype, {
-        /** The calendar name.
-            @memberof MayanCalendar */
-        name: "Mayan",
-        /** Julian date of start of Mayan epoch: 11 August 3114 BCE.
-            @memberof MayanCalendar */
-        jdEpoch: 584282.5,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof MayanCalendar */
-        hasYearZero: true,
-        /** The minimum month number.
-            @memberof MayanCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            @memberof MayanCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof MayanCalendar */
-        minDay: 0,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof MayanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left.
-            @property haabMonths {string[]} The names of the Haab months.
-            @property tzolkinMonths {string[]} The names of the Tzolkin months. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Mayan",
-            epochs: ["", ""],
-            monthNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            monthNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            dayNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesMin: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            digits: null,
-            dateFormat: "YYYY.m.d",
-            firstDay: 0,
-            isRTL: false,
-            haabMonths: [
-              "Pop",
-              "Uo",
-              "Zip",
-              "Zotz",
-              "Tzec",
-              "Xul",
-              "Yaxkin",
-              "Mol",
-              "Chen",
-              "Yax",
-              "Zac",
-              "Ceh",
-              "Mac",
-              "Kankin",
-              "Muan",
-              "Pax",
-              "Kayab",
-              "Cumku",
-              "Uayeb"
-            ],
-            tzolkinMonths: [
-              "Imix",
-              "Ik",
-              "Akbal",
-              "Kan",
-              "Chicchan",
-              "Cimi",
-              "Manik",
-              "Lamat",
-              "Muluc",
-              "Oc",
-              "Chuen",
-              "Eb",
-              "Ben",
-              "Ix",
-              "Men",
-              "Cib",
-              "Caban",
-              "Etznab",
-              "Cauac",
-              "Ahau"
-            ]
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          var baktun = Math.floor(year / 400);
-          year = year % 400;
-          year += year < 0 ? 400 : 0;
-          var katun = Math.floor(year / 20);
-          return baktun + "." + katun + "." + year % 20;
-        },
-        /** Convert from the formatted year back to a single number.
-            @memberof MayanCalendar
-            @param years {string} The year as n.n.n.
-            @return {number} The sequential year.
-            @throws Error if an invalid value is supplied. */
-        forYear: function(years) {
-          years = years.split(".");
-          if (years.length < 3) {
-            throw "Invalid Mayan year";
-          }
-          var year = 0;
-          for (var i = 0; i < years.length; i++) {
-            var y = parseInt(years[i], 10);
-            if (Math.abs(y) > 19 || i > 0 && y < 0) {
-              throw "Invalid Mayan year";
-            }
-            year = year * 20 + y;
-          }
-          return year;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 18;
-        },
-        /** Determine the week of the year for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
-          return 0;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 360;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return 20;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof MayanCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 5;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day();
-        },
-        /** Determine whether this date is a week day.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
-          return true;
-        },
-        /** Retrieve additional information about a date - Haab and Tzolkin equivalents.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var jd = date.toJD();
-          var haab = this._toHaab(jd);
-          var tzolkin = this._toTzolkin(jd);
-          return {
-            haabMonthName: this.local.haabMonths[haab[0] - 1],
-            haabMonth: haab[0],
-            haabDay: haab[1],
-            tzolkinDayName: this.local.tzolkinMonths[tzolkin[0] - 1],
-            tzolkinDay: tzolkin[0],
-            tzolkinTrecena: tzolkin[1]
-          };
-        },
-        /** Retrieve Haab date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd  {number} The Julian date.
-            @return {number[]} Corresponding Haab month and day. */
-        _toHaab: function(jd) {
-          jd -= this.jdEpoch;
-          var day = mod(jd + 8 + (18 - 1) * 20, 365);
-          return [Math.floor(day / 20) + 1, mod(day, 20)];
-        },
-        /** Retrieve Tzolkin date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd {number} The Julian date.
-            @return {number[]} Corresponding Tzolkin day and trecena. */
-        _toTzolkin: function(jd) {
-          jd -= this.jdEpoch;
-          return [amod(jd + 20, 20), amod(jd + 4, 13)];
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day() + date.month() * 20 + date.year() * 360 + this.jdEpoch;
-        },
-        /** Create a new date from a Julian date.
-            @memberof MayanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor(jd / 360);
-          jd = jd % 360;
-          jd += jd < 0 ? 360 : 0;
-          var month = Math.floor(jd / 20);
-          var day = jd % 20;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      function amod(a, b) {
-        return mod(a - 1, b) + 1;
-      }
-      main.calendars.mayan = MayanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nanakshahi.js
-  var require_nanakshahi = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nanakshahi.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NanakshahiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NanakshahiCalendar.prototype = new main.baseCalendar();
-      var gregorian = main.instance("gregorian");
-      assign(NanakshahiCalendar.prototype, {
-        /** The calendar name.
-            @memberof NanakshahiCalendar */
-        name: "Nanakshahi",
-        /** Julian date of start of Nanakshahi epoch: 14 March 1469 CE.
-            @memberof NanakshahiCalendar */
-        jdEpoch: 22576735e-1,
-        /** Days per month in a common year.
-            @memberof NanakshahiCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NanakshahiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NanakshahiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NanakshahiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NanakshahiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NanakshahiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nanakshahi",
-            epochs: ["BN", "AN"],
-            monthNames: [
-              "Chet",
-              "Vaisakh",
-              "Jeth",
-              "Harh",
-              "Sawan",
-              "Bhadon",
-              "Assu",
-              "Katak",
-              "Maghar",
-              "Poh",
-              "Magh",
-              "Phagun"
-            ],
-            monthNamesShort: ["Che", "Vai", "Jet", "Har", "Saw", "Bha", "Ass", "Kat", "Mgr", "Poh", "Mgh", "Pha"],
-            dayNames: ["Somvaar", "Mangalvar", "Budhvaar", "Veervaar", "Shukarvaar", "Sanicharvaar", "Etvaar"],
-            dayNamesShort: ["Som", "Mangal", "Budh", "Veer", "Shukar", "Sanichar", "Et"],
-            dayNamesMin: ["So", "Ma", "Bu", "Ve", "Sh", "Sa", "Et"],
-            digits: null,
-            dateFormat: "dd-mm-yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return gregorian.leapYear(date.year() + (date.year() < 1 ? 1 : 0) + 1469);
-        },
-        /** Determine the week of the year for a date.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(1 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidMonth);
-          var year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          var doy = date.day();
-          for (var m = 1; m < date.month(); m++) {
-            doy += this.daysPerMonth[m - 1];
-          }
-          return doy + gregorian.toJD(year + 1468, 3, 13);
-        },
-        /** Create a new date from a Julian date.
-            @memberof NanakshahiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5);
-          var year = Math.floor((jd - (this.jdEpoch - 1)) / 366);
-          while (jd >= this.toJD(year + 1, 1, 1)) {
-            year++;
-          }
-          var day = jd - Math.floor(this.toJD(year, 1, 1) + 0.5) + 1;
-          var month = 1;
-          while (day > this.daysInMonth(year, month)) {
-            day -= this.daysInMonth(year, month);
-            month++;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.nanakshahi = NanakshahiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nepali.js
-  var require_nepali = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nepali.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NepaliCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NepaliCalendar.prototype = new main.baseCalendar();
-      assign(NepaliCalendar.prototype, {
-        /** The calendar name.
-            @memberof NepaliCalendar */
-        name: "Nepali",
-        /** Julian date of start of Nepali epoch: 14 April 57 BCE.
-            @memberof NepaliCalendar */
-        jdEpoch: 17007095e-1,
-        /** Days per month in a common year.
-            @memberof NepaliCalendar */
-        daysPerMonth: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NepaliCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NepaliCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NepaliCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NepaliCalendar */
-        minDay: 1,
-        /** The number of days in the year.
-            @memberof NepaliCalendar */
-        daysPerYear: 365,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NepaliCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nepali",
-            epochs: ["BBS", "ABS"],
-            monthNames: [
-              "Baisakh",
-              "Jestha",
-              "Ashadh",
-              "Shrawan",
-              "Bhadra",
-              "Ashwin",
-              "Kartik",
-              "Mangsir",
-              "Paush",
-              "Mangh",
-              "Falgun",
-              "Chaitra"
-            ],
-            monthNamesShort: ["Bai", "Je", "As", "Shra", "Bha", "Ash", "Kar", "Mang", "Pau", "Ma", "Fal", "Chai"],
-            dayNames: ["Aaitabaar", "Sombaar", "Manglbaar", "Budhabaar", "Bihibaar", "Shukrabaar", "Shanibaar"],
-            dayNamesShort: ["Aaita", "Som", "Mangl", "Budha", "Bihi", "Shukra", "Shani"],
-            dayNamesMin: ["Aai", "So", "Man", "Bu", "Bi", "Shu", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.daysInYear(year) !== this.daysPerYear;
-        },
-        /** Determine the week of the year for a date.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          if (typeof this.NEPALI_CALENDAR_DATA[year] === "undefined") {
-            return this.daysPerYear;
-          }
-          var daysPerYear = 0;
-          for (var month_number = this.minMonth; month_number <= 12; month_number++) {
-            daysPerYear += this.NEPALI_CALENDAR_DATA[year][month_number];
-          }
-          return daysPerYear;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NepaliCalendar
-            @param year {CDate|number| The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return typeof this.NEPALI_CALENDAR_DATA[year] === "undefined" ? this.daysPerMonth[month - 1] : this.NEPALI_CALENDAR_DATA[year][month];
-        },
-        /** Determine whether this date is a week day.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(nepaliYear, nepaliMonth, nepaliDay) {
-          var date = this._validate(nepaliYear, nepaliMonth, nepaliDay, main.local.invalidDate);
-          nepaliYear = date.year();
-          nepaliMonth = date.month();
-          nepaliDay = date.day();
-          var gregorianCalendar = main.instance();
-          var gregorianDayOfYear = 0;
-          var nepaliMonthToCheck = nepaliMonth;
-          var nepaliYearToCheck = nepaliYear;
-          this._createMissingCalendarData(nepaliYear);
-          var gregorianYear = nepaliYear - (nepaliMonthToCheck > 9 || nepaliMonthToCheck === 9 && nepaliDay >= this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0] ? 56 : 57);
-          if (nepaliMonth !== 9) {
-            gregorianDayOfYear = nepaliDay;
-            nepaliMonthToCheck--;
-          }
-          while (nepaliMonthToCheck !== 9) {
-            if (nepaliMonthToCheck <= 0) {
-              nepaliMonthToCheck = 12;
-              nepaliYearToCheck--;
-            }
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][nepaliMonthToCheck];
-            nepaliMonthToCheck--;
-          }
-          if (nepaliMonth === 9) {
-            gregorianDayOfYear += nepaliDay - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-            if (gregorianDayOfYear < 0) {
-              gregorianDayOfYear += gregorianCalendar.daysInYear(gregorianYear);
-            }
-          } else {
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][9] - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-          }
-          return gregorianCalendar.newDate(gregorianYear, 1, 1).add(gregorianDayOfYear, "d").toJD();
-        },
-        /** Create a new date from a Julian date.
-            @memberof NepaliCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var gregorianCalendar = main.instance();
-          var gregorianDate = gregorianCalendar.fromJD(jd);
-          var gregorianYear = gregorianDate.year();
-          var gregorianDayOfYear = gregorianDate.dayOfYear();
-          var nepaliYear = gregorianYear + 56;
-          this._createMissingCalendarData(nepaliYear);
-          var nepaliMonth = 9;
-          var dayOfFirstJanInPaush = this.NEPALI_CALENDAR_DATA[nepaliYear][0];
-          var daysSinceJanFirstToEndOfNepaliMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - dayOfFirstJanInPaush + 1;
-          while (gregorianDayOfYear > daysSinceJanFirstToEndOfNepaliMonth) {
-            nepaliMonth++;
-            if (nepaliMonth > 12) {
-              nepaliMonth = 1;
-              nepaliYear++;
-            }
-            daysSinceJanFirstToEndOfNepaliMonth += this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth];
-          }
-          var nepaliDayOfMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - (daysSinceJanFirstToEndOfNepaliMonth - gregorianDayOfYear);
-          return this.newDate(nepaliYear, nepaliMonth, nepaliDayOfMonth);
-        },
-        /** Creates missing data in the NEPALI_CALENDAR_DATA table.
-            This data will not be correct but just give an estimated result. Mostly -/+ 1 day
-            @private
-            @param nepaliYear {number} The missing year number. */
-        _createMissingCalendarData: function(nepaliYear) {
-          var tmp_calendar_data = this.daysPerMonth.slice(0);
-          tmp_calendar_data.unshift(17);
-          for (var nepaliYearToCreate = nepaliYear - 1; nepaliYearToCreate < nepaliYear + 2; nepaliYearToCreate++) {
-            if (typeof this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] === "undefined") {
-              this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] = tmp_calendar_data;
-            }
-          }
-        },
-        NEPALI_CALENDAR_DATA: {
-          // These data are from http://www.ashesh.com.np
-          1970: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1971: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          1972: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1973: [19, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1974: [19, 31, 31, 32, 30, 31, 31, 30, 29, 30, 29, 30, 30],
-          1975: [18, 31, 31, 32, 32, 30, 31, 30, 29, 30, 29, 30, 30],
-          1976: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1977: [18, 31, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          1978: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1979: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1980: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1981: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1982: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1983: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1984: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1985: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1986: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1987: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1988: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1989: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1990: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1991: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          // These data are from http://nepalicalendar.rat32.com/index.php
-          1992: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1993: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1994: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1995: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1996: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1997: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1998: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1999: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2e3: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2001: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2002: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2003: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2004: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2005: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2006: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2007: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2008: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2009: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2010: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2011: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2012: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2013: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2014: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2015: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2016: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2017: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2018: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2019: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2020: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2021: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2022: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2023: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2024: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2025: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2026: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2027: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2028: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2029: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2030: [17, 31, 32, 31, 32, 31, 30, 30, 30, 30, 30, 30, 31],
-          2031: [17, 31, 32, 31, 32, 31, 31, 31, 31, 31, 31, 31, 31],
-          2032: [17, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-          2033: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2034: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2035: [17, 30, 32, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2036: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2037: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2038: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2039: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2040: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2041: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2042: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2043: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2044: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2045: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2046: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2047: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2048: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2049: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2050: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2051: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2052: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2053: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2054: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2055: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 29, 30],
-          2056: [17, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2057: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2058: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2059: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2060: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2061: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2062: [17, 30, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          2063: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2064: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2065: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2066: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2067: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2068: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2069: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2070: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2071: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2072: [17, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2073: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2074: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2075: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2076: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2077: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2078: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2079: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2080: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          // These data are from http://www.ashesh.com.np/nepali-calendar/
-          2081: [17, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2082: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2083: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2084: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2085: [17, 31, 32, 31, 32, 31, 31, 30, 30, 29, 30, 30, 30],
-          2086: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2087: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2088: [16, 30, 31, 32, 32, 30, 31, 30, 30, 29, 30, 30, 30],
-          2089: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2090: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2091: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2092: [16, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2093: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2094: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2095: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
-          2096: [17, 30, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2097: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2098: [17, 31, 31, 32, 31, 31, 31, 29, 30, 29, 30, 30, 31],
-          2099: [17, 31, 31, 32, 31, 31, 31, 30, 29, 29, 30, 30, 30],
-          2100: [17, 31, 32, 31, 32, 30, 31, 30, 29, 30, 29, 30, 30]
-        }
-      });
-      main.calendars.nepali = NepaliCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/persian.js
-  var require_persian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/persian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function PersianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      PersianCalendar.prototype = new main.baseCalendar();
-      assign(PersianCalendar.prototype, {
-        /** The calendar name.
-            @memberof PersianCalendar */
-        name: "Persian",
-        /** Julian date of start of Persian epoch: 19 March 622 CE.
-            @memberof PersianCalendar */
-        jdEpoch: 19483205e-1,
-        /** Days per month in a common year.
-            @memberof PersianCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof PersianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof PersianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof PersianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof PersianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof PersianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Persian",
-            epochs: ["BP", "AP"],
-            monthNames: [
-              "Farvardin",
-              "Ordibehesht",
-              "Khordad",
-              "Tir",
-              "Mordad",
-              "Shahrivar",
-              "Mehr",
-              "Aban",
-              "Azar",
-              "Day",
-              "Bahman",
-              "Esfand"
-            ],
-            monthNamesShort: ["Far", "Ord", "Kho", "Tir", "Mor", "Sha", "Meh", "Aba", "Aza", "Day", "Bah", "Esf"],
-            dayNames: ["Yekshambe", "Doshambe", "Seshambe", "Ch\xE6harshambe", "Panjshambe", "Jom'e", "Shambe"],
-            dayNamesShort: ["Yek", "Do", "Se", "Ch\xE6", "Panj", "Jom", "Sha"],
-            dayNamesMin: ["Ye", "Do", "Se", "Ch", "Pa", "Jo", "Sh"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return ((date.year() - (date.year() > 0 ? 474 : 473)) % 2820 + 474 + 38) * 682 % 2816 < 682;
-        },
-        /** Determine the week of the year for a date.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-((checkDate.dayOfWeek() + 1) % 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var epBase = year - (year >= 0 ? 474 : 473);
-          var epYear = 474 + mod(epBase, 2820);
-          return day + (month <= 7 ? (month - 1) * 31 : (month - 1) * 30 + 6) + Math.floor((epYear * 682 - 110) / 2816) + (epYear - 1) * 365 + Math.floor(epBase / 2820) * 1029983 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof PersianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var depoch = jd - this.toJD(475, 1, 1);
-          var cycle = Math.floor(depoch / 1029983);
-          var cyear = mod(depoch, 1029983);
-          var ycycle = 2820;
-          if (cyear !== 1029982) {
-            var aux1 = Math.floor(cyear / 366);
-            var aux2 = mod(cyear, 366);
-            ycycle = Math.floor((2134 * aux1 + 2816 * aux2 + 2815) / 1028522) + aux1 + 1;
-          }
-          var year = ycycle + 2820 * cycle + 474;
-          year = year <= 0 ? year - 1 : year;
-          var yday = jd - this.toJD(year, 1, 1) + 1;
-          var month = yday <= 186 ? Math.ceil(yday / 31) : Math.ceil((yday - 6) / 30);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.persian = PersianCalendar;
-      main.calendars.jalali = PersianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/taiwan.js
-  var require_taiwan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/taiwan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function TaiwanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      TaiwanCalendar.prototype = new main.baseCalendar();
-      assign(TaiwanCalendar.prototype, {
-        /** The calendar name.
-            @memberof TaiwanCalendar */
-        name: "Taiwan",
-        /** Julian date of start of Taiwan epoch: 1 January 1912 CE (Gregorian).
-            @memberof TaiwanCalendar */
-        jdEpoch: 24194025e-1,
-        /** Difference in years between Taiwan and Gregorian calendars.
-            @memberof TaiwanCalendar */
-        yearsOffset: 1911,
-        /** Days per month in a common year.
-            @memberof TaiwanCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof TaiwanCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof TaiwanCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof TaiwanCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof TaiwanCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof TaiwanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Taiwan",
-            epochs: ["BROC", "ROC"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof TaiwanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Taiwanese to Gregorian year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Taiwanese year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        },
-        /** Convert Gregorian to Taiwanese year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Taiwanese year. */
-        _g2tYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        }
-      });
-      main.calendars.taiwan = TaiwanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/thai.js
-  var require_thai = __commonJS({
-    "node_modules/world-calendars/dist/calendars/thai.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ThaiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ThaiCalendar.prototype = new main.baseCalendar();
-      assign(ThaiCalendar.prototype, {
-        /** The calendar name.
-            @memberof ThaiCalendar */
-        name: "Thai",
-        /** Julian date of start of Thai epoch: 1 January 543 BCE (Gregorian).
-            @memberof ThaiCalendar */
-        jdEpoch: 15230985e-1,
-        /** Difference in years between Thai and Gregorian calendars.
-            @memberof ThaiCalendar */
-        yearsOffset: 543,
-        /** Days per month in a common year.
-            @memberof ThaiCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ThaiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof ThaiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof ThaiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof ThaiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ThaiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Thai",
-            epochs: ["BBE", "BE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof ThaiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Thai to Gregorian year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Thai year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        },
-        /** Convert Gregorian to Thai year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Thai year. */
-        _g2tYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        }
-      });
-      main.calendars.thai = ThaiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ummalqura.js
-  var require_ummalqura = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ummalqura.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function UmmAlQuraCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      UmmAlQuraCalendar.prototype = new main.baseCalendar();
-      assign(UmmAlQuraCalendar.prototype, {
-        /** The calendar name.
-            @memberof UmmAlQuraCalendar */
-        name: "UmmAlQura",
-        //jdEpoch: 1948440, // Julian date of start of UmmAlQura epoch: 14 March 1937 CE
-        //daysPerMonth: // Days per month in a common year, replaced by a method.
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof UmmAlQuraCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof UmmAlQuraCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof UmmAlQuraCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof UmmAlQuraCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof UmmAlQuraCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Umm al-Qura",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Al-Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' Al-Thani",
-              "Jumada Al-Awwal",
-              "Jumada Al-Thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: ["Yawm al-Ahad", "Yawm al-Ithnain", "Yawm al-Thal\u0101th\u0101\u2019", "Yawm al-Arba\u2018\u0101\u2019", "Yawm al-Kham\u012Bs", "Yawm al-Jum\u2018a", "Yawm al-Sabt"],
-            dayNamesMin: ["Ah", "Ith", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: true
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this.daysInYear(date.year()) === 355;
-        },
-        /** Determine the week of the year for a date.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var daysCount = 0;
-          for (var i = 1; i <= 12; i++) {
-            daysCount += this.daysInMonth(year, i);
-          }
-          return daysCount;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          var mcjdn = date.toJD() - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) {
-              return ummalqura_dat[index] - ummalqura_dat[index - 1];
-            }
-            index++;
-          }
-          return 30;
-        },
-        /** Determine whether this date is a week day.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var index = 12 * (date.year() - 1) + date.month() - 15292;
-          var mcjdn = date.day() + ummalqura_dat[index - 1] - 1;
-          return mcjdn + 24e5 - 0.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof UmmAlQuraCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var mcjdn = jd - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) break;
-            index++;
-          }
-          var lunation = index + 15292;
-          var ii = Math.floor((lunation - 1) / 12);
-          var year = ii + 1;
-          var month = lunation - 12 * ii;
-          var day = mcjdn - ummalqura_dat[index - 1] + 1;
-          return this.newDate(year, month, day);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof UmmAlQuraCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          var valid = main.baseCalendar.prototype.isValid.apply(this, arguments);
-          if (valid) {
-            year = year.year != null ? year.year : year;
-            valid = year >= 1276 && year <= 1500;
-          }
-          return valid;
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof UmmAlQuraCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param month {number} The month to validate.
-            @param day {number} The day to validate.
-            @param error {string} Error message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          var date = main.baseCalendar.prototype._validate.apply(this, arguments);
-          if (date.year < 1276 || date.year > 1500) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return date;
-        }
-      });
-      main.calendars.ummalqura = UmmAlQuraCalendar;
-      var ummalqura_dat = [
-        20,
-        50,
-        79,
-        109,
-        138,
-        168,
-        197,
-        227,
-        256,
-        286,
-        315,
-        345,
-        374,
-        404,
-        433,
-        463,
-        492,
-        522,
-        551,
-        581,
-        611,
-        641,
-        670,
-        700,
-        729,
-        759,
-        788,
-        818,
-        847,
-        877,
-        906,
-        936,
-        965,
-        995,
-        1024,
-        1054,
-        1083,
-        1113,
-        1142,
-        1172,
-        1201,
-        1231,
-        1260,
-        1290,
-        1320,
-        1350,
-        1379,
-        1409,
-        1438,
-        1468,
-        1497,
-        1527,
-        1556,
-        1586,
-        1615,
-        1645,
-        1674,
-        1704,
-        1733,
-        1763,
-        1792,
-        1822,
-        1851,
-        1881,
-        1910,
-        1940,
-        1969,
-        1999,
-        2028,
-        2058,
-        2087,
-        2117,
-        2146,
-        2176,
-        2205,
-        2235,
-        2264,
-        2294,
-        2323,
-        2353,
-        2383,
-        2413,
-        2442,
-        2472,
-        2501,
-        2531,
-        2560,
-        2590,
-        2619,
-        2649,
-        2678,
-        2708,
-        2737,
-        2767,
-        2796,
-        2826,
-        2855,
-        2885,
-        2914,
-        2944,
-        2973,
-        3003,
-        3032,
-        3062,
-        3091,
-        3121,
-        3150,
-        3180,
-        3209,
-        3239,
-        3268,
-        3298,
-        3327,
-        3357,
-        3386,
-        3416,
-        3446,
-        3476,
-        3505,
-        3535,
-        3564,
-        3594,
-        3623,
-        3653,
-        3682,
-        3712,
-        3741,
-        3771,
-        3800,
-        3830,
-        3859,
-        3889,
-        3918,
-        3948,
-        3977,
-        4007,
-        4036,
-        4066,
-        4095,
-        4125,
-        4155,
-        4185,
-        4214,
-        4244,
-        4273,
-        4303,
-        4332,
-        4362,
-        4391,
-        4421,
-        4450,
-        4480,
-        4509,
-        4539,
-        4568,
-        4598,
-        4627,
-        4657,
-        4686,
-        4716,
-        4745,
-        4775,
-        4804,
-        4834,
-        4863,
-        4893,
-        4922,
-        4952,
-        4981,
-        5011,
-        5040,
-        5070,
-        5099,
-        5129,
-        5158,
-        5188,
-        5218,
-        5248,
-        5277,
-        5307,
-        5336,
-        5366,
-        5395,
-        5425,
-        5454,
-        5484,
-        5513,
-        5543,
-        5572,
-        5602,
-        5631,
-        5661,
-        5690,
-        5720,
-        5749,
-        5779,
-        5808,
-        5838,
-        5867,
-        5897,
-        5926,
-        5956,
-        5985,
-        6015,
-        6044,
-        6074,
-        6103,
-        6133,
-        6162,
-        6192,
-        6221,
-        6251,
-        6281,
-        6311,
-        6340,
-        6370,
-        6399,
-        6429,
-        6458,
-        6488,
-        6517,
-        6547,
-        6576,
-        6606,
-        6635,
-        6665,
-        6694,
-        6724,
-        6753,
-        6783,
-        6812,
-        6842,
-        6871,
-        6901,
-        6930,
-        6960,
-        6989,
-        7019,
-        7048,
-        7078,
-        7107,
-        7137,
-        7166,
-        7196,
-        7225,
-        7255,
-        7284,
-        7314,
-        7344,
-        7374,
-        7403,
-        7433,
-        7462,
-        7492,
-        7521,
-        7551,
-        7580,
-        7610,
-        7639,
-        7669,
-        7698,
-        7728,
-        7757,
-        7787,
-        7816,
-        7846,
-        7875,
-        7905,
-        7934,
-        7964,
-        7993,
-        8023,
-        8053,
-        8083,
-        8112,
-        8142,
-        8171,
-        8201,
-        8230,
-        8260,
-        8289,
-        8319,
-        8348,
-        8378,
-        8407,
-        8437,
-        8466,
-        8496,
-        8525,
-        8555,
-        8584,
-        8614,
-        8643,
-        8673,
-        8702,
-        8732,
-        8761,
-        8791,
-        8821,
-        8850,
-        8880,
-        8909,
-        8938,
-        8968,
-        8997,
-        9027,
-        9056,
-        9086,
-        9115,
-        9145,
-        9175,
-        9205,
-        9234,
-        9264,
-        9293,
-        9322,
-        9352,
-        9381,
-        9410,
-        9440,
-        9470,
-        9499,
-        9529,
-        9559,
-        9589,
-        9618,
-        9648,
-        9677,
-        9706,
-        9736,
-        9765,
-        9794,
-        9824,
-        9853,
-        9883,
-        9913,
-        9943,
-        9972,
-        10002,
-        10032,
-        10061,
-        10090,
-        10120,
-        10149,
-        10178,
-        10208,
-        10237,
-        10267,
-        10297,
-        10326,
-        10356,
-        10386,
-        10415,
-        10445,
-        10474,
-        10504,
-        10533,
-        10562,
-        10592,
-        10621,
-        10651,
-        10680,
-        10710,
-        10740,
-        10770,
-        10799,
-        10829,
-        10858,
-        10888,
-        10917,
-        10947,
-        10976,
-        11005,
-        11035,
-        11064,
-        11094,
-        11124,
-        11153,
-        11183,
-        11213,
-        11242,
-        11272,
-        11301,
-        11331,
-        11360,
-        11389,
-        11419,
-        11448,
-        11478,
-        11507,
-        11537,
-        11567,
-        11596,
-        11626,
-        11655,
-        11685,
-        11715,
-        11744,
-        11774,
-        11803,
-        11832,
-        11862,
-        11891,
-        11921,
-        11950,
-        11980,
-        12010,
-        12039,
-        12069,
-        12099,
-        12128,
-        12158,
-        12187,
-        12216,
-        12246,
-        12275,
-        12304,
-        12334,
-        12364,
-        12393,
-        12423,
-        12453,
-        12483,
-        12512,
-        12542,
-        12571,
-        12600,
-        12630,
-        12659,
-        12688,
-        12718,
-        12747,
-        12777,
-        12807,
-        12837,
-        12866,
-        12896,
-        12926,
-        12955,
-        12984,
-        13014,
-        13043,
-        13072,
-        13102,
-        13131,
-        13161,
-        13191,
-        13220,
-        13250,
-        13280,
-        13310,
-        13339,
-        13368,
-        13398,
-        13427,
-        13456,
-        13486,
-        13515,
-        13545,
-        13574,
-        13604,
-        13634,
-        13664,
-        13693,
-        13723,
-        13752,
-        13782,
-        13811,
-        13840,
-        13870,
-        13899,
-        13929,
-        13958,
-        13988,
-        14018,
-        14047,
-        14077,
-        14107,
-        14136,
-        14166,
-        14195,
-        14224,
-        14254,
-        14283,
-        14313,
-        14342,
-        14372,
-        14401,
-        14431,
-        14461,
-        14490,
-        14520,
-        14550,
-        14579,
-        14609,
-        14638,
-        14667,
-        14697,
-        14726,
-        14756,
-        14785,
-        14815,
-        14844,
-        14874,
-        14904,
-        14933,
-        14963,
-        14993,
-        15021,
-        15051,
-        15081,
-        15110,
-        15140,
-        15169,
-        15199,
-        15228,
-        15258,
-        15287,
-        15317,
-        15347,
-        15377,
-        15406,
-        15436,
-        15465,
-        15494,
-        15524,
-        15553,
-        15582,
-        15612,
-        15641,
-        15671,
-        15701,
-        15731,
-        15760,
-        15790,
-        15820,
-        15849,
-        15878,
-        15908,
-        15937,
-        15966,
-        15996,
-        16025,
-        16055,
-        16085,
-        16114,
-        16144,
-        16174,
-        16204,
-        16233,
-        16262,
-        16292,
-        16321,
-        16350,
-        16380,
-        16409,
-        16439,
-        16468,
-        16498,
-        16528,
-        16558,
-        16587,
-        16617,
-        16646,
-        16676,
-        16705,
-        16734,
-        16764,
-        16793,
-        16823,
-        16852,
-        16882,
-        16912,
-        16941,
-        16971,
-        17001,
-        17030,
-        17060,
-        17089,
-        17118,
-        17148,
-        17177,
-        17207,
-        17236,
-        17266,
-        17295,
-        17325,
-        17355,
-        17384,
-        17414,
-        17444,
-        17473,
-        17502,
-        17532,
-        17561,
-        17591,
-        17620,
-        17650,
-        17679,
-        17709,
-        17738,
-        17768,
-        17798,
-        17827,
-        17857,
-        17886,
-        17916,
-        17945,
-        17975,
-        18004,
-        18034,
-        18063,
-        18093,
-        18122,
-        18152,
-        18181,
-        18211,
-        18241,
-        18270,
-        18300,
-        18330,
-        18359,
-        18388,
-        18418,
-        18447,
-        18476,
-        18506,
-        18535,
-        18565,
-        18595,
-        18625,
-        18654,
-        18684,
-        18714,
-        18743,
-        18772,
-        18802,
-        18831,
-        18860,
-        18890,
-        18919,
-        18949,
-        18979,
-        19008,
-        19038,
-        19068,
-        19098,
-        19127,
-        19156,
-        19186,
-        19215,
-        19244,
-        19274,
-        19303,
-        19333,
-        19362,
-        19392,
-        19422,
-        19452,
-        19481,
-        19511,
-        19540,
-        19570,
-        19599,
-        19628,
-        19658,
-        19687,
-        19717,
-        19746,
-        19776,
-        19806,
-        19836,
-        19865,
-        19895,
-        19924,
-        19954,
-        19983,
-        20012,
-        20042,
-        20071,
-        20101,
-        20130,
-        20160,
-        20190,
-        20219,
-        20249,
-        20279,
-        20308,
-        20338,
-        20367,
-        20396,
-        20426,
-        20455,
-        20485,
-        20514,
-        20544,
-        20573,
-        20603,
-        20633,
-        20662,
-        20692,
-        20721,
-        20751,
-        20780,
-        20810,
-        20839,
-        20869,
-        20898,
-        20928,
-        20957,
-        20987,
-        21016,
-        21046,
-        21076,
-        21105,
-        21135,
-        21164,
-        21194,
-        21223,
-        21253,
-        21282,
-        21312,
-        21341,
-        21371,
-        21400,
-        21430,
-        21459,
-        21489,
-        21519,
-        21548,
-        21578,
-        21607,
-        21637,
-        21666,
-        21696,
-        21725,
-        21754,
-        21784,
-        21813,
-        21843,
-        21873,
-        21902,
-        21932,
-        21962,
-        21991,
-        22021,
-        22050,
-        22080,
-        22109,
-        22138,
-        22168,
-        22197,
-        22227,
-        22256,
-        22286,
-        22316,
-        22346,
-        22375,
-        22405,
-        22434,
-        22464,
-        22493,
-        22522,
-        22552,
-        22581,
-        22611,
-        22640,
-        22670,
-        22700,
-        22730,
-        22759,
-        22789,
-        22818,
-        22848,
-        22877,
-        22906,
-        22936,
-        22965,
-        22994,
-        23024,
-        23054,
-        23083,
-        23113,
-        23143,
-        23173,
-        23202,
-        23232,
-        23261,
-        23290,
-        23320,
-        23349,
-        23379,
-        23408,
-        23438,
-        23467,
-        23497,
-        23527,
-        23556,
-        23586,
-        23616,
-        23645,
-        23674,
-        23704,
-        23733,
-        23763,
-        23792,
-        23822,
-        23851,
-        23881,
-        23910,
-        23940,
-        23970,
-        23999,
-        24029,
-        24058,
-        24088,
-        24117,
-        24147,
-        24176,
-        24206,
-        24235,
-        24265,
-        24294,
-        24324,
-        24353,
-        24383,
-        24413,
-        24442,
-        24472,
-        24501,
-        24531,
-        24560,
-        24590,
-        24619,
-        24648,
-        24678,
-        24707,
-        24737,
-        24767,
-        24796,
-        24826,
-        24856,
-        24885,
-        24915,
-        24944,
-        24974,
-        25003,
-        25032,
-        25062,
-        25091,
-        25121,
-        25150,
-        25180,
-        25210,
-        25240,
-        25269,
-        25299,
-        25328,
-        25358,
-        25387,
-        25416,
-        25446,
-        25475,
-        25505,
-        25534,
-        25564,
-        25594,
-        25624,
-        25653,
-        25683,
-        25712,
-        25742,
-        25771,
-        25800,
-        25830,
-        25859,
-        25888,
-        25918,
-        25948,
-        25977,
-        26007,
-        26037,
-        26067,
-        26096,
-        26126,
-        26155,
-        26184,
-        26214,
-        26243,
-        26272,
-        26302,
-        26332,
-        26361,
-        26391,
-        26421,
-        26451,
-        26480,
-        26510,
-        26539,
-        26568,
-        26598,
-        26627,
-        26656,
-        26686,
-        26715,
-        26745,
-        26775,
-        26805,
-        26834,
-        26864,
-        26893,
-        26923,
-        26952,
-        26982,
-        27011,
-        27041,
-        27070,
-        27099,
-        27129,
-        27159,
-        27188,
-        27218,
-        27248,
-        27277,
-        27307,
-        27336,
-        27366,
-        27395,
-        27425,
-        27454,
-        27484,
-        27513,
-        27542,
-        27572,
-        27602,
-        27631,
-        27661,
-        27691,
-        27720,
-        27750,
-        27779,
-        27809,
-        27838,
-        27868,
-        27897,
-        27926,
-        27956,
-        27985,
-        28015,
-        28045,
-        28074,
-        28104,
-        28134,
-        28163,
-        28193,
-        28222,
-        28252,
-        28281,
-        28310,
-        28340,
-        28369,
-        28399,
-        28428,
-        28458,
-        28488,
-        28517,
-        28547,
-        28577,
-        // From 1356
-        28607,
-        28636,
-        28665,
-        28695,
-        28724,
-        28754,
-        28783,
-        28813,
-        28843,
-        28872,
-        28901,
-        28931,
-        28960,
-        28990,
-        29019,
-        29049,
-        29078,
-        29108,
-        29137,
-        29167,
-        29196,
-        29226,
-        29255,
-        29285,
-        29315,
-        29345,
-        29375,
-        29404,
-        29434,
-        29463,
-        29492,
-        29522,
-        29551,
-        29580,
-        29610,
-        29640,
-        29669,
-        29699,
-        29729,
-        29759,
-        29788,
-        29818,
-        29847,
-        29876,
-        29906,
-        29935,
-        29964,
-        29994,
-        30023,
-        30053,
-        30082,
-        30112,
-        30141,
-        30171,
-        30200,
-        30230,
-        30259,
-        30289,
-        30318,
-        30348,
-        30378,
-        30408,
-        30437,
-        30467,
-        30496,
-        30526,
-        30555,
-        30585,
-        30614,
-        30644,
-        30673,
-        30703,
-        30732,
-        30762,
-        30791,
-        30821,
-        30850,
-        30880,
-        30909,
-        30939,
-        30968,
-        30998,
-        31027,
-        31057,
-        31086,
-        31116,
-        31145,
-        31175,
-        31204,
-        31234,
-        31263,
-        31293,
-        31322,
-        31352,
-        31381,
-        31411,
-        31441,
-        31471,
-        31500,
-        31530,
-        31559,
-        31589,
-        31618,
-        31648,
-        31676,
-        31706,
-        31736,
-        31766,
-        31795,
-        31825,
-        31854,
-        31884,
-        31913,
-        31943,
-        31972,
-        32002,
-        32031,
-        32061,
-        32090,
-        32120,
-        32150,
-        32180,
-        32209,
-        32239,
-        32268,
-        32298,
-        32327,
-        32357,
-        32386,
-        32416,
-        32445,
-        32475,
-        32504,
-        32534,
-        32563,
-        32593,
-        32622,
-        32652,
-        32681,
-        32711,
-        32740,
-        32770,
-        32799,
-        32829,
-        32858,
-        32888,
-        32917,
-        32947,
-        32976,
-        33006,
-        33035,
-        33065,
-        33094,
-        33124,
-        33153,
-        33183,
-        33213,
-        33243,
-        33272,
-        33302,
-        33331,
-        33361,
-        33390,
-        33420,
-        33450,
-        33479,
-        33509,
-        33539,
-        33568,
-        33598,
-        33627,
-        33657,
-        33686,
-        33716,
-        33745,
-        33775,
-        33804,
-        33834,
-        33863,
-        33893,
-        33922,
-        33952,
-        33981,
-        34011,
-        34040,
-        34069,
-        34099,
-        34128,
-        34158,
-        34187,
-        34217,
-        34247,
-        34277,
-        34306,
-        34336,
-        34365,
-        34395,
-        34424,
-        34454,
-        34483,
-        34512,
-        34542,
-        34571,
-        34601,
-        34631,
-        34660,
-        34690,
-        34719,
-        34749,
-        34778,
-        34808,
-        34837,
-        34867,
-        34896,
-        34926,
-        34955,
-        34985,
-        35015,
-        35044,
-        35074,
-        35103,
-        35133,
-        35162,
-        35192,
-        35222,
-        35251,
-        35280,
-        35310,
-        35340,
-        35370,
-        35399,
-        35429,
-        35458,
-        35488,
-        35517,
-        35547,
-        35576,
-        35605,
-        35635,
-        35665,
-        35694,
-        35723,
-        35753,
-        35782,
-        35811,
-        35841,
-        35871,
-        35901,
-        35930,
-        35960,
-        35989,
-        36019,
-        36048,
-        36078,
-        36107,
-        36136,
-        36166,
-        36195,
-        36225,
-        36254,
-        36284,
-        36314,
-        36343,
-        36373,
-        36403,
-        36433,
-        36462,
-        36492,
-        36521,
-        36551,
-        36580,
-        36610,
-        36639,
-        36669,
-        36698,
-        36728,
-        36757,
-        36786,
-        36816,
-        36845,
-        36875,
-        36904,
-        36934,
-        36963,
-        36993,
-        37022,
-        37052,
-        37081,
-        37111,
-        37141,
-        37170,
-        37200,
-        37229,
-        37259,
-        37288,
-        37318,
-        37347,
-        37377,
-        37406,
-        37436,
-        37465,
-        37495,
-        37524,
-        37554,
-        37584,
-        37613,
-        37643,
-        37672,
-        37701,
-        37731,
-        37760,
-        37790,
-        37819,
-        37849,
-        37878,
-        37908,
-        37938,
-        37967,
-        37997,
-        38027,
-        38056,
-        38085,
-        38115,
-        38144,
-        38174,
-        38203,
-        38233,
-        38262,
-        38292,
-        38322,
-        38351,
-        38381,
-        38410,
-        38440,
-        38469,
-        38499,
-        38528,
-        38558,
-        38587,
-        38617,
-        38646,
-        38676,
-        38705,
-        38735,
-        38764,
-        38794,
-        38823,
-        38853,
-        38882,
-        38912,
-        38941,
-        38971,
-        39001,
-        39030,
-        39059,
-        39089,
-        39118,
-        39148,
-        39178,
-        39208,
-        39237,
-        39267,
-        39297,
-        39326,
-        39355,
-        39385,
-        39414,
-        39444,
-        39473,
-        39503,
-        39532,
-        39562,
-        39592,
-        39621,
-        39650,
-        39680,
-        39709,
-        39739,
-        39768,
-        39798,
-        39827,
-        39857,
-        39886,
-        39916,
-        39946,
-        39975,
-        40005,
-        40035,
-        40064,
-        40094,
-        40123,
-        40153,
-        40182,
-        40212,
-        40241,
-        40271,
-        40300,
-        40330,
-        40359,
-        40389,
-        40418,
-        40448,
-        40477,
-        40507,
-        40536,
-        40566,
-        40595,
-        40625,
-        40655,
-        40685,
-        40714,
-        40744,
-        40773,
-        40803,
-        40832,
-        40862,
-        40892,
-        40921,
-        40951,
-        40980,
-        41009,
-        41039,
-        41068,
-        41098,
-        41127,
-        41157,
-        41186,
-        41216,
-        41245,
-        41275,
-        41304,
-        41334,
-        41364,
-        41393,
-        41422,
-        41452,
-        41481,
-        41511,
-        41540,
-        41570,
-        41599,
-        41629,
-        41658,
-        41688,
-        41718,
-        41748,
-        41777,
-        41807,
-        41836,
-        41865,
-        41894,
-        41924,
-        41953,
-        41983,
-        42012,
-        42042,
-        42072,
-        42102,
-        42131,
-        42161,
-        42190,
-        42220,
-        42249,
-        42279,
-        42308,
-        42337,
-        42367,
-        42397,
-        42426,
-        42456,
-        42485,
-        42515,
-        42545,
-        42574,
-        42604,
-        42633,
-        42662,
-        42692,
-        42721,
-        42751,
-        42780,
-        42810,
-        42839,
-        42869,
-        42899,
-        42929,
-        42958,
-        42988,
-        43017,
-        43046,
-        43076,
-        43105,
-        43135,
-        43164,
-        43194,
-        43223,
-        43253,
-        43283,
-        43312,
-        43342,
-        43371,
-        43401,
-        43430,
-        43460,
-        43489,
-        43519,
-        43548,
-        43578,
-        43607,
-        43637,
-        43666,
-        43696,
-        43726,
-        43755,
-        43785,
-        43814,
-        43844,
-        43873,
-        43903,
-        43932,
-        43962,
-        43991,
-        44021,
-        44050,
-        44080,
-        44109,
-        44139,
-        44169,
-        44198,
-        44228,
-        44258,
-        44287,
-        44317,
-        44346,
-        44375,
-        44405,
-        44434,
-        44464,
-        44493,
-        44523,
-        44553,
-        44582,
-        44612,
-        44641,
-        44671,
-        44700,
-        44730,
-        44759,
-        44788,
-        44818,
-        44847,
-        44877,
-        44906,
-        44936,
-        44966,
-        44996,
-        45025,
-        45055,
-        45084,
-        45114,
-        45143,
-        45172,
-        45202,
-        45231,
-        45261,
-        45290,
-        45320,
-        45350,
-        45380,
-        45409,
-        45439,
-        45468,
-        45498,
-        45527,
-        45556,
-        45586,
-        45615,
-        45644,
-        45674,
-        45704,
-        45733,
-        45763,
-        45793,
-        45823,
-        45852,
-        45882,
-        45911,
-        45940,
-        45970,
-        45999,
-        46028,
-        46058,
-        46088,
-        46117,
-        46147,
-        46177,
-        46206,
-        46236,
-        46265,
-        46295,
-        46324,
-        46354,
-        46383,
-        46413,
-        46442,
-        46472,
-        46501,
-        46531,
-        46560,
-        46590,
-        46620,
-        46649,
-        46679,
-        46708,
-        46738,
-        46767,
-        46797,
-        46826,
-        46856,
-        46885,
-        46915,
-        46944,
-        46974,
-        47003,
-        47033,
-        47063,
-        47092,
-        47122,
-        47151,
-        47181,
-        47210,
-        47240,
-        47269,
-        47298,
-        47328,
-        47357,
-        47387,
-        47417,
-        47446,
-        47476,
-        47506,
-        47535,
-        47565,
-        47594,
-        47624,
-        47653,
-        47682,
-        47712,
-        47741,
-        47771,
-        47800,
-        47830,
-        47860,
-        47890,
-        47919,
-        47949,
-        47978,
-        48008,
-        48037,
-        48066,
-        48096,
-        48125,
-        48155,
-        48184,
-        48214,
-        48244,
-        48273,
-        48303,
-        48333,
-        48362,
-        48392,
-        48421,
-        48450,
-        48480,
-        48509,
-        48538,
-        48568,
-        48598,
-        48627,
-        48657,
-        48687,
-        48717,
-        48746,
-        48776,
-        48805,
-        48834,
-        48864,
-        48893,
-        48922,
-        48952,
-        48982,
-        49011,
-        49041,
-        49071,
-        49100,
-        49130,
-        49160,
-        49189,
-        49218,
-        49248,
-        49277,
-        49306,
-        49336,
-        49365,
-        49395,
-        49425,
-        49455,
-        49484,
-        49514,
-        49543,
-        49573,
-        49602,
-        49632,
-        49661,
-        49690,
-        49720,
-        49749,
-        49779,
-        49809,
-        49838,
-        49868,
-        49898,
-        49927,
-        49957,
-        49986,
-        50016,
-        50045,
-        50075,
-        50104,
-        50133,
-        50163,
-        50192,
-        50222,
-        50252,
-        50281,
-        50311,
-        50340,
-        50370,
-        50400,
-        50429,
-        50459,
-        50488,
-        50518,
-        50547,
-        50576,
-        50606,
-        50635,
-        50665,
-        50694,
-        50724,
-        50754,
-        50784,
-        50813,
-        50843,
-        50872,
-        50902,
-        50931,
-        50960,
-        50990,
-        51019,
-        51049,
-        51078,
-        51108,
-        51138,
-        51167,
-        51197,
-        51227,
-        51256,
-        51286,
-        51315,
-        51345,
-        51374,
-        51403,
-        51433,
-        51462,
-        51492,
-        51522,
-        51552,
-        51582,
-        51611,
-        51641,
-        51670,
-        51699,
-        51729,
-        51758,
-        51787,
-        51816,
-        51846,
-        51876,
-        51906,
-        51936,
-        51965,
-        51995,
-        52025,
-        52054,
-        52083,
-        52113,
-        52142,
-        52171,
-        52200,
-        52230,
-        52260,
-        52290,
-        52319,
-        52349,
-        52379,
-        52408,
-        52438,
-        52467,
-        52497,
-        52526,
-        52555,
-        52585,
-        52614,
-        52644,
-        52673,
-        52703,
-        52733,
-        52762,
-        52792,
-        52822,
-        52851,
-        52881,
-        52910,
-        52939,
-        52969,
-        52998,
-        53028,
-        53057,
-        53087,
-        53116,
-        53146,
-        53176,
-        53205,
-        53235,
-        53264,
-        53294,
-        53324,
-        53353,
-        53383,
-        53412,
-        53441,
-        53471,
-        53500,
-        53530,
-        53559,
-        53589,
-        53619,
-        53648,
-        53678,
-        53708,
-        53737,
-        53767,
-        53796,
-        53825,
-        53855,
-        53884,
-        53913,
-        53943,
-        53973,
-        54003,
-        54032,
-        54062,
-        54092,
-        54121,
-        54151,
-        54180,
-        54209,
-        54239,
-        54268,
-        54297,
-        54327,
-        54357,
-        54387,
-        54416,
-        54446,
-        54476,
-        54505,
-        54535,
-        54564,
-        54593,
-        54623,
-        54652,
-        54681,
-        54711,
-        54741,
-        54770,
-        54800,
-        54830,
-        54859,
-        54889,
-        54919,
-        54948,
-        54977,
-        55007,
-        55036,
-        55066,
-        55095,
-        55125,
-        55154,
-        55184,
-        55213,
-        55243,
-        55273,
-        55302,
-        55332,
-        55361,
-        55391,
-        55420,
-        55450,
-        55479,
-        55508,
-        55538,
-        55567,
-        55597,
-        55627,
-        55657,
-        55686,
-        55716,
-        55745,
-        55775,
-        55804,
-        55834,
-        55863,
-        55892,
-        55922,
-        55951,
-        55981,
-        56011,
-        56040,
-        56070,
-        56100,
-        56129,
-        56159,
-        56188,
-        56218,
-        56247,
-        56276,
-        56306,
-        56335,
-        56365,
-        56394,
-        56424,
-        56454,
-        56483,
-        56513,
-        56543,
-        56572,
-        56601,
-        56631,
-        56660,
-        56690,
-        56719,
-        56749,
-        56778,
-        56808,
-        56837,
-        56867,
-        56897,
-        56926,
-        56956,
-        56985,
-        57015,
-        57044,
-        57074,
-        57103,
-        57133,
-        57162,
-        57192,
-        57221,
-        57251,
-        57280,
-        57310,
-        57340,
-        57369,
-        57399,
-        57429,
-        57458,
-        57487,
-        57517,
-        57546,
-        57576,
-        57605,
-        57634,
-        57664,
-        57694,
-        57723,
-        57753,
-        57783,
-        57813,
-        57842,
-        57871,
-        57901,
-        57930,
-        57959,
-        57989,
-        58018,
-        58048,
-        58077,
-        58107,
-        58137,
-        58167,
-        58196,
-        58226,
-        58255,
-        58285,
-        58314,
-        58343,
-        58373,
-        58402,
-        58432,
-        58461,
-        58491,
-        58521,
-        58551,
-        58580,
-        58610,
-        58639,
-        58669,
-        58698,
-        58727,
-        58757,
-        58786,
-        58816,
-        58845,
-        58875,
-        58905,
-        58934,
-        58964,
-        58994,
-        59023,
-        59053,
-        59082,
-        59111,
-        59141,
-        59170,
-        59200,
-        59229,
-        59259,
-        59288,
-        59318,
-        59348,
-        59377,
-        59407,
-        59436,
-        59466,
-        59495,
-        59525,
-        59554,
-        59584,
-        59613,
-        59643,
-        59672,
-        59702,
-        59731,
-        59761,
-        59791,
-        59820,
-        59850,
-        59879,
-        59909,
-        59939,
-        59968,
-        59997,
-        60027,
-        60056,
-        60086,
-        60115,
-        60145,
-        60174,
-        60204,
-        60234,
-        60264,
-        60293,
-        60323,
-        60352,
-        60381,
-        60411,
-        60440,
-        60469,
-        60499,
-        60528,
-        60558,
-        60588,
-        60618,
-        60648,
-        60677,
-        60707,
-        60736,
-        60765,
-        60795,
-        60824,
-        60853,
-        60883,
-        60912,
-        60942,
-        60972,
-        61002,
-        61031,
-        61061,
-        61090,
-        61120,
-        61149,
-        61179,
-        61208,
-        61237,
-        61267,
-        61296,
-        61326,
-        61356,
-        61385,
-        61415,
-        61445,
-        61474,
-        61504,
-        61533,
-        61563,
-        61592,
-        61621,
-        61651,
-        61680,
-        61710,
-        61739,
-        61769,
-        61799,
-        61828,
-        61858,
-        61888,
-        61917,
-        61947,
-        61976,
-        62006,
-        62035,
-        62064,
-        62094,
-        62123,
-        62153,
-        62182,
-        62212,
-        62242,
-        62271,
-        62301,
-        62331,
-        62360,
-        62390,
-        62419,
-        62448,
-        62478,
-        62507,
-        62537,
-        62566,
-        62596,
-        62625,
-        62655,
-        62685,
-        62715,
-        62744,
-        62774,
-        62803,
-        62832,
-        62862,
-        62891,
-        62921,
-        62950,
-        62980,
-        63009,
-        63039,
-        63069,
-        63099,
-        63128,
-        63157,
-        63187,
-        63216,
-        63246,
-        63275,
-        63305,
-        63334,
-        63363,
-        63393,
-        63423,
-        63453,
-        63482,
-        63512,
-        63541,
-        63571,
-        63600,
-        63630,
-        63659,
-        63689,
-        63718,
-        63747,
-        63777,
-        63807,
-        63836,
-        63866,
-        63895,
-        63925,
-        63955,
-        63984,
-        64014,
-        64043,
-        64073,
-        64102,
-        64131,
-        64161,
-        64190,
-        64220,
-        64249,
-        64279,
-        64309,
-        64339,
-        64368,
-        64398,
-        64427,
-        64457,
-        64486,
-        64515,
-        64545,
-        64574,
-        64603,
-        64633,
-        64663,
-        64692,
-        64722,
-        64752,
-        64782,
-        64811,
-        64841,
-        64870,
-        64899,
-        64929,
-        64958,
-        64987,
-        65017,
-        65047,
-        65076,
-        65106,
-        65136,
-        65166,
-        65195,
-        65225,
-        65254,
-        65283,
-        65313,
-        65342,
-        65371,
-        65401,
-        65431,
-        65460,
-        65490,
-        65520,
-        65549,
-        65579,
-        65608,
-        65638,
-        65667,
-        65697,
-        65726,
-        65755,
-        65785,
-        65815,
-        65844,
-        65874,
-        65903,
-        65933,
-        65963,
-        65992,
-        66022,
-        66051,
-        66081,
-        66110,
-        66140,
-        66169,
-        66199,
-        66228,
-        66258,
-        66287,
-        66317,
-        66346,
-        66376,
-        66405,
-        66435,
-        66465,
-        66494,
-        66524,
-        66553,
-        66583,
-        66612,
-        66641,
-        66671,
-        66700,
-        66730,
-        66760,
-        66789,
-        66819,
-        66849,
-        66878,
-        66908,
-        66937,
-        66967,
-        66996,
-        67025,
-        67055,
-        67084,
-        67114,
-        67143,
-        67173,
-        67203,
-        67233,
-        67262,
-        67292,
-        67321,
-        67351,
-        67380,
-        67409,
-        67439,
-        67468,
-        67497,
-        67527,
-        67557,
-        67587,
-        67617,
-        67646,
-        67676,
-        67705,
-        67735,
-        67764,
-        67793,
-        67823,
-        67852,
-        67882,
-        67911,
-        67941,
-        67971,
-        68e3,
-        68030,
-        68060,
-        68089,
-        68119,
-        68148,
-        68177,
-        68207,
-        68236,
-        68266,
-        68295,
-        68325,
-        68354,
-        68384,
-        68414,
-        68443,
-        68473,
-        68502,
-        68532,
-        68561,
-        68591,
-        68620,
-        68650,
-        68679,
-        68708,
-        68738,
-        68768,
-        68797,
-        68827,
-        68857,
-        68886,
-        68916,
-        68946,
-        68975,
-        69004,
-        69034,
-        69063,
-        69092,
-        69122,
-        69152,
-        69181,
-        69211,
-        69240,
-        69270,
-        69300,
-        69330,
-        69359,
-        69388,
-        69418,
-        69447,
-        69476,
-        69506,
-        69535,
-        69565,
-        69595,
-        69624,
-        69654,
-        69684,
-        69713,
-        69743,
-        69772,
-        69802,
-        69831,
-        69861,
-        69890,
-        69919,
-        69949,
-        69978,
-        70008,
-        70038,
-        70067,
-        70097,
-        70126,
-        70156,
-        70186,
-        70215,
-        70245,
-        70274,
-        70303,
-        70333,
-        70362,
-        70392,
-        70421,
-        70451,
-        70481,
-        70510,
-        70540,
-        70570,
-        70599,
-        70629,
-        70658,
-        70687,
-        70717,
-        70746,
-        70776,
-        70805,
-        70835,
-        70864,
-        70894,
-        70924,
-        70954,
-        70983,
-        71013,
-        71042,
-        71071,
-        71101,
-        71130,
-        71159,
-        71189,
-        71218,
-        71248,
-        71278,
-        71308,
-        71337,
-        71367,
-        71397,
-        71426,
-        71455,
-        71485,
-        71514,
-        71543,
-        71573,
-        71602,
-        71632,
-        71662,
-        71691,
-        71721,
-        71751,
-        71781,
-        71810,
-        71839,
-        71869,
-        71898,
-        71927,
-        71957,
-        71986,
-        72016,
-        72046,
-        72075,
-        72105,
-        72135,
-        72164,
-        72194,
-        72223,
-        72253,
-        72282,
-        72311,
-        72341,
-        72370,
-        72400,
-        72429,
-        72459,
-        72489,
-        72518,
-        72548,
-        72577,
-        72607,
-        72637,
-        72666,
-        72695,
-        72725,
-        72754,
-        72784,
-        72813,
-        72843,
-        72872,
-        72902,
-        72931,
-        72961,
-        72991,
-        73020,
-        73050,
-        73080,
-        73109,
-        73139,
-        73168,
-        73197,
-        73227,
-        73256,
-        73286,
-        73315,
-        73345,
-        73375,
-        73404,
-        73434,
-        73464,
-        73493,
-        73523,
-        73552,
-        73581,
-        73611,
-        73640,
-        73669,
-        73699,
-        73729,
-        73758,
-        73788,
-        73818,
-        73848,
-        73877,
-        73907,
-        73936,
-        73965,
-        73995,
-        74024,
-        74053,
-        74083,
-        74113,
-        74142,
-        74172,
-        74202,
-        74231,
-        74261,
-        74291,
-        74320,
-        74349,
-        74379,
-        74408,
-        74437,
-        74467,
-        74497,
-        74526,
-        74556,
-        74586,
-        74615,
-        74645,
-        74675,
-        74704,
-        74733,
-        74763,
-        74792,
-        74822,
-        74851,
-        74881,
-        74910,
-        74940,
-        74969,
-        74999,
-        75029,
-        75058,
-        75088,
-        75117,
-        75147,
-        75176,
-        75206,
-        75235,
-        75264,
-        75294,
-        75323,
-        75353,
-        75383,
-        75412,
-        75442,
-        75472,
-        75501,
-        75531,
-        75560,
-        75590,
-        75619,
-        75648,
-        75678,
-        75707,
-        75737,
-        75766,
-        75796,
-        75826,
-        75856,
-        75885,
-        75915,
-        75944,
-        75974,
-        76003,
-        76032,
-        76062,
-        76091,
-        76121,
-        76150,
-        76180,
-        76210,
-        76239,
-        76269,
-        76299,
-        76328,
-        76358,
-        76387,
-        76416,
-        76446,
-        76475,
-        76505,
-        76534,
-        76564,
-        76593,
-        76623,
-        76653,
-        76682,
-        76712,
-        76741,
-        76771,
-        76801,
-        76830,
-        76859,
-        76889,
-        76918,
-        76948,
-        76977,
-        77007,
-        77036,
-        77066,
-        77096,
-        77125,
-        77155,
-        77185,
-        77214,
-        77243,
-        77273,
-        77302,
-        77332,
-        77361,
-        77390,
-        77420,
-        77450,
-        77479,
-        77509,
-        77539,
-        77569,
-        77598,
-        77627,
-        77657,
-        77686,
-        77715,
-        77745,
-        77774,
-        77804,
-        77833,
-        77863,
-        77893,
-        77923,
-        77952,
-        77982,
-        78011,
-        78041,
-        78070,
-        78099,
-        78129,
-        78158,
-        78188,
-        78217,
-        78247,
-        78277,
-        78307,
-        78336,
-        78366,
-        78395,
-        78425,
-        78454,
-        78483,
-        78513,
-        78542,
-        78572,
-        78601,
-        78631,
-        78661,
-        78690,
-        78720,
-        78750,
-        78779,
-        78808,
-        78838,
-        78867,
-        78897,
-        78926,
-        78956,
-        78985,
-        79015,
-        79044,
-        79074,
-        79104,
-        79133,
-        79163,
-        79192,
-        79222,
-        79251,
-        79281,
-        79310,
-        79340,
-        79369,
-        79399,
-        79428,
-        79458,
-        79487,
-        79517,
-        79546,
-        79576,
-        79606,
-        79635,
-        79665,
-        79695,
-        79724,
-        79753,
-        79783,
-        79812,
-        79841,
-        79871,
-        79900,
-        79930,
-        79960,
-        79990
-      ];
-    }
-  });
-
-  // src/components/calendars/calendars.js
-  var require_calendars = __commonJS({
-    "src/components/calendars/calendars.js"(exports, module) {
-      "use strict";
-      module.exports = require_main();
-      require_plus();
-      require_chinese();
-      require_coptic();
-      require_discworld();
-      require_ethiopian();
-      require_hebrew();
-      require_islamic();
-      require_julian();
-      require_mayan();
-      require_nanakshahi();
-      require_nepali();
-      require_persian();
-      require_taiwan();
-      require_thai();
-      require_ummalqura();
-    }
-  });
-
-  // src/components/calendars/index.js
-  var require_calendars2 = __commonJS({
-    "src/components/calendars/index.js"(exports, module) {
-      "use strict";
-      var calendars = require_calendars();
-      var Lib = require_lib();
-      var constants = require_numerical();
-      var EPOCHJD = constants.EPOCHJD;
-      var ONEDAY = constants.ONEDAY;
-      var attributes = {
-        valType: "enumerated",
-        values: Lib.sortObjectKeys(calendars.calendars),
-        editType: "calc",
-        dflt: "gregorian"
-      };
-      var handleDefaults = function(contIn, contOut, attr, dflt) {
-        var attrs = {};
-        attrs[attr] = attributes;
-        return Lib.coerce(contIn, contOut, attrs, attr, dflt);
-      };
-      var handleTraceDefaults = function(traceIn, traceOut, coords, layout) {
-        for (var i = 0; i < coords.length; i++) {
-          handleDefaults(traceIn, traceOut, coords[i] + "calendar", layout.calendar);
-        }
-      };
-      var CANONICAL_TICK = {
-        chinese: "2000-01-01",
-        coptic: "2000-01-01",
-        discworld: "2000-01-01",
-        ethiopian: "2000-01-01",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-01",
-        julian: "2000-01-01",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-01",
-        nepali: "2000-01-01",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-01",
-        thai: "2000-01-01",
-        ummalqura: "1400-01-01"
-      };
-      var CANONICAL_SUNDAY = {
-        chinese: "2000-01-02",
-        coptic: "2000-01-03",
-        discworld: "2000-01-03",
-        ethiopian: "2000-01-05",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-02",
-        julian: "2000-01-03",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-05",
-        nepali: "2000-01-05",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-04",
-        thai: "2000-01-04",
-        ummalqura: "1400-01-06"
-      };
-      var DFLTRANGE = {
-        chinese: ["2000-01-01", "2001-01-01"],
-        coptic: ["1700-01-01", "1701-01-01"],
-        discworld: ["1800-01-01", "1801-01-01"],
-        ethiopian: ["2000-01-01", "2001-01-01"],
-        hebrew: ["5700-01-01", "5701-01-01"],
-        islamic: ["1400-01-01", "1401-01-01"],
-        julian: ["2000-01-01", "2001-01-01"],
-        mayan: ["5200-01-01", "5201-01-01"],
-        nanakshahi: ["0500-01-01", "0501-01-01"],
-        nepali: ["2000-01-01", "2001-01-01"],
-        persian: ["1400-01-01", "1401-01-01"],
-        jalali: ["1400-01-01", "1401-01-01"],
-        taiwan: ["0100-01-01", "0101-01-01"],
-        thai: ["2500-01-01", "2501-01-01"],
-        ummalqura: ["1400-01-01", "1401-01-01"]
-      };
-      var UNKNOWN = "##";
-      var d3ToWorldCalendars = {
-        d: { 0: "dd", "-": "d" },
-        // 2-digit or unpadded day of month
-        e: { 0: "d", "-": "d" },
-        // alternate, always unpadded day of month
-        a: { 0: "D", "-": "D" },
-        // short weekday name
-        A: { 0: "DD", "-": "DD" },
-        // full weekday name
-        j: { 0: "oo", "-": "o" },
-        // 3-digit or unpadded day of the year
-        W: { 0: "ww", "-": "w" },
-        // 2-digit or unpadded week of the year (Monday first)
-        m: { 0: "mm", "-": "m" },
-        // 2-digit or unpadded month number
-        b: { 0: "M", "-": "M" },
-        // short month name
-        B: { 0: "MM", "-": "MM" },
-        // full month name
-        y: { 0: "yy", "-": "yy" },
-        // 2-digit year (map unpadded to zero-padded)
-        Y: { 0: "yyyy", "-": "yyyy" },
-        // 4-digit year (map unpadded to zero-padded)
-        U: UNKNOWN,
-        // Sunday-first week of the year
-        w: UNKNOWN,
-        // day of the week [0(sunday),6]
-        // combined format, we replace the date part with the world-calendar version
-        // and the %X stays there for d3 to handle with time parts
-        c: { 0: "D M d %X yyyy", "-": "D M d %X yyyy" },
-        x: { 0: "mm/dd/yyyy", "-": "mm/dd/yyyy" }
-      };
-      function worldCalFmt(fmt, x, calendar) {
-        var dateJD = Math.floor((x + 0.05) / ONEDAY) + EPOCHJD;
-        var cDate = getCal(calendar).fromJD(dateJD);
-        var i = 0;
-        var modifier, directive, directiveLen, directiveObj, replacementPart;
-        while ((i = fmt.indexOf("%", i)) !== -1) {
-          modifier = fmt.charAt(i + 1);
-          if (modifier === "0" || modifier === "-" || modifier === "_") {
-            directiveLen = 3;
-            directive = fmt.charAt(i + 2);
-            if (modifier === "_") modifier = "-";
-          } else {
-            directive = modifier;
-            modifier = "0";
-            directiveLen = 2;
-          }
-          directiveObj = d3ToWorldCalendars[directive];
-          if (!directiveObj) {
-            i += directiveLen;
-          } else {
-            if (directiveObj === UNKNOWN) replacementPart = UNKNOWN;
-            else replacementPart = cDate.formatDate(directiveObj[modifier]);
-            fmt = fmt.substr(0, i) + replacementPart + fmt.substr(i + directiveLen);
-            i += replacementPart.length;
-          }
-        }
-        return fmt;
-      }
-      var allCals = {};
-      function getCal(calendar) {
-        var calendarObj = allCals[calendar];
-        if (calendarObj) return calendarObj;
-        calendarObj = allCals[calendar] = calendars.instance(calendar);
-        return calendarObj;
-      }
-      function makeAttrs(description) {
-        return Lib.extendFlat({}, attributes, { description });
-      }
-      function makeTraceAttrsDescription(coord) {
-        return "Sets the calendar system to use with `" + coord + "` date data.";
-      }
-      var xAttrs = {
-        xcalendar: makeAttrs(makeTraceAttrsDescription("x"))
-      };
-      var xyAttrs = Lib.extendFlat({}, xAttrs, {
-        ycalendar: makeAttrs(makeTraceAttrsDescription("y"))
-      });
-      var xyzAttrs = Lib.extendFlat({}, xyAttrs, {
-        zcalendar: makeAttrs(makeTraceAttrsDescription("z"))
-      });
-      var axisAttrs = makeAttrs([
-        "Sets the calendar system to use for `range` and `tick0`",
-        "if this is a date axis. This does not set the calendar for",
-        "interpreting data on this axis, that's specified in the trace",
-        "or via the global `layout.calendar`"
-      ].join(" "));
-      module.exports = {
-        moduleType: "component",
-        name: "calendars",
-        schema: {
-          traces: {
-            scatter: xyAttrs,
-            bar: xyAttrs,
-            box: xyAttrs,
-            heatmap: xyAttrs,
-            contour: xyAttrs,
-            histogram: xyAttrs,
-            histogram2d: xyAttrs,
-            histogram2dcontour: xyAttrs,
-            scatter3d: xyzAttrs,
-            surface: xyzAttrs,
-            mesh3d: xyzAttrs,
-            scattergl: xyAttrs,
-            ohlc: xAttrs,
-            candlestick: xAttrs
-          },
-          layout: {
-            calendar: makeAttrs([
-              "Sets the default calendar system to use for interpreting and",
-              "displaying dates throughout the plot."
-            ].join(" "))
-          },
-          subplots: {
-            xaxis: { calendar: axisAttrs },
-            yaxis: { calendar: axisAttrs },
-            scene: {
-              xaxis: { calendar: axisAttrs },
-              // TODO: it's actually redundant to include yaxis and zaxis here
-              // because in the scene attributes these are the same object so merging
-              // into one merges into them all. However, I left them in for parity with
-              // cartesian, where yaxis is unused until we Plotschema.get() when we
-              // use its presence or absence to determine whether to delete attributes
-              // from yaxis if they only apply to x (rangeselector/rangeslider)
-              yaxis: { calendar: axisAttrs },
-              zaxis: { calendar: axisAttrs }
-            },
-            polar: {
-              radialaxis: { calendar: axisAttrs }
-            }
-          }
-        },
-        layoutAttributes: attributes,
-        handleDefaults,
-        handleTraceDefaults,
-        CANONICAL_SUNDAY,
-        CANONICAL_TICK,
-        DFLTRANGE,
-        getCal,
-        worldCalFmt
-      };
-    }
-  });
-
-  // lib/calendars.js
-  var require_calendars3 = __commonJS({
-    "lib/calendars.js"(exports, module) {
-      "use strict";
-      module.exports = require_calendars2();
+      module.exports = require_histogram2dcontour();
     }
   });
 
@@ -77220,18 +64081,59 @@ var Plotly = (() => {
     "lib/index-finance.js"(exports, module) {
       var Plotly = require_core2();
       Plotly.register([
+        require_scatter2(),
+        require_histogram2dcontour2()
         // traces
-        require_bar2(),
-        require_histogram2(),
-        require_funnel2(),
-        require_waterfall2(),
-        require_pie2(),
-        require_funnelarea2(),
-        require_indicator2(),
-        require_ohlc2(),
-        require_candlestick2(),
-        // components
-        require_calendars3()
+        // require('./bar'),
+        //
+        //
+        // require('./histogram'),
+        //
+        //
+        //
+        //
+        //
+        // require('./funnel'),
+        // require('./waterfall'),
+        //
+        // require('./pie'),
+        //
+        //
+        //
+        // require('./funnelarea'),
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        // require('./indicator'),
+        //
+        //
+        //
+        //
+        // require('./ohlc'),
+        // require('./candlestick'),
+        //
+        //
+        //
+        //
+        // // components
+        // require('./calendars'),
       ]);
       module.exports = Plotly;
     }
@@ -77252,13 +64154,6 @@ polybooljs/index.js:
    * @license MIT
    * @preserve Project Home: https://github.com/voidqk/polybooljs
    *)
-
-object-assign/index.js:
-  (*
-  object-assign
-  (c) Sindre Sorhus
-  @license MIT
-  *)
 */
 
 window.Plotly = Plotly;

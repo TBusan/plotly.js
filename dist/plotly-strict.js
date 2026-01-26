@@ -1,6 +1,6 @@
 /**
 * plotly.js (strict) v3.0.1
-* Copyright 2012-2025, Plotly, Inc.
+* Copyright 2012-2026, Plotly, Inc.
 * All rights reserved.
 * Licensed under the MIT license
 */

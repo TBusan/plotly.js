@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contour Layer Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        h1 { color: #333; text-align: center; }
+        .container { display: flex; gap: 20px; justify-content: center; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        canvas { border: 2px solid #ccc; border-radius: 8px; }
+        .info { margin-top: 10px; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>等值面分层测试</h1>
+
+    <div class="container">
+        <div class="card">
+            <h3>简单高斯峰（单峰）</h3>
+            <canvas id="single-peak" width="400" height="400"></canvas>
+            <div class="info">测试单峰的分层效果</div>
+        </div>
+
+        <div class="card">
+            <h3>多峰分布</h3>
+            <canvas id="multi-peak" width="400" height="400"></canvas>
+            <div class="info">测试多峰的分层效果</div>
+        </div>
+    </div>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // Viridis colormap
+        const COLORS = [
+            '#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
+            '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'
+        ];
+
+        function getColor(value, min, max) {
+            const t = (value - min) / (max - min);
+            const idx = Math.floor(t * (COLORS.length - 1));
+            return COLORS[Math.max(0, Math.min(COLORS.length - 1, idx))];
+        }
+
+        function createSinglePeak(size) {
+            const grid = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    const dx = (i - size/2) / (size/6);
+                    const dy = (j - size/2) / (size/6);
+                    row.push(Math.exp(-(dx*dx + dy*dy) / 2));
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function createMultiPeak(size) {
+            const grid = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    let value = 0;
+                    // Peak 1
+                    const dx1 = (i - size*0.3) / 6;
+                    const dy1 = (j - size*0.3) / 6;
+                    value += 0.6 * Math.exp(-(dx1*dx1 + dy1*dy1) / 2);
+                    // Peak 2
+                    const dx2 = (i - size*0.7) / 5;
+                    const dy2 = (j - size*0.7) / 5;
+                    value += 0.5 * Math.exp(-(dx2*dx2 + dy2*dy2) / 2);
+                    row.push(value);
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function drawContours(canvasId, grid) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Compute contours
+            const result = ContourCore.computeContours(
+                { z: grid },
+                { autocontour: true, ncontours: 10, smoothing: 0.5 }
+            );
+
+            console.log(canvasId, ':', result.levels.length, 'levels');
+
+            // Get bounds
+            const allPoints = [];
+            result.paths.forEach(p => {
+                p.paths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+                p.edgepaths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+            });
+
+            const minX = 0, maxX = grid[0].length - 1;
+            const minY = 0, maxY = grid.length - 1;
+            const padding = 20;
+            const scaleX = (width - 2*padding) / (maxX - minX);
+            const scaleY = (height - 2*padding) / (maxY - minY);
+
+            const toCanvas = (pt) => [
+                padding + (pt[0] - minX) * scaleX,
+                padding + (pt[1] - minY) * scaleY
+            ];
+
+            const min = result.levels[0];
+            const max = result.levels[result.levels.length - 1];
+
+            // Clear canvas with background color (lowest level)
+            ctx.fillStyle = getColor(min, min, max);
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw from LOWEST to HIGHEST level
+            // Each level's path encloses region >= that level
+            for (let i = 0; i < result.paths.length; i++) {
+                const pathInfo = result.paths[i];
+                ctx.fillStyle = getColor(pathInfo.level, min, max);
+
+                // Draw closed paths
+                pathInfo.paths.forEach(path => {
+                    if (path.length < 3) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                // Draw edge paths
+                pathInfo.edgepaths.forEach(path => {
+                    if (path.length < 2) return;
+                    const first = path[0];
+                    const last = path[path.length - 1];
+
+                    ctx.beginPath();
+                    const start = toCanvas(first);
+                    ctx.moveTo(start[0], start[1]);
+
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+
+                    const lastCanvas = toCanvas(last);
+
+                    // Close to edge
+                    if (first[0] <= minX + 0.1) {
+                        ctx.lineTo(padding, lastCanvas[1]);
+                        ctx.lineTo(padding, start[1]);
+                    } else if (first[0] >= maxX - 0.1) {
+                        ctx.lineTo(width - padding, lastCanvas[1]);
+                        ctx.lineTo(width - padding, start[1]);
+                    } else if (first[1] <= minY + 0.1) {
+                        ctx.lineTo(lastCanvas[0], padding);
+                        ctx.lineTo(start[0], padding);
+                    } else {
+                        ctx.lineTo(lastCanvas[0], height - padding);
+                        ctx.lineTo(start[0], height - padding);
+                    }
+
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            }
+
+            // Draw contour lines on top for clarity
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            result.paths.forEach(pathInfo => {
+                pathInfo.paths.forEach(path => {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+            });
+        }
+
+        // Test on load
+        window.addEventListener('load', () => {
+            console.log('Levels:', ContourCore.computeContours({z: [[0,1],[1,2]]}, {autocontour: true, ncontours: 5}).levels);
+
+            drawContours('single-peak', createSinglePeak(50));
+            drawContours('multi-peak', createMultiPeak(50));
+
+            console.log('✅ Rendering complete');
+        });
+    </script>
+</body>
+</html>

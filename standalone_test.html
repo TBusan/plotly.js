@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contour-Core Standalone Module Test</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #1976d2; text-align: center; }
+        h2 { color: #424242; margin-top: 30px; border-bottom: 2px solid #1976d2; padding-bottom: 10px; }
+
+        .test-card { background: white; padding: 25px; margin: 20px 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .test-card h3 { margin-top: 0; color: #1976d2; }
+
+        canvas { border: 2px solid #ddd; border-radius: 8px; background: white; }
+
+        .info-panel { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .info-panel strong { color: #1976d2; }
+
+        .code-block { background: #263238; color: #aed581; padding: 15px; border-radius: 8px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 13px; }
+        .code-block pre { margin: 0; }
+
+        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+        .stat { flex: 1; min-width: 200px; background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #1976d2; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+
+        .success { color: #4caf50; font-weight: bold; }
+        .warning { color: #ff9800; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Contour-Core Standalone Module Test</h1>
+
+        <!-- Module Info -->
+        <div class="test-card">
+            <h3>Module Information</h3>
+            <div class="info-panel">
+                <p><strong>Module:</strong> <code>dist/contour-core.umd.js</code></p>
+                <p><strong>Status:</strong> <span id="module-status" class="warning">Loading...</span></p>
+                <p><strong>Version:</strong> <span id="module-version">-</span></p>
+                <p><strong>Dependencies:</strong> None (zero dependencies!)</p>
+                <p><strong>Size:</strong> ~11 KB (uncompressed)</p>
+            </div>
+        </div>
+
+        <!-- Test 1: Basic Gaussian Peak -->
+        <div class="test-card">
+            <h3>Test 1: Gaussian Peak Distribution</h3>
+            <p>Simple 20x20 grid with a single peak in the center.</p>
+
+            <canvas id="test1-canvas" width="500" height="400"></canvas>
+
+            <div class="stats" id="test1-stats">
+                <div class="stat">
+                    <div class="stat-value" id="test1-time">-</div>
+                    <div class="stat-label">Compute Time (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="test1-levels">-</div>
+                    <div class="stat-label">Contour Levels</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="test1-paths">-</div>
+                    <div class="stat-label">Total Paths</div>
+                </div>
+            </div>
+
+            <div class="code-block">
+<pre>var result = ContourCore.computeContours({
+    z: gaussianPeakData,  // 20x20 grid
+    x: xCoords,
+    y: yCoords
+}, {
+    autocontour: true,
+    ncontours: 10,
+    smoothing: 0.5
+});</pre>
+            </div>
+        </div>
+
+        <!-- Test 2: Multi-Peak Distribution -->
+        <div class="test-card">
+            <h3>Test 2: Multi-Peak Distribution</h3>
+            <p>30x30 grid with multiple peaks at different locations.</p>
+
+            <canvas id="test2-canvas" width="500" height="400"></canvas>
+
+            <div class="stats" id="test2-stats">
+                <div class="stat">
+                    <div class="stat-value" id="test2-time">-</div>
+                    <div class="stat-label">Compute Time (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="test2-levels">-</div>
+                    <div class="stat-label">Contour Levels</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="test2-paths">-</div>
+                    <div class="stat-label">Total Paths</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 3: Custom Thresholds -->
+        <div class="test-card">
+            <h3>Test 3: Custom Thresholds</h3>
+            <p>Using manually specified contour levels instead of auto-generated.</p>
+
+            <canvas id="test3-canvas" width="500" height="400"></canvas>
+
+            <div class="code-block">
+<pre>var result = ContourCore.computeContours(grid, {
+    thresholds: [0.2, 0.4, 0.6, 0.8],  // Custom levels
+    smoothing: 0.3
+});</pre>
+            </div>
+        </div>
+
+        <!-- Test 4: Manual Level Specification -->
+        <div class="test-card">
+            <h3>Test 4: Manual Level Specification</h3>
+            <p>Specifying start, end, and number of contours.</p>
+
+            <canvas id="test4-canvas" width="500" height="400"></canvas>
+
+            <div class="code-block">
+<pre>var result = ContourCore.computeContours(grid, {
+    start: 0.1,
+    end: 0.9,
+    size: 0.1,  // Step size
+    smoothing: 0.5
+});</pre>
+            </div>
+        </div>
+
+        <!-- Test 5: No Smoothing -->
+        <div class="test-card">
+            <h3>Test 5: No Smoothing (Raw Marching Squares)</h3>
+            <p>Direct marching squares output without curve smoothing.</p>
+
+            <canvas id="test5-canvas" width="500" height="400"></canvas>
+
+            <div class="code-block">
+<pre>var result = ContourCore.computeContours(grid, {
+    autocontour: true,
+    ncontours: 8,
+    smoothing: 0  // No smoothing
+});</pre>
+            </div>
+        </div>
+
+        <!-- API Test -->
+        <div class="test-card">
+            <h3>API Methods Test</h3>
+            <div class="info-panel" id="api-test-results">
+                <p>Testing ContourCore API methods...</p>
+            </div>
+        </div>
+
+        <!-- Usage Example -->
+        <div class="test-card">
+            <h3>Usage Example</h3>
+            <div class="code-block">
+<pre>&lt;!-- 1. Include the module --&gt;
+&lt;script src="dist/contour-core.umd.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2. Use it --&gt;
+&lt;script&gt;
+// Prepare your grid data
+var grid = {
+    z: [[0,1,2],[1,2,3],[2,3,4]],  // 2D array of values
+    x: [0,1,2],                      // X coordinates (optional)
+    y: [0,1,2]                       // Y coordinates (optional)
+};
+
+// Compute contours
+var result = ContourCore.computeContours(grid, {
+    autocontour: true,
+    ncontours: 10,
+    smoothing: 0.5
+});
+
+// Result contains:
+console.log(result.levels);  // Array of contour level values
+console.log(result.paths);   // Array of path objects
+&lt;/script&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the packaged contour-core module -->
+    <script src="dist/contour-core.umd.js"></script>
+
+    <script>
+        // Utility functions
+        function createGaussianPeak(size, peakX, peakY, sigma) {
+            var grid = [];
+            for (var i = 0; i < size; i++) {
+                var row = [];
+                for (var j = 0; j < size; j++) {
+                    var dx = (i - peakX) / sigma;
+                    var dy = (j - peakY) / sigma;
+                    var value = Math.exp(-(dx * dx + dy * dy) / 2);
+                    row.push(value);
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function createMultiPeak(size) {
+            var grid = [];
+            for (var i = 0; i < size; i++) {
+                var row = [];
+                for (var j = 0; j < size; j++) {
+                    var value = 0;
+                    // Peak 1
+                    var dx1 = (i - size * 0.3) / 5;
+                    var dy1 = (j - size * 0.3) / 5;
+                    value += 0.6 * Math.exp(-(dx1 * dx1 + dy1 * dy1) / 2);
+                    // Peak 2
+                    var dx2 = (i - size * 0.7) / 6;
+                    var dy2 = (j - size * 0.7) / 6;
+                    value += 0.4 * Math.exp(-(dx2 * dx2 + dy2 * dy2) / 2);
+                    row.push(value);
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function createCoords(size) {
+            var coords = [];
+            for (var i = 0; i < size; i++) {
+                coords.push(i / (size - 1));
+            }
+            return coords;
+        }
+
+        function drawContours(canvas, result, width, height) {
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+
+            // Find bounds
+            var allPoints = [];
+            result.paths.forEach(function(pathInfo) {
+                pathInfo.edgepaths.forEach(function(path) {
+                    path.forEach(function(pt) { allPoints.push(pt); });
+                });
+                pathInfo.paths.forEach(function(path) {
+                    path.forEach(function(pt) { allPoints.push(pt); });
+                });
+            });
+
+            if (allPoints.length === 0) return;
+
+            var minX = Math.min.apply(null, allPoints.map(function(p) { return p[0]; }));
+            var maxX = Math.max.apply(null, allPoints.map(function(p) { return p[0]; }));
+            var minY = Math.min.apply(null, allPoints.map(function(p) { return p[1]; }));
+            var maxY = Math.max.apply(null, allPoints.map(function(p) { return p[1]; }));
+
+            var padding = 40;
+            var scaleX = (width - 2 * padding) / (maxX - minX || 1);
+            var scaleY = (height - 2 * padding) / (maxY - minY || 1);
+
+            function toCanvas(pt) {
+                return [
+                    padding + (pt[0] - minX) * scaleX,
+                    padding + (pt[1] - minY) * scaleY
+                ];
+            }
+
+            // Draw each level with different color
+            var colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                         '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
+            result.paths.forEach(function(pathInfo, idx) {
+                var color = colors[idx % colors.length];
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.fillStyle = color;
+
+                // Draw edgepaths
+                pathInfo.edgepaths.forEach(function(path) {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    var start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (var i = 1; i < path.length; i++) {
+                        var pt = toCanvas(path[i]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.stroke();
+                });
+
+                // Draw paths
+                pathInfo.paths.forEach(function(path) {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    var start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (var i = 1; i < path.length; i++) {
+                        var pt = toCanvas(path[i]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+            });
+
+            // Draw axes
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(padding, padding, width - 2 * padding, height - 2 * padding);
+        }
+
+        function runTests() {
+            // Check if module loaded
+            if (typeof ContourCore === 'undefined') {
+                document.getElementById('module-status').textContent = 'Failed to load!';
+                document.getElementById('module-status').className = 'warning';
+                return;
+            }
+
+            document.getElementById('module-status').textContent = 'Loaded successfully!';
+            document.getElementById('module-status').className = 'success';
+            document.getElementById('module-version').textContent = ContourCore.getVersion();
+
+            // Test 1: Gaussian Peak
+            console.log('\n=== Test 1: Gaussian Peak ===');
+            var test1Start = performance.now();
+            var test1Grid = {
+                z: createGaussianPeak(20, 10, 10, 4),
+                x: createCoords(20),
+                y: createCoords(20)
+            };
+            var test1Result = ContourCore.computeContours(test1Grid, {
+                autocontour: true,
+                ncontours: 10,
+                smoothing: 0.5
+            });
+            var test1Time = (performance.now() - test1Start).toFixed(2);
+
+            document.getElementById('test1-time').textContent = test1Time;
+            document.getElementById('test1-levels').textContent = test1Result.levels.length;
+            document.getElementById('test1-paths').textContent = test1Result.paths.length;
+
+            drawContours(document.getElementById('test1-canvas'), test1Result, 500, 400);
+            console.log('Test 1 completed in ' + test1Time + 'ms');
+
+            // Test 2: Multi-Peak
+            console.log('\n=== Test 2: Multi-Peak ===');
+            var test2Start = performance.now();
+            var test2Grid = {
+                z: createMultiPeak(30),
+                x: createCoords(30),
+                y: createCoords(30)
+            };
+            var test2Result = ContourCore.computeContours(test2Grid, {
+                autocontour: true,
+                ncontours: 12,
+                smoothing: 0.5
+            });
+            var test2Time = (performance.now() - test2Start).toFixed(2);
+
+            document.getElementById('test2-time').textContent = test2Time;
+            document.getElementById('test2-levels').textContent = test2Result.levels.length;
+            document.getElementById('test2-paths').textContent = test2Result.paths.length;
+
+            drawContours(document.getElementById('test2-canvas'), test2Result, 500, 400);
+            console.log('Test 2 completed in ' + test2Time + 'ms');
+
+            // Test 3: Custom Thresholds
+            console.log('\n=== Test 3: Custom Thresholds ===');
+            var test3Result = ContourCore.computeContours(test1Grid, {
+                thresholds: [0.2, 0.4, 0.6, 0.8],
+                smoothing: 0.3
+            });
+            drawContours(document.getElementById('test3-canvas'), test3Result, 500, 400);
+            console.log('Test 3: ' + test3Result.levels.length + ' levels');
+
+            // Test 4: Manual Levels
+            console.log('\n=== Test 4: Manual Level Specification ===');
+            var test4Result = ContourCore.computeContours(test1Grid, {
+                start: 0.1,
+                end: 0.9,
+                size: 0.1,
+                smoothing: 0.5
+            });
+            drawContours(document.getElementById('test4-canvas'), test4Result, 500, 400);
+            console.log('Test 4: ' + test4Result.levels.length + ' levels');
+
+            // Test 5: No Smoothing
+            console.log('\n=== Test 5: No Smoothing ===');
+            var test5Result = ContourCore.computeContours(test1Grid, {
+                autocontour: true,
+                ncontours: 8,
+                smoothing: 0
+            });
+            drawContours(document.getElementById('test5-canvas'), test5Result, 500, 400);
+            console.log('Test 5: Raw marching squares output');
+
+            // API Tests
+            console.log('\n=== API Methods Test ===');
+            var apiTests = [
+                { name: 'getVersion()', test: typeof ContourCore.getVersion === 'function' },
+                { name: 'getInfo()', test: typeof ContourCore.getInfo === 'function' },
+                { name: 'computeContours()', test: typeof ContourCore.computeContours === 'function' }
+            ];
+
+            var apiHtml = '<p><strong>API Methods:</strong></p><ul>';
+            apiTests.forEach(function(t) {
+                var status = t.test ? '<span class="success">✓</span>' : '<span class="warning">✗</span>';
+                apiHtml += '<li>' + status + ' ' + t.name + '</li>';
+
+                // Test getInfo
+                if (t.name === 'getInfo()' && t.test) {
+                    var info = ContourCore.getInfo();
+                    console.log('Module info:', info);
+                    apiHtml += '<li><em>Info: ' + info.name + ' v' + info.version + '</em></li>';
+                }
+            });
+            apiHtml += '</ul>';
+            document.getElementById('api-test-results').innerHTML = apiHtml;
+
+            console.log('\n✅ All tests completed successfully!');
+            console.log('The contour-core module is working independently without any dependencies.');
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

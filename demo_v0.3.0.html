@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contour-Core v0.3.0 - Complete Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .canvas-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-width: 100%;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .control-group select,
+        .control-group input[type="range"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .control-group input[type="range"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 0.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .features {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .features h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-item .icon {
+            font-size: 1.5em;
+            margin-right: 12px;
+        }
+
+        .feature-item .text h4 {
+            font-size: 0.95em;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .feature-item .text p {
+            font-size: 0.85em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat .label {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 Contour-Core v0.3.0</h1>
+        <p>Optimized Label Placement • Null Value Support • Canvas & SVG Rendering</p>
+    </div>
+
+    <div class="container">
+        <!-- Card 1: Basic Contour with Labels -->
+        <div class="card">
+            <h2>📍 Contour with Optimized Labels</h2>
+            <div class="canvas-container">
+                <canvas id="canvas1" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Contour Type</label>
+                    <select id="contourType1">
+                        <option value="fill">Fill</option>
+                        <option value="lines" selected>Lines</option>
+                        <option value="heatmap">Heatmap</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Color Scale</label>
+                    <select id="colorScale1">
+                        <option value="Viridis">Viridis</option>
+                        <option value="Plasma">Plasma</option>
+                        <option value="Hot">Hot</option>
+                        <option value="Jet">Jet</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Number of Contours: <span class="value-display" id="ncontoursVal">8</span></label>
+                    <input type="range" id="ncontours1" min="3" max="20" value="8">
+                </div>
+                <div class="control-group">
+                    <label>Label Size: <span class="value-display" id="labelSizeVal">12</span>px</label>
+                    <input type="range" id="labelSize1" min="8" max="20" value="12">
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas1()">🔄 Redraw</button>
+        </div>
+
+        <!-- Card 2: Null Value Handling -->
+        <div class="card">
+            <h2>🔍 Null Value Handling</h2>
+            <div class="canvas-container">
+                <canvas id="canvas2" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Null Density</label>
+                    <select id="nullDensity">
+                        <option value="low">Low (10%)</option>
+                        <option value="medium" selected>Medium (25%)</option>
+                        <option value="high">High (50%)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Show Null Regions</label>
+                    <select id="showNulls">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="value" id="nullCount">0</div>
+                    <div class="label">Null Values</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="validCount">0</div>
+                    <div class="label">Valid Values</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="contourCount">0</div>
+                    <div class="label">Contours</div>
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas2()">🔄 Generate New Data</button>
+        </div>
+
+        <!-- Card 3: SVG Output -->
+        <div class="card">
+            <h2>🖼️ SVG Rendering</h2>
+            <div class="canvas-container" id="svgContainer" style="overflow: auto;">
+                <!-- SVG will be inserted here -->
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Color Scale</label>
+                    <select id="svgColorScale">
+                        <option value="Viridis">Viridis</option>
+                        <option value="Plasma" selected>Plasma</option>
+                        <option value="Electric">Electric</option>
+                        <option value="Earth">Earth</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Show Labels</label>
+                    <select id="svgShowLabels">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="renderSVG()">🔄 Generate SVG</button>
+            <button class="btn" onclick="downloadSVG()" style="background: #28a745; margin-top: 10px;">💾 Download SVG</button>
+        </div>
+
+        <!-- Card 4: Performance Comparison -->
+        <div class="card">
+            <h2>⚡ Performance Test</h2>
+            <div class="canvas-container">
+                <canvas id="canvasPerf" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Grid Size: <span class="value-display" id="gridSizeVal">50x50</span></label>
+                    <input type="range" id="gridSize" min="10" max="100" value="50">
+                </div>
+                <div class="control-group">
+                    <label>Contours: <span class="value-display" id="perfContoursVal">15</span></label>
+                    <input type="range" id="perfContours" min="5" max="50" value="15">
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="value" id="computeTime">0</div>
+                    <div class="label">Compute (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="renderTime">0</div>
+                    <div class="label">Render (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="totalTime">0</div>
+                    <div class="label">Total (ms)</div>
+                </div>
+            </div>
+            <button class="btn" onclick="runPerformanceTest()">🚀 Run Test</button>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+        <h3>✨ Key Features (v0.3.0)</h3>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="icon">🎯</div>
+                <div class="text">
+                    <h4>Optimized Label Placement</h4>
+                    <p>Advanced algorithm minimizes overlap and finds optimal positions along contours</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🔄</div>
+                <div class="text">
+                    <h4>Null Value Support</h4>
+                    <p>Handles null, undefined, and NaN values gracefully with configurable visualization</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🎨</div>
+                <div class="text">
+                    <h4>Dual Rendering</h4>
+                    <p>Canvas for performance, SVG for quality - both fully supported</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">⚡</div>
+                <div class="text">
+                    <h4>High Performance</h4>
+                    <p>Optimized algorithms handle large grids efficiently</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🌈</div>
+                <div class="text">
+                    <h4>6 Color Scales</h4>
+                    <p>Viridis, Plasma, Hot, Jet, Earth, and Electric presets included</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">📊</div>
+                <div class="text">
+                    <h4>Complete API</h4>
+                    <p>Simple one-line rendering or fine-grained control - your choice</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // ============================================
+        // Utility Functions
+        // ============================================
+
+        function generateTestGrid(m, n, nullDensity = 0) {
+            const grid = [];
+            for (let i = 0; i < m; i++) {
+                grid[i] = [];
+                for (let j = 0; j < n; j++) {
+                    if (nullDensity > 0 && Math.random() < nullDensity) {
+                        grid[i][j] = null;
+                    } else {
+                        grid[i][j] = Math.sin(i * 0.3) * Math.cos(j * 0.3) * 10 +
+                                   Math.random() * 2;
+                    }
+                }
+            }
+            return grid;
+        }
+
+        // ============================================
+        // Canvas 1: Basic Contour with Labels
+        // ============================================
+
+        function renderCanvas1() {
+            const canvas = document.getElementById('canvas1');
+            const contourType = document.getElementById('contourType1').value;
+            const colorScale = document.getElementById('colorScale1').value;
+            const ncontours = parseInt(document.getElementById('ncontours1').value);
+            const labelSize = parseInt(document.getElementById('labelSize1').value);
+
+            const grid = generateTestGrid(30, 40);
+
+            ContourCore.render(canvas, {
+                z: grid,
+                contours: { type: contourType },
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: 0.3,
+                colorscale: colorScale,
+                labelFont: 'Arial',
+                labelSize: labelSize,
+                labelColor: '#000',
+                showLabels: true
+            });
+        }
+
+        // ============================================
+        // Canvas 2: Null Value Handling
+        // ============================================
+
+        function renderCanvas2() {
+            const canvas = document.getElementById('canvas2');
+            const nullDensityMap = { low: 0.1, medium: 0.25, high: 0.5 };
+            const nullDensity = nullDensityMap[document.getElementById('nullDensity').value];
+            const showNulls = document.getElementById('showNulls').value === 'yes';
+
+            const grid = generateTestGrid(25, 30, nullDensity);
+
+            const result = ContourCore.computeContours({ z: grid }, { autocontour: true, ncontours: 8 });
+
+            // Update stats
+            document.getElementById('nullCount').textContent = result.nullCount || 0;
+            document.getElementById('validCount').textContent = result.validCount || grid.length * grid[0].length;
+            document.getElementById('contourCount').textContent = result.paths.length;
+
+            ContourCore.drawTo(canvas, result, {
+                coloring: 'fill',
+                colorscale: 'Viridis',
+                showLabels: true,
+                nullRegion: {
+                    visible: showNulls,
+                    fill: 'rgba(255,255,255,0.9)',
+                    stroke: '#ccc'
+                }
+            });
+        }
+
+        // ============================================
+        // SVG Rendering
+        // ============================================
+
+        let currentSVG = '';
+
+        function renderSVG() {
+            const colorScale = document.getElementById('svgColorScale').value;
+            const showLabels = document.getElementById('svgShowLabels').value === 'yes';
+
+            const grid = generateTestGrid(25, 30);
+            const result = ContourCore.computeContours({ z: grid }, { autocontour: true, ncontours: 8 });
+
+            const svg = ContourCore.renderers.svg.renderSVG(result, {
+                width: 500,
+                height: 400,
+                coloring: 'fill',
+                colorscale: colorScale,
+                showLines: true,
+                showLabels: showLabels,
+                colorbar: true,
+                labelFont: 'Arial',
+                labelSize: 12
+            });
+
+            document.getElementById('svgContainer').innerHTML = svg;
+            currentSVG = svg;
+        }
+
+        function downloadSVG() {
+            if (!currentSVG) {
+                alert('Please generate SVG first!');
+                return;
+            }
+            const blob = new Blob([currentSVG], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'contour-output.svg';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ============================================
+        // Performance Test
+        // ============================================
+
+        function runPerformanceTest() {
+            const gridSize = parseInt(document.getElementById('gridSize').value);
+            const perfContours = parseInt(document.getElementById('perfContours').value);
+            const canvas = document.getElementById('canvasPerf');
+
+            const grid = generateTestGrid(gridSize, gridSize);
+
+            // Compute
+            const computeStart = performance.now();
+            const result = ContourCore.computeContours({ z: grid }, { autocontour: true, ncontours: perfContours });
+            const computeEnd = performance.now();
+
+            // Render
+            const renderStart = performance.now();
+            ContourCore.drawTo(canvas, result, {
+                coloring: 'fill',
+                colorscale: 'Viridis',
+                showLabels: false
+            });
+            const renderEnd = performance.now();
+
+            // Update stats
+            document.getElementById('computeTime').textContent = (computeEnd - computeStart).toFixed(1);
+            document.getElementById('renderTime').textContent = (renderEnd - renderStart).toFixed(1);
+            document.getElementById('totalTime').textContent = ((renderEnd - computeStart)).toFixed(1);
+        }
+
+        // ============================================
+        // Event Listeners
+        // ============================================
+
+        document.getElementById('ncontours1').addEventListener('input', function() {
+            document.getElementById('ncontoursVal').textContent = this.value;
+        });
+
+        document.getElementById('labelSize1').addEventListener('input', function() {
+            document.getElementById('labelSizeVal').textContent = this.value;
+        });
+
+        document.getElementById('gridSize').addEventListener('input', function() {
+            document.getElementById('gridSizeVal').textContent = this.value + 'x' + this.value;
+        });
+
+        document.getElementById('perfContours').addEventListener('input', function() {
+            document.getElementById('perfContoursVal').textContent = this.value;
+        });
+
+        // ============================================
+        // Initial Render
+        // ============================================
+
+        window.addEventListener('load', function() {
+            renderCanvas1();
+            renderCanvas2();
+            renderSVG();
+            runPerformanceTest();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "contour-core",
+  "version": "1.0.0",
+  "description": "Standalone contour calculation library extracted from Plotly.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test_node.js"
+  },
+  "keywords": [
+    "contour",
+    "marching-squares",
+    "visualization",
+    "plotting",
+    "ssr"
+  ],
+  "author": "Plotly.js contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>UMD Test</title>
+</head>
+<body>
+    <h1>Contour-Core UMD Test</h1>
+    <div id="output"></div>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        try {
+            document.getElementById('output').innerHTML = '<p style="color: green;">✓ ContourCore loaded successfully!</p>';
+            document.getElementById('output').innerHTML += '<p>Version: ' + ContourCore.version + '</p>';
+            document.getElementById('output').innerHTML += '<p>Available functions: ' + Object.keys(ContourCore).join(', ') + '</p>';
+
+            // Test a simple computation
+            var grid = [[1,2,3], [4,5,6], [7,8,9]];
+            var result = ContourCore.computeContours({z: grid}, {autocontour: true, ncontours: 5});
+            document.getElementById('output').innerHTML += '<p style="color: green;">✓ computeContours works! Found ' + result.levels.length + ' levels</p>';
+        } catch(e) {
+            document.getElementById('output').innerHTML = '<p style="color: red;">✗ Error: ' + e.message + '</p>';
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

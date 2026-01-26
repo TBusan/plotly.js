@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contour Surface Rendering Demo</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #1976d2; text-align: center; }
+        h2 { color: #424242; margin-top: 30px; border-bottom: 2px solid #1976d2; padding-bottom: 10px; }
+
+        .demo-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .demo-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 500px;
+        }
+
+        .demo-card h3 { margin-top: 0; color: #1976d2; }
+
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: block;
+            margin: 10px auto;
+        }
+
+        .info-panel {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .stat {
+            flex: 1;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 20px; font-weight: bold; color: #1976d2; }
+        .stat-label { font-size: 12px; color: #666; }
+
+        .colorbar {
+            height: 300px;
+            width: 30px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 10px;
+            position: relative;
+        }
+
+        .colorbar-labels {
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 10px;
+            height: 300px;
+            position: relative;
+        }
+
+        .colorbar-label {
+            position: absolute;
+            right: 0;
+            font-size: 11px;
+            color: #666;
+            transform: translateY(-50%);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Contour Surface Rendering Demo</h1>
+
+    <!-- Demo 1: Filled Contours -->
+    <div class="demo-card">
+        <h3>1. Filled Contours (等值面填充)</h3>
+        <div class="demo-container">
+            <canvas id="filled-canvas" width="500" height="400"></canvas>
+            <div>
+                <canvas id="colorbar1" class="colorbar" width="30" height="300"></canvas>
+                <div id="colorbar-labels1" class="colorbar-labels"></div>
+            </div>
+        </div>
+        <div class="stats" id="stats1"></div>
+        <div class="info-panel">
+            <p><strong>渲染方式：</strong>填充等值线区域，使用颜色渐变表示数值大小</p>
+            <p><strong>色标：</strong>Viridis 配色方案（从深蓝到亮黄）</p>
+        </div>
+    </div>
+
+    <!-- Demo 2: Contour Lines -->
+    <div class="demo-card">
+        <h3>2. Contour Lines (等值线)</h3>
+        <div class="demo-container">
+            <canvas id="lines-canvas" width="500" height="400"></canvas>
+            <div>
+                <canvas id="colorbar2" class="colorbar" width="30" height="300"></canvas>
+                <div id="colorbar-labels2" class="colorbar-labels"></div>
+            </div>
+        </div>
+        <div class="stats" id="stats2"></div>
+        <div class="info-panel">
+            <p><strong>渲染方式：</strong>只绘制等值线边界，不填充</p>
+            <p><strong>线条：</strong>每个等值线级别使用不同颜色</p>
+        </div>
+    </div>
+
+    <!-- Demo 3: Combined -->
+    <div class="demo-card">
+        <h3>3. Combined (填充 + 线条)</h3>
+        <div class="demo-container">
+            <canvas id="combined-canvas" width="500" height="400"></canvas>
+            <div>
+                <canvas id="colorbar3" class="colorbar" width="30" height="300"></canvas>
+                <div id="colorbar-labels3" class="colorbar-labels"></div>
+            </div>
+        </div>
+        <div class="stats" id="stats3"></div>
+        <div class="info-panel">
+            <p><strong>渲染方式：</strong>先填充区域，再叠加等值线边界</p>
+            <p><strong>效果：</strong>既有颜色填充，又有清晰的边界线</p>
+        </div>
+    </div>
+
+    <!-- Demo 4: Custom Colormap -->
+    <div class="demo-card">
+        <h3>4. Custom Colormap (自定义配色)</h3>
+        <div class="demo-container">
+            <canvas id="custom-canvas" width="500" height="400"></canvas>
+            <div>
+                <canvas id="colorbar4" class="colorbar" width="30" height="300"></canvas>
+                <div id="colorbar-labels4" class="colorbar-labels"></div>
+            </div>
+        </div>
+        <div class="info-panel">
+            <p><strong>配色方案：</strong>Heat (热力图) - 从黑到红到黄</p>
+        </div>
+    </div>
+
+    <!-- Load contour-core module -->
+    <script src="dist/contour-core.umd.js"></script>
+
+    <script>
+        // ============================================
+        // COLOR MAPS
+        // ============================================
+
+        // Viridis colormap (default)
+        const VIRIDIS = [
+            '#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
+            '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'
+        ];
+
+        // Heat colormap
+        const HEAT = [
+            '#000000', '#2a0000', '#550000', '#7f0000', '#aa0000',
+            '#d40000', '#ff0000', '#ff4d00', '#ff9900', '#ffe600'
+        ];
+
+        // Get color from colormap for a value
+        function getColor(value, min, max, colormap) {
+            const t = (value - min) / (max - min);
+            const idx = Math.floor(t * (colormap.length - 1));
+            const clampedIdx = Math.max(0, Math.min(colormap.length - 1, idx));
+            return colormap[clampedIdx];
+        }
+
+        // ============================================
+        // DATA GENERATION
+        // ============================================
+
+        function createGaussianPeak(size, peakX, peakY, sigma, amplitude) {
+            const grid = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    const dx = (i - peakX) / sigma;
+                    const dy = (j - peakY) / sigma;
+                    const value = amplitude * Math.exp(-(dx * dx + dy * dy) / 2);
+                    row.push(value);
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function createMultiPeak(size) {
+            const grid = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    let value = 0;
+                    // Peak 1
+                    const dx1 = (i - size * 0.3) / 6;
+                    const dy1 = (j - size * 0.3) / 6;
+                    value += 0.7 * Math.exp(-(dx1 * dx1 + dy1 * dy1) / 2);
+                    // Peak 2
+                    const dx2 = (i - size * 0.7) / 5;
+                    const dy2 = (j - size * 0.7) / 5;
+                    value += 0.5 * Math.exp(-(dx2 * dx2 + dy2 * dy2) / 2);
+                    // Peak 3
+                    const dx3 = (i - size * 0.5) / 8;
+                    const dy3 = (j - size * 0.5) / 8;
+                    value += 0.3 * Math.exp(-(dx3 * dx3 + dy3 * dy3) / 2);
+                    row.push(value);
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        function createCoords(size) {
+            const coords = [];
+            for (let i = 0; i < size; i++) {
+                coords.push(i / (size - 1));
+            }
+            return coords;
+        }
+
+        // ============================================
+        // RENDERING FUNCTIONS
+        // ============================================
+
+        function drawColorbar(canvasId, labelsId, levels, min, max, colormap) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Draw color gradient
+            for (let y = 0; y < height; y++) {
+                const t = 1 - y / height;  // Invert so high values at top
+                const idx = Math.floor(t * (colormap.length - 1));
+                const color = colormap[Math.max(0, Math.min(colormap.length - 1, idx))];
+                ctx.fillStyle = color;
+                ctx.fillRect(0, y, width, 1);
+            }
+
+            // Draw labels
+            const labelsContainer = document.getElementById(labelsId);
+            labelsContainer.innerHTML = '';
+            labelsContainer.style.width = '50px';
+
+            levels.forEach((level, idx) => {
+                const t = (level - min) / (max - min);
+                const y = (1 - t) * height;
+                const label = document.createElement('div');
+                label.className = 'colorbar-label';
+                label.style.top = y + 'px';
+                label.textContent = level.toFixed(2);
+                labelsContainer.appendChild(label);
+            });
+        }
+
+        function drawFilledContours(canvas, result, width, height, colormap, options = {}) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+
+            // Get bounds
+            const allPoints = [];
+            result.paths.forEach(pathInfo => {
+                pathInfo.edgepaths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+                pathInfo.paths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+            });
+
+            if (allPoints.length === 0) return;
+
+            const minX = Math.min.apply(null, allPoints.map(p => p[0]));
+            const maxX = Math.max.apply(null, allPoints.map(p => p[0]));
+            const minY = Math.min.apply(null, allPoints.map(p => p[1]));
+            const maxY = Math.max.apply(null, allPoints.map(p => p[1]));
+
+            const padding = 20;
+            const scaleX = (width - 2 * padding) / (maxX - minX || 1);
+            const scaleY = (height - 2 * padding) / (maxY - minY || 1);
+
+            function toCanvas(pt) {
+                return [
+                    padding + (pt[0] - minX) * scaleX,
+                    padding + (pt[1] - minY) * scaleY
+                ];
+            }
+
+            // Get value range
+            const min = result.levels[0];
+            const max = result.levels[result.levels.length - 1];
+
+            // Draw filled contours from LOWEST to HIGHEST
+            // Each level's path encloses the region >= that level
+            // So we draw from low to high, with higher levels on top
+            for (let i = 0; i < result.paths.length; i++) {
+                const pathInfo = result.paths[i];
+                const color = getColor(pathInfo.level, min, max, colormap);
+
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+
+                // Draw closed paths (contours)
+                pathInfo.paths.forEach(path => {
+                    if (path.length < 3) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                // Draw edge paths (open contours that touch the boundary)
+                // These need to be closed by connecting to the canvas edge
+                pathInfo.edgepaths.forEach(path => {
+                    if (path.length < 2) return;
+
+                    // Determine which edge this path connects to
+                    const first = path[0];
+                    const last = path[path.length - 1];
+
+                    ctx.beginPath();
+                    const start = toCanvas(first);
+                    ctx.moveTo(start[0], start[1]);
+
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+
+                    // Close the path by extending to the canvas boundary
+                    const lastCanvas = toCanvas(last);
+
+                    // Check which edge we're on and close appropriately
+                    if (first[0] <= minX + 0.1) {
+                        // Left edge
+                        ctx.lineTo(padding, lastCanvas[1]);
+                        ctx.lineTo(padding, start[1]);
+                    } else if (first[0] >= maxX - 0.1) {
+                        // Right edge
+                        ctx.lineTo(width - padding, lastCanvas[1]);
+                        ctx.lineTo(width - padding, start[1]);
+                    } else if (first[1] <= minY + 0.1) {
+                        // Top edge
+                        ctx.lineTo(lastCanvas[0], padding);
+                        ctx.lineTo(start[0], padding);
+                    } else {
+                        // Bottom edge
+                        ctx.lineTo(lastCanvas[0], height - padding);
+                        ctx.lineTo(start[0], height - padding);
+                    }
+
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            }
+
+            return { minX, maxX, minY, maxY, scaleX, scaleY, padding };
+        }
+
+        function drawContourLines(canvas, result, width, height, colormap, options = {}) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+
+            // Get bounds
+            const allPoints = [];
+            result.paths.forEach(pathInfo => {
+                pathInfo.edgepaths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+                pathInfo.paths.forEach(path => path.forEach(pt => allPoints.push(pt)));
+            });
+
+            if (allPoints.length === 0) return;
+
+            const minX = Math.min.apply(null, allPoints.map(p => p[0]));
+            const maxX = Math.max.apply(null, allPoints.map(p => p[0]));
+            const minY = Math.min.apply(null, allPoints.map(p => p[1]));
+            const maxY = Math.max.apply(null, allPoints.map(p => p[1]));
+
+            const padding = 20;
+            const scaleX = (width - 2 * padding) / (maxX - minX || 1);
+            const scaleY = (height - 2 * padding) / (maxY - minY || 1);
+
+            function toCanvas(pt) {
+                return [
+                    padding + (pt[0] - minX) * scaleX,
+                    padding + (pt[1] - minY) * scaleY
+                ];
+            }
+
+            const min = result.levels[0];
+            const max = result.levels[result.levels.length - 1];
+
+            // Draw contour lines
+            result.paths.forEach(pathInfo => {
+                const color = getColor(pathInfo.level, min, max, colormap);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = options.lineWidth || 2;
+
+                pathInfo.paths.forEach(path => {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+
+                pathInfo.edgepaths.forEach(path => {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.stroke();
+                });
+            });
+
+            return { minX, maxX, minY, maxY, scaleX, scaleY, padding };
+        }
+
+        function drawCombined(canvas, result, width, height, colormap) {
+            // First draw filled
+            const bounds = drawFilledContours(canvas, result, width, height, colormap);
+
+            // Then draw lines on top
+            const ctx = canvas.getContext('2d');
+            const minX = bounds.minX, maxX = bounds.maxX;
+            const minY = bounds.minY, maxY = bounds.maxY;
+            const scaleX = bounds.scaleX, scaleY = bounds.scaleY;
+            const padding = bounds.padding;
+
+            function toCanvas(pt) {
+                return [
+                    padding + (pt[0] - minX) * scaleX,
+                    padding + (pt[1] - minY) * scaleY
+                ];
+            }
+
+            const min = result.levels[0];
+            const max = result.levels[result.levels.length - 1];
+
+            // Draw dark contour lines
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.lineWidth = 1;
+
+            result.paths.forEach(pathInfo => {
+                pathInfo.paths.forEach(path => {
+                    if (path.length < 2) return;
+                    ctx.beginPath();
+                    const start = toCanvas(path[0]);
+                    ctx.moveTo(start[0], start[1]);
+                    for (let j = 1; j < path.length; j++) {
+                        const pt = toCanvas(path[j]);
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                });
+            });
+        }
+
+        // ============================================
+        // STATS DISPLAY
+        // ============================================
+
+        function showStats(elementId, result, time) {
+            const container = document.getElementById(elementId);
+            const pathCount = result.paths.reduce((sum, p) => sum + p.paths.length + p.edgepaths.length, 0);
+            container.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">${time}</div>
+                    <div class="stat-label">计算时间 (ms)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${result.levels.length}</div>
+                    <div class="stat-label">等值线级别</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${pathCount}</div>
+                    <div class="stat-label">总路径数</div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // MAIN FUNCTION
+        // ============================================
+
+        function runDemo() {
+            if (typeof ContourCore === 'undefined') {
+                console.error('ContourCore module not loaded!');
+                return;
+            }
+
+            console.log('=== Contour Surface Rendering Demo ===\n');
+
+            // Create test data
+            const grid = {
+                z: createMultiPeak(50),
+                x: createCoords(50),
+                y: createCoords(50)
+            };
+
+            const options = {
+                autocontour: true,
+                ncontours: 15,
+                smoothing: 0.5
+            };
+
+            // Compute contours
+            const startTime = performance.now();
+            const result = ContourCore.computeContours(grid, options);
+            const elapsed = (performance.now() - startTime).toFixed(2);
+
+            console.log('Computed in ' + elapsed + 'ms');
+            console.log('Levels:', result.levels.length);
+            console.log('Paths:', result.paths.length);
+
+            // Demo 1: Filled contours
+            drawFilledContours(
+                document.getElementById('filled-canvas'),
+                result, 500, 400, VIRIDIS
+            );
+            drawColorbar('colorbar1', 'colorbar-labels1', result.levels,
+                result.levels[0], result.levels[result.levels.length - 1], VIRIDIS);
+            showStats('stats1', result, elapsed);
+
+            // Demo 2: Contour lines
+            drawContourLines(
+                document.getElementById('lines-canvas'),
+                result, 500, 400, VIRIDIS
+            );
+            drawColorbar('colorbar2', 'colorbar-labels2', result.levels,
+                result.levels[0], result.levels[result.levels.length - 1], VIRIDIS);
+            showStats('stats2', result, elapsed);
+
+            // Demo 3: Combined
+            drawCombined(
+                document.getElementById('combined-canvas'),
+                result, 500, 400, VIRIDIS
+            );
+            drawColorbar('colorbar3', 'colorbar-labels3', result.levels,
+                result.levels[0], result.levels[result.levels.length - 1], VIRIDIS);
+            showStats('stats3', result, elapsed);
+
+            // Demo 4: Custom colormap
+            drawFilledContours(
+                document.getElementById('custom-canvas'),
+                result, 500, 400, HEAT
+            );
+            drawColorbar('colorbar4', 'colorbar-labels4', result.levels,
+                result.levels[0], result.levels[result.levels.length - 1], HEAT);
+
+            console.log('\n✅ Demo completed!');
+        }
+
+        // Run on page load
+        window.addEventListener('load', runDemo);
+    </script>
+</body>
+</html>

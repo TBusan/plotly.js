@@ -1,6 +1,6 @@
 /**
 * plotly.js (gl2d) v3.0.1
-* Copyright 2012-2025, Plotly, Inc.
+* Copyright 2012-2026, Plotly, Inc.
 * All rights reserved.
 * Licensed under the MIT license
 */
@@ -14,21 +14,15 @@
 } (typeof self !== "undefined" ? self : this, () => {
 "use strict";
 var Plotly = (() => {
-  var __create = Object.create;
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  };
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, { get: all[name], enumerable: true });
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -38,14 +32,6 @@ var Plotly = (() => {
     }
     return to;
   };
-  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-    mod
-  ));
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
   // src/version.js
@@ -7774,14 +7760,14 @@ var Plotly = (() => {
             };
           }
           function parseSpecifier(d, specifier, string, j) {
-            var i = 0, n = specifier.length, m = string.length, c, parse2;
+            var i = 0, n = specifier.length, m = string.length, c, parse;
             while (i < n) {
               if (j >= m) return -1;
               c = specifier.charCodeAt(i++);
               if (c === 37) {
                 c = specifier.charAt(i++);
-                parse2 = parses[c in pads ? specifier.charAt(i++) : c];
-                if (!parse2 || (j = parse2(d, string, j)) < 0) return -1;
+                parse = parses[c in pads ? specifier.charAt(i++) : c];
+                if (!parse || (j = parse(d, string, j)) < 0) return -1;
               } else if (c != string.charCodeAt(j++)) {
                 return -1;
               }
@@ -7892,12 +7878,12 @@ var Plotly = (() => {
         function requote(s) {
           return s.replace(requoteRe, "\\$&");
         }
-        function formatRe(names2) {
-          return new RegExp("^(?:" + names2.map(requote).join("|") + ")", "i");
+        function formatRe(names) {
+          return new RegExp("^(?:" + names.map(requote).join("|") + ")", "i");
         }
-        function formatLookup(names2) {
-          var map = {}, i = -1, n = names2.length;
-          while (++i < n) map[names2[i].toLowerCase()] = i;
+        function formatLookup(names) {
+          var map = {}, i = -1, n = names.length;
+          while (++i < n) map[names[i].toLowerCase()] = i;
           return map;
         }
         function parseWeekdayNumberSunday(d, string, i) {
@@ -9682,13 +9668,13 @@ var Plotly = (() => {
           var rgb1 = tinycolor(color1).toRgb();
           var rgb2 = tinycolor(color2).toRgb();
           var p = amount / 100;
-          var rgba2 = {
+          var rgba = {
             r: (rgb2.r - rgb1.r) * p + rgb1.r,
             g: (rgb2.g - rgb1.g) * p + rgb1.g,
             b: (rgb2.b - rgb1.b) * p + rgb1.b,
             a: (rgb2.a - rgb1.a) * p + rgb1.a
           };
-          return tinycolor(rgba2);
+          return tinycolor(rgba);
         };
         tinycolor.readability = function(color1, color2) {
           var c1 = tinycolor(color1);
@@ -9737,7 +9723,7 @@ var Plotly = (() => {
             return tinycolor.mostReadable(baseColor, ["#fff", "#000"], args);
           }
         };
-        var names2 = tinycolor.names = {
+        var names = tinycolor.names = {
           aliceblue: "f0f8ff",
           antiquewhite: "faebd7",
           aqua: "0ff",
@@ -9888,7 +9874,7 @@ var Plotly = (() => {
           yellow: "ff0",
           yellowgreen: "9acd32"
         };
-        var hexNames = tinycolor.hexNames = flip(names2);
+        var hexNames = tinycolor.hexNames = flip(names);
         function flip(o) {
           var flipped = {};
           for (var i in o) {
@@ -9972,8 +9958,8 @@ var Plotly = (() => {
         function stringInputToObject(color) {
           color = color.replace(trimLeft, "").replace(trimRight, "").toLowerCase();
           var named = false;
-          if (names2[color]) {
-            color = names2[color];
+          if (names[color]) {
+            color = names[color];
             named = true;
           } else if (color == "transparent") {
             return { r: 0, g: 0, b: 0, a: 0, format: "name" };
@@ -10874,8 +10860,8 @@ var Plotly = (() => {
         var match = valTrim.match(/^rgba?\s*\(([^()]*)\)$/);
         if (!match) return val;
         var parts = match[1].trim().split(/\s*[\s,]\s*/);
-        var rgba2 = valTrim.charAt(3) === "a" && parts.length === 4;
-        if (!rgba2 && parts.length !== 3) return val;
+        var rgba = valTrim.charAt(3) === "a" && parts.length === 4;
+        if (!rgba && parts.length !== 3) return val;
         for (var i = 0; i < parts.length; i++) {
           if (!parts[i].length) return val;
           parts[i] = Number(parts[i]);
@@ -10889,7 +10875,7 @@ var Plotly = (() => {
           }
         }
         var rgbStr = Math.round(parts[0] * 255) + ", " + Math.round(parts[1] * 255) + ", " + Math.round(parts[2] * 255);
-        if (rgba2) return "rgba(" + rgbStr + ", " + parts[3] + ")";
+        if (rgba) return "rgba(" + rgbStr + ", " + parts[3] + ")";
         return "rgb(" + rgbStr + ")";
       }
     }
@@ -11227,8 +11213,14 @@ var Plotly = (() => {
       };
       exports.coercePattern = function(coerce, attr, markerColor, hasMarkerColorscale) {
         var shape = coerce(attr + ".shape");
-        if (shape) {
-          coerce(attr + ".solidity");
+        var path;
+        if (!shape) {
+          path = coerce(attr + ".path");
+        }
+        if (shape || path) {
+          if (shape) {
+            coerce(attr + ".solidity");
+          }
           coerce(attr + ".size");
           var fillmode = coerce(attr + ".fillmode");
           var isOverlay = fillmode === "overlay";
@@ -13092,6 +13084,11 @@ var Plotly = (() => {
           arrayOk: true,
           editType: "style"
         },
+        path: {
+          valType: "string",
+          arrayOk: true,
+          editType: "style"
+        },
         fillmode: {
           valType: "enumerated",
           values: ["replace", "overlay"],
@@ -13745,16 +13742,16 @@ var Plotly = (() => {
     }
   });
 
-  // temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css
+  // temp_stylePlugin:node_modules\maplibre-gl\dist\maplibre-gl.css
   var init_maplibre_gl = __esm({
-    "temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "temp_stylePlugin:node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
     }
   });
 
-  // stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css
+  // stylePlugin:D:\study\code\webgl\plotly.js\node_modules\maplibre-gl\dist\maplibre-gl.css
   var maplibre_gl_exports = {};
   var init_maplibre_gl2 = __esm({
-    "stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "stylePlugin:D:\\study\\code\\webgl\\plotly.js\\node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
       init_maplibre_gl();
     }
   });
@@ -20831,8 +20828,8 @@ var Plotly = (() => {
         var N = range.length;
         var _range = new Array(N);
         for (var i = 0; i < N; i++) {
-          var rgba2 = tinycolor(range[i]).toRgb();
-          _range[i] = [rgba2.r, rgba2.g, rgba2.b, rgba2.a];
+          var rgba = tinycolor(range[i]).toRgb();
+          _range[i] = [rgba.r, rgba.g, rgba.b, rgba.a];
         }
         var _sclFunc = d3.scale.linear().domain(domain).range(_range).clamp(true);
         var noNumericCheck = opts.noNumericCheck;
@@ -21484,6 +21481,12 @@ var Plotly = (() => {
           valType: "color",
           dflt: colorAttrs.defaultLine,
           editType: "ticks"
+        },
+        zerolinelayer: {
+          valType: "enumerated",
+          values: ["above traces", "below traces"],
+          dflt: "below traces",
+          editType: "plot"
         },
         zerolinewidth: {
           valType: "number",
@@ -22843,10 +22846,10 @@ var Plotly = (() => {
   // node_modules/parse-svg-path/index.js
   var require_parse_svg_path = __commonJS({
     "node_modules/parse-svg-path/index.js"(exports, module) {
-      module.exports = parse2;
+      module.exports = parse;
       var length = { a: 7, c: 6, h: 1, l: 2, m: 2, q: 4, s: 4, t: 2, v: 1, z: 0 };
       var segment = /([astvzqmhlc])([^astvzqmhlc]*)/ig;
-      function parse2(path) {
+      function parse(path) {
         var data = [];
         path.replace(segment, function(_, command, args) {
           var type = command.toLowerCase();
@@ -23714,13 +23717,14 @@ var Plotly = (() => {
       function setFillStyle(sel, trace, gd, forLegend) {
         var markerPattern = trace.fillpattern;
         var fillgradient = trace.fillgradient;
-        var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, 0, "");
+        var pAttr = drawing.getPatternAttr;
+        var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
         if (patternShape) {
-          var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-          var patternFGColor = drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+          var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+          var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
           var patternFGOpacity = markerPattern.fgopacity;
-          var patternSize = drawing.getPatternAttr(markerPattern.size, 0, 8);
-          var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, 0, 0.3);
+          var patternSize = pAttr(markerPattern.size, 0, 8);
+          var patternSolidity = pAttr(markerPattern.solidity, 0, 0.3);
           var patternID = trace.uid;
           drawing.pattern(
             sel,
@@ -24070,6 +24074,16 @@ var Plotly = (() => {
               fill: fgRGB
             };
             break;
+          default:
+            width = size;
+            height = size;
+            patternTag = "path";
+            patternAttrs = {
+              d: shape,
+              opacity,
+              fill: fgRGB
+            };
+            break;
         }
         var str = [
           shape || "noSh",
@@ -24202,7 +24216,8 @@ var Plotly = (() => {
             if (!gradientInfo[gradientType]) gradientType = 0;
           }
           var markerPattern = marker.pattern;
-          var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, d.i, "");
+          var pAttr = drawing.getPatternAttr;
+          var patternShape = markerPattern && (pAttr(markerPattern.shape, d.i, "") || pAttr(markerPattern.path, d.i, ""));
           if (gradientType && gradientType !== "none") {
             var gradientColor = d.mgc;
             if (gradientColor) perPointGradient = true;
@@ -24224,12 +24239,12 @@ var Plotly = (() => {
               fgcolor = pt.color;
               perPointPattern = true;
             }
-            var patternFGColor = drawing.getPatternAttr(fgcolor, d.i, pt && pt.color || null);
-            var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, d.i, null);
+            var patternFGColor = pAttr(fgcolor, d.i, pt && pt.color || null);
+            var patternBGColor = pAttr(markerPattern.bgcolor, d.i, null);
             var patternFGOpacity = markerPattern.fgopacity;
-            var patternSize = drawing.getPatternAttr(markerPattern.size, d.i, 8);
-            var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, d.i, 0.3);
-            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
+            var patternSize = pAttr(markerPattern.size, d.i, 8);
+            var patternSolidity = pAttr(markerPattern.solidity, d.i, 0.3);
+            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.path) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
             var patternID = trace.uid;
             if (perPointPattern) patternID += "-" + d.i;
             drawing.pattern(
@@ -24974,7 +24989,7 @@ var Plotly = (() => {
         var editAttr;
         if (prop === "title.text") editAttr = "titleText";
         else if (prop.indexOf("axis") !== -1) editAttr = "axisTitleText";
-        else if (prop.indexOf("colorbar" !== -1)) editAttr = "colorbarTitleText";
+        else if (prop.indexOf(true)) editAttr = "colorbarTitleText";
         var editable = gd._context.edits[editAttr];
         function matchesPlaceholder(text, placeholder2) {
           if (text === void 0 || placeholder2 === void 0) return false;
@@ -28043,6 +28058,7 @@ var Plotly = (() => {
               if (plotinfo.minorGridlayer) plotinfo.minorGridlayer.selectAll("path").remove();
               if (plotinfo.gridlayer) plotinfo.gridlayer.selectAll("path").remove();
               if (plotinfo.zerolinelayer) plotinfo.zerolinelayer.selectAll("path").remove();
+              if (plotinfo.zerolinelayerAbove) plotinfo.zerolinelayerAbove.selectAll("path").remove();
               fullLayout._infolayer.select(".g-" + xa._id + "title").remove();
               fullLayout._infolayer.select(".g-" + ya._id + "title").remove();
             }
@@ -28095,6 +28111,7 @@ var Plotly = (() => {
         var axLetter = axId.charAt(0);
         var counterLetter = axes.counterLetter(axId);
         var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         if (!mainPlotinfo) return;
         ax._shiftPusher = ax.autoshift || overlayingShiftedAx.indexOf(ax._id) !== -1 || overlayingShiftedAx.indexOf(ax.overlaying) !== -1;
         if (ax._shiftPusher & ax.anchor === "free") {
@@ -28163,7 +28180,7 @@ var Plotly = (() => {
             });
             axes.drawZeroLine(gd, ax, {
               counterAxis,
-              layer: plotinfo.zerolinelayer,
+              layer: zerolineIsAbove ? plotinfo.zerolinelayerAbove : plotinfo.zerolinelayer,
               path: gridPath,
               transFn: transTickFn
             });
@@ -28550,6 +28567,7 @@ var Plotly = (() => {
       }
       function getTickLabelUV(ax) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28558,7 +28576,7 @@ var Plotly = (() => {
         var isRight = has("right");
         var isBottom = has("bottom");
         var isInside = has("inside");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         if (!isAligned && !isInside) return [0, 0];
         var side = ax.side;
         var u = isAligned ? (ax.tickwidth || 0) / 2 : 0;
@@ -28593,6 +28611,7 @@ var Plotly = (() => {
       };
       axes.makeLabelFns = function(ax, shift, angle) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28600,9 +28619,9 @@ var Plotly = (() => {
         var isLeft = has("left");
         var isRight = has("right");
         var isBottom = has("bottom");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         var insideTickLabels = has("inside");
-        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && ax.tickson !== "boundaries";
+        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && tickson !== "boundaries";
         var labelStandoff = 0;
         var labelShift = 0;
         var tickLen = labelsOverTicks ? ax.ticklen : 0;
@@ -28819,6 +28838,7 @@ var Plotly = (() => {
         opts = opts || {};
         var fullLayout = gd._fullLayout;
         var axId = ax._id;
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         var cls = opts.cls || axId + "tick";
         var vals = opts.vals.filter(function(d) {
           return d.text;
@@ -28964,8 +28984,10 @@ var Plotly = (() => {
                 var isPeriodLabel = e.K === "tick" && e.L === "text" && ax.ticklabelmode === "period";
                 var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
                 var sel;
-                if (e.K === ZERO_PATH.K) sel = mainPlotinfo.zerolinelayer.selectAll("." + ax._id + "zl");
-                else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
+                if (e.K === ZERO_PATH.K) {
+                  var zerolineLayer = zerolineIsAbove ? mainPlotinfo.zerolinelayerAbove : mainPlotinfo.zerolinelayer;
+                  sel = zerolineLayer.selectAll("." + ax._id + "zl");
+                } else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
                 else if (e.K === GRID_PATH.K) sel = mainPlotinfo.gridlayer.selectAll("." + ax._id);
                 else sel = mainPlotinfo[ax._id.charAt(0) + "axislayer"];
                 sel.each(function() {
@@ -29056,6 +29078,7 @@ var Plotly = (() => {
               }
             } else {
               var ticklabelposition = ax.ticklabelposition || "";
+              var tickson = ax.tickson || "";
               var has = function(str) {
                 return ticklabelposition.indexOf(str) !== -1;
               };
@@ -29063,7 +29086,7 @@ var Plotly = (() => {
               var isLeft = has("left");
               var isRight = has("right");
               var isBottom = has("bottom");
-              var isAligned = isBottom || isLeft || isTop || isRight;
+              var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
               var pad = !isAligned ? 0 : (ax.tickwidth || 0) + 2 * TEXTPAD;
               for (i = 0; i < lbbArray.length - 1; i++) {
                 if (Lib.bBoxIntersect(lbbArray[i], lbbArray[i + 1], pad)) {
@@ -29983,6 +30006,11 @@ var Plotly = (() => {
           dflt: colorAttrs.defaultLine,
           editType: "legend"
         },
+        maxheight: {
+          valType: "number",
+          min: 0,
+          editType: "legend"
+        },
         borderwidth: {
           valType: "number",
           min: 0,
@@ -30279,6 +30307,7 @@ var Plotly = (() => {
         coerce("groupclick");
         coerce("xanchor", defaultXAnchor);
         coerce("yanchor", defaultYAnchor);
+        coerce("maxheight", isHorizontal ? 0.5 : 1);
         coerce("valign");
         Lib.noneOrAll(containerIn, containerOut, ["x", "y"]);
         var titleText = coerce("title.text");
@@ -31029,10 +31058,11 @@ var Plotly = (() => {
             }
             var fillColor = mcc || d0.mc || marker.color;
             var markerPattern = marker.pattern;
-            var patternShape = markerPattern && Drawing.getPatternAttr(markerPattern.shape, 0, "");
+            var pAttr = Drawing.getPatternAttr;
+            var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
             if (patternShape) {
-              var patternBGColor = Drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-              var patternFGColor = Drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+              var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+              var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
               var patternFGOpacity = markerPattern.fgopacity;
               var patternSize = dimAttr(markerPattern.size, 8, 10);
               var patternSolidity = dimAttr(markerPattern.solidity, 0.5, 1);
@@ -31898,10 +31928,9 @@ var Plotly = (() => {
         var isAbovePlotArea = legendObj.y > 1 || legendObj.y === 1 && yanchor === "bottom";
         var traceGroupGap = legendObj.tracegroupgap;
         var legendGroupWidths = {};
-        legendObj._maxHeight = Math.max(
-          isBelowPlotArea || isAbovePlotArea ? fullLayout.height / 2 : gs.h,
-          30
-        );
+        var { maxheight, orientation, yref } = legendObj;
+        var heightToBeScaled = orientation === "v" && yref === "paper" ? gs.h : fullLayout.height;
+        legendObj._maxHeight = Math.max(maxheight > 1 ? maxheight : maxheight * heightToBeScaled, 30);
         var toggleRectWidth = 0;
         legendObj._width = 0;
         legendObj._height = 0;
@@ -36302,7 +36331,7 @@ var Plotly = (() => {
         title: function(gd) {
           var opts = gd._context.toImageButtonOptions || {};
           var format = opts.format || "png";
-          return format === "png" ? _(gd, "Download plot as a png") : (
+          return format === "png" ? _(gd, "Download plot as a PNG") : (
             // legacy text
             _(gd, "Download plot")
           );
@@ -47044,7 +47073,7 @@ var Plotly = (() => {
             list.push(format("unused", base, p, valIn));
           } else if (!Lib.validate(valIn, nestedSchema)) {
             list.push(format("value", base, p, valIn));
-          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || valIn !== valOut)) {
+          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || !isArrayOrTypedArray(valIn) && valIn !== valOut || String(valIn) !== String(valOut))) {
             list.push(format("dynamic", base, p, valIn, valOut));
           }
         }
@@ -50744,10 +50773,12 @@ var Plotly = (() => {
           }
         }
         if (!opts.noZeroLine) {
+          var zeroLineLayer = coerce2("zerolinelayer");
           var zeroLineColor = coerce2("zerolinecolor", dfltColor);
           var zeroLineWidth = coerce2("zerolinewidth");
           var showZeroLine = coerce("zeroline", opts.showGrid || !!zeroLineColor || !!zeroLineWidth);
           if (!showZeroLine) {
+            delete containerOut.zerolinelayer;
             delete containerOut.zerolinecolor;
             delete containerOut.zerolinewidth;
           }
@@ -50865,11 +50896,11 @@ var Plotly = (() => {
         if (containerOut.showline || containerOut.ticks) coerce("mirror");
         var isMultiCategory = axType === "multicategory";
         if (!options.noTickson && (axType === "category" || isMultiCategory) && (containerOut.ticks || containerOut.showgrid)) {
-          var ticksonDflt;
-          if (isMultiCategory) ticksonDflt = "boundaries";
-          var tickson = coerce("tickson", ticksonDflt);
-          if (tickson === "boundaries") {
+          if (isMultiCategory) {
+            coerce("tickson", "boundaries");
             delete containerOut.ticklabelposition;
+          } else {
+            coerce("tickson");
           }
         }
         if (isMultiCategory) {
@@ -51940,6 +51971,11 @@ var Plotly = (() => {
             }
             plotinfo.overplot = ensureSingle(plotgroup, "g", "overplot");
             plotinfo.plot = ensureSingle(plotinfo.overplot, "g", id);
+            if (mainplotinfo && hasMultipleZ) {
+              plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
+            } else {
+              plotinfo.zerolinelayerAbove = ensureSingle(plotgroup, "g", "zerolinelayer-above");
+            }
             if (!hasZ) {
               plotinfo.xlines = ensureSingle(plotgroup, "path", "xlines-above");
               plotinfo.ylines = ensureSingle(plotgroup, "path", "ylines-above");
@@ -51960,6 +51996,7 @@ var Plotly = (() => {
           plotinfo.minorGridlayer = mainplotinfo.minorGridlayer;
           plotinfo.gridlayer = mainplotinfo.gridlayer;
           plotinfo.zerolinelayer = mainplotinfo.zerolinelayer;
+          plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
           ensureSingle(mainplotinfo.overlinesBelow, "path", xId);
           ensureSingle(mainplotinfo.overlinesBelow, "path", yId);
           ensureSingle(mainplotinfo.overaxesBelow, "g", xId);
@@ -59045,6 +59082,14 @@ var Plotly = (() => {
     }
   });
 
+  // lib/scatter.js
+  var require_scatter2 = __commonJS({
+    "lib/scatter.js"(exports, module) {
+      "use strict";
+      module.exports = require_scatter();
+    }
+  });
+
   // src/traces/scattergl/hover.js
   var require_hover3 = __commonJS({
     "src/traces/scattergl/hover.js"(exports, module) {
@@ -60417,7 +60462,7 @@ var Plotly = (() => {
         }
         var symVal = 42;
         obj[sym] = symVal;
-        for (sym in obj) {
+        for (var _ in obj) {
           return false;
         }
         if (typeof Object.keys === "function" && Object.keys(obj).length !== 0) {
@@ -60434,7 +60479,10 @@ var Plotly = (() => {
           return false;
         }
         if (typeof Object.getOwnPropertyDescriptor === "function") {
-          var descriptor = Object.getOwnPropertyDescriptor(obj, sym);
+          var descriptor = (
+            /** @type {PropertyDescriptor} */
+            Object.getOwnPropertyDescriptor(obj, sym)
+          );
           if (descriptor.value !== symVal || descriptor.enumerable !== true) {
             return false;
           }
@@ -60452,6 +60500,14 @@ var Plotly = (() => {
       module.exports = function hasToStringTagShams() {
         return hasSymbols() && !!Symbol.toStringTag;
       };
+    }
+  });
+
+  // node_modules/es-object-atoms/index.js
+  var require_es_object_atoms = __commonJS({
+    "node_modules/es-object-atoms/index.js"(exports, module) {
+      "use strict";
+      module.exports = Object;
     }
   });
 
@@ -60511,6 +60567,118 @@ var Plotly = (() => {
     }
   });
 
+  // node_modules/math-intrinsics/abs.js
+  var require_abs = __commonJS({
+    "node_modules/math-intrinsics/abs.js"(exports, module) {
+      "use strict";
+      module.exports = Math.abs;
+    }
+  });
+
+  // node_modules/math-intrinsics/floor.js
+  var require_floor = __commonJS({
+    "node_modules/math-intrinsics/floor.js"(exports, module) {
+      "use strict";
+      module.exports = Math.floor;
+    }
+  });
+
+  // node_modules/math-intrinsics/max.js
+  var require_max = __commonJS({
+    "node_modules/math-intrinsics/max.js"(exports, module) {
+      "use strict";
+      module.exports = Math.max;
+    }
+  });
+
+  // node_modules/math-intrinsics/min.js
+  var require_min = __commonJS({
+    "node_modules/math-intrinsics/min.js"(exports, module) {
+      "use strict";
+      module.exports = Math.min;
+    }
+  });
+
+  // node_modules/math-intrinsics/pow.js
+  var require_pow = __commonJS({
+    "node_modules/math-intrinsics/pow.js"(exports, module) {
+      "use strict";
+      module.exports = Math.pow;
+    }
+  });
+
+  // node_modules/math-intrinsics/round.js
+  var require_round = __commonJS({
+    "node_modules/math-intrinsics/round.js"(exports, module) {
+      "use strict";
+      module.exports = Math.round;
+    }
+  });
+
+  // node_modules/math-intrinsics/isNaN.js
+  var require_isNaN = __commonJS({
+    "node_modules/math-intrinsics/isNaN.js"(exports, module) {
+      "use strict";
+      module.exports = Number.isNaN || function isNaN2(a) {
+        return a !== a;
+      };
+    }
+  });
+
+  // node_modules/math-intrinsics/sign.js
+  var require_sign = __commonJS({
+    "node_modules/math-intrinsics/sign.js"(exports, module) {
+      "use strict";
+      var $isNaN = require_isNaN();
+      module.exports = function sign(number) {
+        if ($isNaN(number) || number === 0) {
+          return number;
+        }
+        return number < 0 ? -1 : 1;
+      };
+    }
+  });
+
+  // node_modules/gopd/gOPD.js
+  var require_gOPD = __commonJS({
+    "node_modules/gopd/gOPD.js"(exports, module) {
+      "use strict";
+      module.exports = Object.getOwnPropertyDescriptor;
+    }
+  });
+
+  // node_modules/gopd/index.js
+  var require_gopd = __commonJS({
+    "node_modules/gopd/index.js"(exports, module) {
+      "use strict";
+      var $gOPD = require_gOPD();
+      if ($gOPD) {
+        try {
+          $gOPD([], "length");
+        } catch (e) {
+          $gOPD = null;
+        }
+      }
+      module.exports = $gOPD;
+    }
+  });
+
+  // node_modules/es-define-property/index.js
+  var require_es_define_property = __commonJS({
+    "node_modules/es-define-property/index.js"(exports, module) {
+      "use strict";
+      var $defineProperty = Object.defineProperty || false;
+      if ($defineProperty) {
+        try {
+          $defineProperty({}, "a", { value: 1 });
+        } catch (e) {
+          $defineProperty = false;
+        }
+      }
+      module.exports = $defineProperty;
+    }
+  });
+
   // node_modules/has-symbols/index.js
   var require_has_symbols = __commonJS({
     "node_modules/has-symbols/index.js"(exports, module) {
@@ -60535,17 +60703,20 @@ var Plotly = (() => {
     }
   });
 
-  // node_modules/has-proto/index.js
-  var require_has_proto = __commonJS({
-    "node_modules/has-proto/index.js"(exports, module) {
+  // node_modules/get-proto/Reflect.getPrototypeOf.js
+  var require_Reflect_getPrototypeOf = __commonJS({
+    "node_modules/get-proto/Reflect.getPrototypeOf.js"(exports, module) {
       "use strict";
-      var test = {
-        foo: {}
-      };
-      var $Object = Object;
-      module.exports = function hasProto() {
-        return { __proto__: test }.foo === test.foo && !({ __proto__: null } instanceof $Object);
-      };
+      module.exports = typeof Reflect !== "undefined" && Reflect.getPrototypeOf || null;
+    }
+  });
+
+  // node_modules/get-proto/Object.getPrototypeOf.js
+  var require_Object_getPrototypeOf = __commonJS({
+    "node_modules/get-proto/Object.getPrototypeOf.js"(exports, module) {
+      "use strict";
+      var $Object = require_es_object_atoms();
+      module.exports = $Object.getPrototypeOf || null;
     }
   });
 
@@ -60634,6 +60805,110 @@ var Plotly = (() => {
     }
   });
 
+  // node_modules/call-bind-apply-helpers/functionCall.js
+  var require_functionCall = __commonJS({
+    "node_modules/call-bind-apply-helpers/functionCall.js"(exports, module) {
+      "use strict";
+      module.exports = Function.prototype.call;
+    }
+  });
+
+  // node_modules/call-bind-apply-helpers/functionApply.js
+  var require_functionApply = __commonJS({
+    "node_modules/call-bind-apply-helpers/functionApply.js"(exports, module) {
+      "use strict";
+      module.exports = Function.prototype.apply;
+    }
+  });
+
+  // node_modules/call-bind-apply-helpers/reflectApply.js
+  var require_reflectApply = __commonJS({
+    "node_modules/call-bind-apply-helpers/reflectApply.js"(exports, module) {
+      "use strict";
+      module.exports = typeof Reflect !== "undefined" && Reflect && Reflect.apply;
+    }
+  });
+
+  // node_modules/call-bind-apply-helpers/actualApply.js
+  var require_actualApply = __commonJS({
+    "node_modules/call-bind-apply-helpers/actualApply.js"(exports, module) {
+      "use strict";
+      var bind = require_function_bind();
+      var $apply = require_functionApply();
+      var $call = require_functionCall();
+      var $reflectApply = require_reflectApply();
+      module.exports = $reflectApply || bind.call($call, $apply);
+    }
+  });
+
+  // node_modules/call-bind-apply-helpers/index.js
+  var require_call_bind_apply_helpers = __commonJS({
+    "node_modules/call-bind-apply-helpers/index.js"(exports, module) {
+      "use strict";
+      var bind = require_function_bind();
+      var $TypeError = require_type();
+      var $call = require_functionCall();
+      var $actualApply = require_actualApply();
+      module.exports = function callBindBasic(args) {
+        if (args.length < 1 || typeof args[0] !== "function") {
+          throw new $TypeError("a function is required");
+        }
+        return $actualApply(bind, $call, args);
+      };
+    }
+  });
+
+  // node_modules/dunder-proto/get.js
+  var require_get = __commonJS({
+    "node_modules/dunder-proto/get.js"(exports, module) {
+      "use strict";
+      var callBind = require_call_bind_apply_helpers();
+      var gOPD = require_gopd();
+      var hasProtoAccessor;
+      try {
+        hasProtoAccessor = /** @type {{ __proto__?: typeof Array.prototype }} */
+        [].__proto__ === Array.prototype;
+      } catch (e) {
+        if (!e || typeof e !== "object" || !("code" in e) || e.code !== "ERR_PROTO_ACCESS") {
+          throw e;
+        }
+      }
+      var desc = !!hasProtoAccessor && gOPD && gOPD(
+        Object.prototype,
+        /** @type {keyof typeof Object.prototype} */
+        "__proto__"
+      );
+      var $Object = Object;
+      var $getPrototypeOf = $Object.getPrototypeOf;
+      module.exports = desc && typeof desc.get === "function" ? callBind([desc.get]) : typeof $getPrototypeOf === "function" ? (
+        /** @type {import('./get')} */
+        function getDunder(value) {
+          return $getPrototypeOf(value == null ? value : $Object(value));
+        }
+      ) : false;
+    }
+  });
+
+  // node_modules/get-proto/index.js
+  var require_get_proto = __commonJS({
+    "node_modules/get-proto/index.js"(exports, module) {
+      "use strict";
+      var reflectGetProto = require_Reflect_getPrototypeOf();
+      var originalGetProto = require_Object_getPrototypeOf();
+      var getDunderProto = require_get();
+      module.exports = reflectGetProto ? function getProto(O) {
+        return reflectGetProto(O);
+      } : originalGetProto ? function getProto(O) {
+        if (!O || typeof O !== "object" && typeof O !== "function") {
+          throw new TypeError("getProto: not an object");
+        }
+        return originalGetProto(O);
+      } : getDunderProto ? function getProto(O) {
+        return getDunderProto(O);
+      } : null;
+    }
+  });
+
   // node_modules/hasown/index.js
   var require_hasown = __commonJS({
     "node_modules/hasown/index.js"(exports, module) {
@@ -60650,6 +60925,7 @@ var Plotly = (() => {
     "node_modules/get-intrinsic/index.js"(exports, module) {
       "use strict";
       var undefined2;
+      var $Object = require_es_object_atoms();
       var $Error = require_es_errors();
       var $EvalError = require_eval();
       var $RangeError = require_range();
@@ -60657,6 +60933,13 @@ var Plotly = (() => {
       var $SyntaxError = require_syntax();
       var $TypeError = require_type();
       var $URIError = require_uri();
+      var abs = require_abs();
+      var floor = require_floor();
+      var max = require_max();
+      var min = require_min();
+      var pow = require_pow();
+      var round = require_round();
+      var sign = require_sign();
       var $Function = Function;
       var getEvalledConstructor = function(expressionSyntax) {
         try {
@@ -60664,14 +60947,8 @@ var Plotly = (() => {
         } catch (e) {
         }
       };
-      var $gOPD = Object.getOwnPropertyDescriptor;
-      if ($gOPD) {
-        try {
-          $gOPD({}, "");
-        } catch (e) {
-          $gOPD = null;
-        }
-      }
+      var $gOPD = require_gopd();
+      var $defineProperty = require_es_define_property();
       var throwTypeError = function() {
         throw new $TypeError();
       };
@@ -60688,10 +60965,11 @@ var Plotly = (() => {
         }
       }() : throwTypeError;
       var hasSymbols = require_has_symbols()();
-      var hasProto = require_has_proto()();
-      var getProto = Object.getPrototypeOf || (hasProto ? function(x) {
-        return x.__proto__;
-      } : null);
+      var getProto = require_get_proto();
+      var $ObjectGPO = require_Object_getPrototypeOf();
+      var $ReflectGPO = require_Reflect_getPrototypeOf();
+      var $apply = require_functionApply();
+      var $call = require_functionCall();
       var needsEval = {};
       var TypedArray = typeof Uint8Array === "undefined" || !getProto ? undefined2 : getProto(Uint8Array);
       var INTRINSICS = {
@@ -60720,6 +60998,7 @@ var Plotly = (() => {
         "%eval%": eval,
         // eslint-disable-line no-eval
         "%EvalError%": $EvalError,
+        "%Float16Array%": typeof Float16Array === "undefined" ? undefined2 : Float16Array,
         "%Float32Array%": typeof Float32Array === "undefined" ? undefined2 : Float32Array,
         "%Float64Array%": typeof Float64Array === "undefined" ? undefined2 : Float64Array,
         "%FinalizationRegistry%": typeof FinalizationRegistry === "undefined" ? undefined2 : FinalizationRegistry,
@@ -60736,7 +61015,8 @@ var Plotly = (() => {
         "%MapIteratorPrototype%": typeof Map === "undefined" || !hasSymbols || !getProto ? undefined2 : getProto((/* @__PURE__ */ new Map())[Symbol.iterator]()),
         "%Math%": Math,
         "%Number%": Number,
-        "%Object%": Object,
+        "%Object%": $Object,
+        "%Object.getOwnPropertyDescriptor%": $gOPD,
         "%parseFloat%": parseFloat,
         "%parseInt%": parseInt,
         "%Promise%": typeof Promise === "undefined" ? undefined2 : Promise,
@@ -60762,7 +61042,19 @@ var Plotly = (() => {
         "%URIError%": $URIError,
         "%WeakMap%": typeof WeakMap === "undefined" ? undefined2 : WeakMap,
         "%WeakRef%": typeof WeakRef === "undefined" ? undefined2 : WeakRef,
-        "%WeakSet%": typeof WeakSet === "undefined" ? undefined2 : WeakSet
+        "%WeakSet%": typeof WeakSet === "undefined" ? undefined2 : WeakSet,
+        "%Function.prototype.call%": $call,
+        "%Function.prototype.apply%": $apply,
+        "%Object.defineProperty%": $defineProperty,
+        "%Object.getPrototypeOf%": $ObjectGPO,
+        "%Math.abs%": abs,
+        "%Math.floor%": floor,
+        "%Math.max%": max,
+        "%Math.min%": min,
+        "%Math.pow%": pow,
+        "%Math.round%": round,
+        "%Math.sign%": sign,
+        "%Reflect.getPrototypeOf%": $ReflectGPO
       };
       if (getProto) {
         try {
@@ -60851,11 +61143,11 @@ var Plotly = (() => {
       };
       var bind = require_function_bind();
       var hasOwn = require_hasown();
-      var $concat = bind.call(Function.call, Array.prototype.concat);
-      var $spliceApply = bind.call(Function.apply, Array.prototype.splice);
-      var $replace = bind.call(Function.call, String.prototype.replace);
-      var $strSlice = bind.call(Function.call, String.prototype.slice);
-      var $exec = bind.call(Function.call, RegExp.prototype.exec);
+      var $concat = bind.call($call, Array.prototype.concat);
+      var $spliceApply = bind.call($apply, Array.prototype.splice);
+      var $replace = bind.call($call, String.prototype.replace);
+      var $strSlice = bind.call($call, String.prototype.slice);
+      var $exec = bind.call($call, RegExp.prototype.exec);
       var rePropName = /[^%.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|%$))/g;
       var reEscapeChar = /\\(\\)?/g;
       var stringToPath = function stringToPath2(string) {
@@ -60935,7 +61227,7 @@ var Plotly = (() => {
               if (!allowMissing) {
                 throw new $TypeError("base intrinsic for " + name + " exists, but the property is not available.");
               }
-              return void 0;
+              return void undefined2;
             }
             if ($gOPD && i + 1 >= parts.length) {
               var desc = $gOPD(value, part);
@@ -60956,40 +61248,6 @@ var Plotly = (() => {
         }
         return value;
       };
-    }
-  });
-
-  // node_modules/es-define-property/index.js
-  var require_es_define_property = __commonJS({
-    "node_modules/es-define-property/index.js"(exports, module) {
-      "use strict";
-      var GetIntrinsic = require_get_intrinsic();
-      var $defineProperty = GetIntrinsic("%Object.defineProperty%", true) || false;
-      if ($defineProperty) {
-        try {
-          $defineProperty({}, "a", { value: 1 });
-        } catch (e) {
-          $defineProperty = false;
-        }
-      }
-      module.exports = $defineProperty;
-    }
-  });
-
-  // node_modules/gopd/index.js
-  var require_gopd = __commonJS({
-    "node_modules/gopd/index.js"(exports, module) {
-      "use strict";
-      var GetIntrinsic = require_get_intrinsic();
-      var $gOPD = GetIntrinsic("%Object.getOwnPropertyDescriptor%", true);
-      if ($gOPD) {
-        try {
-          $gOPD([], "length");
-        } catch (e) {
-          $gOPD = null;
-        }
-      }
-      module.exports = $gOPD;
     }
   });
 
@@ -64701,7 +64959,7 @@ var Plotly = (() => {
   var require_svg_path_bounds = __commonJS({
     "node_modules/svg-path-bounds/index.js"(exports, module) {
       "use strict";
-      var parse2 = require_parse_svg_path();
+      var parse = require_parse_svg_path();
       var abs = require_abs_svg_path();
       var normalize = require_normalize_svg_path();
       var isSvgPath = require_is_svg_path();
@@ -64711,7 +64969,7 @@ var Plotly = (() => {
         if (Array.isArray(path) && path.length === 1 && typeof path[0] === "string") path = path[0];
         if (typeof path === "string") {
           assert(isSvgPath(path), "String is not an SVG path.");
-          path = parse2(path);
+          path = parse(path);
         }
         assert(Array.isArray(path), "Argument should be a string or an array of path segments.");
         path = abs(path);
@@ -65278,9 +65536,9 @@ var Plotly = (() => {
   var require_color_parse = __commonJS({
     "node_modules/color-normalize/node_modules/color-parse/index.js"(exports, module) {
       "use strict";
-      var names2 = require_color_name();
-      module.exports = parse2;
-      var baseHues2 = {
+      var names = require_color_name();
+      module.exports = parse;
+      var baseHues = {
         red: 0,
         orange: 60,
         yellow: 120,
@@ -65288,12 +65546,12 @@ var Plotly = (() => {
         blue: 240,
         purple: 300
       };
-      function parse2(cstr) {
+      function parse(cstr) {
         var m, parts = [], alpha = 1, space;
         if (typeof cstr === "string") {
           cstr = cstr.toLowerCase();
-          if (names2[cstr]) {
-            parts = names2[cstr].slice();
+          if (names[cstr]) {
+            parts = names[cstr].slice();
             space = "rgb";
           } else if (cstr === "transparent") {
             alpha = 0;
@@ -65341,8 +65599,8 @@ var Plotly = (() => {
               } else if (base[i] === "h") {
                 if (/deg$/.test(x)) {
                   return parseFloat(x);
-                } else if (baseHues2[x] !== void 0) {
-                  return baseHues2[x];
+                } else if (baseHues[x] !== void 0) {
+                  return baseHues[x];
                 }
               }
               return parseFloat(x);
@@ -65395,11 +65653,11 @@ var Plotly = (() => {
   var require_color_rgba = __commonJS({
     "node_modules/color-normalize/node_modules/color-rgba/index.js"(exports, module) {
       "use strict";
-      var parse2 = require_color_parse();
-      module.exports = function rgba2(color) {
+      var parse = require_color_parse();
+      module.exports = function rgba(color) {
         if (Array.isArray(color) && color.raw) color = String.raw.apply(null, arguments);
         var values, i, l;
-        var parsed = parse2(color);
+        var parsed = parse(color);
         if (!parsed.space) return [];
         var min = [0, 0, 0], max = parsed.space[0] === "h" ? [360, 100, 100] : [255, 255, 255];
         values = Array(3);
@@ -65431,7 +65689,7 @@ var Plotly = (() => {
   var require_color_normalize = __commonJS({
     "node_modules/color-normalize/index.js"(exports, module) {
       "use strict";
-      var rgba2 = require_color_rgba();
+      var rgba = require_color_rgba();
       var clamp = require_clamp();
       var dtype = require_dtype();
       module.exports = function normalize(color, type) {
@@ -65442,7 +65700,7 @@ var Plotly = (() => {
         var output = new Ctor(4);
         var normalize2 = type !== "uint8" && type !== "uint8_clamped";
         if (!color.length || typeof color === "string") {
-          color = rgba2(color);
+          color = rgba(color);
           color[0] /= 255;
           color[1] /= 255;
           color[2] /= 255;
@@ -65487,11 +65745,11 @@ var Plotly = (() => {
       "use strict";
       var isNumeric = require_fast_isnumeric();
       var tinycolor = require_tinycolor();
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var Colorscale = require_colorscale();
       var colorDflt = require_attributes3().defaultLine;
       var isArrayOrTypedArray = require_array().isArrayOrTypedArray;
-      var colorDfltRgba = rgba2(colorDflt);
+      var colorDfltRgba = rgba(colorDflt);
       var opacityDflt = 1;
       function calculateColor(colorIn, opacityIn) {
         var colorOut = colorIn;
@@ -65500,7 +65758,7 @@ var Plotly = (() => {
       }
       function validateColor(colorIn) {
         if (isNumeric(colorIn)) return colorDfltRgba;
-        var colorOut = rgba2(colorIn);
+        var colorOut = rgba(colorIn);
         return colorOut.length ? colorOut : colorDfltRgba;
       }
       function validateOpacity(opacityIn) {
@@ -65521,7 +65779,7 @@ var Plotly = (() => {
         }
         if (isArrayColorIn) {
           getColor = function(c, i2) {
-            return c[i2] === void 0 ? colorDfltRgba : rgba2(sclFunc(c[i2]));
+            return c[i2] === void 0 ? colorDfltRgba : rgba(sclFunc(c[i2]));
           };
         } else getColor = validateColor;
         if (isArrayOpacityIn) {
@@ -65535,7 +65793,7 @@ var Plotly = (() => {
             opacityi = getOpacity(opacityIn, i);
             colorOut[i] = calculateColor(colori, opacityi);
           }
-        } else colorOut = calculateColor(rgba2(colorIn), opacityIn);
+        } else colorOut = calculateColor(rgba(colorIn), opacityIn);
         return colorOut;
       }
       function parseColorScale(cont) {
@@ -65565,7 +65823,7 @@ var Plotly = (() => {
       "use strict";
       var isNumeric = require_fast_isnumeric();
       var svgSdf = require_svg_path_sdf();
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var Registry = require_registry();
       var Lib = require_lib();
       var isArrayOrTypedArray = Lib.isArrayOrTypedArray;
@@ -65832,12 +66090,12 @@ var Plotly = (() => {
           }
         } else {
           if (isOpen) {
-            optsOut.color = rgba2(optsIn.color, "uint8");
+            optsOut.color = rgba(optsIn.color, "uint8");
             optsOut.color[3] = 0;
-            optsOut.borderColor = rgba2(optsIn.color, "uint8");
+            optsOut.borderColor = rgba(optsIn.color, "uint8");
           } else {
-            optsOut.color = rgba2(optsIn.color, "uint8");
-            optsOut.borderColor = rgba2(optsIn.line.color, "uint8");
+            optsOut.color = rgba(optsIn.color, "uint8");
+            optsOut.borderColor = rgba(optsIn.line.color, "uint8");
           }
           optsOut.opacity = trace.opacity * optsIn.opacity;
           optsOut.marker = getSymbolSdf({
@@ -66565,9 +66823,9 @@ var Plotly = (() => {
       module.exports = toNumber;
       module.exports.to = toNumber;
       module.exports.from = fromNumber;
-      function toNumber(rgba2, normalized) {
+      function toNumber(rgba, normalized) {
         if (normalized == null) normalized = true;
-        var r = rgba2[0], g = rgba2[1], b = rgba2[2], a = rgba2[3];
+        var r = rgba[0], g = rgba[1], b = rgba[2], a = rgba[3];
         if (a == null) a = normalized ? 1 : 255;
         if (normalized) {
           r *= 255;
@@ -66804,7 +67062,7 @@ var Plotly = (() => {
       function _nonIterableRest() {
         throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
       }
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var getBounds = require_array_bounds();
       var colorId = require_color_id();
       var cluster = require_point_cluster();
@@ -67450,7 +67708,7 @@ var Plotly = (() => {
         }
         for (var _i6 = 0; _i6 < colors.length; _i6++) {
           var color = colors[_i6];
-          color = rgba2(color, "uint8");
+          color = rgba(color, "uint8");
           var id = colorId(color, false);
           if (paletteIds[id] == null) {
             var pos = palette.length;
@@ -69011,7 +69269,7 @@ var Plotly = (() => {
   });
 
   // node_modules/es5-ext/math/sign/index.js
-  var require_sign = __commonJS({
+  var require_sign2 = __commonJS({
     "node_modules/es5-ext/math/sign/index.js"(exports, module) {
       "use strict";
       module.exports = require_is_implemented9()() ? Math.sign : require_shim7();
@@ -69022,7 +69280,7 @@ var Plotly = (() => {
   var require_to_integer = __commonJS({
     "node_modules/es5-ext/number/to-integer.js"(exports, module) {
       "use strict";
-      var sign = require_sign();
+      var sign = require_sign2();
       var abs = Math.abs;
       var floor = Math.floor;
       module.exports = function(value) {
@@ -69478,7 +69736,7 @@ var Plotly = (() => {
   });
 
   // node_modules/es6-iterator/get.js
-  var require_get = __commonJS({
+  var require_get2 = __commonJS({
     "node_modules/es6-iterator/get.js"(exports, module) {
       "use strict";
       var isArguments = require_is_arguments2();
@@ -69503,7 +69761,7 @@ var Plotly = (() => {
       var isArguments = require_is_arguments2();
       var callable = require_valid_callable();
       var isString = require_is_string();
-      var get = require_get();
+      var get = require_get2();
       var isArray = Array.isArray;
       var call = Function.prototype.call;
       var some = Array.prototype.some;
@@ -69567,7 +69825,7 @@ var Plotly = (() => {
       var ensureValue = require_valid_value();
       var randomUniq = require_random_uniq();
       var d = require_d();
-      var getIterator = require_get();
+      var getIterator = require_get2();
       var forOf = require_for_of();
       var toStringTagSymbol = require_es6_symbol().toStringTag;
       var isNative = require_is_native_implemented();
@@ -69660,7 +69918,7 @@ var Plotly = (() => {
   var require_regl_line2d = __commonJS({
     "node_modules/regl-line2d/index.js"(exports, module) {
       "use strict";
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var getBounds = require_array_bounds();
       var extend = require_object_assign();
       var pick = require_pick_by_alias();
@@ -70411,7 +70669,7 @@ void main() {
           }
           if (o.join != null) state.join = o.join;
           if (o.hole != null) state.hole = o.hole;
-          if (o.fill != null) state.fill = !o.fill ? null : rgba2(o.fill, "uint8");
+          if (o.fill != null) state.fill = !o.fill ? null : rgba(o.fill, "uint8");
           if (o.viewport != null) state.viewport = parseRect(o.viewport);
           if (!state.viewport) {
             state.viewport = parseRect([
@@ -70588,16 +70846,16 @@ void main() {
             if (!colors) colors = "transparent";
             let colorData = new Uint8Array(count * 4 + 4);
             if (!Array.isArray(colors) || typeof colors[0] === "number") {
-              let c = rgba2(colors, "uint8");
+              let c = rgba(colors, "uint8");
               for (let i2 = 0; i2 < count + 1; i2++) {
                 colorData.set(c, i2 * 4);
               }
             } else {
               for (let i2 = 0; i2 < count; i2++) {
-                let c = rgba2(colors[i2], "uint8");
+                let c = rgba(colors[i2], "uint8");
                 colorData.set(c, i2 * 4);
               }
-              colorData.set(rgba2(colors[0], "uint8"), count * 4);
+              colorData.set(rgba(colors[0], "uint8"), count * 4);
             }
             state.colorBuffer({
               usage: "dynamic",
@@ -70640,7 +70898,7 @@ void main() {
     "node_modules/regl-error2d/index.js"(exports, module) {
       "use strict";
       var getBounds = require_array_bounds();
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var updateDiff = require_update_diff();
       var pick = require_pick_by_alias();
       var extend = require_object_assign();
@@ -70976,7 +71234,7 @@ void main() {
                 if (colors.length < count) throw Error("Not enough colors");
                 let colorData = new Uint8Array(count * 4);
                 for (let i2 = 0; i2 < count; i2++) {
-                  let c = rgba2(colors[i2], "uint8");
+                  let c = rgba(colors[i2], "uint8");
                   colorData.set(c, i2 * 4);
                 }
                 return colorData;
@@ -71108,7 +71366,7 @@ void main() {
   var require_parenthesis = __commonJS({
     "node_modules/parenthesis/index.js"(exports, module) {
       "use strict";
-      function parse2(str, opts) {
+      function parse(str, opts) {
         if (typeof str !== "string") return [str];
         var res = [str];
         if (typeof opts === "string" || Array.isArray(opts)) {
@@ -71187,10 +71445,10 @@ void main() {
         if (Array.isArray(arg)) {
           return stringify(arg, opts);
         } else {
-          return parse2(arg, opts);
+          return parse(arg, opts);
         }
       }
-      parenthesis.parse = parse2;
+      parenthesis.parse = parse;
       parenthesis.stringify = stringify;
       module.exports = parenthesis;
     }
@@ -82457,7 +82715,7 @@ void main() {
       var createRegl = require_regl_unchecked();
       var createGl = require_context();
       var WeakMap2 = require_es6_weak_map();
-      var rgba2 = require_color_normalize();
+      var rgba = require_color_normalize();
       var fontAtlas = require_font_atlas();
       var pool = require_pool();
       var parseRect = require_parse_rect();
@@ -82962,7 +83220,7 @@ void main() {
             o.color = "transparent";
           }
           if (typeof o.color === "string" || !isNaN(o.color)) {
-            this.color = rgba2(o.color, "uint8");
+            this.color = rgba(o.color, "uint8");
           } else {
             var colorData;
             if (typeof o.color[0] === "number" && o.color.length > this.counts.length) {
@@ -82970,13 +83228,13 @@ void main() {
               colorData = pool.mallocUint8(l);
               var sub = (o.color.subarray || o.color.slice).bind(o.color);
               for (var i$4 = 0; i$4 < l; i$4 += 4) {
-                colorData.set(rgba2(sub(i$4, i$4 + 4), "uint8"), i$4);
+                colorData.set(rgba(sub(i$4, i$4 + 4), "uint8"), i$4);
               }
             } else {
               var l$1 = o.color.length;
               colorData = pool.mallocUint8(l$1 * 4);
               for (var i$5 = 0; i$5 < l$1; i$5++) {
-                colorData.set(rgba2(o.color[i$5] || 0, "uint8"), i$5 * 4);
+                colorData.set(rgba(o.color[i$5] || 0, "uint8"), i$5 * 4);
               }
             }
             this.color = colorData;
@@ -83092,12 +83350,8389 @@ void main() {
     }
   });
 
+  // node_modules/@plotly/regl/dist/regl.unchecked.js
+  var require_regl_unchecked2 = __commonJS({
+    "node_modules/@plotly/regl/dist/regl.unchecked.js"(exports, module) {
+      (function(global2, factory) {
+        typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && false ? define(factory) : global2.createREGL = factory();
+      })(exports, function() {
+        "use strict";
+        var extend = function(base, opts) {
+          var keys = Object.keys(opts);
+          for (var i = 0; i < keys.length; ++i) {
+            base[keys[i]] = opts[keys[i]];
+          }
+          return base;
+        };
+        var VARIABLE_COUNTER = 0;
+        var DYN_FUNC = 0;
+        var DYN_CONSTANT = 5;
+        var DYN_ARRAY = 6;
+        function DynamicVariable(type, data) {
+          this.id = VARIABLE_COUNTER++;
+          this.type = type;
+          this.data = data;
+        }
+        function escapeStr(str) {
+          return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        }
+        function splitParts(str) {
+          if (str.length === 0) {
+            return [];
+          }
+          var firstChar = str.charAt(0);
+          var lastChar = str.charAt(str.length - 1);
+          if (str.length > 1 && firstChar === lastChar && (firstChar === '"' || firstChar === "'")) {
+            return ['"' + escapeStr(str.substr(1, str.length - 2)) + '"'];
+          }
+          var parts = /\[(false|true|null|\d+|'[^']*'|"[^"]*")\]/.exec(str);
+          if (parts) {
+            return splitParts(str.substr(0, parts.index)).concat(splitParts(parts[1])).concat(splitParts(str.substr(parts.index + parts[0].length)));
+          }
+          var subparts = str.split(".");
+          if (subparts.length === 1) {
+            return ['"' + escapeStr(str) + '"'];
+          }
+          var result = [];
+          for (var i = 0; i < subparts.length; ++i) {
+            result = result.concat(splitParts(subparts[i]));
+          }
+          return result;
+        }
+        function toAccessorString(str) {
+          return "[" + splitParts(str).join("][") + "]";
+        }
+        function defineDynamic(type, data) {
+          return new DynamicVariable(type, toAccessorString(data + ""));
+        }
+        function isDynamic(x) {
+          return typeof x === "function" && !x._reglType || x instanceof DynamicVariable;
+        }
+        function unbox(x, path) {
+          if (typeof x === "function") {
+            return new DynamicVariable(DYN_FUNC, x);
+          } else if (typeof x === "number" || typeof x === "boolean") {
+            return new DynamicVariable(DYN_CONSTANT, x);
+          } else if (Array.isArray(x)) {
+            return new DynamicVariable(DYN_ARRAY, x.map(function(y, i) {
+              return unbox(y, path + "[" + i + "]");
+            }));
+          } else if (x instanceof DynamicVariable) {
+            return x;
+          }
+        }
+        var dynamic = {
+          DynamicVariable,
+          define: defineDynamic,
+          isDynamic,
+          unbox,
+          accessor: toAccessorString
+        };
+        var raf = {
+          next: typeof requestAnimationFrame === "function" ? function(cb) {
+            return requestAnimationFrame(cb);
+          } : function(cb) {
+            return setTimeout(cb, 16);
+          },
+          cancel: typeof cancelAnimationFrame === "function" ? function(raf2) {
+            return cancelAnimationFrame(raf2);
+          } : clearTimeout
+        };
+        var clock = typeof performance !== "undefined" && performance.now ? function() {
+          return performance.now();
+        } : function() {
+          return +/* @__PURE__ */ new Date();
+        };
+        function createStringStore() {
+          var stringIds = { "": 0 };
+          var stringValues = [""];
+          return {
+            id: function(str) {
+              var result = stringIds[str];
+              if (result) {
+                return result;
+              }
+              result = stringIds[str] = stringValues.length;
+              stringValues.push(str);
+              return result;
+            },
+            str: function(id) {
+              return stringValues[id];
+            }
+          };
+        }
+        function createCanvas(element, onDone, pixelRatio) {
+          var canvas = document.createElement("canvas");
+          extend(canvas.style, {
+            border: 0,
+            margin: 0,
+            padding: 0,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%"
+          });
+          element.appendChild(canvas);
+          if (element === document.body) {
+            canvas.style.position = "absolute";
+            extend(element.style, {
+              margin: 0,
+              padding: 0
+            });
+          }
+          function resize() {
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            if (element !== document.body) {
+              var bounds = canvas.getBoundingClientRect();
+              w = bounds.right - bounds.left;
+              h = bounds.bottom - bounds.top;
+            }
+            canvas.width = pixelRatio * w;
+            canvas.height = pixelRatio * h;
+          }
+          var resizeObserver;
+          if (element !== document.body && typeof ResizeObserver === "function") {
+            resizeObserver = new ResizeObserver(function() {
+              setTimeout(resize);
+            });
+            resizeObserver.observe(element);
+          } else {
+            window.addEventListener("resize", resize, false);
+          }
+          function onDestroy() {
+            if (resizeObserver) {
+              resizeObserver.disconnect();
+            } else {
+              window.removeEventListener("resize", resize);
+            }
+            element.removeChild(canvas);
+          }
+          resize();
+          return {
+            canvas,
+            onDestroy
+          };
+        }
+        function createContext(canvas, contextAttributes) {
+          function get(name) {
+            try {
+              return canvas.getContext(name, contextAttributes);
+            } catch (e) {
+              return null;
+            }
+          }
+          return get("webgl") || get("experimental-webgl") || get("webgl-experimental");
+        }
+        function isHTMLElement(obj) {
+          return typeof obj.nodeName === "string" && typeof obj.appendChild === "function" && typeof obj.getBoundingClientRect === "function";
+        }
+        function isWebGLContext(obj) {
+          return typeof obj.drawArrays === "function" || typeof obj.drawElements === "function";
+        }
+        function parseExtensions(input) {
+          if (typeof input === "string") {
+            return input.split();
+          }
+          return input;
+        }
+        function getElement(desc) {
+          if (typeof desc === "string") {
+            return document.querySelector(desc);
+          }
+          return desc;
+        }
+        function parseArgs(args_) {
+          var args = args_ || {};
+          var element, container, canvas, gl;
+          var contextAttributes = {};
+          var extensions = [];
+          var optionalExtensions = [];
+          var pixelRatio = typeof window === "undefined" ? 1 : window.devicePixelRatio;
+          var profile = false;
+          var cachedCode = {};
+          var onDone = function(err) {
+            if (err) {
+            }
+          };
+          var onDestroy = function() {
+          };
+          if (typeof args === "string") {
+            element = document.querySelector(args);
+          } else if (typeof args === "object") {
+            if (isHTMLElement(args)) {
+              element = args;
+            } else if (isWebGLContext(args)) {
+              gl = args;
+              canvas = gl.canvas;
+            } else {
+              if ("gl" in args) {
+                gl = args.gl;
+              } else if ("canvas" in args) {
+                canvas = getElement(args.canvas);
+              } else if ("container" in args) {
+                container = getElement(args.container);
+              }
+              if ("attributes" in args) {
+                contextAttributes = args.attributes;
+              }
+              if ("extensions" in args) {
+                extensions = parseExtensions(args.extensions);
+              }
+              if ("optionalExtensions" in args) {
+                optionalExtensions = parseExtensions(args.optionalExtensions);
+              }
+              if ("onDone" in args) {
+                onDone = args.onDone;
+              }
+              if ("profile" in args) {
+                profile = !!args.profile;
+              }
+              if ("pixelRatio" in args) {
+                pixelRatio = +args.pixelRatio;
+              }
+              if ("cachedCode" in args) {
+                cachedCode = args.cachedCode;
+              }
+            }
+          } else {
+          }
+          if (element) {
+            if (element.nodeName.toLowerCase() === "canvas") {
+              canvas = element;
+            } else {
+              container = element;
+            }
+          }
+          if (!gl) {
+            if (!canvas) {
+              var result = createCanvas(container || document.body, onDone, pixelRatio);
+              if (!result) {
+                return null;
+              }
+              canvas = result.canvas;
+              onDestroy = result.onDestroy;
+            }
+            if (contextAttributes.premultipliedAlpha === void 0) contextAttributes.premultipliedAlpha = true;
+            gl = createContext(canvas, contextAttributes);
+          }
+          if (!gl) {
+            onDestroy();
+            onDone("webgl not supported, try upgrading your browser or graphics drivers http://get.webgl.org");
+            return null;
+          }
+          return {
+            gl,
+            canvas,
+            container,
+            extensions,
+            optionalExtensions,
+            pixelRatio,
+            profile,
+            cachedCode,
+            onDone,
+            onDestroy
+          };
+        }
+        function createExtensionCache(gl, config) {
+          var extensions = {};
+          function tryLoadExtension(name_) {
+            var name2 = name_.toLowerCase();
+            var ext;
+            try {
+              ext = extensions[name2] = gl.getExtension(name2);
+            } catch (e) {
+            }
+            return !!ext;
+          }
+          for (var i = 0; i < config.extensions.length; ++i) {
+            var name = config.extensions[i];
+            if (!tryLoadExtension(name)) {
+              config.onDestroy();
+              config.onDone('"' + name + '" extension is not supported by the current WebGL context, try upgrading your system or a different browser');
+              return null;
+            }
+          }
+          config.optionalExtensions.forEach(tryLoadExtension);
+          return {
+            extensions,
+            restore: function() {
+              Object.keys(extensions).forEach(function(name2) {
+                if (extensions[name2] && !tryLoadExtension(name2)) {
+                  throw new Error("(regl): error restoring extension " + name2);
+                }
+              });
+            }
+          };
+        }
+        function loop(n, f) {
+          var result = Array(n);
+          for (var i = 0; i < n; ++i) {
+            result[i] = f(i);
+          }
+          return result;
+        }
+        var GL_BYTE = 5120;
+        var GL_UNSIGNED_BYTE$1 = 5121;
+        var GL_SHORT = 5122;
+        var GL_UNSIGNED_SHORT = 5123;
+        var GL_INT = 5124;
+        var GL_UNSIGNED_INT = 5125;
+        var GL_FLOAT$1 = 5126;
+        function nextPow16(v) {
+          for (var i = 16; i <= 1 << 28; i *= 16) {
+            if (v <= i) {
+              return i;
+            }
+          }
+          return 0;
+        }
+        function log2(v) {
+          var r, shift;
+          r = (v > 65535) << 4;
+          v >>>= r;
+          shift = (v > 255) << 3;
+          v >>>= shift;
+          r |= shift;
+          shift = (v > 15) << 2;
+          v >>>= shift;
+          r |= shift;
+          shift = (v > 3) << 1;
+          v >>>= shift;
+          r |= shift;
+          return r | v >> 1;
+        }
+        function createPool() {
+          var bufferPool = loop(8, function() {
+            return [];
+          });
+          function alloc(n) {
+            var sz = nextPow16(n);
+            var bin = bufferPool[log2(sz) >> 2];
+            if (bin.length > 0) {
+              return bin.pop();
+            }
+            return new ArrayBuffer(sz);
+          }
+          function free(buf) {
+            bufferPool[log2(buf.byteLength) >> 2].push(buf);
+          }
+          function allocType(type, n) {
+            var result = null;
+            switch (type) {
+              case GL_BYTE:
+                result = new Int8Array(alloc(n), 0, n);
+                break;
+              case GL_UNSIGNED_BYTE$1:
+                result = new Uint8Array(alloc(n), 0, n);
+                break;
+              case GL_SHORT:
+                result = new Int16Array(alloc(2 * n), 0, n);
+                break;
+              case GL_UNSIGNED_SHORT:
+                result = new Uint16Array(alloc(2 * n), 0, n);
+                break;
+              case GL_INT:
+                result = new Int32Array(alloc(4 * n), 0, n);
+                break;
+              case GL_UNSIGNED_INT:
+                result = new Uint32Array(alloc(4 * n), 0, n);
+                break;
+              case GL_FLOAT$1:
+                result = new Float32Array(alloc(4 * n), 0, n);
+                break;
+              default:
+                return null;
+            }
+            if (result.length !== n) {
+              return result.subarray(0, n);
+            }
+            return result;
+          }
+          function freeType(array) {
+            free(array.buffer);
+          }
+          return {
+            alloc,
+            free,
+            allocType,
+            freeType
+          };
+        }
+        var pool = createPool();
+        pool.zero = createPool();
+        var GL_SUBPIXEL_BITS = 3408;
+        var GL_RED_BITS = 3410;
+        var GL_GREEN_BITS = 3411;
+        var GL_BLUE_BITS = 3412;
+        var GL_ALPHA_BITS = 3413;
+        var GL_DEPTH_BITS = 3414;
+        var GL_STENCIL_BITS = 3415;
+        var GL_ALIASED_POINT_SIZE_RANGE = 33901;
+        var GL_ALIASED_LINE_WIDTH_RANGE = 33902;
+        var GL_MAX_TEXTURE_SIZE = 3379;
+        var GL_MAX_VIEWPORT_DIMS = 3386;
+        var GL_MAX_VERTEX_ATTRIBS = 34921;
+        var GL_MAX_VERTEX_UNIFORM_VECTORS = 36347;
+        var GL_MAX_VARYING_VECTORS = 36348;
+        var GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS = 35661;
+        var GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS = 35660;
+        var GL_MAX_TEXTURE_IMAGE_UNITS = 34930;
+        var GL_MAX_FRAGMENT_UNIFORM_VECTORS = 36349;
+        var GL_MAX_CUBE_MAP_TEXTURE_SIZE = 34076;
+        var GL_MAX_RENDERBUFFER_SIZE = 34024;
+        var GL_VENDOR = 7936;
+        var GL_RENDERER = 7937;
+        var GL_VERSION = 7938;
+        var GL_SHADING_LANGUAGE_VERSION = 35724;
+        var GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 34047;
+        var GL_MAX_COLOR_ATTACHMENTS_WEBGL = 36063;
+        var GL_MAX_DRAW_BUFFERS_WEBGL = 34852;
+        var GL_TEXTURE_2D = 3553;
+        var GL_TEXTURE_CUBE_MAP = 34067;
+        var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 34069;
+        var GL_TEXTURE0 = 33984;
+        var GL_RGBA = 6408;
+        var GL_FLOAT = 5126;
+        var GL_UNSIGNED_BYTE = 5121;
+        var GL_FRAMEBUFFER = 36160;
+        var GL_FRAMEBUFFER_COMPLETE = 36053;
+        var GL_COLOR_ATTACHMENT0 = 36064;
+        var GL_COLOR_BUFFER_BIT$1 = 16384;
+        var wrapLimits = function(gl, extensions) {
+          var maxAnisotropic = 1;
+          if (extensions.ext_texture_filter_anisotropic) {
+            maxAnisotropic = gl.getParameter(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+          }
+          var maxDrawbuffers = 1;
+          var maxColorAttachments = 1;
+          if (extensions.webgl_draw_buffers) {
+            maxDrawbuffers = gl.getParameter(GL_MAX_DRAW_BUFFERS_WEBGL);
+            maxColorAttachments = gl.getParameter(GL_MAX_COLOR_ATTACHMENTS_WEBGL);
+          }
+          var readFloat = !!extensions.oes_texture_float;
+          if (readFloat) {
+            var readFloatTexture = gl.createTexture();
+            gl.bindTexture(GL_TEXTURE_2D, readFloatTexture);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, null);
+            var fbo = gl.createFramebuffer();
+            gl.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+            gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, readFloatTexture, 0);
+            gl.bindTexture(GL_TEXTURE_2D, null);
+            if (gl.checkFramebufferStatus(GL_FRAMEBUFFER) !== GL_FRAMEBUFFER_COMPLETE) readFloat = false;
+            else {
+              gl.viewport(0, 0, 1, 1);
+              gl.clearColor(1, 0, 0, 1);
+              gl.clear(GL_COLOR_BUFFER_BIT$1);
+              var pixels = pool.allocType(GL_FLOAT, 4);
+              gl.readPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, pixels);
+              if (gl.getError()) readFloat = false;
+              else {
+                gl.deleteFramebuffer(fbo);
+                gl.deleteTexture(readFloatTexture);
+                readFloat = pixels[0] === 1;
+              }
+              pool.freeType(pixels);
+            }
+          }
+          var isIE = typeof navigator !== "undefined" && (/MSIE/.test(navigator.userAgent) || /Trident\//.test(navigator.appVersion) || /Edge/.test(navigator.userAgent));
+          var npotTextureCube = true;
+          if (!isIE) {
+            var cubeTexture = gl.createTexture();
+            var data = pool.allocType(GL_UNSIGNED_BYTE, 36);
+            gl.activeTexture(GL_TEXTURE0);
+            gl.bindTexture(GL_TEXTURE_CUBE_MAP, cubeTexture);
+            gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            pool.freeType(data);
+            gl.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+            gl.deleteTexture(cubeTexture);
+            npotTextureCube = !gl.getError();
+          }
+          return {
+            // drawing buffer bit depth
+            colorBits: [
+              gl.getParameter(GL_RED_BITS),
+              gl.getParameter(GL_GREEN_BITS),
+              gl.getParameter(GL_BLUE_BITS),
+              gl.getParameter(GL_ALPHA_BITS)
+            ],
+            depthBits: gl.getParameter(GL_DEPTH_BITS),
+            stencilBits: gl.getParameter(GL_STENCIL_BITS),
+            subpixelBits: gl.getParameter(GL_SUBPIXEL_BITS),
+            // supported extensions
+            extensions: Object.keys(extensions).filter(function(ext) {
+              return !!extensions[ext];
+            }),
+            // max aniso samples
+            maxAnisotropic,
+            // max draw buffers
+            maxDrawbuffers,
+            maxColorAttachments,
+            // point and line size ranges
+            pointSizeDims: gl.getParameter(GL_ALIASED_POINT_SIZE_RANGE),
+            lineWidthDims: gl.getParameter(GL_ALIASED_LINE_WIDTH_RANGE),
+            maxViewportDims: gl.getParameter(GL_MAX_VIEWPORT_DIMS),
+            maxCombinedTextureUnits: gl.getParameter(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+            maxCubeMapSize: gl.getParameter(GL_MAX_CUBE_MAP_TEXTURE_SIZE),
+            maxRenderbufferSize: gl.getParameter(GL_MAX_RENDERBUFFER_SIZE),
+            maxTextureUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
+            maxTextureSize: gl.getParameter(GL_MAX_TEXTURE_SIZE),
+            maxAttributes: gl.getParameter(GL_MAX_VERTEX_ATTRIBS),
+            maxVertexUniforms: gl.getParameter(GL_MAX_VERTEX_UNIFORM_VECTORS),
+            maxVertexTextureUnits: gl.getParameter(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS),
+            maxVaryingVectors: gl.getParameter(GL_MAX_VARYING_VECTORS),
+            maxFragmentUniforms: gl.getParameter(GL_MAX_FRAGMENT_UNIFORM_VECTORS),
+            // vendor info
+            glsl: gl.getParameter(GL_SHADING_LANGUAGE_VERSION),
+            renderer: gl.getParameter(GL_RENDERER),
+            vendor: gl.getParameter(GL_VENDOR),
+            version: gl.getParameter(GL_VERSION),
+            // quirks
+            readFloat,
+            npotTextureCube
+          };
+        };
+        var isTypedArray = function(x) {
+          return x instanceof Uint8Array || x instanceof Uint16Array || x instanceof Uint32Array || x instanceof Int8Array || x instanceof Int16Array || x instanceof Int32Array || x instanceof Float32Array || x instanceof Float64Array || x instanceof Uint8ClampedArray;
+        };
+        function isNDArrayLike(obj) {
+          return !!obj && typeof obj === "object" && Array.isArray(obj.shape) && Array.isArray(obj.stride) && typeof obj.offset === "number" && obj.shape.length === obj.stride.length && (Array.isArray(obj.data) || isTypedArray(obj.data));
+        }
+        var values = function(obj) {
+          return Object.keys(obj).map(function(key) {
+            return obj[key];
+          });
+        };
+        var flattenUtils = {
+          shape: arrayShape$1,
+          flatten: flattenArray
+        };
+        function flatten1D(array, nx, out) {
+          for (var i = 0; i < nx; ++i) {
+            out[i] = array[i];
+          }
+        }
+        function flatten2D(array, nx, ny, out) {
+          var ptr = 0;
+          for (var i = 0; i < nx; ++i) {
+            var row = array[i];
+            for (var j = 0; j < ny; ++j) {
+              out[ptr++] = row[j];
+            }
+          }
+        }
+        function flatten3D(array, nx, ny, nz, out, ptr_) {
+          var ptr = ptr_;
+          for (var i = 0; i < nx; ++i) {
+            var row = array[i];
+            for (var j = 0; j < ny; ++j) {
+              var col = row[j];
+              for (var k = 0; k < nz; ++k) {
+                out[ptr++] = col[k];
+              }
+            }
+          }
+        }
+        function flattenRec(array, shape, level, out, ptr) {
+          var stride = 1;
+          for (var i = level + 1; i < shape.length; ++i) {
+            stride *= shape[i];
+          }
+          var n = shape[level];
+          if (shape.length - level === 4) {
+            var nx = shape[level + 1];
+            var ny = shape[level + 2];
+            var nz = shape[level + 3];
+            for (i = 0; i < n; ++i) {
+              flatten3D(array[i], nx, ny, nz, out, ptr);
+              ptr += stride;
+            }
+          } else {
+            for (i = 0; i < n; ++i) {
+              flattenRec(array[i], shape, level + 1, out, ptr);
+              ptr += stride;
+            }
+          }
+        }
+        function flattenArray(array, shape, type, out_) {
+          var sz = 1;
+          if (shape.length) {
+            for (var i = 0; i < shape.length; ++i) {
+              sz *= shape[i];
+            }
+          } else {
+            sz = 0;
+          }
+          var out = out_ || pool.allocType(type, sz);
+          switch (shape.length) {
+            case 0:
+              break;
+            case 1:
+              flatten1D(array, shape[0], out);
+              break;
+            case 2:
+              flatten2D(array, shape[0], shape[1], out);
+              break;
+            case 3:
+              flatten3D(array, shape[0], shape[1], shape[2], out, 0);
+              break;
+            default:
+              flattenRec(array, shape, 0, out, 0);
+          }
+          return out;
+        }
+        function arrayShape$1(array_) {
+          var shape = [];
+          for (var array = array_; array.length; array = array[0]) {
+            shape.push(array.length);
+          }
+          return shape;
+        }
+        var arrayTypes = {
+          "[object Int8Array]": 5120,
+          "[object Int16Array]": 5122,
+          "[object Int32Array]": 5124,
+          "[object Uint8Array]": 5121,
+          "[object Uint8ClampedArray]": 5121,
+          "[object Uint16Array]": 5123,
+          "[object Uint32Array]": 5125,
+          "[object Float32Array]": 5126,
+          "[object Float64Array]": 5121,
+          "[object ArrayBuffer]": 5121
+        };
+        var int8 = 5120;
+        var int16 = 5122;
+        var int32 = 5124;
+        var uint8 = 5121;
+        var uint16 = 5123;
+        var uint32 = 5125;
+        var float = 5126;
+        var float32 = 5126;
+        var glTypes = {
+          int8,
+          int16,
+          int32,
+          uint8,
+          uint16,
+          uint32,
+          float,
+          float32
+        };
+        var dynamic$1 = 35048;
+        var stream = 35040;
+        var usageTypes = {
+          dynamic: dynamic$1,
+          stream,
+          "static": 35044
+        };
+        var arrayFlatten = flattenUtils.flatten;
+        var arrayShape = flattenUtils.shape;
+        var GL_STATIC_DRAW = 35044;
+        var GL_STREAM_DRAW = 35040;
+        var GL_UNSIGNED_BYTE$2 = 5121;
+        var GL_FLOAT$2 = 5126;
+        var DTYPES_SIZES = [];
+        DTYPES_SIZES[5120] = 1;
+        DTYPES_SIZES[5122] = 2;
+        DTYPES_SIZES[5124] = 4;
+        DTYPES_SIZES[5121] = 1;
+        DTYPES_SIZES[5123] = 2;
+        DTYPES_SIZES[5125] = 4;
+        DTYPES_SIZES[5126] = 4;
+        function typedArrayCode(data) {
+          return arrayTypes[Object.prototype.toString.call(data)] | 0;
+        }
+        function copyArray(out, inp) {
+          for (var i = 0; i < inp.length; ++i) {
+            out[i] = inp[i];
+          }
+        }
+        function transpose(result, data, shapeX, shapeY, strideX, strideY, offset) {
+          var ptr = 0;
+          for (var i = 0; i < shapeX; ++i) {
+            for (var j = 0; j < shapeY; ++j) {
+              result[ptr++] = data[strideX * i + strideY * j + offset];
+            }
+          }
+        }
+        function wrapBufferState(gl, stats2, config, destroyBuffer) {
+          var bufferCount = 0;
+          var bufferSet = {};
+          function REGLBuffer(type) {
+            this.id = bufferCount++;
+            this.buffer = gl.createBuffer();
+            this.type = type;
+            this.usage = GL_STATIC_DRAW;
+            this.byteLength = 0;
+            this.dimension = 1;
+            this.dtype = GL_UNSIGNED_BYTE$2;
+            this.persistentData = null;
+            if (config.profile) {
+              this.stats = { size: 0 };
+            }
+          }
+          REGLBuffer.prototype.bind = function() {
+            gl.bindBuffer(this.type, this.buffer);
+          };
+          REGLBuffer.prototype.destroy = function() {
+            destroy(this);
+          };
+          var streamPool = [];
+          function createStream(type, data) {
+            var buffer = streamPool.pop();
+            if (!buffer) {
+              buffer = new REGLBuffer(type);
+            }
+            buffer.bind();
+            initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1, false);
+            return buffer;
+          }
+          function destroyStream(stream$$1) {
+            streamPool.push(stream$$1);
+          }
+          function initBufferFromTypedArray(buffer, data, usage) {
+            buffer.byteLength = data.byteLength;
+            gl.bufferData(buffer.type, data, usage);
+          }
+          function initBufferFromData(buffer, data, usage, dtype, dimension, persist) {
+            var shape;
+            buffer.usage = usage;
+            if (Array.isArray(data)) {
+              buffer.dtype = dtype || GL_FLOAT$2;
+              if (data.length > 0) {
+                var flatData;
+                if (Array.isArray(data[0])) {
+                  shape = arrayShape(data);
+                  var dim = 1;
+                  for (var i = 1; i < shape.length; ++i) {
+                    dim *= shape[i];
+                  }
+                  buffer.dimension = dim;
+                  flatData = arrayFlatten(data, shape, buffer.dtype);
+                  initBufferFromTypedArray(buffer, flatData, usage);
+                  if (persist) {
+                    buffer.persistentData = flatData;
+                  } else {
+                    pool.freeType(flatData);
+                  }
+                } else if (typeof data[0] === "number") {
+                  buffer.dimension = dimension;
+                  var typedData = pool.allocType(buffer.dtype, data.length);
+                  copyArray(typedData, data);
+                  initBufferFromTypedArray(buffer, typedData, usage);
+                  if (persist) {
+                    buffer.persistentData = typedData;
+                  } else {
+                    pool.freeType(typedData);
+                  }
+                } else if (isTypedArray(data[0])) {
+                  buffer.dimension = data[0].length;
+                  buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT$2;
+                  flatData = arrayFlatten(
+                    data,
+                    [data.length, data[0].length],
+                    buffer.dtype
+                  );
+                  initBufferFromTypedArray(buffer, flatData, usage);
+                  if (persist) {
+                    buffer.persistentData = flatData;
+                  } else {
+                    pool.freeType(flatData);
+                  }
+                } else {
+                }
+              }
+            } else if (isTypedArray(data)) {
+              buffer.dtype = dtype || typedArrayCode(data);
+              buffer.dimension = dimension;
+              initBufferFromTypedArray(buffer, data, usage);
+              if (persist) {
+                buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer));
+              }
+            } else if (isNDArrayLike(data)) {
+              shape = data.shape;
+              var stride = data.stride;
+              var offset = data.offset;
+              var shapeX = 0;
+              var shapeY = 0;
+              var strideX = 0;
+              var strideY = 0;
+              if (shape.length === 1) {
+                shapeX = shape[0];
+                shapeY = 1;
+                strideX = stride[0];
+                strideY = 0;
+              } else if (shape.length === 2) {
+                shapeX = shape[0];
+                shapeY = shape[1];
+                strideX = stride[0];
+                strideY = stride[1];
+              } else {
+              }
+              buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT$2;
+              buffer.dimension = shapeY;
+              var transposeData2 = pool.allocType(buffer.dtype, shapeX * shapeY);
+              transpose(
+                transposeData2,
+                data.data,
+                shapeX,
+                shapeY,
+                strideX,
+                strideY,
+                offset
+              );
+              initBufferFromTypedArray(buffer, transposeData2, usage);
+              if (persist) {
+                buffer.persistentData = transposeData2;
+              } else {
+                pool.freeType(transposeData2);
+              }
+            } else if (data instanceof ArrayBuffer) {
+              buffer.dtype = GL_UNSIGNED_BYTE$2;
+              buffer.dimension = dimension;
+              initBufferFromTypedArray(buffer, data, usage);
+              if (persist) {
+                buffer.persistentData = new Uint8Array(new Uint8Array(data));
+              }
+            } else {
+            }
+          }
+          function destroy(buffer) {
+            stats2.bufferCount--;
+            destroyBuffer(buffer);
+            var handle = buffer.buffer;
+            gl.deleteBuffer(handle);
+            buffer.buffer = null;
+            delete bufferSet[buffer.id];
+          }
+          function createBuffer(options, type, deferInit, persistent) {
+            stats2.bufferCount++;
+            var buffer = new REGLBuffer(type);
+            bufferSet[buffer.id] = buffer;
+            function reglBuffer(options2) {
+              var usage = GL_STATIC_DRAW;
+              var data = null;
+              var byteLength = 0;
+              var dtype = 0;
+              var dimension = 1;
+              if (Array.isArray(options2) || isTypedArray(options2) || isNDArrayLike(options2) || options2 instanceof ArrayBuffer) {
+                data = options2;
+              } else if (typeof options2 === "number") {
+                byteLength = options2 | 0;
+              } else if (options2) {
+                if ("data" in options2) {
+                  data = options2.data;
+                }
+                if ("usage" in options2) {
+                  usage = usageTypes[options2.usage];
+                }
+                if ("type" in options2) {
+                  dtype = glTypes[options2.type];
+                }
+                if ("dimension" in options2) {
+                  dimension = options2.dimension | 0;
+                }
+                if ("length" in options2) {
+                  byteLength = options2.length | 0;
+                }
+              }
+              buffer.bind();
+              if (!data) {
+                if (byteLength) gl.bufferData(buffer.type, byteLength, usage);
+                buffer.dtype = dtype || GL_UNSIGNED_BYTE$2;
+                buffer.usage = usage;
+                buffer.dimension = dimension;
+                buffer.byteLength = byteLength;
+              } else {
+                initBufferFromData(buffer, data, usage, dtype, dimension, persistent);
+              }
+              if (config.profile) {
+                buffer.stats.size = buffer.byteLength * DTYPES_SIZES[buffer.dtype];
+              }
+              return reglBuffer;
+            }
+            function setSubData(data, offset) {
+              gl.bufferSubData(buffer.type, offset, data);
+            }
+            function subdata(data, offset_) {
+              var offset = (offset_ || 0) | 0;
+              var shape;
+              buffer.bind();
+              if (isTypedArray(data) || data instanceof ArrayBuffer) {
+                setSubData(data, offset);
+              } else if (Array.isArray(data)) {
+                if (data.length > 0) {
+                  if (typeof data[0] === "number") {
+                    var converted = pool.allocType(buffer.dtype, data.length);
+                    copyArray(converted, data);
+                    setSubData(converted, offset);
+                    pool.freeType(converted);
+                  } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
+                    shape = arrayShape(data);
+                    var flatData = arrayFlatten(data, shape, buffer.dtype);
+                    setSubData(flatData, offset);
+                    pool.freeType(flatData);
+                  } else {
+                  }
+                }
+              } else if (isNDArrayLike(data)) {
+                shape = data.shape;
+                var stride = data.stride;
+                var shapeX = 0;
+                var shapeY = 0;
+                var strideX = 0;
+                var strideY = 0;
+                if (shape.length === 1) {
+                  shapeX = shape[0];
+                  shapeY = 1;
+                  strideX = stride[0];
+                  strideY = 0;
+                } else if (shape.length === 2) {
+                  shapeX = shape[0];
+                  shapeY = shape[1];
+                  strideX = stride[0];
+                  strideY = stride[1];
+                } else {
+                }
+                var dtype = Array.isArray(data.data) ? buffer.dtype : typedArrayCode(data.data);
+                var transposeData2 = pool.allocType(dtype, shapeX * shapeY);
+                transpose(
+                  transposeData2,
+                  data.data,
+                  shapeX,
+                  shapeY,
+                  strideX,
+                  strideY,
+                  data.offset
+                );
+                setSubData(transposeData2, offset);
+                pool.freeType(transposeData2);
+              } else {
+              }
+              return reglBuffer;
+            }
+            if (!deferInit) {
+              reglBuffer(options);
+            }
+            reglBuffer._reglType = "buffer";
+            reglBuffer._buffer = buffer;
+            reglBuffer.subdata = subdata;
+            if (config.profile) {
+              reglBuffer.stats = buffer.stats;
+            }
+            reglBuffer.destroy = function() {
+              destroy(buffer);
+            };
+            return reglBuffer;
+          }
+          function restoreBuffers() {
+            values(bufferSet).forEach(function(buffer) {
+              buffer.buffer = gl.createBuffer();
+              gl.bindBuffer(buffer.type, buffer.buffer);
+              gl.bufferData(
+                buffer.type,
+                buffer.persistentData || buffer.byteLength,
+                buffer.usage
+              );
+            });
+          }
+          if (config.profile) {
+            stats2.getTotalBufferSize = function() {
+              var total = 0;
+              Object.keys(bufferSet).forEach(function(key) {
+                total += bufferSet[key].stats.size;
+              });
+              return total;
+            };
+          }
+          return {
+            create: createBuffer,
+            createStream,
+            destroyStream,
+            clear: function() {
+              values(bufferSet).forEach(destroy);
+              streamPool.forEach(destroy);
+            },
+            getBuffer: function(wrapper) {
+              if (wrapper && wrapper._buffer instanceof REGLBuffer) {
+                return wrapper._buffer;
+              }
+              return null;
+            },
+            restore: restoreBuffers,
+            _initBuffer: initBufferFromData
+          };
+        }
+        var points = 0;
+        var point = 0;
+        var lines = 1;
+        var line = 1;
+        var triangles = 4;
+        var triangle = 4;
+        var primTypes = {
+          points,
+          point,
+          lines,
+          line,
+          triangles,
+          triangle,
+          "line loop": 2,
+          "line strip": 3,
+          "triangle strip": 5,
+          "triangle fan": 6
+        };
+        var GL_POINTS = 0;
+        var GL_LINES = 1;
+        var GL_TRIANGLES = 4;
+        var GL_BYTE$1 = 5120;
+        var GL_UNSIGNED_BYTE$3 = 5121;
+        var GL_SHORT$1 = 5122;
+        var GL_UNSIGNED_SHORT$1 = 5123;
+        var GL_INT$1 = 5124;
+        var GL_UNSIGNED_INT$1 = 5125;
+        var GL_ELEMENT_ARRAY_BUFFER = 34963;
+        var GL_STREAM_DRAW$1 = 35040;
+        var GL_STATIC_DRAW$1 = 35044;
+        function wrapElementsState(gl, extensions, bufferState, stats2) {
+          var elementSet = {};
+          var elementCount = 0;
+          var elementTypes = {
+            "uint8": GL_UNSIGNED_BYTE$3,
+            "uint16": GL_UNSIGNED_SHORT$1
+          };
+          if (extensions.oes_element_index_uint) {
+            elementTypes.uint32 = GL_UNSIGNED_INT$1;
+          }
+          function REGLElementBuffer(buffer) {
+            this.id = elementCount++;
+            elementSet[this.id] = this;
+            this.buffer = buffer;
+            this.primType = GL_TRIANGLES;
+            this.vertCount = 0;
+            this.type = 0;
+          }
+          REGLElementBuffer.prototype.bind = function() {
+            this.buffer.bind();
+          };
+          var bufferPool = [];
+          function createElementStream(data) {
+            var result = bufferPool.pop();
+            if (!result) {
+              result = new REGLElementBuffer(bufferState.create(
+                null,
+                GL_ELEMENT_ARRAY_BUFFER,
+                true,
+                false
+              )._buffer);
+            }
+            initElements(result, data, GL_STREAM_DRAW$1, -1, -1, 0, 0);
+            return result;
+          }
+          function destroyElementStream(elements) {
+            bufferPool.push(elements);
+          }
+          function initElements(elements, data, usage, prim, count, byteLength, type) {
+            elements.buffer.bind();
+            var dtype;
+            if (data) {
+              var predictedType = type;
+              if (!type && (!isTypedArray(data) || isNDArrayLike(data) && !isTypedArray(data.data))) {
+                predictedType = extensions.oes_element_index_uint ? GL_UNSIGNED_INT$1 : GL_UNSIGNED_SHORT$1;
+              }
+              bufferState._initBuffer(
+                elements.buffer,
+                data,
+                usage,
+                predictedType,
+                3
+              );
+            } else {
+              gl.bufferData(GL_ELEMENT_ARRAY_BUFFER, byteLength, usage);
+              elements.buffer.dtype = dtype || GL_UNSIGNED_BYTE$3;
+              elements.buffer.usage = usage;
+              elements.buffer.dimension = 3;
+              elements.buffer.byteLength = byteLength;
+            }
+            dtype = type;
+            if (!type) {
+              switch (elements.buffer.dtype) {
+                case GL_UNSIGNED_BYTE$3:
+                case GL_BYTE$1:
+                  dtype = GL_UNSIGNED_BYTE$3;
+                  break;
+                case GL_UNSIGNED_SHORT$1:
+                case GL_SHORT$1:
+                  dtype = GL_UNSIGNED_SHORT$1;
+                  break;
+                case GL_UNSIGNED_INT$1:
+                case GL_INT$1:
+                  dtype = GL_UNSIGNED_INT$1;
+                  break;
+                default:
+              }
+              elements.buffer.dtype = dtype;
+            }
+            elements.type = dtype;
+            var vertCount = count;
+            if (vertCount < 0) {
+              vertCount = elements.buffer.byteLength;
+              if (dtype === GL_UNSIGNED_SHORT$1) {
+                vertCount >>= 1;
+              } else if (dtype === GL_UNSIGNED_INT$1) {
+                vertCount >>= 2;
+              }
+            }
+            elements.vertCount = vertCount;
+            var primType = prim;
+            if (prim < 0) {
+              primType = GL_TRIANGLES;
+              var dimension = elements.buffer.dimension;
+              if (dimension === 1) primType = GL_POINTS;
+              if (dimension === 2) primType = GL_LINES;
+              if (dimension === 3) primType = GL_TRIANGLES;
+            }
+            elements.primType = primType;
+          }
+          function destroyElements(elements) {
+            stats2.elementsCount--;
+            delete elementSet[elements.id];
+            elements.buffer.destroy();
+            elements.buffer = null;
+          }
+          function createElements(options, persistent) {
+            var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true);
+            var elements = new REGLElementBuffer(buffer._buffer);
+            stats2.elementsCount++;
+            function reglElements(options2) {
+              if (!options2) {
+                buffer();
+                elements.primType = GL_TRIANGLES;
+                elements.vertCount = 0;
+                elements.type = GL_UNSIGNED_BYTE$3;
+              } else if (typeof options2 === "number") {
+                buffer(options2);
+                elements.primType = GL_TRIANGLES;
+                elements.vertCount = options2 | 0;
+                elements.type = GL_UNSIGNED_BYTE$3;
+              } else {
+                var data = null;
+                var usage = GL_STATIC_DRAW$1;
+                var primType = -1;
+                var vertCount = -1;
+                var byteLength = 0;
+                var dtype = 0;
+                if (Array.isArray(options2) || isTypedArray(options2) || isNDArrayLike(options2)) {
+                  data = options2;
+                } else {
+                  if ("data" in options2) {
+                    data = options2.data;
+                  }
+                  if ("usage" in options2) {
+                    usage = usageTypes[options2.usage];
+                  }
+                  if ("primitive" in options2) {
+                    primType = primTypes[options2.primitive];
+                  }
+                  if ("count" in options2) {
+                    vertCount = options2.count | 0;
+                  }
+                  if ("type" in options2) {
+                    dtype = elementTypes[options2.type];
+                  }
+                  if ("length" in options2) {
+                    byteLength = options2.length | 0;
+                  } else {
+                    byteLength = vertCount;
+                    if (dtype === GL_UNSIGNED_SHORT$1 || dtype === GL_SHORT$1) {
+                      byteLength *= 2;
+                    } else if (dtype === GL_UNSIGNED_INT$1 || dtype === GL_INT$1) {
+                      byteLength *= 4;
+                    }
+                  }
+                }
+                initElements(
+                  elements,
+                  data,
+                  usage,
+                  primType,
+                  vertCount,
+                  byteLength,
+                  dtype
+                );
+              }
+              return reglElements;
+            }
+            reglElements(options);
+            reglElements._reglType = "elements";
+            reglElements._elements = elements;
+            reglElements.subdata = function(data, offset) {
+              buffer.subdata(data, offset);
+              return reglElements;
+            };
+            reglElements.destroy = function() {
+              destroyElements(elements);
+            };
+            return reglElements;
+          }
+          return {
+            create: createElements,
+            createStream: createElementStream,
+            destroyStream: destroyElementStream,
+            getElements: function(elements) {
+              if (typeof elements === "function" && elements._elements instanceof REGLElementBuffer) {
+                return elements._elements;
+              }
+              return null;
+            },
+            clear: function() {
+              values(elementSet).forEach(destroyElements);
+            }
+          };
+        }
+        var FLOAT = new Float32Array(1);
+        var INT = new Uint32Array(FLOAT.buffer);
+        var GL_UNSIGNED_SHORT$3 = 5123;
+        function convertToHalfFloat(array) {
+          var ushorts = pool.allocType(GL_UNSIGNED_SHORT$3, array.length);
+          for (var i = 0; i < array.length; ++i) {
+            if (isNaN(array[i])) {
+              ushorts[i] = 65535;
+            } else if (array[i] === Infinity) {
+              ushorts[i] = 31744;
+            } else if (array[i] === -Infinity) {
+              ushorts[i] = 64512;
+            } else {
+              FLOAT[0] = array[i];
+              var x = INT[0];
+              var sgn = x >>> 31 << 15;
+              var exp = (x << 1 >>> 24) - 127;
+              var frac = x >> 13 & (1 << 10) - 1;
+              if (exp < -24) {
+                ushorts[i] = sgn;
+              } else if (exp < -14) {
+                var s = -14 - exp;
+                ushorts[i] = sgn + (frac + (1 << 10) >> s);
+              } else if (exp > 15) {
+                ushorts[i] = sgn + 31744;
+              } else {
+                ushorts[i] = sgn + (exp + 15 << 10) + frac;
+              }
+            }
+          }
+          return ushorts;
+        }
+        function isArrayLike(s) {
+          return Array.isArray(s) || isTypedArray(s);
+        }
+        var GL_COMPRESSED_TEXTURE_FORMATS = 34467;
+        var GL_TEXTURE_2D$1 = 3553;
+        var GL_TEXTURE_CUBE_MAP$1 = 34067;
+        var GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 = 34069;
+        var GL_RGBA$1 = 6408;
+        var GL_ALPHA = 6406;
+        var GL_RGB = 6407;
+        var GL_LUMINANCE = 6409;
+        var GL_LUMINANCE_ALPHA = 6410;
+        var GL_RGBA4 = 32854;
+        var GL_RGB5_A1 = 32855;
+        var GL_RGB565 = 36194;
+        var GL_UNSIGNED_SHORT_4_4_4_4 = 32819;
+        var GL_UNSIGNED_SHORT_5_5_5_1 = 32820;
+        var GL_UNSIGNED_SHORT_5_6_5 = 33635;
+        var GL_UNSIGNED_INT_24_8_WEBGL = 34042;
+        var GL_DEPTH_COMPONENT = 6402;
+        var GL_DEPTH_STENCIL = 34041;
+        var GL_SRGB_EXT = 35904;
+        var GL_SRGB_ALPHA_EXT = 35906;
+        var GL_HALF_FLOAT_OES = 36193;
+        var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 33776;
+        var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 33777;
+        var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 33778;
+        var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 33779;
+        var GL_COMPRESSED_RGB_ATC_WEBGL = 35986;
+        var GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL = 35987;
+        var GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL = 34798;
+        var GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG = 35840;
+        var GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG = 35841;
+        var GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG = 35842;
+        var GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 35843;
+        var GL_COMPRESSED_RGB_ETC1_WEBGL = 36196;
+        var GL_UNSIGNED_BYTE$4 = 5121;
+        var GL_UNSIGNED_SHORT$2 = 5123;
+        var GL_UNSIGNED_INT$2 = 5125;
+        var GL_FLOAT$3 = 5126;
+        var GL_TEXTURE_WRAP_S = 10242;
+        var GL_TEXTURE_WRAP_T = 10243;
+        var GL_REPEAT = 10497;
+        var GL_CLAMP_TO_EDGE = 33071;
+        var GL_MIRRORED_REPEAT = 33648;
+        var GL_TEXTURE_MAG_FILTER = 10240;
+        var GL_TEXTURE_MIN_FILTER = 10241;
+        var GL_NEAREST = 9728;
+        var GL_LINEAR = 9729;
+        var GL_NEAREST_MIPMAP_NEAREST = 9984;
+        var GL_LINEAR_MIPMAP_NEAREST = 9985;
+        var GL_NEAREST_MIPMAP_LINEAR = 9986;
+        var GL_LINEAR_MIPMAP_LINEAR = 9987;
+        var GL_GENERATE_MIPMAP_HINT = 33170;
+        var GL_DONT_CARE = 4352;
+        var GL_FASTEST = 4353;
+        var GL_NICEST = 4354;
+        var GL_TEXTURE_MAX_ANISOTROPY_EXT = 34046;
+        var GL_UNPACK_ALIGNMENT = 3317;
+        var GL_UNPACK_FLIP_Y_WEBGL = 37440;
+        var GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441;
+        var GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443;
+        var GL_BROWSER_DEFAULT_WEBGL = 37444;
+        var GL_TEXTURE0$1 = 33984;
+        var MIPMAP_FILTERS = [
+          GL_NEAREST_MIPMAP_NEAREST,
+          GL_NEAREST_MIPMAP_LINEAR,
+          GL_LINEAR_MIPMAP_NEAREST,
+          GL_LINEAR_MIPMAP_LINEAR
+        ];
+        var CHANNELS_FORMAT = [
+          0,
+          GL_LUMINANCE,
+          GL_LUMINANCE_ALPHA,
+          GL_RGB,
+          GL_RGBA$1
+        ];
+        var FORMAT_CHANNELS = {};
+        FORMAT_CHANNELS[GL_LUMINANCE] = FORMAT_CHANNELS[GL_ALPHA] = FORMAT_CHANNELS[GL_DEPTH_COMPONENT] = 1;
+        FORMAT_CHANNELS[GL_DEPTH_STENCIL] = FORMAT_CHANNELS[GL_LUMINANCE_ALPHA] = 2;
+        FORMAT_CHANNELS[GL_RGB] = FORMAT_CHANNELS[GL_SRGB_EXT] = 3;
+        FORMAT_CHANNELS[GL_RGBA$1] = FORMAT_CHANNELS[GL_SRGB_ALPHA_EXT] = 4;
+        function objectName(str) {
+          return "[object " + str + "]";
+        }
+        var CANVAS_CLASS = objectName("HTMLCanvasElement");
+        var OFFSCREENCANVAS_CLASS = objectName("OffscreenCanvas");
+        var CONTEXT2D_CLASS = objectName("CanvasRenderingContext2D");
+        var BITMAP_CLASS = objectName("ImageBitmap");
+        var IMAGE_CLASS = objectName("HTMLImageElement");
+        var VIDEO_CLASS = objectName("HTMLVideoElement");
+        var PIXEL_CLASSES = Object.keys(arrayTypes).concat([
+          CANVAS_CLASS,
+          OFFSCREENCANVAS_CLASS,
+          CONTEXT2D_CLASS,
+          BITMAP_CLASS,
+          IMAGE_CLASS,
+          VIDEO_CLASS
+        ]);
+        var TYPE_SIZES = [];
+        TYPE_SIZES[GL_UNSIGNED_BYTE$4] = 1;
+        TYPE_SIZES[GL_FLOAT$3] = 4;
+        TYPE_SIZES[GL_HALF_FLOAT_OES] = 2;
+        TYPE_SIZES[GL_UNSIGNED_SHORT$2] = 2;
+        TYPE_SIZES[GL_UNSIGNED_INT$2] = 4;
+        var FORMAT_SIZES_SPECIAL = [];
+        FORMAT_SIZES_SPECIAL[GL_RGBA4] = 2;
+        FORMAT_SIZES_SPECIAL[GL_RGB5_A1] = 2;
+        FORMAT_SIZES_SPECIAL[GL_RGB565] = 2;
+        FORMAT_SIZES_SPECIAL[GL_DEPTH_STENCIL] = 4;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGB_S3TC_DXT1_EXT] = 0.5;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_S3TC_DXT1_EXT] = 0.5;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_S3TC_DXT3_EXT] = 1;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_S3TC_DXT5_EXT] = 1;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGB_ATC_WEBGL] = 0.5;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL] = 1;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL] = 1;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG] = 0.5;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG] = 0.25;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG] = 0.5;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG] = 0.25;
+        FORMAT_SIZES_SPECIAL[GL_COMPRESSED_RGB_ETC1_WEBGL] = 0.5;
+        function isNumericArray(arr) {
+          return Array.isArray(arr) && (arr.length === 0 || typeof arr[0] === "number");
+        }
+        function isRectArray(arr) {
+          if (!Array.isArray(arr)) {
+            return false;
+          }
+          var width = arr.length;
+          if (width === 0 || !isArrayLike(arr[0])) {
+            return false;
+          }
+          return true;
+        }
+        function classString(x) {
+          return Object.prototype.toString.call(x);
+        }
+        function isCanvasElement(object) {
+          return classString(object) === CANVAS_CLASS;
+        }
+        function isOffscreenCanvas(object) {
+          return classString(object) === OFFSCREENCANVAS_CLASS;
+        }
+        function isContext2D(object) {
+          return classString(object) === CONTEXT2D_CLASS;
+        }
+        function isBitmap(object) {
+          return classString(object) === BITMAP_CLASS;
+        }
+        function isImageElement(object) {
+          return classString(object) === IMAGE_CLASS;
+        }
+        function isVideoElement(object) {
+          return classString(object) === VIDEO_CLASS;
+        }
+        function isPixelData(object) {
+          if (!object) {
+            return false;
+          }
+          var className = classString(object);
+          if (PIXEL_CLASSES.indexOf(className) >= 0) {
+            return true;
+          }
+          return isNumericArray(object) || isRectArray(object) || isNDArrayLike(object);
+        }
+        function typedArrayCode$1(data) {
+          return arrayTypes[Object.prototype.toString.call(data)] | 0;
+        }
+        function convertData(result, data) {
+          var n = data.length;
+          switch (result.type) {
+            case GL_UNSIGNED_BYTE$4:
+            case GL_UNSIGNED_SHORT$2:
+            case GL_UNSIGNED_INT$2:
+            case GL_FLOAT$3:
+              var converted = pool.allocType(result.type, n);
+              converted.set(data);
+              result.data = converted;
+              break;
+            case GL_HALF_FLOAT_OES:
+              result.data = convertToHalfFloat(data);
+              break;
+            default:
+          }
+        }
+        function preConvert(image, n) {
+          return pool.allocType(
+            image.type === GL_HALF_FLOAT_OES ? GL_FLOAT$3 : image.type,
+            n
+          );
+        }
+        function postConvert(image, data) {
+          if (image.type === GL_HALF_FLOAT_OES) {
+            image.data = convertToHalfFloat(data);
+            pool.freeType(data);
+          } else {
+            image.data = data;
+          }
+        }
+        function transposeData(image, array, strideX, strideY, strideC, offset) {
+          var w = image.width;
+          var h = image.height;
+          var c = image.channels;
+          var n = w * h * c;
+          var data = preConvert(image, n);
+          var p = 0;
+          for (var i = 0; i < h; ++i) {
+            for (var j = 0; j < w; ++j) {
+              for (var k = 0; k < c; ++k) {
+                data[p++] = array[strideX * j + strideY * i + strideC * k + offset];
+              }
+            }
+          }
+          postConvert(image, data);
+        }
+        function getTextureSize(format, type, width, height, isMipmap, isCube) {
+          var s;
+          if (typeof FORMAT_SIZES_SPECIAL[format] !== "undefined") {
+            s = FORMAT_SIZES_SPECIAL[format];
+          } else {
+            s = FORMAT_CHANNELS[format] * TYPE_SIZES[type];
+          }
+          if (isCube) {
+            s *= 6;
+          }
+          if (isMipmap) {
+            var total = 0;
+            var w = width;
+            while (w >= 1) {
+              total += s * w * w;
+              w /= 2;
+            }
+            return total;
+          } else {
+            return s * width * height;
+          }
+        }
+        function createTextureSet(gl, extensions, limits, reglPoll, contextState, stats2, config) {
+          var mipmapHint = {
+            "don't care": GL_DONT_CARE,
+            "dont care": GL_DONT_CARE,
+            "nice": GL_NICEST,
+            "fast": GL_FASTEST
+          };
+          var wrapModes = {
+            "repeat": GL_REPEAT,
+            "clamp": GL_CLAMP_TO_EDGE,
+            "mirror": GL_MIRRORED_REPEAT
+          };
+          var magFilters = {
+            "nearest": GL_NEAREST,
+            "linear": GL_LINEAR
+          };
+          var minFilters = extend({
+            "mipmap": GL_LINEAR_MIPMAP_LINEAR,
+            "nearest mipmap nearest": GL_NEAREST_MIPMAP_NEAREST,
+            "linear mipmap nearest": GL_LINEAR_MIPMAP_NEAREST,
+            "nearest mipmap linear": GL_NEAREST_MIPMAP_LINEAR,
+            "linear mipmap linear": GL_LINEAR_MIPMAP_LINEAR
+          }, magFilters);
+          var colorSpace = {
+            "none": 0,
+            "browser": GL_BROWSER_DEFAULT_WEBGL
+          };
+          var textureTypes = {
+            "uint8": GL_UNSIGNED_BYTE$4,
+            "rgba4": GL_UNSIGNED_SHORT_4_4_4_4,
+            "rgb565": GL_UNSIGNED_SHORT_5_6_5,
+            "rgb5 a1": GL_UNSIGNED_SHORT_5_5_5_1
+          };
+          var textureFormats = {
+            "alpha": GL_ALPHA,
+            "luminance": GL_LUMINANCE,
+            "luminance alpha": GL_LUMINANCE_ALPHA,
+            "rgb": GL_RGB,
+            "rgba": GL_RGBA$1,
+            "rgba4": GL_RGBA4,
+            "rgb5 a1": GL_RGB5_A1,
+            "rgb565": GL_RGB565
+          };
+          var compressedTextureFormats = {};
+          if (extensions.ext_srgb) {
+            textureFormats.srgb = GL_SRGB_EXT;
+            textureFormats.srgba = GL_SRGB_ALPHA_EXT;
+          }
+          if (extensions.oes_texture_float) {
+            textureTypes.float32 = textureTypes.float = GL_FLOAT$3;
+          }
+          if (extensions.oes_texture_half_float) {
+            textureTypes["float16"] = textureTypes["half float"] = GL_HALF_FLOAT_OES;
+          }
+          if (extensions.webgl_depth_texture) {
+            extend(textureFormats, {
+              "depth": GL_DEPTH_COMPONENT,
+              "depth stencil": GL_DEPTH_STENCIL
+            });
+            extend(textureTypes, {
+              "uint16": GL_UNSIGNED_SHORT$2,
+              "uint32": GL_UNSIGNED_INT$2,
+              "depth stencil": GL_UNSIGNED_INT_24_8_WEBGL
+            });
+          }
+          if (extensions.webgl_compressed_texture_s3tc) {
+            extend(compressedTextureFormats, {
+              "rgb s3tc dxt1": GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+              "rgba s3tc dxt1": GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+              "rgba s3tc dxt3": GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
+              "rgba s3tc dxt5": GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+            });
+          }
+          if (extensions.webgl_compressed_texture_atc) {
+            extend(compressedTextureFormats, {
+              "rgb atc": GL_COMPRESSED_RGB_ATC_WEBGL,
+              "rgba atc explicit alpha": GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL,
+              "rgba atc interpolated alpha": GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL
+            });
+          }
+          if (extensions.webgl_compressed_texture_pvrtc) {
+            extend(compressedTextureFormats, {
+              "rgb pvrtc 4bppv1": GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
+              "rgb pvrtc 2bppv1": GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,
+              "rgba pvrtc 4bppv1": GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
+              "rgba pvrtc 2bppv1": GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+            });
+          }
+          if (extensions.webgl_compressed_texture_etc1) {
+            compressedTextureFormats["rgb etc1"] = GL_COMPRESSED_RGB_ETC1_WEBGL;
+          }
+          var supportedCompressedFormats = Array.prototype.slice.call(
+            gl.getParameter(GL_COMPRESSED_TEXTURE_FORMATS)
+          );
+          Object.keys(compressedTextureFormats).forEach(function(name) {
+            var format = compressedTextureFormats[name];
+            if (supportedCompressedFormats.indexOf(format) >= 0) {
+              textureFormats[name] = format;
+            }
+          });
+          var supportedFormats = Object.keys(textureFormats);
+          limits.textureFormats = supportedFormats;
+          var textureFormatsInvert = [];
+          Object.keys(textureFormats).forEach(function(key) {
+            var val = textureFormats[key];
+            textureFormatsInvert[val] = key;
+          });
+          var textureTypesInvert = [];
+          Object.keys(textureTypes).forEach(function(key) {
+            var val = textureTypes[key];
+            textureTypesInvert[val] = key;
+          });
+          var magFiltersInvert = [];
+          Object.keys(magFilters).forEach(function(key) {
+            var val = magFilters[key];
+            magFiltersInvert[val] = key;
+          });
+          var minFiltersInvert = [];
+          Object.keys(minFilters).forEach(function(key) {
+            var val = minFilters[key];
+            minFiltersInvert[val] = key;
+          });
+          var wrapModesInvert = [];
+          Object.keys(wrapModes).forEach(function(key) {
+            var val = wrapModes[key];
+            wrapModesInvert[val] = key;
+          });
+          var colorFormats = supportedFormats.reduce(function(color, key) {
+            var glenum = textureFormats[key];
+            if (glenum === GL_LUMINANCE || glenum === GL_ALPHA || glenum === GL_LUMINANCE || glenum === GL_LUMINANCE_ALPHA || glenum === GL_DEPTH_COMPONENT || glenum === GL_DEPTH_STENCIL || extensions.ext_srgb && (glenum === GL_SRGB_EXT || glenum === GL_SRGB_ALPHA_EXT)) {
+              color[glenum] = glenum;
+            } else if (glenum === GL_RGB5_A1 || key.indexOf("rgba") >= 0) {
+              color[glenum] = GL_RGBA$1;
+            } else {
+              color[glenum] = GL_RGB;
+            }
+            return color;
+          }, {});
+          function TexFlags() {
+            this.internalformat = GL_RGBA$1;
+            this.format = GL_RGBA$1;
+            this.type = GL_UNSIGNED_BYTE$4;
+            this.compressed = false;
+            this.premultiplyAlpha = false;
+            this.flipY = false;
+            this.unpackAlignment = 1;
+            this.colorSpace = GL_BROWSER_DEFAULT_WEBGL;
+            this.width = 0;
+            this.height = 0;
+            this.channels = 0;
+          }
+          function copyFlags(result, other) {
+            result.internalformat = other.internalformat;
+            result.format = other.format;
+            result.type = other.type;
+            result.compressed = other.compressed;
+            result.premultiplyAlpha = other.premultiplyAlpha;
+            result.flipY = other.flipY;
+            result.unpackAlignment = other.unpackAlignment;
+            result.colorSpace = other.colorSpace;
+            result.width = other.width;
+            result.height = other.height;
+            result.channels = other.channels;
+          }
+          function parseFlags(flags, options) {
+            if (typeof options !== "object" || !options) {
+              return;
+            }
+            if ("premultiplyAlpha" in options) {
+              flags.premultiplyAlpha = options.premultiplyAlpha;
+            }
+            if ("flipY" in options) {
+              flags.flipY = options.flipY;
+            }
+            if ("alignment" in options) {
+              flags.unpackAlignment = options.alignment;
+            }
+            if ("colorSpace" in options) {
+              flags.colorSpace = colorSpace[options.colorSpace];
+            }
+            if ("type" in options) {
+              var type = options.type;
+              flags.type = textureTypes[type];
+            }
+            var w = flags.width;
+            var h = flags.height;
+            var c = flags.channels;
+            var hasChannels = false;
+            if ("shape" in options) {
+              w = options.shape[0];
+              h = options.shape[1];
+              if (options.shape.length === 3) {
+                c = options.shape[2];
+                hasChannels = true;
+              }
+            } else {
+              if ("radius" in options) {
+                w = h = options.radius;
+              }
+              if ("width" in options) {
+                w = options.width;
+              }
+              if ("height" in options) {
+                h = options.height;
+              }
+              if ("channels" in options) {
+                c = options.channels;
+                hasChannels = true;
+              }
+            }
+            flags.width = w | 0;
+            flags.height = h | 0;
+            flags.channels = c | 0;
+            var hasFormat = false;
+            if ("format" in options) {
+              var formatStr = options.format;
+              var internalformat = flags.internalformat = textureFormats[formatStr];
+              flags.format = colorFormats[internalformat];
+              if (formatStr in textureTypes) {
+                if (!("type" in options)) {
+                  flags.type = textureTypes[formatStr];
+                }
+              }
+              if (formatStr in compressedTextureFormats) {
+                flags.compressed = true;
+              }
+              hasFormat = true;
+            }
+            if (!hasChannels && hasFormat) {
+              flags.channels = FORMAT_CHANNELS[flags.format];
+            } else if (hasChannels && !hasFormat) {
+              if (flags.channels !== CHANNELS_FORMAT[flags.format]) {
+                flags.format = flags.internalformat = CHANNELS_FORMAT[flags.channels];
+              }
+            } else if (hasFormat && hasChannels) {
+            }
+          }
+          function setFlags(flags) {
+            gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, flags.flipY);
+            gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, flags.premultiplyAlpha);
+            gl.pixelStorei(GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, flags.colorSpace);
+            gl.pixelStorei(GL_UNPACK_ALIGNMENT, flags.unpackAlignment);
+          }
+          function TexImage() {
+            TexFlags.call(this);
+            this.xOffset = 0;
+            this.yOffset = 0;
+            this.data = null;
+            this.needsFree = false;
+            this.element = null;
+            this.needsCopy = false;
+          }
+          function parseImage(image, options) {
+            var data = null;
+            if (isPixelData(options)) {
+              data = options;
+            } else if (options) {
+              parseFlags(image, options);
+              if ("x" in options) {
+                image.xOffset = options.x | 0;
+              }
+              if ("y" in options) {
+                image.yOffset = options.y | 0;
+              }
+              if (isPixelData(options.data)) {
+                data = options.data;
+              }
+            }
+            if (options.copy) {
+              var viewW = contextState.viewportWidth;
+              var viewH = contextState.viewportHeight;
+              image.width = image.width || viewW - image.xOffset;
+              image.height = image.height || viewH - image.yOffset;
+              image.needsCopy = true;
+            } else if (!data) {
+              image.width = image.width || 1;
+              image.height = image.height || 1;
+              image.channels = image.channels || 4;
+            } else if (isTypedArray(data)) {
+              image.channels = image.channels || 4;
+              image.data = data;
+              if (!("type" in options) && image.type === GL_UNSIGNED_BYTE$4) {
+                image.type = typedArrayCode$1(data);
+              }
+            } else if (isNumericArray(data)) {
+              image.channels = image.channels || 4;
+              convertData(image, data);
+              image.alignment = 1;
+              image.needsFree = true;
+            } else if (isNDArrayLike(data)) {
+              var array = data.data;
+              if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$4) {
+                image.type = typedArrayCode$1(array);
+              }
+              var shape = data.shape;
+              var stride = data.stride;
+              var shapeX, shapeY, shapeC, strideX, strideY, strideC;
+              if (shape.length === 3) {
+                shapeC = shape[2];
+                strideC = stride[2];
+              } else {
+                shapeC = 1;
+                strideC = 1;
+              }
+              shapeX = shape[0];
+              shapeY = shape[1];
+              strideX = stride[0];
+              strideY = stride[1];
+              image.alignment = 1;
+              image.width = shapeX;
+              image.height = shapeY;
+              image.channels = shapeC;
+              image.format = image.internalformat = CHANNELS_FORMAT[shapeC];
+              image.needsFree = true;
+              transposeData(image, array, strideX, strideY, strideC, data.offset);
+            } else if (isCanvasElement(data) || isOffscreenCanvas(data) || isContext2D(data)) {
+              if (isCanvasElement(data) || isOffscreenCanvas(data)) {
+                image.element = data;
+              } else {
+                image.element = data.canvas;
+              }
+              image.width = image.element.width;
+              image.height = image.element.height;
+              image.channels = 4;
+            } else if (isBitmap(data)) {
+              image.element = data;
+              image.width = data.width;
+              image.height = data.height;
+              image.channels = 4;
+            } else if (isImageElement(data)) {
+              image.element = data;
+              image.width = data.naturalWidth;
+              image.height = data.naturalHeight;
+              image.channels = 4;
+            } else if (isVideoElement(data)) {
+              image.element = data;
+              image.width = data.videoWidth;
+              image.height = data.videoHeight;
+              image.channels = 4;
+            } else if (isRectArray(data)) {
+              var w = image.width || data[0].length;
+              var h = image.height || data.length;
+              var c = image.channels;
+              if (isArrayLike(data[0][0])) {
+                c = c || data[0][0].length;
+              } else {
+                c = c || 1;
+              }
+              var arrayShape2 = flattenUtils.shape(data);
+              var n = 1;
+              for (var dd = 0; dd < arrayShape2.length; ++dd) {
+                n *= arrayShape2[dd];
+              }
+              var allocData = preConvert(image, n);
+              flattenUtils.flatten(data, arrayShape2, "", allocData);
+              postConvert(image, allocData);
+              image.alignment = 1;
+              image.width = w;
+              image.height = h;
+              image.channels = c;
+              image.format = image.internalformat = CHANNELS_FORMAT[c];
+              image.needsFree = true;
+            }
+            if (image.type === GL_FLOAT$3) {
+            } else if (image.type === GL_HALF_FLOAT_OES) {
+            }
+          }
+          function setImage(info, target, miplevel) {
+            var element = info.element;
+            var data = info.data;
+            var internalformat = info.internalformat;
+            var format = info.format;
+            var type = info.type;
+            var width = info.width;
+            var height = info.height;
+            setFlags(info);
+            if (element) {
+              gl.texImage2D(target, miplevel, format, format, type, element);
+            } else if (info.compressed) {
+              gl.compressedTexImage2D(target, miplevel, internalformat, width, height, 0, data);
+            } else if (info.needsCopy) {
+              reglPoll();
+              gl.copyTexImage2D(
+                target,
+                miplevel,
+                format,
+                info.xOffset,
+                info.yOffset,
+                width,
+                height,
+                0
+              );
+            } else {
+              gl.texImage2D(target, miplevel, format, width, height, 0, format, type, data || null);
+            }
+          }
+          function setSubImage(info, target, x, y, miplevel) {
+            var element = info.element;
+            var data = info.data;
+            var internalformat = info.internalformat;
+            var format = info.format;
+            var type = info.type;
+            var width = info.width;
+            var height = info.height;
+            setFlags(info);
+            if (element) {
+              gl.texSubImage2D(
+                target,
+                miplevel,
+                x,
+                y,
+                format,
+                type,
+                element
+              );
+            } else if (info.compressed) {
+              gl.compressedTexSubImage2D(
+                target,
+                miplevel,
+                x,
+                y,
+                internalformat,
+                width,
+                height,
+                data
+              );
+            } else if (info.needsCopy) {
+              reglPoll();
+              gl.copyTexSubImage2D(
+                target,
+                miplevel,
+                x,
+                y,
+                info.xOffset,
+                info.yOffset,
+                width,
+                height
+              );
+            } else {
+              gl.texSubImage2D(
+                target,
+                miplevel,
+                x,
+                y,
+                width,
+                height,
+                format,
+                type,
+                data
+              );
+            }
+          }
+          var imagePool = [];
+          function allocImage() {
+            return imagePool.pop() || new TexImage();
+          }
+          function freeImage(image) {
+            if (image.needsFree) {
+              pool.freeType(image.data);
+            }
+            TexImage.call(image);
+            imagePool.push(image);
+          }
+          function MipMap() {
+            TexFlags.call(this);
+            this.genMipmaps = false;
+            this.mipmapHint = GL_DONT_CARE;
+            this.mipmask = 0;
+            this.images = Array(16);
+          }
+          function parseMipMapFromShape(mipmap, width, height) {
+            var img = mipmap.images[0] = allocImage();
+            mipmap.mipmask = 1;
+            img.width = mipmap.width = width;
+            img.height = mipmap.height = height;
+            img.channels = mipmap.channels = 4;
+          }
+          function parseMipMapFromObject(mipmap, options) {
+            var imgData = null;
+            if (isPixelData(options)) {
+              imgData = mipmap.images[0] = allocImage();
+              copyFlags(imgData, mipmap);
+              parseImage(imgData, options);
+              mipmap.mipmask = 1;
+            } else {
+              parseFlags(mipmap, options);
+              if (Array.isArray(options.mipmap)) {
+                var mipData = options.mipmap;
+                for (var i = 0; i < mipData.length; ++i) {
+                  imgData = mipmap.images[i] = allocImage();
+                  copyFlags(imgData, mipmap);
+                  imgData.width >>= i;
+                  imgData.height >>= i;
+                  parseImage(imgData, mipData[i]);
+                  mipmap.mipmask |= 1 << i;
+                }
+              } else {
+                imgData = mipmap.images[0] = allocImage();
+                copyFlags(imgData, mipmap);
+                parseImage(imgData, options);
+                mipmap.mipmask = 1;
+              }
+            }
+            copyFlags(mipmap, mipmap.images[0]);
+            if (mipmap.compressed && (mipmap.internalformat === GL_COMPRESSED_RGB_S3TC_DXT1_EXT || mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT3_EXT || mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)) {
+            }
+          }
+          function setMipMap(mipmap, target) {
+            var images = mipmap.images;
+            for (var i = 0; i < images.length; ++i) {
+              if (!images[i]) {
+                return;
+              }
+              setImage(images[i], target, i);
+            }
+          }
+          var mipPool = [];
+          function allocMipMap() {
+            var result = mipPool.pop() || new MipMap();
+            TexFlags.call(result);
+            result.mipmask = 0;
+            for (var i = 0; i < 16; ++i) {
+              result.images[i] = null;
+            }
+            return result;
+          }
+          function freeMipMap(mipmap) {
+            var images = mipmap.images;
+            for (var i = 0; i < images.length; ++i) {
+              if (images[i]) {
+                freeImage(images[i]);
+              }
+              images[i] = null;
+            }
+            mipPool.push(mipmap);
+          }
+          function TexInfo() {
+            this.minFilter = GL_NEAREST;
+            this.magFilter = GL_NEAREST;
+            this.wrapS = GL_CLAMP_TO_EDGE;
+            this.wrapT = GL_CLAMP_TO_EDGE;
+            this.anisotropic = 1;
+            this.genMipmaps = false;
+            this.mipmapHint = GL_DONT_CARE;
+          }
+          function parseTexInfo(info, options) {
+            if ("min" in options) {
+              var minFilter = options.min;
+              info.minFilter = minFilters[minFilter];
+              if (MIPMAP_FILTERS.indexOf(info.minFilter) >= 0 && !("faces" in options)) {
+                info.genMipmaps = true;
+              }
+            }
+            if ("mag" in options) {
+              var magFilter = options.mag;
+              info.magFilter = magFilters[magFilter];
+            }
+            var wrapS = info.wrapS;
+            var wrapT = info.wrapT;
+            if ("wrap" in options) {
+              var wrap = options.wrap;
+              if (typeof wrap === "string") {
+                wrapS = wrapT = wrapModes[wrap];
+              } else if (Array.isArray(wrap)) {
+                wrapS = wrapModes[wrap[0]];
+                wrapT = wrapModes[wrap[1]];
+              }
+            } else {
+              if ("wrapS" in options) {
+                var optWrapS = options.wrapS;
+                wrapS = wrapModes[optWrapS];
+              }
+              if ("wrapT" in options) {
+                var optWrapT = options.wrapT;
+                wrapT = wrapModes[optWrapT];
+              }
+            }
+            info.wrapS = wrapS;
+            info.wrapT = wrapT;
+            if ("anisotropic" in options) {
+              var anisotropic = options.anisotropic;
+              info.anisotropic = options.anisotropic;
+            }
+            if ("mipmap" in options) {
+              var hasMipMap = false;
+              switch (typeof options.mipmap) {
+                case "string":
+                  info.mipmapHint = mipmapHint[options.mipmap];
+                  info.genMipmaps = true;
+                  hasMipMap = true;
+                  break;
+                case "boolean":
+                  hasMipMap = info.genMipmaps = options.mipmap;
+                  break;
+                case "object":
+                  info.genMipmaps = false;
+                  hasMipMap = true;
+                  break;
+                default:
+              }
+              if (hasMipMap && !("min" in options)) {
+                info.minFilter = GL_NEAREST_MIPMAP_NEAREST;
+              }
+            }
+          }
+          function setTexInfo(info, target) {
+            gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, info.minFilter);
+            gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, info.magFilter);
+            gl.texParameteri(target, GL_TEXTURE_WRAP_S, info.wrapS);
+            gl.texParameteri(target, GL_TEXTURE_WRAP_T, info.wrapT);
+            if (extensions.ext_texture_filter_anisotropic) {
+              gl.texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, info.anisotropic);
+            }
+            if (info.genMipmaps) {
+              gl.hint(GL_GENERATE_MIPMAP_HINT, info.mipmapHint);
+              gl.generateMipmap(target);
+            }
+          }
+          var textureCount = 0;
+          var textureSet = {};
+          var numTexUnits = limits.maxTextureUnits;
+          var textureUnits = Array(numTexUnits).map(function() {
+            return null;
+          });
+          function REGLTexture(target) {
+            TexFlags.call(this);
+            this.mipmask = 0;
+            this.internalformat = GL_RGBA$1;
+            this.id = textureCount++;
+            this.refCount = 1;
+            this.target = target;
+            this.texture = gl.createTexture();
+            this.unit = -1;
+            this.bindCount = 0;
+            this.texInfo = new TexInfo();
+            if (config.profile) {
+              this.stats = { size: 0 };
+            }
+          }
+          function tempBind(texture) {
+            gl.activeTexture(GL_TEXTURE0$1);
+            gl.bindTexture(texture.target, texture.texture);
+          }
+          function tempRestore() {
+            var prev = textureUnits[0];
+            if (prev) {
+              gl.bindTexture(prev.target, prev.texture);
+            } else {
+              gl.bindTexture(GL_TEXTURE_2D$1, null);
+            }
+          }
+          function destroy(texture) {
+            var handle = texture.texture;
+            var unit = texture.unit;
+            var target = texture.target;
+            if (unit >= 0) {
+              gl.activeTexture(GL_TEXTURE0$1 + unit);
+              gl.bindTexture(target, null);
+              textureUnits[unit] = null;
+            }
+            gl.deleteTexture(handle);
+            texture.texture = null;
+            texture.params = null;
+            texture.pixels = null;
+            texture.refCount = 0;
+            delete textureSet[texture.id];
+            stats2.textureCount--;
+          }
+          extend(REGLTexture.prototype, {
+            bind: function() {
+              var texture = this;
+              texture.bindCount += 1;
+              var unit = texture.unit;
+              if (unit < 0) {
+                for (var i = 0; i < numTexUnits; ++i) {
+                  var other = textureUnits[i];
+                  if (other) {
+                    if (other.bindCount > 0) {
+                      continue;
+                    }
+                    other.unit = -1;
+                  }
+                  textureUnits[i] = texture;
+                  unit = i;
+                  break;
+                }
+                if (unit >= numTexUnits) {
+                }
+                if (config.profile && stats2.maxTextureUnits < unit + 1) {
+                  stats2.maxTextureUnits = unit + 1;
+                }
+                texture.unit = unit;
+                gl.activeTexture(GL_TEXTURE0$1 + unit);
+                gl.bindTexture(texture.target, texture.texture);
+              }
+              return unit;
+            },
+            unbind: function() {
+              this.bindCount -= 1;
+            },
+            decRef: function() {
+              if (--this.refCount <= 0) {
+                destroy(this);
+              }
+            }
+          });
+          function createTexture2D(a, b) {
+            var texture = new REGLTexture(GL_TEXTURE_2D$1);
+            textureSet[texture.id] = texture;
+            stats2.textureCount++;
+            function reglTexture2D(a2, b2) {
+              var texInfo = texture.texInfo;
+              TexInfo.call(texInfo);
+              var mipData = allocMipMap();
+              if (typeof a2 === "number") {
+                if (typeof b2 === "number") {
+                  parseMipMapFromShape(mipData, a2 | 0, b2 | 0);
+                } else {
+                  parseMipMapFromShape(mipData, a2 | 0, a2 | 0);
+                }
+              } else if (a2) {
+                parseTexInfo(texInfo, a2);
+                parseMipMapFromObject(mipData, a2);
+              } else {
+                parseMipMapFromShape(mipData, 1, 1);
+              }
+              if (texInfo.genMipmaps) {
+                mipData.mipmask = (mipData.width << 1) - 1;
+              }
+              texture.mipmask = mipData.mipmask;
+              copyFlags(texture, mipData);
+              texture.internalformat = mipData.internalformat;
+              reglTexture2D.width = mipData.width;
+              reglTexture2D.height = mipData.height;
+              tempBind(texture);
+              setMipMap(mipData, GL_TEXTURE_2D$1);
+              setTexInfo(texInfo, GL_TEXTURE_2D$1);
+              tempRestore();
+              freeMipMap(mipData);
+              if (config.profile) {
+                texture.stats.size = getTextureSize(
+                  texture.internalformat,
+                  texture.type,
+                  mipData.width,
+                  mipData.height,
+                  texInfo.genMipmaps,
+                  false
+                );
+              }
+              reglTexture2D.format = textureFormatsInvert[texture.internalformat];
+              reglTexture2D.type = textureTypesInvert[texture.type];
+              reglTexture2D.mag = magFiltersInvert[texInfo.magFilter];
+              reglTexture2D.min = minFiltersInvert[texInfo.minFilter];
+              reglTexture2D.wrapS = wrapModesInvert[texInfo.wrapS];
+              reglTexture2D.wrapT = wrapModesInvert[texInfo.wrapT];
+              return reglTexture2D;
+            }
+            function subimage(image, x_, y_, level_) {
+              var x = x_ | 0;
+              var y = y_ | 0;
+              var level = level_ | 0;
+              var imageData = allocImage();
+              copyFlags(imageData, texture);
+              imageData.width = 0;
+              imageData.height = 0;
+              parseImage(imageData, image);
+              imageData.width = imageData.width || (texture.width >> level) - x;
+              imageData.height = imageData.height || (texture.height >> level) - y;
+              tempBind(texture);
+              setSubImage(imageData, GL_TEXTURE_2D$1, x, y, level);
+              tempRestore();
+              freeImage(imageData);
+              return reglTexture2D;
+            }
+            function resize(w_, h_) {
+              var w = w_ | 0;
+              var h = h_ | 0 || w;
+              if (w === texture.width && h === texture.height) {
+                return reglTexture2D;
+              }
+              reglTexture2D.width = texture.width = w;
+              reglTexture2D.height = texture.height = h;
+              tempBind(texture);
+              for (var i = 0; texture.mipmask >> i; ++i) {
+                var _w = w >> i;
+                var _h = h >> i;
+                if (!_w || !_h) break;
+                gl.texImage2D(
+                  GL_TEXTURE_2D$1,
+                  i,
+                  texture.format,
+                  _w,
+                  _h,
+                  0,
+                  texture.format,
+                  texture.type,
+                  null
+                );
+              }
+              tempRestore();
+              if (config.profile) {
+                texture.stats.size = getTextureSize(
+                  texture.internalformat,
+                  texture.type,
+                  w,
+                  h,
+                  false,
+                  false
+                );
+              }
+              return reglTexture2D;
+            }
+            reglTexture2D(a, b);
+            reglTexture2D.subimage = subimage;
+            reglTexture2D.resize = resize;
+            reglTexture2D._reglType = "texture2d";
+            reglTexture2D._texture = texture;
+            if (config.profile) {
+              reglTexture2D.stats = texture.stats;
+            }
+            reglTexture2D.destroy = function() {
+              texture.decRef();
+            };
+            return reglTexture2D;
+          }
+          function createTextureCube(a0, a1, a2, a3, a4, a5) {
+            var texture = new REGLTexture(GL_TEXTURE_CUBE_MAP$1);
+            textureSet[texture.id] = texture;
+            stats2.cubeCount++;
+            var faces = new Array(6);
+            function reglTextureCube(a02, a12, a22, a32, a42, a52) {
+              var i;
+              var texInfo = texture.texInfo;
+              TexInfo.call(texInfo);
+              for (i = 0; i < 6; ++i) {
+                faces[i] = allocMipMap();
+              }
+              if (typeof a02 === "number" || !a02) {
+                var s = a02 | 0 || 1;
+                for (i = 0; i < 6; ++i) {
+                  parseMipMapFromShape(faces[i], s, s);
+                }
+              } else if (typeof a02 === "object") {
+                if (a12) {
+                  parseMipMapFromObject(faces[0], a02);
+                  parseMipMapFromObject(faces[1], a12);
+                  parseMipMapFromObject(faces[2], a22);
+                  parseMipMapFromObject(faces[3], a32);
+                  parseMipMapFromObject(faces[4], a42);
+                  parseMipMapFromObject(faces[5], a52);
+                } else {
+                  parseTexInfo(texInfo, a02);
+                  parseFlags(texture, a02);
+                  if ("faces" in a02) {
+                    var faceInput = a02.faces;
+                    for (i = 0; i < 6; ++i) {
+                      copyFlags(faces[i], texture);
+                      parseMipMapFromObject(faces[i], faceInput[i]);
+                    }
+                  } else {
+                    for (i = 0; i < 6; ++i) {
+                      parseMipMapFromObject(faces[i], a02);
+                    }
+                  }
+                }
+              } else {
+              }
+              copyFlags(texture, faces[0]);
+              if (texInfo.genMipmaps) {
+                texture.mipmask = (faces[0].width << 1) - 1;
+              } else {
+                texture.mipmask = faces[0].mipmask;
+              }
+              texture.internalformat = faces[0].internalformat;
+              reglTextureCube.width = faces[0].width;
+              reglTextureCube.height = faces[0].height;
+              tempBind(texture);
+              for (i = 0; i < 6; ++i) {
+                setMipMap(faces[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + i);
+              }
+              setTexInfo(texInfo, GL_TEXTURE_CUBE_MAP$1);
+              tempRestore();
+              if (config.profile) {
+                texture.stats.size = getTextureSize(
+                  texture.internalformat,
+                  texture.type,
+                  reglTextureCube.width,
+                  reglTextureCube.height,
+                  texInfo.genMipmaps,
+                  true
+                );
+              }
+              reglTextureCube.format = textureFormatsInvert[texture.internalformat];
+              reglTextureCube.type = textureTypesInvert[texture.type];
+              reglTextureCube.mag = magFiltersInvert[texInfo.magFilter];
+              reglTextureCube.min = minFiltersInvert[texInfo.minFilter];
+              reglTextureCube.wrapS = wrapModesInvert[texInfo.wrapS];
+              reglTextureCube.wrapT = wrapModesInvert[texInfo.wrapT];
+              for (i = 0; i < 6; ++i) {
+                freeMipMap(faces[i]);
+              }
+              return reglTextureCube;
+            }
+            function subimage(face, image, x_, y_, level_) {
+              var x = x_ | 0;
+              var y = y_ | 0;
+              var level = level_ | 0;
+              var imageData = allocImage();
+              copyFlags(imageData, texture);
+              imageData.width = 0;
+              imageData.height = 0;
+              parseImage(imageData, image);
+              imageData.width = imageData.width || (texture.width >> level) - x;
+              imageData.height = imageData.height || (texture.height >> level) - y;
+              tempBind(texture);
+              setSubImage(imageData, GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + face, x, y, level);
+              tempRestore();
+              freeImage(imageData);
+              return reglTextureCube;
+            }
+            function resize(radius_) {
+              var radius = radius_ | 0;
+              if (radius === texture.width) {
+                return;
+              }
+              reglTextureCube.width = texture.width = radius;
+              reglTextureCube.height = texture.height = radius;
+              tempBind(texture);
+              for (var i = 0; i < 6; ++i) {
+                for (var j = 0; texture.mipmask >> j; ++j) {
+                  gl.texImage2D(
+                    GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + i,
+                    j,
+                    texture.format,
+                    radius >> j,
+                    radius >> j,
+                    0,
+                    texture.format,
+                    texture.type,
+                    null
+                  );
+                }
+              }
+              tempRestore();
+              if (config.profile) {
+                texture.stats.size = getTextureSize(
+                  texture.internalformat,
+                  texture.type,
+                  reglTextureCube.width,
+                  reglTextureCube.height,
+                  false,
+                  true
+                );
+              }
+              return reglTextureCube;
+            }
+            reglTextureCube(a0, a1, a2, a3, a4, a5);
+            reglTextureCube.subimage = subimage;
+            reglTextureCube.resize = resize;
+            reglTextureCube._reglType = "textureCube";
+            reglTextureCube._texture = texture;
+            if (config.profile) {
+              reglTextureCube.stats = texture.stats;
+            }
+            reglTextureCube.destroy = function() {
+              texture.decRef();
+            };
+            return reglTextureCube;
+          }
+          function destroyTextures() {
+            for (var i = 0; i < numTexUnits; ++i) {
+              gl.activeTexture(GL_TEXTURE0$1 + i);
+              gl.bindTexture(GL_TEXTURE_2D$1, null);
+              textureUnits[i] = null;
+            }
+            values(textureSet).forEach(destroy);
+            stats2.cubeCount = 0;
+            stats2.textureCount = 0;
+          }
+          if (config.profile) {
+            stats2.getTotalTextureSize = function() {
+              var total = 0;
+              Object.keys(textureSet).forEach(function(key) {
+                total += textureSet[key].stats.size;
+              });
+              return total;
+            };
+          }
+          function restoreTextures() {
+            for (var i = 0; i < numTexUnits; ++i) {
+              var tex = textureUnits[i];
+              if (tex) {
+                tex.bindCount = 0;
+                tex.unit = -1;
+                textureUnits[i] = null;
+              }
+            }
+            values(textureSet).forEach(function(texture) {
+              texture.texture = gl.createTexture();
+              gl.bindTexture(texture.target, texture.texture);
+              for (var i2 = 0; i2 < 32; ++i2) {
+                if ((texture.mipmask & 1 << i2) === 0) {
+                  continue;
+                }
+                if (texture.target === GL_TEXTURE_2D$1) {
+                  gl.texImage2D(
+                    GL_TEXTURE_2D$1,
+                    i2,
+                    texture.internalformat,
+                    texture.width >> i2,
+                    texture.height >> i2,
+                    0,
+                    texture.internalformat,
+                    texture.type,
+                    null
+                  );
+                } else {
+                  for (var j = 0; j < 6; ++j) {
+                    gl.texImage2D(
+                      GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + j,
+                      i2,
+                      texture.internalformat,
+                      texture.width >> i2,
+                      texture.height >> i2,
+                      0,
+                      texture.internalformat,
+                      texture.type,
+                      null
+                    );
+                  }
+                }
+              }
+              setTexInfo(texture.texInfo, texture.target);
+            });
+          }
+          function refreshTextures() {
+            for (var i = 0; i < numTexUnits; ++i) {
+              var tex = textureUnits[i];
+              if (tex) {
+                tex.bindCount = 0;
+                tex.unit = -1;
+                textureUnits[i] = null;
+              }
+              gl.activeTexture(GL_TEXTURE0$1 + i);
+              gl.bindTexture(GL_TEXTURE_2D$1, null);
+              gl.bindTexture(GL_TEXTURE_CUBE_MAP$1, null);
+            }
+          }
+          return {
+            create2D: createTexture2D,
+            createCube: createTextureCube,
+            clear: destroyTextures,
+            getTexture: function(wrapper) {
+              return null;
+            },
+            restore: restoreTextures,
+            refresh: refreshTextures
+          };
+        }
+        var GL_RENDERBUFFER = 36161;
+        var GL_RGBA4$1 = 32854;
+        var GL_RGB5_A1$1 = 32855;
+        var GL_RGB565$1 = 36194;
+        var GL_DEPTH_COMPONENT16 = 33189;
+        var GL_STENCIL_INDEX8 = 36168;
+        var GL_DEPTH_STENCIL$1 = 34041;
+        var GL_SRGB8_ALPHA8_EXT = 35907;
+        var GL_RGBA32F_EXT = 34836;
+        var GL_RGBA16F_EXT = 34842;
+        var GL_RGB16F_EXT = 34843;
+        var FORMAT_SIZES = [];
+        FORMAT_SIZES[GL_RGBA4$1] = 2;
+        FORMAT_SIZES[GL_RGB5_A1$1] = 2;
+        FORMAT_SIZES[GL_RGB565$1] = 2;
+        FORMAT_SIZES[GL_DEPTH_COMPONENT16] = 2;
+        FORMAT_SIZES[GL_STENCIL_INDEX8] = 1;
+        FORMAT_SIZES[GL_DEPTH_STENCIL$1] = 4;
+        FORMAT_SIZES[GL_SRGB8_ALPHA8_EXT] = 4;
+        FORMAT_SIZES[GL_RGBA32F_EXT] = 16;
+        FORMAT_SIZES[GL_RGBA16F_EXT] = 8;
+        FORMAT_SIZES[GL_RGB16F_EXT] = 6;
+        function getRenderbufferSize(format, width, height) {
+          return FORMAT_SIZES[format] * width * height;
+        }
+        var wrapRenderbuffers = function(gl, extensions, limits, stats2, config) {
+          var formatTypes = {
+            "rgba4": GL_RGBA4$1,
+            "rgb565": GL_RGB565$1,
+            "rgb5 a1": GL_RGB5_A1$1,
+            "depth": GL_DEPTH_COMPONENT16,
+            "stencil": GL_STENCIL_INDEX8,
+            "depth stencil": GL_DEPTH_STENCIL$1
+          };
+          if (extensions.ext_srgb) {
+            formatTypes["srgba"] = GL_SRGB8_ALPHA8_EXT;
+          }
+          if (extensions.ext_color_buffer_half_float) {
+            formatTypes["rgba16f"] = GL_RGBA16F_EXT;
+            formatTypes["rgb16f"] = GL_RGB16F_EXT;
+          }
+          if (extensions.webgl_color_buffer_float) {
+            formatTypes["rgba32f"] = GL_RGBA32F_EXT;
+          }
+          var formatTypesInvert = [];
+          Object.keys(formatTypes).forEach(function(key) {
+            var val = formatTypes[key];
+            formatTypesInvert[val] = key;
+          });
+          var renderbufferCount = 0;
+          var renderbufferSet = {};
+          function REGLRenderbuffer(renderbuffer) {
+            this.id = renderbufferCount++;
+            this.refCount = 1;
+            this.renderbuffer = renderbuffer;
+            this.format = GL_RGBA4$1;
+            this.width = 0;
+            this.height = 0;
+            if (config.profile) {
+              this.stats = { size: 0 };
+            }
+          }
+          REGLRenderbuffer.prototype.decRef = function() {
+            if (--this.refCount <= 0) {
+              destroy(this);
+            }
+          };
+          function destroy(rb) {
+            var handle = rb.renderbuffer;
+            gl.bindRenderbuffer(GL_RENDERBUFFER, null);
+            gl.deleteRenderbuffer(handle);
+            rb.renderbuffer = null;
+            rb.refCount = 0;
+            delete renderbufferSet[rb.id];
+            stats2.renderbufferCount--;
+          }
+          function createRenderbuffer(a, b) {
+            var renderbuffer = new REGLRenderbuffer(gl.createRenderbuffer());
+            renderbufferSet[renderbuffer.id] = renderbuffer;
+            stats2.renderbufferCount++;
+            function reglRenderbuffer(a2, b2) {
+              var w = 0;
+              var h = 0;
+              var format = GL_RGBA4$1;
+              if (typeof a2 === "object" && a2) {
+                var options = a2;
+                if ("shape" in options) {
+                  var shape = options.shape;
+                  w = shape[0] | 0;
+                  h = shape[1] | 0;
+                } else {
+                  if ("radius" in options) {
+                    w = h = options.radius | 0;
+                  }
+                  if ("width" in options) {
+                    w = options.width | 0;
+                  }
+                  if ("height" in options) {
+                    h = options.height | 0;
+                  }
+                }
+                if ("format" in options) {
+                  format = formatTypes[options.format];
+                }
+              } else if (typeof a2 === "number") {
+                w = a2 | 0;
+                if (typeof b2 === "number") {
+                  h = b2 | 0;
+                } else {
+                  h = w;
+                }
+              } else if (!a2) {
+                w = h = 1;
+              } else {
+              }
+              if (w === renderbuffer.width && h === renderbuffer.height && format === renderbuffer.format) {
+                return;
+              }
+              reglRenderbuffer.width = renderbuffer.width = w;
+              reglRenderbuffer.height = renderbuffer.height = h;
+              renderbuffer.format = format;
+              gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer);
+              gl.renderbufferStorage(GL_RENDERBUFFER, format, w, h);
+              if (config.profile) {
+                renderbuffer.stats.size = getRenderbufferSize(renderbuffer.format, renderbuffer.width, renderbuffer.height);
+              }
+              reglRenderbuffer.format = formatTypesInvert[renderbuffer.format];
+              return reglRenderbuffer;
+            }
+            function resize(w_, h_) {
+              var w = w_ | 0;
+              var h = h_ | 0 || w;
+              if (w === renderbuffer.width && h === renderbuffer.height) {
+                return reglRenderbuffer;
+              }
+              reglRenderbuffer.width = renderbuffer.width = w;
+              reglRenderbuffer.height = renderbuffer.height = h;
+              gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer);
+              gl.renderbufferStorage(GL_RENDERBUFFER, renderbuffer.format, w, h);
+              if (config.profile) {
+                renderbuffer.stats.size = getRenderbufferSize(
+                  renderbuffer.format,
+                  renderbuffer.width,
+                  renderbuffer.height
+                );
+              }
+              return reglRenderbuffer;
+            }
+            reglRenderbuffer(a, b);
+            reglRenderbuffer.resize = resize;
+            reglRenderbuffer._reglType = "renderbuffer";
+            reglRenderbuffer._renderbuffer = renderbuffer;
+            if (config.profile) {
+              reglRenderbuffer.stats = renderbuffer.stats;
+            }
+            reglRenderbuffer.destroy = function() {
+              renderbuffer.decRef();
+            };
+            return reglRenderbuffer;
+          }
+          if (config.profile) {
+            stats2.getTotalRenderbufferSize = function() {
+              var total = 0;
+              Object.keys(renderbufferSet).forEach(function(key) {
+                total += renderbufferSet[key].stats.size;
+              });
+              return total;
+            };
+          }
+          function restoreRenderbuffers() {
+            values(renderbufferSet).forEach(function(rb) {
+              rb.renderbuffer = gl.createRenderbuffer();
+              gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer);
+              gl.renderbufferStorage(GL_RENDERBUFFER, rb.format, rb.width, rb.height);
+            });
+            gl.bindRenderbuffer(GL_RENDERBUFFER, null);
+          }
+          return {
+            create: createRenderbuffer,
+            clear: function() {
+              values(renderbufferSet).forEach(destroy);
+            },
+            restore: restoreRenderbuffers
+          };
+        };
+        var GL_FRAMEBUFFER$1 = 36160;
+        var GL_RENDERBUFFER$1 = 36161;
+        var GL_TEXTURE_2D$2 = 3553;
+        var GL_TEXTURE_CUBE_MAP_POSITIVE_X$2 = 34069;
+        var GL_COLOR_ATTACHMENT0$1 = 36064;
+        var GL_DEPTH_ATTACHMENT = 36096;
+        var GL_STENCIL_ATTACHMENT = 36128;
+        var GL_DEPTH_STENCIL_ATTACHMENT = 33306;
+        var GL_FRAMEBUFFER_COMPLETE$1 = 36053;
+        var GL_HALF_FLOAT_OES$1 = 36193;
+        var GL_UNSIGNED_BYTE$5 = 5121;
+        var GL_FLOAT$4 = 5126;
+        var GL_RGB$1 = 6407;
+        var GL_RGBA$2 = 6408;
+        var textureFormatChannels = [];
+        textureFormatChannels[GL_RGBA$2] = 4;
+        textureFormatChannels[GL_RGB$1] = 3;
+        var textureTypeSizes = [];
+        textureTypeSizes[GL_UNSIGNED_BYTE$5] = 1;
+        textureTypeSizes[GL_FLOAT$4] = 4;
+        textureTypeSizes[GL_HALF_FLOAT_OES$1] = 2;
+        function wrapFBOState(gl, extensions, limits, textureState, renderbufferState, stats2) {
+          var framebufferState = {
+            cur: null,
+            next: null,
+            dirty: false,
+            setFBO: null
+          };
+          var colorTextureFormats = ["rgba"];
+          var colorRenderbufferFormats = ["rgba4", "rgb565", "rgb5 a1"];
+          if (extensions.ext_srgb) {
+            colorRenderbufferFormats.push("srgba");
+          }
+          if (extensions.ext_color_buffer_half_float) {
+            colorRenderbufferFormats.push("rgba16f", "rgb16f");
+          }
+          if (extensions.webgl_color_buffer_float) {
+            colorRenderbufferFormats.push("rgba32f");
+          }
+          var colorTypes = ["uint8"];
+          if (extensions.oes_texture_half_float) {
+            colorTypes.push("half float", "float16");
+          }
+          if (extensions.oes_texture_float) {
+            colorTypes.push("float", "float32");
+          }
+          function FramebufferAttachment(target, texture, renderbuffer) {
+            this.target = target;
+            this.texture = texture;
+            this.renderbuffer = renderbuffer;
+            var w = 0;
+            var h = 0;
+            if (texture) {
+              w = texture.width;
+              h = texture.height;
+            } else if (renderbuffer) {
+              w = renderbuffer.width;
+              h = renderbuffer.height;
+            }
+            this.width = w;
+            this.height = h;
+          }
+          function decRef(attachment) {
+            if (attachment) {
+              if (attachment.texture) {
+                attachment.texture._texture.decRef();
+              }
+              if (attachment.renderbuffer) {
+                attachment.renderbuffer._renderbuffer.decRef();
+              }
+            }
+          }
+          function incRefAndCheckShape(attachment, width, height) {
+            if (!attachment) {
+              return;
+            }
+            if (attachment.texture) {
+              var texture = attachment.texture._texture;
+              var tw = Math.max(1, texture.width);
+              var th = Math.max(1, texture.height);
+              texture.refCount += 1;
+            } else {
+              var renderbuffer = attachment.renderbuffer._renderbuffer;
+              renderbuffer.refCount += 1;
+            }
+          }
+          function attach(location, attachment) {
+            if (attachment) {
+              if (attachment.texture) {
+                gl.framebufferTexture2D(
+                  GL_FRAMEBUFFER$1,
+                  location,
+                  attachment.target,
+                  attachment.texture._texture.texture,
+                  0
+                );
+              } else {
+                gl.framebufferRenderbuffer(
+                  GL_FRAMEBUFFER$1,
+                  location,
+                  GL_RENDERBUFFER$1,
+                  attachment.renderbuffer._renderbuffer.renderbuffer
+                );
+              }
+            }
+          }
+          function parseAttachment(attachment) {
+            var target = GL_TEXTURE_2D$2;
+            var texture = null;
+            var renderbuffer = null;
+            var data = attachment;
+            if (typeof attachment === "object") {
+              data = attachment.data;
+              if ("target" in attachment) {
+                target = attachment.target | 0;
+              }
+            }
+            var type = data._reglType;
+            if (type === "texture2d") {
+              texture = data;
+            } else if (type === "textureCube") {
+              texture = data;
+            } else if (type === "renderbuffer") {
+              renderbuffer = data;
+              target = GL_RENDERBUFFER$1;
+            } else {
+            }
+            return new FramebufferAttachment(target, texture, renderbuffer);
+          }
+          function allocAttachment(width, height, isTexture, format, type) {
+            if (isTexture) {
+              var texture = textureState.create2D({
+                width,
+                height,
+                format,
+                type
+              });
+              texture._texture.refCount = 0;
+              return new FramebufferAttachment(GL_TEXTURE_2D$2, texture, null);
+            } else {
+              var rb = renderbufferState.create({
+                width,
+                height,
+                format
+              });
+              rb._renderbuffer.refCount = 0;
+              return new FramebufferAttachment(GL_RENDERBUFFER$1, null, rb);
+            }
+          }
+          function unwrapAttachment(attachment) {
+            return attachment && (attachment.texture || attachment.renderbuffer);
+          }
+          function resizeAttachment(attachment, w, h) {
+            if (attachment) {
+              if (attachment.texture) {
+                attachment.texture.resize(w, h);
+              } else if (attachment.renderbuffer) {
+                attachment.renderbuffer.resize(w, h);
+              }
+              attachment.width = w;
+              attachment.height = h;
+            }
+          }
+          var framebufferCount = 0;
+          var framebufferSet = {};
+          function REGLFramebuffer() {
+            this.id = framebufferCount++;
+            framebufferSet[this.id] = this;
+            this.framebuffer = gl.createFramebuffer();
+            this.width = 0;
+            this.height = 0;
+            this.colorAttachments = [];
+            this.depthAttachment = null;
+            this.stencilAttachment = null;
+            this.depthStencilAttachment = null;
+          }
+          function decFBORefs(framebuffer) {
+            framebuffer.colorAttachments.forEach(decRef);
+            decRef(framebuffer.depthAttachment);
+            decRef(framebuffer.stencilAttachment);
+            decRef(framebuffer.depthStencilAttachment);
+          }
+          function destroy(framebuffer) {
+            var handle = framebuffer.framebuffer;
+            gl.deleteFramebuffer(handle);
+            framebuffer.framebuffer = null;
+            stats2.framebufferCount--;
+            delete framebufferSet[framebuffer.id];
+          }
+          function updateFramebuffer(framebuffer) {
+            var i;
+            gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebuffer.framebuffer);
+            var colorAttachments = framebuffer.colorAttachments;
+            for (i = 0; i < colorAttachments.length; ++i) {
+              attach(GL_COLOR_ATTACHMENT0$1 + i, colorAttachments[i]);
+            }
+            for (i = colorAttachments.length; i < limits.maxColorAttachments; ++i) {
+              gl.framebufferTexture2D(
+                GL_FRAMEBUFFER$1,
+                GL_COLOR_ATTACHMENT0$1 + i,
+                GL_TEXTURE_2D$2,
+                null,
+                0
+              );
+            }
+            gl.framebufferTexture2D(
+              GL_FRAMEBUFFER$1,
+              GL_DEPTH_STENCIL_ATTACHMENT,
+              GL_TEXTURE_2D$2,
+              null,
+              0
+            );
+            gl.framebufferTexture2D(
+              GL_FRAMEBUFFER$1,
+              GL_DEPTH_ATTACHMENT,
+              GL_TEXTURE_2D$2,
+              null,
+              0
+            );
+            gl.framebufferTexture2D(
+              GL_FRAMEBUFFER$1,
+              GL_STENCIL_ATTACHMENT,
+              GL_TEXTURE_2D$2,
+              null,
+              0
+            );
+            attach(GL_DEPTH_ATTACHMENT, framebuffer.depthAttachment);
+            attach(GL_STENCIL_ATTACHMENT, framebuffer.stencilAttachment);
+            attach(GL_DEPTH_STENCIL_ATTACHMENT, framebuffer.depthStencilAttachment);
+            var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER$1);
+            if (!gl.isContextLost() && status !== GL_FRAMEBUFFER_COMPLETE$1) {
+            }
+            gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebufferState.next ? framebufferState.next.framebuffer : null);
+            framebufferState.cur = framebufferState.next;
+            gl.getError();
+          }
+          function createFBO(a0, a1) {
+            var framebuffer = new REGLFramebuffer();
+            stats2.framebufferCount++;
+            function reglFramebuffer(a, b) {
+              var i;
+              var width = 0;
+              var height = 0;
+              var needsDepth = true;
+              var needsStencil = true;
+              var colorBuffer = null;
+              var colorTexture = true;
+              var colorFormat = "rgba";
+              var colorType = "uint8";
+              var colorCount = 1;
+              var depthBuffer = null;
+              var stencilBuffer = null;
+              var depthStencilBuffer = null;
+              var depthStencilTexture = false;
+              if (typeof a === "number") {
+                width = a | 0;
+                height = b | 0 || width;
+              } else if (!a) {
+                width = height = 1;
+              } else {
+                var options = a;
+                if ("shape" in options) {
+                  var shape = options.shape;
+                  width = shape[0];
+                  height = shape[1];
+                } else {
+                  if ("radius" in options) {
+                    width = height = options.radius;
+                  }
+                  if ("width" in options) {
+                    width = options.width;
+                  }
+                  if ("height" in options) {
+                    height = options.height;
+                  }
+                }
+                if ("color" in options || "colors" in options) {
+                  colorBuffer = options.color || options.colors;
+                  if (Array.isArray(colorBuffer)) {
+                  }
+                }
+                if (!colorBuffer) {
+                  if ("colorCount" in options) {
+                    colorCount = options.colorCount | 0;
+                  }
+                  if ("colorTexture" in options) {
+                    colorTexture = !!options.colorTexture;
+                    colorFormat = "rgba4";
+                  }
+                  if ("colorType" in options) {
+                    colorType = options.colorType;
+                    if (!colorTexture) {
+                      if (colorType === "half float" || colorType === "float16") {
+                        colorFormat = "rgba16f";
+                      } else if (colorType === "float" || colorType === "float32") {
+                        colorFormat = "rgba32f";
+                      }
+                    } else {
+                    }
+                  }
+                  if ("colorFormat" in options) {
+                    colorFormat = options.colorFormat;
+                    if (colorTextureFormats.indexOf(colorFormat) >= 0) {
+                      colorTexture = true;
+                    } else if (colorRenderbufferFormats.indexOf(colorFormat) >= 0) {
+                      colorTexture = false;
+                    } else {
+                    }
+                  }
+                }
+                if ("depthTexture" in options || "depthStencilTexture" in options) {
+                  depthStencilTexture = !!(options.depthTexture || options.depthStencilTexture);
+                }
+                if ("depth" in options) {
+                  if (typeof options.depth === "boolean") {
+                    needsDepth = options.depth;
+                  } else {
+                    depthBuffer = options.depth;
+                    needsStencil = false;
+                  }
+                }
+                if ("stencil" in options) {
+                  if (typeof options.stencil === "boolean") {
+                    needsStencil = options.stencil;
+                  } else {
+                    stencilBuffer = options.stencil;
+                    needsDepth = false;
+                  }
+                }
+                if ("depthStencil" in options) {
+                  if (typeof options.depthStencil === "boolean") {
+                    needsDepth = needsStencil = options.depthStencil;
+                  } else {
+                    depthStencilBuffer = options.depthStencil;
+                    needsDepth = false;
+                    needsStencil = false;
+                  }
+                }
+              }
+              var colorAttachments = null;
+              var depthAttachment = null;
+              var stencilAttachment = null;
+              var depthStencilAttachment = null;
+              if (Array.isArray(colorBuffer)) {
+                colorAttachments = colorBuffer.map(parseAttachment);
+              } else if (colorBuffer) {
+                colorAttachments = [parseAttachment(colorBuffer)];
+              } else {
+                colorAttachments = new Array(colorCount);
+                for (i = 0; i < colorCount; ++i) {
+                  colorAttachments[i] = allocAttachment(
+                    width,
+                    height,
+                    colorTexture,
+                    colorFormat,
+                    colorType
+                  );
+                }
+              }
+              width = width || colorAttachments[0].width;
+              height = height || colorAttachments[0].height;
+              if (depthBuffer) {
+                depthAttachment = parseAttachment(depthBuffer);
+              } else if (needsDepth && !needsStencil) {
+                depthAttachment = allocAttachment(
+                  width,
+                  height,
+                  depthStencilTexture,
+                  "depth",
+                  "uint32"
+                );
+              }
+              if (stencilBuffer) {
+                stencilAttachment = parseAttachment(stencilBuffer);
+              } else if (needsStencil && !needsDepth) {
+                stencilAttachment = allocAttachment(
+                  width,
+                  height,
+                  false,
+                  "stencil",
+                  "uint8"
+                );
+              }
+              if (depthStencilBuffer) {
+                depthStencilAttachment = parseAttachment(depthStencilBuffer);
+              } else if (!depthBuffer && !stencilBuffer && needsStencil && needsDepth) {
+                depthStencilAttachment = allocAttachment(
+                  width,
+                  height,
+                  depthStencilTexture,
+                  "depth stencil",
+                  "depth stencil"
+                );
+              }
+              var commonColorAttachmentSize = null;
+              for (i = 0; i < colorAttachments.length; ++i) {
+                incRefAndCheckShape(colorAttachments[i], width, height);
+                if (colorAttachments[i] && colorAttachments[i].texture) {
+                  var colorAttachmentSize = textureFormatChannels[colorAttachments[i].texture._texture.format] * textureTypeSizes[colorAttachments[i].texture._texture.type];
+                  if (commonColorAttachmentSize === null) {
+                    commonColorAttachmentSize = colorAttachmentSize;
+                  } else {
+                  }
+                }
+              }
+              incRefAndCheckShape(depthAttachment, width, height);
+              incRefAndCheckShape(stencilAttachment, width, height);
+              incRefAndCheckShape(depthStencilAttachment, width, height);
+              decFBORefs(framebuffer);
+              framebuffer.width = width;
+              framebuffer.height = height;
+              framebuffer.colorAttachments = colorAttachments;
+              framebuffer.depthAttachment = depthAttachment;
+              framebuffer.stencilAttachment = stencilAttachment;
+              framebuffer.depthStencilAttachment = depthStencilAttachment;
+              reglFramebuffer.color = colorAttachments.map(unwrapAttachment);
+              reglFramebuffer.depth = unwrapAttachment(depthAttachment);
+              reglFramebuffer.stencil = unwrapAttachment(stencilAttachment);
+              reglFramebuffer.depthStencil = unwrapAttachment(depthStencilAttachment);
+              reglFramebuffer.width = framebuffer.width;
+              reglFramebuffer.height = framebuffer.height;
+              updateFramebuffer(framebuffer);
+              return reglFramebuffer;
+            }
+            function resize(w_, h_) {
+              var w = Math.max(w_ | 0, 1);
+              var h = Math.max(h_ | 0 || w, 1);
+              if (w === framebuffer.width && h === framebuffer.height) {
+                return reglFramebuffer;
+              }
+              var colorAttachments = framebuffer.colorAttachments;
+              for (var i = 0; i < colorAttachments.length; ++i) {
+                resizeAttachment(colorAttachments[i], w, h);
+              }
+              resizeAttachment(framebuffer.depthAttachment, w, h);
+              resizeAttachment(framebuffer.stencilAttachment, w, h);
+              resizeAttachment(framebuffer.depthStencilAttachment, w, h);
+              framebuffer.width = reglFramebuffer.width = w;
+              framebuffer.height = reglFramebuffer.height = h;
+              updateFramebuffer(framebuffer);
+              return reglFramebuffer;
+            }
+            reglFramebuffer(a0, a1);
+            return extend(reglFramebuffer, {
+              resize,
+              _reglType: "framebuffer",
+              _framebuffer: framebuffer,
+              destroy: function() {
+                destroy(framebuffer);
+                decFBORefs(framebuffer);
+              },
+              use: function(block) {
+                framebufferState.setFBO({
+                  framebuffer: reglFramebuffer
+                }, block);
+              }
+            });
+          }
+          function createCubeFBO(options) {
+            var faces = Array(6);
+            function reglFramebufferCube(a) {
+              var i;
+              var params = {
+                color: null
+              };
+              var radius = 0;
+              var colorBuffer = null;
+              var colorFormat = "rgba";
+              var colorType = "uint8";
+              var colorCount = 1;
+              if (typeof a === "number") {
+                radius = a | 0;
+              } else if (!a) {
+                radius = 1;
+              } else {
+                var options2 = a;
+                if ("shape" in options2) {
+                  var shape = options2.shape;
+                  radius = shape[0];
+                } else {
+                  if ("radius" in options2) {
+                    radius = options2.radius | 0;
+                  }
+                  if ("width" in options2) {
+                    radius = options2.width | 0;
+                    if ("height" in options2) {
+                    }
+                  } else if ("height" in options2) {
+                    radius = options2.height | 0;
+                  }
+                }
+                if ("color" in options2 || "colors" in options2) {
+                  colorBuffer = options2.color || options2.colors;
+                  if (Array.isArray(colorBuffer)) {
+                  }
+                }
+                if (!colorBuffer) {
+                  if ("colorCount" in options2) {
+                    colorCount = options2.colorCount | 0;
+                  }
+                  if ("colorType" in options2) {
+                    colorType = options2.colorType;
+                  }
+                  if ("colorFormat" in options2) {
+                    colorFormat = options2.colorFormat;
+                  }
+                }
+                if ("depth" in options2) {
+                  params.depth = options2.depth;
+                }
+                if ("stencil" in options2) {
+                  params.stencil = options2.stencil;
+                }
+                if ("depthStencil" in options2) {
+                  params.depthStencil = options2.depthStencil;
+                }
+              }
+              var colorCubes;
+              if (colorBuffer) {
+                if (Array.isArray(colorBuffer)) {
+                  colorCubes = [];
+                  for (i = 0; i < colorBuffer.length; ++i) {
+                    colorCubes[i] = colorBuffer[i];
+                  }
+                } else {
+                  colorCubes = [colorBuffer];
+                }
+              } else {
+                colorCubes = Array(colorCount);
+                var cubeMapParams = {
+                  radius,
+                  format: colorFormat,
+                  type: colorType
+                };
+                for (i = 0; i < colorCount; ++i) {
+                  colorCubes[i] = textureState.createCube(cubeMapParams);
+                }
+              }
+              params.color = Array(colorCubes.length);
+              for (i = 0; i < colorCubes.length; ++i) {
+                var cube = colorCubes[i];
+                radius = radius || cube.width;
+                params.color[i] = {
+                  target: GL_TEXTURE_CUBE_MAP_POSITIVE_X$2,
+                  data: colorCubes[i]
+                };
+              }
+              for (i = 0; i < 6; ++i) {
+                for (var j = 0; j < colorCubes.length; ++j) {
+                  params.color[j].target = GL_TEXTURE_CUBE_MAP_POSITIVE_X$2 + i;
+                }
+                if (i > 0) {
+                  params.depth = faces[0].depth;
+                  params.stencil = faces[0].stencil;
+                  params.depthStencil = faces[0].depthStencil;
+                }
+                if (faces[i]) {
+                  faces[i](params);
+                } else {
+                  faces[i] = createFBO(params);
+                }
+              }
+              return extend(reglFramebufferCube, {
+                width: radius,
+                height: radius,
+                color: colorCubes
+              });
+            }
+            function resize(radius_) {
+              var i;
+              var radius = radius_ | 0;
+              if (radius === reglFramebufferCube.width) {
+                return reglFramebufferCube;
+              }
+              var colors = reglFramebufferCube.color;
+              for (i = 0; i < colors.length; ++i) {
+                colors[i].resize(radius);
+              }
+              for (i = 0; i < 6; ++i) {
+                faces[i].resize(radius);
+              }
+              reglFramebufferCube.width = reglFramebufferCube.height = radius;
+              return reglFramebufferCube;
+            }
+            reglFramebufferCube(options);
+            return extend(reglFramebufferCube, {
+              faces,
+              resize,
+              _reglType: "framebufferCube",
+              destroy: function() {
+                faces.forEach(function(f) {
+                  f.destroy();
+                });
+              }
+            });
+          }
+          function restoreFramebuffers() {
+            framebufferState.cur = null;
+            framebufferState.next = null;
+            framebufferState.dirty = true;
+            values(framebufferSet).forEach(function(fb) {
+              fb.framebuffer = gl.createFramebuffer();
+              updateFramebuffer(fb);
+            });
+          }
+          return extend(framebufferState, {
+            getFramebuffer: function(object) {
+              if (typeof object === "function" && object._reglType === "framebuffer") {
+                var fbo = object._framebuffer;
+                if (fbo instanceof REGLFramebuffer) {
+                  return fbo;
+                }
+              }
+              return null;
+            },
+            create: createFBO,
+            createCube: createCubeFBO,
+            clear: function() {
+              values(framebufferSet).forEach(destroy);
+            },
+            restore: restoreFramebuffers
+          });
+        }
+        var GL_FLOAT$5 = 5126;
+        var GL_ARRAY_BUFFER$1 = 34962;
+        var GL_ELEMENT_ARRAY_BUFFER$1 = 34963;
+        function AttributeRecord() {
+          this.state = 0;
+          this.x = 0;
+          this.y = 0;
+          this.z = 0;
+          this.w = 0;
+          this.buffer = null;
+          this.size = 0;
+          this.normalized = false;
+          this.type = GL_FLOAT$5;
+          this.offset = 0;
+          this.stride = 0;
+          this.divisor = 0;
+        }
+        function wrapAttributeState(gl, extensions, limits, stats2, bufferState, elementState, drawState) {
+          var NUM_ATTRIBUTES = limits.maxAttributes;
+          var attributeBindings = new Array(NUM_ATTRIBUTES);
+          for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
+            attributeBindings[i] = new AttributeRecord();
+          }
+          var vaoCount = 0;
+          var vaoSet = {};
+          var state = {
+            Record: AttributeRecord,
+            scope: {},
+            state: attributeBindings,
+            currentVAO: null,
+            targetVAO: null,
+            restore: extVAO() ? restoreVAO : function() {
+            },
+            createVAO,
+            getVAO,
+            destroyBuffer,
+            setVAO: extVAO() ? setVAOEXT : setVAOEmulated,
+            clear: extVAO() ? destroyVAOEXT : function() {
+            }
+          };
+          function destroyBuffer(buffer) {
+            for (var i2 = 0; i2 < attributeBindings.length; ++i2) {
+              var record = attributeBindings[i2];
+              if (record.buffer === buffer) {
+                gl.disableVertexAttribArray(i2);
+                record.buffer = null;
+              }
+            }
+          }
+          function extVAO() {
+            return extensions.oes_vertex_array_object;
+          }
+          function extInstanced() {
+            return extensions.angle_instanced_arrays;
+          }
+          function getVAO(vao) {
+            if (typeof vao === "function" && vao._vao) {
+              return vao._vao;
+            }
+            return null;
+          }
+          function setVAOEXT(vao) {
+            if (vao === state.currentVAO) {
+              return;
+            }
+            var ext = extVAO();
+            if (vao) {
+              ext.bindVertexArrayOES(vao.vao);
+            } else {
+              ext.bindVertexArrayOES(null);
+            }
+            state.currentVAO = vao;
+          }
+          function setVAOEmulated(vao) {
+            if (vao === state.currentVAO) {
+              return;
+            }
+            if (vao) {
+              vao.bindAttrs();
+            } else {
+              var exti = extInstanced();
+              for (var i2 = 0; i2 < attributeBindings.length; ++i2) {
+                var binding = attributeBindings[i2];
+                if (binding.buffer) {
+                  gl.enableVertexAttribArray(i2);
+                  binding.buffer.bind();
+                  gl.vertexAttribPointer(i2, binding.size, binding.type, binding.normalized, binding.stride, binding.offfset);
+                  if (exti && binding.divisor) {
+                    exti.vertexAttribDivisorANGLE(i2, binding.divisor);
+                  }
+                } else {
+                  gl.disableVertexAttribArray(i2);
+                  gl.vertexAttrib4f(i2, binding.x, binding.y, binding.z, binding.w);
+                }
+              }
+              if (drawState.elements) {
+                gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, drawState.elements.buffer.buffer);
+              } else {
+                gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null);
+              }
+            }
+            state.currentVAO = vao;
+          }
+          function destroyVAOEXT() {
+            values(vaoSet).forEach(function(vao) {
+              vao.destroy();
+            });
+          }
+          function REGLVAO() {
+            this.id = ++vaoCount;
+            this.attributes = [];
+            this.elements = null;
+            this.ownsElements = false;
+            this.count = 0;
+            this.offset = 0;
+            this.instances = -1;
+            this.primitive = 4;
+            var extension = extVAO();
+            if (extension) {
+              this.vao = extension.createVertexArrayOES();
+            } else {
+              this.vao = null;
+            }
+            vaoSet[this.id] = this;
+            this.buffers = [];
+          }
+          REGLVAO.prototype.bindAttrs = function() {
+            var exti = extInstanced();
+            var attributes = this.attributes;
+            for (var i2 = 0; i2 < attributes.length; ++i2) {
+              var attr = attributes[i2];
+              if (attr.buffer) {
+                gl.enableVertexAttribArray(i2);
+                gl.bindBuffer(GL_ARRAY_BUFFER$1, attr.buffer.buffer);
+                gl.vertexAttribPointer(i2, attr.size, attr.type, attr.normalized, attr.stride, attr.offset);
+                if (exti && attr.divisor) {
+                  exti.vertexAttribDivisorANGLE(i2, attr.divisor);
+                }
+              } else {
+                gl.disableVertexAttribArray(i2);
+                gl.vertexAttrib4f(i2, attr.x, attr.y, attr.z, attr.w);
+              }
+            }
+            for (var j = attributes.length; j < NUM_ATTRIBUTES; ++j) {
+              gl.disableVertexAttribArray(j);
+            }
+            var elements = elementState.getElements(this.elements);
+            if (elements) {
+              gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, elements.buffer.buffer);
+            } else {
+              gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null);
+            }
+          };
+          REGLVAO.prototype.refresh = function() {
+            var ext = extVAO();
+            if (ext) {
+              ext.bindVertexArrayOES(this.vao);
+              this.bindAttrs();
+              state.currentVAO = null;
+              ext.bindVertexArrayOES(null);
+            }
+          };
+          REGLVAO.prototype.destroy = function() {
+            if (this.vao) {
+              var extension = extVAO();
+              if (this === state.currentVAO) {
+                state.currentVAO = null;
+                extension.bindVertexArrayOES(null);
+              }
+              extension.deleteVertexArrayOES(this.vao);
+              this.vao = null;
+            }
+            if (this.ownsElements) {
+              this.elements.destroy();
+              this.elements = null;
+              this.ownsElements = false;
+            }
+            if (vaoSet[this.id]) {
+              delete vaoSet[this.id];
+              stats2.vaoCount -= 1;
+            }
+          };
+          function restoreVAO() {
+            var ext = extVAO();
+            if (ext) {
+              values(vaoSet).forEach(function(vao) {
+                vao.refresh();
+              });
+            }
+          }
+          function createVAO(_attr) {
+            var vao = new REGLVAO();
+            stats2.vaoCount += 1;
+            function updateVAO(options) {
+              var attributes;
+              if (Array.isArray(options)) {
+                attributes = options;
+                if (vao.elements && vao.ownsElements) {
+                  vao.elements.destroy();
+                }
+                vao.elements = null;
+                vao.ownsElements = false;
+                vao.offset = 0;
+                vao.count = 0;
+                vao.instances = -1;
+                vao.primitive = 4;
+              } else {
+                if (options.elements) {
+                  var elements = options.elements;
+                  if (vao.ownsElements) {
+                    if (typeof elements === "function" && elements._reglType === "elements") {
+                      vao.elements.destroy();
+                      vao.ownsElements = false;
+                    } else {
+                      vao.elements(elements);
+                      vao.ownsElements = false;
+                    }
+                  } else if (elementState.getElements(options.elements)) {
+                    vao.elements = options.elements;
+                    vao.ownsElements = false;
+                  } else {
+                    vao.elements = elementState.create(options.elements);
+                    vao.ownsElements = true;
+                  }
+                } else {
+                  vao.elements = null;
+                  vao.ownsElements = false;
+                }
+                attributes = options.attributes;
+                vao.offset = 0;
+                vao.count = -1;
+                vao.instances = -1;
+                vao.primitive = 4;
+                if (vao.elements) {
+                  vao.count = vao.elements._elements.vertCount;
+                  vao.primitive = vao.elements._elements.primType;
+                }
+                if ("offset" in options) {
+                  vao.offset = options.offset | 0;
+                }
+                if ("count" in options) {
+                  vao.count = options.count | 0;
+                }
+                if ("instances" in options) {
+                  vao.instances = options.instances | 0;
+                }
+                if ("primitive" in options) {
+                  vao.primitive = primTypes[options.primitive];
+                }
+              }
+              var bufUpdated = {};
+              var nattributes = vao.attributes;
+              nattributes.length = attributes.length;
+              for (var i2 = 0; i2 < attributes.length; ++i2) {
+                var spec = attributes[i2];
+                var rec = nattributes[i2] = new AttributeRecord();
+                var data = spec.data || spec;
+                if (Array.isArray(data) || isTypedArray(data) || isNDArrayLike(data)) {
+                  var buf;
+                  if (vao.buffers[i2]) {
+                    buf = vao.buffers[i2];
+                    if (isTypedArray(data) && buf._buffer.byteLength >= data.byteLength) {
+                      buf.subdata(data);
+                    } else {
+                      buf.destroy();
+                      vao.buffers[i2] = null;
+                    }
+                  }
+                  if (!vao.buffers[i2]) {
+                    buf = vao.buffers[i2] = bufferState.create(spec, GL_ARRAY_BUFFER$1, false, true);
+                  }
+                  rec.buffer = bufferState.getBuffer(buf);
+                  rec.size = rec.buffer.dimension | 0;
+                  rec.normalized = false;
+                  rec.type = rec.buffer.dtype;
+                  rec.offset = 0;
+                  rec.stride = 0;
+                  rec.divisor = 0;
+                  rec.state = 1;
+                  bufUpdated[i2] = 1;
+                } else if (bufferState.getBuffer(spec)) {
+                  rec.buffer = bufferState.getBuffer(spec);
+                  rec.size = rec.buffer.dimension | 0;
+                  rec.normalized = false;
+                  rec.type = rec.buffer.dtype;
+                  rec.offset = 0;
+                  rec.stride = 0;
+                  rec.divisor = 0;
+                  rec.state = 1;
+                } else if (bufferState.getBuffer(spec.buffer)) {
+                  rec.buffer = bufferState.getBuffer(spec.buffer);
+                  rec.size = (+spec.size || rec.buffer.dimension) | 0;
+                  rec.normalized = !!spec.normalized || false;
+                  if ("type" in spec) {
+                    rec.type = glTypes[spec.type];
+                  } else {
+                    rec.type = rec.buffer.dtype;
+                  }
+                  rec.offset = (spec.offset || 0) | 0;
+                  rec.stride = (spec.stride || 0) | 0;
+                  rec.divisor = (spec.divisor || 0) | 0;
+                  rec.state = 1;
+                } else if ("x" in spec) {
+                  rec.x = +spec.x || 0;
+                  rec.y = +spec.y || 0;
+                  rec.z = +spec.z || 0;
+                  rec.w = +spec.w || 0;
+                  rec.state = 2;
+                } else {
+                }
+              }
+              for (var j = 0; j < vao.buffers.length; ++j) {
+                if (!bufUpdated[j] && vao.buffers[j]) {
+                  vao.buffers[j].destroy();
+                  vao.buffers[j] = null;
+                }
+              }
+              vao.refresh();
+              return updateVAO;
+            }
+            updateVAO.destroy = function() {
+              for (var j = 0; j < vao.buffers.length; ++j) {
+                if (vao.buffers[j]) {
+                  vao.buffers[j].destroy();
+                }
+              }
+              vao.buffers.length = 0;
+              if (vao.ownsElements) {
+                vao.elements.destroy();
+                vao.elements = null;
+                vao.ownsElements = false;
+              }
+              vao.destroy();
+            };
+            updateVAO._vao = vao;
+            updateVAO._reglType = "vao";
+            return updateVAO(_attr);
+          }
+          return state;
+        }
+        var GL_FRAGMENT_SHADER = 35632;
+        var GL_VERTEX_SHADER = 35633;
+        var GL_ACTIVE_UNIFORMS = 35718;
+        var GL_ACTIVE_ATTRIBUTES = 35721;
+        function wrapShaderState(gl, stringStore, stats2, config) {
+          var fragShaders = {};
+          var vertShaders = {};
+          function ActiveInfo(name, id, location, info) {
+            this.name = name;
+            this.id = id;
+            this.location = location;
+            this.info = info;
+          }
+          function insertActiveInfo(list, info) {
+            for (var i = 0; i < list.length; ++i) {
+              if (list[i].id === info.id) {
+                list[i].location = info.location;
+                return;
+              }
+            }
+            list.push(info);
+          }
+          function getShader(type, id, command) {
+            var cache = type === GL_FRAGMENT_SHADER ? fragShaders : vertShaders;
+            var shader = cache[id];
+            if (!shader) {
+              var source = stringStore.str(id);
+              shader = gl.createShader(type);
+              gl.shaderSource(shader, source);
+              gl.compileShader(shader);
+              cache[id] = shader;
+            }
+            return shader;
+          }
+          var programCache = {};
+          var programList = [];
+          var PROGRAM_COUNTER = 0;
+          function REGLProgram(fragId, vertId) {
+            this.id = PROGRAM_COUNTER++;
+            this.fragId = fragId;
+            this.vertId = vertId;
+            this.program = null;
+            this.uniforms = [];
+            this.attributes = [];
+            this.refCount = 1;
+            if (config.profile) {
+              this.stats = {
+                uniformsCount: 0,
+                attributesCount: 0
+              };
+            }
+          }
+          function linkProgram(desc, command, attributeLocations) {
+            var i, info;
+            var fragShader = getShader(GL_FRAGMENT_SHADER, desc.fragId);
+            var vertShader = getShader(GL_VERTEX_SHADER, desc.vertId);
+            var program = desc.program = gl.createProgram();
+            gl.attachShader(program, fragShader);
+            gl.attachShader(program, vertShader);
+            if (attributeLocations) {
+              for (i = 0; i < attributeLocations.length; ++i) {
+                var binding = attributeLocations[i];
+                gl.bindAttribLocation(program, binding[0], binding[1]);
+              }
+            }
+            gl.linkProgram(program);
+            var numUniforms = gl.getProgramParameter(program, GL_ACTIVE_UNIFORMS);
+            if (config.profile) {
+              desc.stats.uniformsCount = numUniforms;
+            }
+            var uniforms = desc.uniforms;
+            for (i = 0; i < numUniforms; ++i) {
+              info = gl.getActiveUniform(program, i);
+              if (info) {
+                if (info.size > 1) {
+                  for (var j = 0; j < info.size; ++j) {
+                    var name = info.name.replace("[0]", "[" + j + "]");
+                    insertActiveInfo(uniforms, new ActiveInfo(
+                      name,
+                      stringStore.id(name),
+                      gl.getUniformLocation(program, name),
+                      info
+                    ));
+                  }
+                } else {
+                  insertActiveInfo(uniforms, new ActiveInfo(
+                    info.name,
+                    stringStore.id(info.name),
+                    gl.getUniformLocation(program, info.name),
+                    info
+                  ));
+                }
+              }
+            }
+            var numAttributes = gl.getProgramParameter(program, GL_ACTIVE_ATTRIBUTES);
+            if (config.profile) {
+              desc.stats.attributesCount = numAttributes;
+            }
+            var attributes = desc.attributes;
+            for (i = 0; i < numAttributes; ++i) {
+              info = gl.getActiveAttrib(program, i);
+              if (info) {
+                insertActiveInfo(attributes, new ActiveInfo(
+                  info.name,
+                  stringStore.id(info.name),
+                  gl.getAttribLocation(program, info.name),
+                  info
+                ));
+              }
+            }
+          }
+          if (config.profile) {
+            stats2.getMaxUniformsCount = function() {
+              var m = 0;
+              programList.forEach(function(desc) {
+                if (desc.stats.uniformsCount > m) {
+                  m = desc.stats.uniformsCount;
+                }
+              });
+              return m;
+            };
+            stats2.getMaxAttributesCount = function() {
+              var m = 0;
+              programList.forEach(function(desc) {
+                if (desc.stats.attributesCount > m) {
+                  m = desc.stats.attributesCount;
+                }
+              });
+              return m;
+            };
+          }
+          function restoreShaders() {
+            fragShaders = {};
+            vertShaders = {};
+            for (var i = 0; i < programList.length; ++i) {
+              linkProgram(programList[i], null, programList[i].attributes.map(function(info) {
+                return [info.location, info.name];
+              }));
+            }
+          }
+          return {
+            clear: function() {
+              var deleteShader = gl.deleteShader.bind(gl);
+              values(fragShaders).forEach(deleteShader);
+              fragShaders = {};
+              values(vertShaders).forEach(deleteShader);
+              vertShaders = {};
+              programList.forEach(function(desc) {
+                gl.deleteProgram(desc.program);
+              });
+              programList.length = 0;
+              programCache = {};
+              stats2.shaderCount = 0;
+            },
+            program: function(vertId, fragId, command, attribLocations) {
+              var cache = programCache[fragId];
+              if (!cache) {
+                cache = programCache[fragId] = {};
+              }
+              var prevProgram = cache[vertId];
+              if (prevProgram) {
+                prevProgram.refCount++;
+                if (!attribLocations) {
+                  return prevProgram;
+                }
+              }
+              var program = new REGLProgram(fragId, vertId);
+              stats2.shaderCount++;
+              linkProgram(program, command, attribLocations);
+              if (!prevProgram) {
+                cache[vertId] = program;
+              }
+              programList.push(program);
+              return extend(program, {
+                destroy: function() {
+                  program.refCount--;
+                  if (program.refCount <= 0) {
+                    gl.deleteProgram(program.program);
+                    var idx = programList.indexOf(program);
+                    programList.splice(idx, 1);
+                    stats2.shaderCount--;
+                  }
+                  if (cache[program.vertId].refCount <= 0) {
+                    gl.deleteShader(vertShaders[program.vertId]);
+                    delete vertShaders[program.vertId];
+                    delete programCache[program.fragId][program.vertId];
+                  }
+                  if (!Object.keys(programCache[program.fragId]).length) {
+                    gl.deleteShader(fragShaders[program.fragId]);
+                    delete fragShaders[program.fragId];
+                    delete programCache[program.fragId];
+                  }
+                }
+              });
+            },
+            restore: restoreShaders,
+            shader: getShader,
+            frag: -1,
+            vert: -1
+          };
+        }
+        var GL_RGBA$3 = 6408;
+        var GL_UNSIGNED_BYTE$6 = 5121;
+        var GL_PACK_ALIGNMENT = 3333;
+        var GL_FLOAT$6 = 5126;
+        function wrapReadPixels(gl, framebufferState, reglPoll, context, glAttributes, extensions, limits) {
+          function readPixelsImpl(input) {
+            var type;
+            if (framebufferState.next === null) {
+              type = GL_UNSIGNED_BYTE$6;
+            } else {
+              type = framebufferState.next.colorAttachments[0].texture._texture.type;
+            }
+            var x = 0;
+            var y = 0;
+            var width = context.framebufferWidth;
+            var height = context.framebufferHeight;
+            var data = null;
+            if (isTypedArray(input)) {
+              data = input;
+            } else if (input) {
+              x = input.x | 0;
+              y = input.y | 0;
+              width = (input.width || context.framebufferWidth - x) | 0;
+              height = (input.height || context.framebufferHeight - y) | 0;
+              data = input.data || null;
+            }
+            if (data) {
+              if (type === GL_UNSIGNED_BYTE$6) {
+              } else if (type === GL_FLOAT$6) {
+              }
+            }
+            reglPoll();
+            var size = width * height * 4;
+            if (!data) {
+              if (type === GL_UNSIGNED_BYTE$6) {
+                data = new Uint8Array(size);
+              } else if (type === GL_FLOAT$6) {
+                data = data || new Float32Array(size);
+              }
+            }
+            gl.pixelStorei(GL_PACK_ALIGNMENT, 4);
+            gl.readPixels(
+              x,
+              y,
+              width,
+              height,
+              GL_RGBA$3,
+              type,
+              data
+            );
+            return data;
+          }
+          function readPixelsFBO(options) {
+            var result;
+            framebufferState.setFBO({
+              framebuffer: options.framebuffer
+            }, function() {
+              result = readPixelsImpl(options);
+            });
+            return result;
+          }
+          function readPixels(options) {
+            if (!options || !("framebuffer" in options)) {
+              return readPixelsImpl(options);
+            } else {
+              return readPixelsFBO(options);
+            }
+          }
+          return readPixels;
+        }
+        var hexcase = 0;
+        var b64pad = "";
+        function hex_sha256(s) {
+          return rstr2hex(rstr_sha256(str2rstr_utf8(s)));
+        }
+        function rstr_sha256(s) {
+          return binb2rstr(binb_sha256(rstr2binb(s), s.length * 8));
+        }
+        function rstr_hmac_sha256(key, data) {
+          var bkey = rstr2binb(key);
+          if (bkey.length > 16) bkey = binb_sha256(bkey, key.length * 8);
+          var ipad = Array(16), opad = Array(16);
+          for (var i = 0; i < 16; i++) {
+            ipad[i] = bkey[i] ^ 909522486;
+            opad[i] = bkey[i] ^ 1549556828;
+          }
+          var hash = binb_sha256(ipad.concat(rstr2binb(data)), 512 + data.length * 8);
+          return binb2rstr(binb_sha256(opad.concat(hash), 512 + 256));
+        }
+        function rstr2hex(input) {
+          var hex_tab = hexcase ? "0123456789ABCDEF" : "0123456789abcdef";
+          var output = "";
+          var x;
+          for (var i = 0; i < input.length; i++) {
+            x = input.charCodeAt(i);
+            output += hex_tab.charAt(x >>> 4 & 15) + hex_tab.charAt(x & 15);
+          }
+          return output;
+        }
+        function rstr2b64(input) {
+          var tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          var output = "";
+          var len = input.length;
+          for (var i = 0; i < len; i += 3) {
+            var triplet = input.charCodeAt(i) << 16 | (i + 1 < len ? input.charCodeAt(i + 1) << 8 : 0) | (i + 2 < len ? input.charCodeAt(i + 2) : 0);
+            for (var j = 0; j < 4; j++) {
+              if (i * 8 + j * 6 > input.length * 8) output += b64pad;
+              else output += tab.charAt(triplet >>> 6 * (3 - j) & 63);
+            }
+          }
+          return output;
+        }
+        function rstr2any(input, encoding) {
+          var divisor = encoding.length;
+          var remainders = Array();
+          var i, q, x, quotient;
+          var dividend = Array(Math.ceil(input.length / 2));
+          for (i = 0; i < dividend.length; i++) {
+            dividend[i] = input.charCodeAt(i * 2) << 8 | input.charCodeAt(i * 2 + 1);
+          }
+          while (dividend.length > 0) {
+            quotient = Array();
+            x = 0;
+            for (i = 0; i < dividend.length; i++) {
+              x = (x << 16) + dividend[i];
+              q = Math.floor(x / divisor);
+              x -= q * divisor;
+              if (quotient.length > 0 || q > 0)
+                quotient[quotient.length] = q;
+            }
+            remainders[remainders.length] = x;
+            dividend = quotient;
+          }
+          var output = "";
+          for (i = remainders.length - 1; i >= 0; i--)
+            output += encoding.charAt(remainders[i]);
+          var full_length = Math.ceil(input.length * 8 / (Math.log(encoding.length) / Math.log(2)));
+          for (i = output.length; i < full_length; i++)
+            output = encoding[0] + output;
+          return output;
+        }
+        function str2rstr_utf8(input) {
+          var output = "";
+          var i = -1;
+          var x, y;
+          while (++i < input.length) {
+            x = input.charCodeAt(i);
+            y = i + 1 < input.length ? input.charCodeAt(i + 1) : 0;
+            if (55296 <= x && x <= 56319 && 56320 <= y && y <= 57343) {
+              x = 65536 + ((x & 1023) << 10) + (y & 1023);
+              i++;
+            }
+            if (x <= 127)
+              output += String.fromCharCode(x);
+            else if (x <= 2047)
+              output += String.fromCharCode(
+                192 | x >>> 6 & 31,
+                128 | x & 63
+              );
+            else if (x <= 65535)
+              output += String.fromCharCode(
+                224 | x >>> 12 & 15,
+                128 | x >>> 6 & 63,
+                128 | x & 63
+              );
+            else if (x <= 2097151)
+              output += String.fromCharCode(
+                240 | x >>> 18 & 7,
+                128 | x >>> 12 & 63,
+                128 | x >>> 6 & 63,
+                128 | x & 63
+              );
+          }
+          return output;
+        }
+        function rstr2binb(input) {
+          var output = Array(input.length >> 2);
+          for (var i = 0; i < output.length; i++)
+            output[i] = 0;
+          for (var i = 0; i < input.length * 8; i += 8)
+            output[i >> 5] |= (input.charCodeAt(i / 8) & 255) << 24 - i % 32;
+          return output;
+        }
+        function binb2rstr(input) {
+          var output = "";
+          for (var i = 0; i < input.length * 32; i += 8)
+            output += String.fromCharCode(input[i >> 5] >>> 24 - i % 32 & 255);
+          return output;
+        }
+        function sha256_S(X, n) {
+          return X >>> n | X << 32 - n;
+        }
+        function sha256_R(X, n) {
+          return X >>> n;
+        }
+        function sha256_Ch(x, y, z) {
+          return x & y ^ ~x & z;
+        }
+        function sha256_Maj(x, y, z) {
+          return x & y ^ x & z ^ y & z;
+        }
+        function sha256_Sigma0256(x) {
+          return sha256_S(x, 2) ^ sha256_S(x, 13) ^ sha256_S(x, 22);
+        }
+        function sha256_Sigma1256(x) {
+          return sha256_S(x, 6) ^ sha256_S(x, 11) ^ sha256_S(x, 25);
+        }
+        function sha256_Gamma0256(x) {
+          return sha256_S(x, 7) ^ sha256_S(x, 18) ^ sha256_R(x, 3);
+        }
+        function sha256_Gamma1256(x) {
+          return sha256_S(x, 17) ^ sha256_S(x, 19) ^ sha256_R(x, 10);
+        }
+        var sha256_K = new Array(
+          1116352408,
+          1899447441,
+          -1245643825,
+          -373957723,
+          961987163,
+          1508970993,
+          -1841331548,
+          -1424204075,
+          -670586216,
+          310598401,
+          607225278,
+          1426881987,
+          1925078388,
+          -2132889090,
+          -1680079193,
+          -1046744716,
+          -459576895,
+          -272742522,
+          264347078,
+          604807628,
+          770255983,
+          1249150122,
+          1555081692,
+          1996064986,
+          -1740746414,
+          -1473132947,
+          -1341970488,
+          -1084653625,
+          -958395405,
+          -710438585,
+          113926993,
+          338241895,
+          666307205,
+          773529912,
+          1294757372,
+          1396182291,
+          1695183700,
+          1986661051,
+          -2117940946,
+          -1838011259,
+          -1564481375,
+          -1474664885,
+          -1035236496,
+          -949202525,
+          -778901479,
+          -694614492,
+          -200395387,
+          275423344,
+          430227734,
+          506948616,
+          659060556,
+          883997877,
+          958139571,
+          1322822218,
+          1537002063,
+          1747873779,
+          1955562222,
+          2024104815,
+          -2067236844,
+          -1933114872,
+          -1866530822,
+          -1538233109,
+          -1090935817,
+          -965641998
+        );
+        function binb_sha256(m, l) {
+          var HASH = new Array(
+            1779033703,
+            -1150833019,
+            1013904242,
+            -1521486534,
+            1359893119,
+            -1694144372,
+            528734635,
+            1541459225
+          );
+          var W = new Array(64);
+          var a, b, c, d, e, f, g, h;
+          var i, j, T1, T2;
+          m[l >> 5] |= 128 << 24 - l % 32;
+          m[(l + 64 >> 9 << 4) + 15] = l;
+          for (i = 0; i < m.length; i += 16) {
+            a = HASH[0];
+            b = HASH[1];
+            c = HASH[2];
+            d = HASH[3];
+            e = HASH[4];
+            f = HASH[5];
+            g = HASH[6];
+            h = HASH[7];
+            for (j = 0; j < 64; j++) {
+              if (j < 16) W[j] = m[j + i];
+              else W[j] = safe_add(safe_add(
+                safe_add(sha256_Gamma1256(W[j - 2]), W[j - 7]),
+                sha256_Gamma0256(W[j - 15])
+              ), W[j - 16]);
+              T1 = safe_add(safe_add(
+                safe_add(safe_add(h, sha256_Sigma1256(e)), sha256_Ch(e, f, g)),
+                sha256_K[j]
+              ), W[j]);
+              T2 = safe_add(sha256_Sigma0256(a), sha256_Maj(a, b, c));
+              h = g;
+              g = f;
+              f = e;
+              e = safe_add(d, T1);
+              d = c;
+              c = b;
+              b = a;
+              a = safe_add(T1, T2);
+            }
+            HASH[0] = safe_add(a, HASH[0]);
+            HASH[1] = safe_add(b, HASH[1]);
+            HASH[2] = safe_add(c, HASH[2]);
+            HASH[3] = safe_add(d, HASH[3]);
+            HASH[4] = safe_add(e, HASH[4]);
+            HASH[5] = safe_add(f, HASH[5]);
+            HASH[6] = safe_add(g, HASH[6]);
+            HASH[7] = safe_add(h, HASH[7]);
+          }
+          return HASH;
+        }
+        function safe_add(x, y) {
+          var lsw = (x & 65535) + (y & 65535);
+          var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+          return msw << 16 | lsw & 65535;
+        }
+        function slice(x) {
+          return Array.prototype.slice.call(x);
+        }
+        function join(x) {
+          return slice(x).join("");
+        }
+        function createEnvironment(options) {
+          var cache = options && options.cache;
+          var varCounter = 0;
+          var linkedNames = [];
+          var linkedValues = [];
+          var isStable = [];
+          function link(value, options2) {
+            var stable = options2 && options2.stable;
+            if (!stable) {
+              for (var i = 0; i < linkedValues.length; ++i) {
+                if (linkedValues[i] === value && !isStable[i]) {
+                  return linkedNames[i];
+                }
+              }
+            }
+            var name = "g" + varCounter++;
+            linkedNames.push(name);
+            linkedValues.push(value);
+            isStable.push(stable);
+            return name;
+          }
+          function block() {
+            var code = [];
+            function push() {
+              code.push.apply(code, slice(arguments));
+            }
+            var vars = [];
+            function def() {
+              var name = "v" + varCounter++;
+              vars.push(name);
+              if (arguments.length > 0) {
+                code.push(name, "=");
+                code.push.apply(code, slice(arguments));
+                code.push(";");
+              }
+              return name;
+            }
+            return extend(push, {
+              def,
+              toString: function() {
+                return join([
+                  vars.length > 0 ? "var " + vars.join(",") + ";" : "",
+                  join(code)
+                ]);
+              }
+            });
+          }
+          function scope() {
+            var entry = block();
+            var exit = block();
+            var entryToString = entry.toString;
+            var exitToString = exit.toString;
+            function save(object, prop) {
+              exit(object, prop, "=", entry.def(object, prop), ";");
+            }
+            return extend(function() {
+              entry.apply(entry, slice(arguments));
+            }, {
+              def: entry.def,
+              entry,
+              exit,
+              save,
+              set: function(object, prop, value) {
+                save(object, prop);
+                entry(object, prop, "=", value, ";");
+              },
+              toString: function() {
+                return entryToString() + exitToString();
+              }
+            });
+          }
+          function conditional() {
+            var pred = join(arguments);
+            var thenBlock = scope();
+            var elseBlock = scope();
+            var thenToString = thenBlock.toString;
+            var elseToString = elseBlock.toString;
+            return extend(thenBlock, {
+              then: function() {
+                thenBlock.apply(thenBlock, slice(arguments));
+                return this;
+              },
+              else: function() {
+                elseBlock.apply(elseBlock, slice(arguments));
+                return this;
+              },
+              toString: function() {
+                var elseClause = elseToString();
+                if (elseClause) {
+                  elseClause = "else{" + elseClause + "}";
+                }
+                return join([
+                  "if(",
+                  pred,
+                  "){",
+                  thenToString(),
+                  "}",
+                  elseClause
+                ]);
+              }
+            });
+          }
+          var globalBlock = block();
+          var procedures = {};
+          function proc(name, count) {
+            var args = [];
+            function arg() {
+              var name2 = "a" + args.length;
+              args.push(name2);
+              return name2;
+            }
+            count = count || 0;
+            for (var i = 0; i < count; ++i) {
+              arg();
+            }
+            var body = scope();
+            var bodyToString = body.toString;
+            var result = procedures[name] = extend(body, {
+              arg,
+              toString: function() {
+                return join([
+                  "function(",
+                  args.join(),
+                  "){",
+                  bodyToString(),
+                  "}"
+                ]);
+              }
+            });
+            return result;
+          }
+          function compile() {
+            var code = [
+              '"use strict";',
+              globalBlock,
+              "return {"
+            ];
+            Object.keys(procedures).forEach(function(name) {
+              code.push('"', name, '":', procedures[name].toString(), ",");
+            });
+            code.push("}");
+            var src = join(code).replace(/;/g, ";\n").replace(/}/g, "}\n").replace(/{/g, "{\n");
+            var key;
+            if (cache) {
+              key = hex_sha256(src);
+              if (cache[key]) {
+                return cache[key].apply(null, linkedValues);
+              }
+            }
+            var proc2 = Function.apply(null, linkedNames.concat(src));
+            if (cache) {
+              cache[key] = proc2;
+            }
+            return proc2.apply(null, linkedValues);
+          }
+          return {
+            global: globalBlock,
+            link,
+            block,
+            proc,
+            scope,
+            cond: conditional,
+            compile
+          };
+        }
+        var CUTE_COMPONENTS = "xyzw".split("");
+        var GL_UNSIGNED_BYTE$7 = 5121;
+        var ATTRIB_STATE_POINTER = 1;
+        var ATTRIB_STATE_CONSTANT = 2;
+        var DYN_FUNC$1 = 0;
+        var DYN_PROP$1 = 1;
+        var DYN_CONTEXT$1 = 2;
+        var DYN_STATE$1 = 3;
+        var DYN_THUNK = 4;
+        var DYN_CONSTANT$1 = 5;
+        var DYN_ARRAY$1 = 6;
+        var S_DITHER = "dither";
+        var S_BLEND_ENABLE = "blend.enable";
+        var S_BLEND_COLOR = "blend.color";
+        var S_BLEND_EQUATION = "blend.equation";
+        var S_BLEND_FUNC = "blend.func";
+        var S_DEPTH_ENABLE = "depth.enable";
+        var S_DEPTH_FUNC = "depth.func";
+        var S_DEPTH_RANGE = "depth.range";
+        var S_DEPTH_MASK = "depth.mask";
+        var S_COLOR_MASK = "colorMask";
+        var S_CULL_ENABLE = "cull.enable";
+        var S_CULL_FACE = "cull.face";
+        var S_FRONT_FACE = "frontFace";
+        var S_LINE_WIDTH = "lineWidth";
+        var S_POLYGON_OFFSET_ENABLE = "polygonOffset.enable";
+        var S_POLYGON_OFFSET_OFFSET = "polygonOffset.offset";
+        var S_SAMPLE_ALPHA = "sample.alpha";
+        var S_SAMPLE_ENABLE = "sample.enable";
+        var S_SAMPLE_COVERAGE = "sample.coverage";
+        var S_STENCIL_ENABLE = "stencil.enable";
+        var S_STENCIL_MASK = "stencil.mask";
+        var S_STENCIL_FUNC = "stencil.func";
+        var S_STENCIL_OPFRONT = "stencil.opFront";
+        var S_STENCIL_OPBACK = "stencil.opBack";
+        var S_SCISSOR_ENABLE = "scissor.enable";
+        var S_SCISSOR_BOX = "scissor.box";
+        var S_VIEWPORT = "viewport";
+        var S_PROFILE = "profile";
+        var S_FRAMEBUFFER = "framebuffer";
+        var S_VERT = "vert";
+        var S_FRAG = "frag";
+        var S_ELEMENTS = "elements";
+        var S_PRIMITIVE = "primitive";
+        var S_COUNT = "count";
+        var S_OFFSET = "offset";
+        var S_INSTANCES = "instances";
+        var S_VAO = "vao";
+        var SUFFIX_WIDTH = "Width";
+        var SUFFIX_HEIGHT = "Height";
+        var S_FRAMEBUFFER_WIDTH = S_FRAMEBUFFER + SUFFIX_WIDTH;
+        var S_FRAMEBUFFER_HEIGHT = S_FRAMEBUFFER + SUFFIX_HEIGHT;
+        var S_VIEWPORT_WIDTH = S_VIEWPORT + SUFFIX_WIDTH;
+        var S_VIEWPORT_HEIGHT = S_VIEWPORT + SUFFIX_HEIGHT;
+        var S_DRAWINGBUFFER = "drawingBuffer";
+        var S_DRAWINGBUFFER_WIDTH = S_DRAWINGBUFFER + SUFFIX_WIDTH;
+        var S_DRAWINGBUFFER_HEIGHT = S_DRAWINGBUFFER + SUFFIX_HEIGHT;
+        var NESTED_OPTIONS = [
+          S_BLEND_FUNC,
+          S_BLEND_EQUATION,
+          S_STENCIL_FUNC,
+          S_STENCIL_OPFRONT,
+          S_STENCIL_OPBACK,
+          S_SAMPLE_COVERAGE,
+          S_VIEWPORT,
+          S_SCISSOR_BOX,
+          S_POLYGON_OFFSET_OFFSET
+        ];
+        var GL_ARRAY_BUFFER$2 = 34962;
+        var GL_ELEMENT_ARRAY_BUFFER$2 = 34963;
+        var GL_CULL_FACE = 2884;
+        var GL_BLEND = 3042;
+        var GL_DITHER = 3024;
+        var GL_STENCIL_TEST = 2960;
+        var GL_DEPTH_TEST = 2929;
+        var GL_SCISSOR_TEST = 3089;
+        var GL_POLYGON_OFFSET_FILL = 32823;
+        var GL_SAMPLE_ALPHA_TO_COVERAGE = 32926;
+        var GL_SAMPLE_COVERAGE = 32928;
+        var GL_FLOAT$7 = 5126;
+        var GL_FLOAT_VEC2 = 35664;
+        var GL_FLOAT_VEC3 = 35665;
+        var GL_FLOAT_VEC4 = 35666;
+        var GL_INT$2 = 5124;
+        var GL_INT_VEC2 = 35667;
+        var GL_INT_VEC3 = 35668;
+        var GL_INT_VEC4 = 35669;
+        var GL_BOOL = 35670;
+        var GL_BOOL_VEC2 = 35671;
+        var GL_BOOL_VEC3 = 35672;
+        var GL_BOOL_VEC4 = 35673;
+        var GL_FLOAT_MAT2 = 35674;
+        var GL_FLOAT_MAT3 = 35675;
+        var GL_FLOAT_MAT4 = 35676;
+        var GL_SAMPLER_2D = 35678;
+        var GL_SAMPLER_CUBE = 35680;
+        var GL_TRIANGLES$1 = 4;
+        var GL_FRONT = 1028;
+        var GL_BACK = 1029;
+        var GL_CW = 2304;
+        var GL_CCW = 2305;
+        var GL_MIN_EXT = 32775;
+        var GL_MAX_EXT = 32776;
+        var GL_ALWAYS = 519;
+        var GL_KEEP = 7680;
+        var GL_ZERO = 0;
+        var GL_ONE = 1;
+        var GL_FUNC_ADD = 32774;
+        var GL_LESS = 513;
+        var GL_FRAMEBUFFER$2 = 36160;
+        var GL_COLOR_ATTACHMENT0$2 = 36064;
+        var blendFuncs = {
+          "0": 0,
+          "1": 1,
+          "zero": 0,
+          "one": 1,
+          "src color": 768,
+          "one minus src color": 769,
+          "src alpha": 770,
+          "one minus src alpha": 771,
+          "dst color": 774,
+          "one minus dst color": 775,
+          "dst alpha": 772,
+          "one minus dst alpha": 773,
+          "constant color": 32769,
+          "one minus constant color": 32770,
+          "constant alpha": 32771,
+          "one minus constant alpha": 32772,
+          "src alpha saturate": 776
+        };
+        var compareFuncs = {
+          "never": 512,
+          "less": 513,
+          "<": 513,
+          "equal": 514,
+          "=": 514,
+          "==": 514,
+          "===": 514,
+          "lequal": 515,
+          "<=": 515,
+          "greater": 516,
+          ">": 516,
+          "notequal": 517,
+          "!=": 517,
+          "!==": 517,
+          "gequal": 518,
+          ">=": 518,
+          "always": 519
+        };
+        var stencilOps = {
+          "0": 0,
+          "zero": 0,
+          "keep": 7680,
+          "replace": 7681,
+          "increment": 7682,
+          "decrement": 7683,
+          "increment wrap": 34055,
+          "decrement wrap": 34056,
+          "invert": 5386
+        };
+        var orientationType = {
+          "cw": GL_CW,
+          "ccw": GL_CCW
+        };
+        function isBufferArgs(x) {
+          return Array.isArray(x) || isTypedArray(x) || isNDArrayLike(x);
+        }
+        function sortState(state) {
+          return state.sort(function(a, b) {
+            if (a === S_VIEWPORT) {
+              return -1;
+            } else if (b === S_VIEWPORT) {
+              return 1;
+            }
+            return a < b ? -1 : 1;
+          });
+        }
+        function Declaration(thisDep, contextDep, propDep, append) {
+          this.thisDep = thisDep;
+          this.contextDep = contextDep;
+          this.propDep = propDep;
+          this.append = append;
+        }
+        function isStatic(decl) {
+          return decl && !(decl.thisDep || decl.contextDep || decl.propDep);
+        }
+        function createStaticDecl(append) {
+          return new Declaration(false, false, false, append);
+        }
+        function createDynamicDecl(dyn, append) {
+          var type = dyn.type;
+          if (type === DYN_FUNC$1) {
+            var numArgs = dyn.data.length;
+            return new Declaration(
+              true,
+              numArgs >= 1,
+              numArgs >= 2,
+              append
+            );
+          } else if (type === DYN_THUNK) {
+            var data = dyn.data;
+            return new Declaration(
+              data.thisDep,
+              data.contextDep,
+              data.propDep,
+              append
+            );
+          } else if (type === DYN_CONSTANT$1) {
+            return new Declaration(
+              false,
+              false,
+              false,
+              append
+            );
+          } else if (type === DYN_ARRAY$1) {
+            var thisDep = false;
+            var contextDep = false;
+            var propDep = false;
+            for (var i = 0; i < dyn.data.length; ++i) {
+              var subDyn = dyn.data[i];
+              if (subDyn.type === DYN_PROP$1) {
+                propDep = true;
+              } else if (subDyn.type === DYN_CONTEXT$1) {
+                contextDep = true;
+              } else if (subDyn.type === DYN_STATE$1) {
+                thisDep = true;
+              } else if (subDyn.type === DYN_FUNC$1) {
+                thisDep = true;
+                var subArgs = subDyn.data;
+                if (subArgs >= 1) {
+                  contextDep = true;
+                }
+                if (subArgs >= 2) {
+                  propDep = true;
+                }
+              } else if (subDyn.type === DYN_THUNK) {
+                thisDep = thisDep || subDyn.data.thisDep;
+                contextDep = contextDep || subDyn.data.contextDep;
+                propDep = propDep || subDyn.data.propDep;
+              }
+            }
+            return new Declaration(
+              thisDep,
+              contextDep,
+              propDep,
+              append
+            );
+          } else {
+            return new Declaration(
+              type === DYN_STATE$1,
+              type === DYN_CONTEXT$1,
+              type === DYN_PROP$1,
+              append
+            );
+          }
+        }
+        var SCOPE_DECL = new Declaration(false, false, false, function() {
+        });
+        function reglCore(gl, stringStore, extensions, limits, bufferState, elementState, textureState, framebufferState, uniformState, attributeState, shaderState, drawState, contextState, timer, cachedCode, config) {
+          var AttributeRecord2 = attributeState.Record;
+          var blendEquations = {
+            "add": 32774,
+            "subtract": 32778,
+            "reverse subtract": 32779
+          };
+          if (extensions.ext_blend_minmax) {
+            blendEquations.min = GL_MIN_EXT;
+            blendEquations.max = GL_MAX_EXT;
+          }
+          var extInstancing = extensions.angle_instanced_arrays;
+          var extDrawBuffers = extensions.webgl_draw_buffers;
+          var extVertexArrays = extensions.oes_vertex_array_object;
+          var currentState = {
+            dirty: true,
+            profile: config.profile
+          };
+          var nextState = {};
+          var GL_STATE_NAMES = [];
+          var GL_FLAGS = {};
+          var GL_VARIABLES = {};
+          function propName(name) {
+            return name.replace(".", "_");
+          }
+          function stateFlag(sname, cap, init) {
+            var name = propName(sname);
+            GL_STATE_NAMES.push(sname);
+            nextState[name] = currentState[name] = !!init;
+            GL_FLAGS[name] = cap;
+          }
+          function stateVariable(sname, func, init) {
+            var name = propName(sname);
+            GL_STATE_NAMES.push(sname);
+            if (Array.isArray(init)) {
+              currentState[name] = init.slice();
+              nextState[name] = init.slice();
+            } else {
+              currentState[name] = nextState[name] = init;
+            }
+            GL_VARIABLES[name] = func;
+          }
+          function hasVariableReference(exp) {
+            if (!isNaN(exp)) {
+              return false;
+            }
+            return true;
+          }
+          stateFlag(S_DITHER, GL_DITHER);
+          stateFlag(S_BLEND_ENABLE, GL_BLEND);
+          stateVariable(S_BLEND_COLOR, "blendColor", [0, 0, 0, 0]);
+          stateVariable(
+            S_BLEND_EQUATION,
+            "blendEquationSeparate",
+            [GL_FUNC_ADD, GL_FUNC_ADD]
+          );
+          stateVariable(
+            S_BLEND_FUNC,
+            "blendFuncSeparate",
+            [GL_ONE, GL_ZERO, GL_ONE, GL_ZERO]
+          );
+          stateFlag(S_DEPTH_ENABLE, GL_DEPTH_TEST, true);
+          stateVariable(S_DEPTH_FUNC, "depthFunc", GL_LESS);
+          stateVariable(S_DEPTH_RANGE, "depthRange", [0, 1]);
+          stateVariable(S_DEPTH_MASK, "depthMask", true);
+          stateVariable(S_COLOR_MASK, S_COLOR_MASK, [true, true, true, true]);
+          stateFlag(S_CULL_ENABLE, GL_CULL_FACE);
+          stateVariable(S_CULL_FACE, "cullFace", GL_BACK);
+          stateVariable(S_FRONT_FACE, S_FRONT_FACE, GL_CCW);
+          stateVariable(S_LINE_WIDTH, S_LINE_WIDTH, 1);
+          stateFlag(S_POLYGON_OFFSET_ENABLE, GL_POLYGON_OFFSET_FILL);
+          stateVariable(S_POLYGON_OFFSET_OFFSET, "polygonOffset", [0, 0]);
+          stateFlag(S_SAMPLE_ALPHA, GL_SAMPLE_ALPHA_TO_COVERAGE);
+          stateFlag(S_SAMPLE_ENABLE, GL_SAMPLE_COVERAGE);
+          stateVariable(S_SAMPLE_COVERAGE, "sampleCoverage", [1, false]);
+          stateFlag(S_STENCIL_ENABLE, GL_STENCIL_TEST);
+          stateVariable(S_STENCIL_MASK, "stencilMask", -1);
+          stateVariable(S_STENCIL_FUNC, "stencilFunc", [GL_ALWAYS, 0, -1]);
+          stateVariable(
+            S_STENCIL_OPFRONT,
+            "stencilOpSeparate",
+            [GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP]
+          );
+          stateVariable(
+            S_STENCIL_OPBACK,
+            "stencilOpSeparate",
+            [GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP]
+          );
+          stateFlag(S_SCISSOR_ENABLE, GL_SCISSOR_TEST);
+          stateVariable(
+            S_SCISSOR_BOX,
+            "scissor",
+            [0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight]
+          );
+          stateVariable(
+            S_VIEWPORT,
+            S_VIEWPORT,
+            [0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight]
+          );
+          var sharedState = {
+            gl,
+            context: contextState,
+            strings: stringStore,
+            next: nextState,
+            current: currentState,
+            draw: drawState,
+            elements: elementState,
+            buffer: bufferState,
+            shader: shaderState,
+            attributes: attributeState.state,
+            vao: attributeState,
+            uniforms: uniformState,
+            framebuffer: framebufferState,
+            extensions,
+            timer,
+            isBufferArgs
+          };
+          var sharedConstants = {
+            primTypes,
+            compareFuncs,
+            blendFuncs,
+            blendEquations,
+            stencilOps,
+            glTypes,
+            orientationType
+          };
+          if (extDrawBuffers) {
+            sharedConstants.backBuffer = [GL_BACK];
+            sharedConstants.drawBuffer = loop(limits.maxDrawbuffers, function(i) {
+              if (i === 0) {
+                return [0];
+              }
+              return loop(i, function(j) {
+                return GL_COLOR_ATTACHMENT0$2 + j;
+              });
+            });
+          }
+          var drawCallCounter = 0;
+          function createREGLEnvironment() {
+            var env = createEnvironment({ cache: cachedCode });
+            var link = env.link;
+            var global2 = env.global;
+            env.id = drawCallCounter++;
+            env.batchId = "0";
+            var SHARED = link(sharedState);
+            var shared = env.shared = {
+              props: "a0"
+            };
+            Object.keys(sharedState).forEach(function(prop) {
+              shared[prop] = global2.def(SHARED, ".", prop);
+            });
+            var nextVars = env.next = {};
+            var currentVars = env.current = {};
+            Object.keys(GL_VARIABLES).forEach(function(variable) {
+              if (Array.isArray(currentState[variable])) {
+                nextVars[variable] = global2.def(shared.next, ".", variable);
+                currentVars[variable] = global2.def(shared.current, ".", variable);
+              }
+            });
+            var constants = env.constants = {};
+            Object.keys(sharedConstants).forEach(function(name) {
+              constants[name] = global2.def(JSON.stringify(sharedConstants[name]));
+            });
+            env.invoke = function(block, x) {
+              switch (x.type) {
+                case DYN_FUNC$1:
+                  var argList = [
+                    "this",
+                    shared.context,
+                    shared.props,
+                    env.batchId
+                  ];
+                  return block.def(
+                    link(x.data),
+                    ".call(",
+                    argList.slice(0, Math.max(x.data.length + 1, 4)),
+                    ")"
+                  );
+                case DYN_PROP$1:
+                  return block.def(shared.props, x.data);
+                case DYN_CONTEXT$1:
+                  return block.def(shared.context, x.data);
+                case DYN_STATE$1:
+                  return block.def("this", x.data);
+                case DYN_THUNK:
+                  x.data.append(env, block);
+                  return x.data.ref;
+                case DYN_CONSTANT$1:
+                  return x.data.toString();
+                case DYN_ARRAY$1:
+                  return x.data.map(function(y) {
+                    return env.invoke(block, y);
+                  });
+              }
+            };
+            env.attribCache = {};
+            var scopeAttribs = {};
+            env.scopeAttrib = function(name) {
+              var id = stringStore.id(name);
+              if (id in scopeAttribs) {
+                return scopeAttribs[id];
+              }
+              var binding = attributeState.scope[id];
+              if (!binding) {
+                binding = attributeState.scope[id] = new AttributeRecord2();
+              }
+              var result = scopeAttribs[id] = link(binding);
+              return result;
+            };
+            return env;
+          }
+          function parseProfile(options) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            var profileEnable;
+            if (S_PROFILE in staticOptions) {
+              var value = !!staticOptions[S_PROFILE];
+              profileEnable = createStaticDecl(function(env, scope) {
+                return value;
+              });
+              profileEnable.enable = value;
+            } else if (S_PROFILE in dynamicOptions) {
+              var dyn = dynamicOptions[S_PROFILE];
+              profileEnable = createDynamicDecl(dyn, function(env, scope) {
+                return env.invoke(scope, dyn);
+              });
+            }
+            return profileEnable;
+          }
+          function parseFramebuffer(options, env) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            if (S_FRAMEBUFFER in staticOptions) {
+              var framebuffer = staticOptions[S_FRAMEBUFFER];
+              if (framebuffer) {
+                framebuffer = framebufferState.getFramebuffer(framebuffer);
+                return createStaticDecl(function(env2, block) {
+                  var FRAMEBUFFER = env2.link(framebuffer);
+                  var shared = env2.shared;
+                  block.set(
+                    shared.framebuffer,
+                    ".next",
+                    FRAMEBUFFER
+                  );
+                  var CONTEXT = shared.context;
+                  block.set(
+                    CONTEXT,
+                    "." + S_FRAMEBUFFER_WIDTH,
+                    FRAMEBUFFER + ".width"
+                  );
+                  block.set(
+                    CONTEXT,
+                    "." + S_FRAMEBUFFER_HEIGHT,
+                    FRAMEBUFFER + ".height"
+                  );
+                  return FRAMEBUFFER;
+                });
+              } else {
+                return createStaticDecl(function(env2, scope) {
+                  var shared = env2.shared;
+                  scope.set(
+                    shared.framebuffer,
+                    ".next",
+                    "null"
+                  );
+                  var CONTEXT = shared.context;
+                  scope.set(
+                    CONTEXT,
+                    "." + S_FRAMEBUFFER_WIDTH,
+                    CONTEXT + "." + S_DRAWINGBUFFER_WIDTH
+                  );
+                  scope.set(
+                    CONTEXT,
+                    "." + S_FRAMEBUFFER_HEIGHT,
+                    CONTEXT + "." + S_DRAWINGBUFFER_HEIGHT
+                  );
+                  return "null";
+                });
+              }
+            } else if (S_FRAMEBUFFER in dynamicOptions) {
+              var dyn = dynamicOptions[S_FRAMEBUFFER];
+              return createDynamicDecl(dyn, function(env2, scope) {
+                var FRAMEBUFFER_FUNC = env2.invoke(scope, dyn);
+                var shared = env2.shared;
+                var FRAMEBUFFER_STATE = shared.framebuffer;
+                var FRAMEBUFFER = scope.def(
+                  FRAMEBUFFER_STATE,
+                  ".getFramebuffer(",
+                  FRAMEBUFFER_FUNC,
+                  ")"
+                );
+                scope.set(
+                  FRAMEBUFFER_STATE,
+                  ".next",
+                  FRAMEBUFFER
+                );
+                var CONTEXT = shared.context;
+                scope.set(
+                  CONTEXT,
+                  "." + S_FRAMEBUFFER_WIDTH,
+                  FRAMEBUFFER + "?" + FRAMEBUFFER + ".width:" + CONTEXT + "." + S_DRAWINGBUFFER_WIDTH
+                );
+                scope.set(
+                  CONTEXT,
+                  "." + S_FRAMEBUFFER_HEIGHT,
+                  FRAMEBUFFER + "?" + FRAMEBUFFER + ".height:" + CONTEXT + "." + S_DRAWINGBUFFER_HEIGHT
+                );
+                return FRAMEBUFFER;
+              });
+            } else {
+              return null;
+            }
+          }
+          function parseViewportScissor(options, framebuffer, env) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            function parseBox(param) {
+              if (param in staticOptions) {
+                var box = staticOptions[param];
+                var isStatic2 = true;
+                var x = box.x | 0;
+                var y = box.y | 0;
+                var w, h;
+                if ("width" in box) {
+                  w = box.width | 0;
+                } else {
+                  isStatic2 = false;
+                }
+                if ("height" in box) {
+                  h = box.height | 0;
+                } else {
+                  isStatic2 = false;
+                }
+                return new Declaration(
+                  !isStatic2 && framebuffer && framebuffer.thisDep,
+                  !isStatic2 && framebuffer && framebuffer.contextDep,
+                  !isStatic2 && framebuffer && framebuffer.propDep,
+                  function(env2, scope) {
+                    var CONTEXT = env2.shared.context;
+                    var BOX_W = w;
+                    if (!("width" in box)) {
+                      BOX_W = scope.def(CONTEXT, ".", S_FRAMEBUFFER_WIDTH, "-", x);
+                    }
+                    var BOX_H = h;
+                    if (!("height" in box)) {
+                      BOX_H = scope.def(CONTEXT, ".", S_FRAMEBUFFER_HEIGHT, "-", y);
+                    }
+                    return [x, y, BOX_W, BOX_H];
+                  }
+                );
+              } else if (param in dynamicOptions) {
+                var dynBox = dynamicOptions[param];
+                var result = createDynamicDecl(dynBox, function(env2, scope) {
+                  var BOX = env2.invoke(scope, dynBox);
+                  var CONTEXT = env2.shared.context;
+                  var BOX_X = scope.def(BOX, ".x|0");
+                  var BOX_Y = scope.def(BOX, ".y|0");
+                  var BOX_W = scope.def(
+                    '"width" in ',
+                    BOX,
+                    "?",
+                    BOX,
+                    ".width|0:",
+                    "(",
+                    CONTEXT,
+                    ".",
+                    S_FRAMEBUFFER_WIDTH,
+                    "-",
+                    BOX_X,
+                    ")"
+                  );
+                  var BOX_H = scope.def(
+                    '"height" in ',
+                    BOX,
+                    "?",
+                    BOX,
+                    ".height|0:",
+                    "(",
+                    CONTEXT,
+                    ".",
+                    S_FRAMEBUFFER_HEIGHT,
+                    "-",
+                    BOX_Y,
+                    ")"
+                  );
+                  return [BOX_X, BOX_Y, BOX_W, BOX_H];
+                });
+                if (framebuffer) {
+                  result.thisDep = result.thisDep || framebuffer.thisDep;
+                  result.contextDep = result.contextDep || framebuffer.contextDep;
+                  result.propDep = result.propDep || framebuffer.propDep;
+                }
+                return result;
+              } else if (framebuffer) {
+                return new Declaration(
+                  framebuffer.thisDep,
+                  framebuffer.contextDep,
+                  framebuffer.propDep,
+                  function(env2, scope) {
+                    var CONTEXT = env2.shared.context;
+                    return [
+                      0,
+                      0,
+                      scope.def(CONTEXT, ".", S_FRAMEBUFFER_WIDTH),
+                      scope.def(CONTEXT, ".", S_FRAMEBUFFER_HEIGHT)
+                    ];
+                  }
+                );
+              } else {
+                return null;
+              }
+            }
+            var viewport = parseBox(S_VIEWPORT);
+            if (viewport) {
+              var prevViewport = viewport;
+              viewport = new Declaration(
+                viewport.thisDep,
+                viewport.contextDep,
+                viewport.propDep,
+                function(env2, scope) {
+                  var VIEWPORT = prevViewport.append(env2, scope);
+                  var CONTEXT = env2.shared.context;
+                  scope.set(
+                    CONTEXT,
+                    "." + S_VIEWPORT_WIDTH,
+                    VIEWPORT[2]
+                  );
+                  scope.set(
+                    CONTEXT,
+                    "." + S_VIEWPORT_HEIGHT,
+                    VIEWPORT[3]
+                  );
+                  return VIEWPORT;
+                }
+              );
+            }
+            return {
+              viewport,
+              scissor_box: parseBox(S_SCISSOR_BOX)
+            };
+          }
+          function parseAttribLocations(options, attributes) {
+            var staticOptions = options.static;
+            var staticProgram = typeof staticOptions[S_FRAG] === "string" && typeof staticOptions[S_VERT] === "string";
+            if (staticProgram) {
+              if (Object.keys(attributes.dynamic).length > 0) {
+                return null;
+              }
+              var staticAttributes = attributes.static;
+              var sAttributes = Object.keys(staticAttributes);
+              if (sAttributes.length > 0 && typeof staticAttributes[sAttributes[0]] === "number") {
+                var bindings = [];
+                for (var i = 0; i < sAttributes.length; ++i) {
+                  bindings.push([staticAttributes[sAttributes[i]] | 0, sAttributes[i]]);
+                }
+                return bindings;
+              }
+            }
+            return null;
+          }
+          function parseProgram(options, env, attribLocations) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            function parseShader(name) {
+              if (name in staticOptions) {
+                var id = stringStore.id(staticOptions[name]);
+                var result = createStaticDecl(function() {
+                  return id;
+                });
+                result.id = id;
+                return result;
+              } else if (name in dynamicOptions) {
+                var dyn = dynamicOptions[name];
+                return createDynamicDecl(dyn, function(env2, scope) {
+                  var str = env2.invoke(scope, dyn);
+                  var id2 = scope.def(env2.shared.strings, ".id(", str, ")");
+                  return id2;
+                });
+              }
+              return null;
+            }
+            var frag = parseShader(S_FRAG);
+            var vert = parseShader(S_VERT);
+            var program = null;
+            var progVar;
+            if (isStatic(frag) && isStatic(vert)) {
+              program = shaderState.program(vert.id, frag.id, null, attribLocations);
+              progVar = createStaticDecl(function(env2, scope) {
+                return env2.link(program);
+              });
+            } else {
+              progVar = new Declaration(
+                frag && frag.thisDep || vert && vert.thisDep,
+                frag && frag.contextDep || vert && vert.contextDep,
+                frag && frag.propDep || vert && vert.propDep,
+                function(env2, scope) {
+                  var SHADER_STATE = env2.shared.shader;
+                  var fragId;
+                  if (frag) {
+                    fragId = frag.append(env2, scope);
+                  } else {
+                    fragId = scope.def(SHADER_STATE, ".", S_FRAG);
+                  }
+                  var vertId;
+                  if (vert) {
+                    vertId = vert.append(env2, scope);
+                  } else {
+                    vertId = scope.def(SHADER_STATE, ".", S_VERT);
+                  }
+                  var progDef = SHADER_STATE + ".program(" + vertId + "," + fragId;
+                  return scope.def(progDef + ")");
+                }
+              );
+            }
+            return {
+              frag,
+              vert,
+              progVar,
+              program
+            };
+          }
+          function parseDraw(options, env) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            var staticDraw = {};
+            var vaoActive = false;
+            function parseVAO() {
+              if (S_VAO in staticOptions) {
+                var vao2 = staticOptions[S_VAO];
+                if (vao2 !== null && attributeState.getVAO(vao2) === null) {
+                  vao2 = attributeState.createVAO(vao2);
+                }
+                vaoActive = true;
+                staticDraw.vao = vao2;
+                return createStaticDecl(function(env2) {
+                  var vaoRef = attributeState.getVAO(vao2);
+                  if (vaoRef) {
+                    return env2.link(vaoRef);
+                  } else {
+                    return "null";
+                  }
+                });
+              } else if (S_VAO in dynamicOptions) {
+                vaoActive = true;
+                var dyn = dynamicOptions[S_VAO];
+                return createDynamicDecl(dyn, function(env2, scope) {
+                  var vaoRef = env2.invoke(scope, dyn);
+                  return scope.def(env2.shared.vao + ".getVAO(" + vaoRef + ")");
+                });
+              }
+              return null;
+            }
+            var vao = parseVAO();
+            var elementsActive = false;
+            function parseElements() {
+              if (S_ELEMENTS in staticOptions) {
+                var elements2 = staticOptions[S_ELEMENTS];
+                staticDraw.elements = elements2;
+                if (isBufferArgs(elements2)) {
+                  var e = staticDraw.elements = elementState.create(elements2, true);
+                  elements2 = elementState.getElements(e);
+                  elementsActive = true;
+                } else if (elements2) {
+                  elements2 = elementState.getElements(elements2);
+                  elementsActive = true;
+                }
+                var result = createStaticDecl(function(env2, scope) {
+                  if (elements2) {
+                    var result2 = env2.link(elements2);
+                    env2.ELEMENTS = result2;
+                    return result2;
+                  }
+                  env2.ELEMENTS = null;
+                  return null;
+                });
+                result.value = elements2;
+                return result;
+              } else if (S_ELEMENTS in dynamicOptions) {
+                elementsActive = true;
+                var dyn = dynamicOptions[S_ELEMENTS];
+                return createDynamicDecl(dyn, function(env2, scope) {
+                  var shared = env2.shared;
+                  var IS_BUFFER_ARGS = shared.isBufferArgs;
+                  var ELEMENT_STATE = shared.elements;
+                  var elementDefn = env2.invoke(scope, dyn);
+                  var elements3 = scope.def("null");
+                  var elementStream = scope.def(IS_BUFFER_ARGS, "(", elementDefn, ")");
+                  var ifte = env2.cond(elementStream).then(elements3, "=", ELEMENT_STATE, ".createStream(", elementDefn, ");").else(elements3, "=", ELEMENT_STATE, ".getElements(", elementDefn, ");");
+                  scope.entry(ifte);
+                  scope.exit(
+                    env2.cond(elementStream).then(ELEMENT_STATE, ".destroyStream(", elements3, ");")
+                  );
+                  env2.ELEMENTS = elements3;
+                  return elements3;
+                });
+              } else if (vaoActive) {
+                return new Declaration(
+                  vao.thisDep,
+                  vao.contextDep,
+                  vao.propDep,
+                  function(env2, scope) {
+                    return scope.def(env2.shared.vao + ".currentVAO?" + env2.shared.elements + ".getElements(" + env2.shared.vao + ".currentVAO.elements):null");
+                  }
+                );
+              }
+              return null;
+            }
+            var elements = parseElements();
+            function parsePrimitive() {
+              if (S_PRIMITIVE in staticOptions) {
+                var primitive2 = staticOptions[S_PRIMITIVE];
+                staticDraw.primitive = primitive2;
+                return createStaticDecl(function(env2, scope) {
+                  return primTypes[primitive2];
+                });
+              } else if (S_PRIMITIVE in dynamicOptions) {
+                var dynPrimitive = dynamicOptions[S_PRIMITIVE];
+                return createDynamicDecl(dynPrimitive, function(env2, scope) {
+                  var PRIM_TYPES = env2.constants.primTypes;
+                  var prim = env2.invoke(scope, dynPrimitive);
+                  return scope.def(PRIM_TYPES, "[", prim, "]");
+                });
+              } else if (elementsActive) {
+                if (isStatic(elements)) {
+                  if (elements.value) {
+                    return createStaticDecl(function(env2, scope) {
+                      return scope.def(env2.ELEMENTS, ".primType");
+                    });
+                  } else {
+                    return createStaticDecl(function() {
+                      return GL_TRIANGLES$1;
+                    });
+                  }
+                } else {
+                  return new Declaration(
+                    elements.thisDep,
+                    elements.contextDep,
+                    elements.propDep,
+                    function(env2, scope) {
+                      var elements2 = env2.ELEMENTS;
+                      return scope.def(elements2, "?", elements2, ".primType:", GL_TRIANGLES$1);
+                    }
+                  );
+                }
+              } else if (vaoActive) {
+                return new Declaration(
+                  vao.thisDep,
+                  vao.contextDep,
+                  vao.propDep,
+                  function(env2, scope) {
+                    return scope.def(env2.shared.vao + ".currentVAO?" + env2.shared.vao + ".currentVAO.primitive:" + GL_TRIANGLES$1);
+                  }
+                );
+              }
+              return null;
+            }
+            function parseParam(param, isOffset) {
+              if (param in staticOptions) {
+                var value = staticOptions[param] | 0;
+                if (isOffset) {
+                  staticDraw.offset = value;
+                } else {
+                  staticDraw.instances = value;
+                }
+                return createStaticDecl(function(env2, scope) {
+                  if (isOffset) {
+                    env2.OFFSET = value;
+                  }
+                  return value;
+                });
+              } else if (param in dynamicOptions) {
+                var dynValue = dynamicOptions[param];
+                return createDynamicDecl(dynValue, function(env2, scope) {
+                  var result = env2.invoke(scope, dynValue);
+                  if (isOffset) {
+                    env2.OFFSET = result;
+                  }
+                  return result;
+                });
+              } else if (isOffset) {
+                if (elementsActive) {
+                  return createStaticDecl(function(env2, scope) {
+                    env2.OFFSET = 0;
+                    return 0;
+                  });
+                } else if (vaoActive) {
+                  return new Declaration(
+                    vao.thisDep,
+                    vao.contextDep,
+                    vao.propDep,
+                    function(env2, scope) {
+                      return scope.def(env2.shared.vao + ".currentVAO?" + env2.shared.vao + ".currentVAO.offset:0");
+                    }
+                  );
+                }
+              } else if (vaoActive) {
+                return new Declaration(
+                  vao.thisDep,
+                  vao.contextDep,
+                  vao.propDep,
+                  function(env2, scope) {
+                    return scope.def(env2.shared.vao + ".currentVAO?" + env2.shared.vao + ".currentVAO.instances:-1");
+                  }
+                );
+              }
+              return null;
+            }
+            var OFFSET = parseParam(S_OFFSET, true);
+            function parseVertCount() {
+              if (S_COUNT in staticOptions) {
+                var count2 = staticOptions[S_COUNT] | 0;
+                staticDraw.count = count2;
+                return createStaticDecl(function() {
+                  return count2;
+                });
+              } else if (S_COUNT in dynamicOptions) {
+                var dynCount = dynamicOptions[S_COUNT];
+                return createDynamicDecl(dynCount, function(env2, scope) {
+                  var result2 = env2.invoke(scope, dynCount);
+                  return result2;
+                });
+              } else if (elementsActive) {
+                if (isStatic(elements)) {
+                  if (elements) {
+                    if (OFFSET) {
+                      return new Declaration(
+                        OFFSET.thisDep,
+                        OFFSET.contextDep,
+                        OFFSET.propDep,
+                        function(env2, scope) {
+                          var result2 = scope.def(
+                            env2.ELEMENTS,
+                            ".vertCount-",
+                            env2.OFFSET
+                          );
+                          return result2;
+                        }
+                      );
+                    } else {
+                      return createStaticDecl(function(env2, scope) {
+                        return scope.def(env2.ELEMENTS, ".vertCount");
+                      });
+                    }
+                  } else {
+                    var result = createStaticDecl(function() {
+                      return -1;
+                    });
+                    return result;
+                  }
+                } else {
+                  var variable = new Declaration(
+                    elements.thisDep || OFFSET.thisDep,
+                    elements.contextDep || OFFSET.contextDep,
+                    elements.propDep || OFFSET.propDep,
+                    function(env2, scope) {
+                      var elements2 = env2.ELEMENTS;
+                      if (env2.OFFSET) {
+                        return scope.def(
+                          elements2,
+                          "?",
+                          elements2,
+                          ".vertCount-",
+                          env2.OFFSET,
+                          ":-1"
+                        );
+                      }
+                      return scope.def(elements2, "?", elements2, ".vertCount:-1");
+                    }
+                  );
+                  return variable;
+                }
+              } else if (vaoActive) {
+                var countVariable = new Declaration(
+                  vao.thisDep,
+                  vao.contextDep,
+                  vao.propDep,
+                  function(env2, scope) {
+                    return scope.def(env2.shared.vao, ".currentVAO?", env2.shared.vao, ".currentVAO.count:-1");
+                  }
+                );
+                return countVariable;
+              }
+              return null;
+            }
+            var primitive = parsePrimitive();
+            var count = parseVertCount();
+            var instances = parseParam(S_INSTANCES, false);
+            return {
+              elements,
+              primitive,
+              count,
+              instances,
+              offset: OFFSET,
+              vao,
+              vaoActive,
+              elementsActive,
+              // static draw props
+              static: staticDraw
+            };
+          }
+          function parseGLState(options, env) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            var STATE = {};
+            GL_STATE_NAMES.forEach(function(prop) {
+              var param = propName(prop);
+              function parseParam(parseStatic, parseDynamic) {
+                if (prop in staticOptions) {
+                  var value = parseStatic(staticOptions[prop]);
+                  STATE[param] = createStaticDecl(function() {
+                    return value;
+                  });
+                } else if (prop in dynamicOptions) {
+                  var dyn = dynamicOptions[prop];
+                  STATE[param] = createDynamicDecl(dyn, function(env2, scope) {
+                    return parseDynamic(env2, scope, env2.invoke(scope, dyn));
+                  });
+                }
+              }
+              switch (prop) {
+                case S_CULL_ENABLE:
+                case S_BLEND_ENABLE:
+                case S_DITHER:
+                case S_STENCIL_ENABLE:
+                case S_DEPTH_ENABLE:
+                case S_SCISSOR_ENABLE:
+                case S_POLYGON_OFFSET_ENABLE:
+                case S_SAMPLE_ALPHA:
+                case S_SAMPLE_ENABLE:
+                case S_DEPTH_MASK:
+                  return parseParam(
+                    function(value) {
+                      return value;
+                    },
+                    function(env2, scope, value) {
+                      return value;
+                    }
+                  );
+                case S_DEPTH_FUNC:
+                  return parseParam(
+                    function(value) {
+                      return compareFuncs[value];
+                    },
+                    function(env2, scope, value) {
+                      var COMPARE_FUNCS = env2.constants.compareFuncs;
+                      return scope.def(COMPARE_FUNCS, "[", value, "]");
+                    }
+                  );
+                case S_DEPTH_RANGE:
+                  return parseParam(
+                    function(value) {
+                      return value;
+                    },
+                    function(env2, scope, value) {
+                      var Z_NEAR = scope.def("+", value, "[0]");
+                      var Z_FAR = scope.def("+", value, "[1]");
+                      return [Z_NEAR, Z_FAR];
+                    }
+                  );
+                case S_BLEND_FUNC:
+                  return parseParam(
+                    function(value) {
+                      var srcRGB = "srcRGB" in value ? value.srcRGB : value.src;
+                      var srcAlpha = "srcAlpha" in value ? value.srcAlpha : value.src;
+                      var dstRGB = "dstRGB" in value ? value.dstRGB : value.dst;
+                      var dstAlpha = "dstAlpha" in value ? value.dstAlpha : value.dst;
+                      return [
+                        blendFuncs[srcRGB],
+                        blendFuncs[dstRGB],
+                        blendFuncs[srcAlpha],
+                        blendFuncs[dstAlpha]
+                      ];
+                    },
+                    function(env2, scope, value) {
+                      var BLEND_FUNCS = env2.constants.blendFuncs;
+                      function read(prefix, suffix) {
+                        var func = scope.def(
+                          '"',
+                          prefix,
+                          suffix,
+                          '" in ',
+                          value,
+                          "?",
+                          value,
+                          ".",
+                          prefix,
+                          suffix,
+                          ":",
+                          value,
+                          ".",
+                          prefix
+                        );
+                        return func;
+                      }
+                      var srcRGB = read("src", "RGB");
+                      var dstRGB = read("dst", "RGB");
+                      var SRC_RGB = scope.def(BLEND_FUNCS, "[", srcRGB, "]");
+                      var SRC_ALPHA = scope.def(BLEND_FUNCS, "[", read("src", "Alpha"), "]");
+                      var DST_RGB = scope.def(BLEND_FUNCS, "[", dstRGB, "]");
+                      var DST_ALPHA = scope.def(BLEND_FUNCS, "[", read("dst", "Alpha"), "]");
+                      return [SRC_RGB, DST_RGB, SRC_ALPHA, DST_ALPHA];
+                    }
+                  );
+                case S_BLEND_EQUATION:
+                  return parseParam(
+                    function(value) {
+                      if (typeof value === "string") {
+                        return [
+                          blendEquations[value],
+                          blendEquations[value]
+                        ];
+                      } else if (typeof value === "object") {
+                        return [
+                          blendEquations[value.rgb],
+                          blendEquations[value.alpha]
+                        ];
+                      } else {
+                      }
+                    },
+                    function(env2, scope, value) {
+                      var BLEND_EQUATIONS = env2.constants.blendEquations;
+                      var RGB = scope.def();
+                      var ALPHA = scope.def();
+                      var ifte = env2.cond("typeof ", value, '==="string"');
+                      ifte.then(
+                        RGB,
+                        "=",
+                        ALPHA,
+                        "=",
+                        BLEND_EQUATIONS,
+                        "[",
+                        value,
+                        "];"
+                      );
+                      ifte.else(
+                        RGB,
+                        "=",
+                        BLEND_EQUATIONS,
+                        "[",
+                        value,
+                        ".rgb];",
+                        ALPHA,
+                        "=",
+                        BLEND_EQUATIONS,
+                        "[",
+                        value,
+                        ".alpha];"
+                      );
+                      scope(ifte);
+                      return [RGB, ALPHA];
+                    }
+                  );
+                case S_BLEND_COLOR:
+                  return parseParam(
+                    function(value) {
+                      return loop(4, function(i) {
+                        return +value[i];
+                      });
+                    },
+                    function(env2, scope, value) {
+                      return loop(4, function(i) {
+                        return scope.def("+", value, "[", i, "]");
+                      });
+                    }
+                  );
+                case S_STENCIL_MASK:
+                  return parseParam(
+                    function(value) {
+                      return value | 0;
+                    },
+                    function(env2, scope, value) {
+                      return scope.def(value, "|0");
+                    }
+                  );
+                case S_STENCIL_FUNC:
+                  return parseParam(
+                    function(value) {
+                      var cmp = value.cmp || "keep";
+                      var ref = value.ref || 0;
+                      var mask = "mask" in value ? value.mask : -1;
+                      return [
+                        compareFuncs[cmp],
+                        ref,
+                        mask
+                      ];
+                    },
+                    function(env2, scope, value) {
+                      var COMPARE_FUNCS = env2.constants.compareFuncs;
+                      var cmp = scope.def(
+                        '"cmp" in ',
+                        value,
+                        "?",
+                        COMPARE_FUNCS,
+                        "[",
+                        value,
+                        ".cmp]",
+                        ":",
+                        GL_KEEP
+                      );
+                      var ref = scope.def(value, ".ref|0");
+                      var mask = scope.def(
+                        '"mask" in ',
+                        value,
+                        "?",
+                        value,
+                        ".mask|0:-1"
+                      );
+                      return [cmp, ref, mask];
+                    }
+                  );
+                case S_STENCIL_OPFRONT:
+                case S_STENCIL_OPBACK:
+                  return parseParam(
+                    function(value) {
+                      var fail = value.fail || "keep";
+                      var zfail = value.zfail || "keep";
+                      var zpass = value.zpass || "keep";
+                      return [
+                        prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
+                        stencilOps[fail],
+                        stencilOps[zfail],
+                        stencilOps[zpass]
+                      ];
+                    },
+                    function(env2, scope, value) {
+                      var STENCIL_OPS = env2.constants.stencilOps;
+                      function read(name) {
+                        return scope.def(
+                          '"',
+                          name,
+                          '" in ',
+                          value,
+                          "?",
+                          STENCIL_OPS,
+                          "[",
+                          value,
+                          ".",
+                          name,
+                          "]:",
+                          GL_KEEP
+                        );
+                      }
+                      return [
+                        prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
+                        read("fail"),
+                        read("zfail"),
+                        read("zpass")
+                      ];
+                    }
+                  );
+                case S_POLYGON_OFFSET_OFFSET:
+                  return parseParam(
+                    function(value) {
+                      var factor = value.factor | 0;
+                      var units = value.units | 0;
+                      return [factor, units];
+                    },
+                    function(env2, scope, value) {
+                      var FACTOR = scope.def(value, ".factor|0");
+                      var UNITS = scope.def(value, ".units|0");
+                      return [FACTOR, UNITS];
+                    }
+                  );
+                case S_CULL_FACE:
+                  return parseParam(
+                    function(value) {
+                      var face = 0;
+                      if (value === "front") {
+                        face = GL_FRONT;
+                      } else if (value === "back") {
+                        face = GL_BACK;
+                      }
+                      return face;
+                    },
+                    function(env2, scope, value) {
+                      return scope.def(value, '==="front"?', GL_FRONT, ":", GL_BACK);
+                    }
+                  );
+                case S_LINE_WIDTH:
+                  return parseParam(
+                    function(value) {
+                      return value;
+                    },
+                    function(env2, scope, value) {
+                      return value;
+                    }
+                  );
+                case S_FRONT_FACE:
+                  return parseParam(
+                    function(value) {
+                      return orientationType[value];
+                    },
+                    function(env2, scope, value) {
+                      return scope.def(value + '==="cw"?' + GL_CW + ":" + GL_CCW);
+                    }
+                  );
+                case S_COLOR_MASK:
+                  return parseParam(
+                    function(value) {
+                      return value.map(function(v) {
+                        return !!v;
+                      });
+                    },
+                    function(env2, scope, value) {
+                      return loop(4, function(i) {
+                        return "!!" + value + "[" + i + "]";
+                      });
+                    }
+                  );
+                case S_SAMPLE_COVERAGE:
+                  return parseParam(
+                    function(value) {
+                      var sampleValue = "value" in value ? value.value : 1;
+                      var sampleInvert = !!value.invert;
+                      return [sampleValue, sampleInvert];
+                    },
+                    function(env2, scope, value) {
+                      var VALUE = scope.def(
+                        '"value" in ',
+                        value,
+                        "?+",
+                        value,
+                        ".value:1"
+                      );
+                      var INVERT = scope.def("!!", value, ".invert");
+                      return [VALUE, INVERT];
+                    }
+                  );
+              }
+            });
+            return STATE;
+          }
+          function parseUniforms(uniforms, env) {
+            var staticUniforms = uniforms.static;
+            var dynamicUniforms = uniforms.dynamic;
+            var UNIFORMS = {};
+            Object.keys(staticUniforms).forEach(function(name) {
+              var value = staticUniforms[name];
+              var result;
+              if (typeof value === "number" || typeof value === "boolean") {
+                result = createStaticDecl(function() {
+                  return value;
+                });
+              } else if (typeof value === "function") {
+                var reglType = value._reglType;
+                if (reglType === "texture2d" || reglType === "textureCube") {
+                  result = createStaticDecl(function(env2) {
+                    return env2.link(value);
+                  });
+                } else if (reglType === "framebuffer" || reglType === "framebufferCube") {
+                  result = createStaticDecl(function(env2) {
+                    return env2.link(value.color[0]);
+                  });
+                } else {
+                }
+              } else if (isArrayLike(value)) {
+                result = createStaticDecl(function(env2) {
+                  var ITEM = env2.global.def(
+                    "[",
+                    loop(value.length, function(i) {
+                      return value[i];
+                    }),
+                    "]"
+                  );
+                  return ITEM;
+                });
+              } else {
+              }
+              result.value = value;
+              UNIFORMS[name] = result;
+            });
+            Object.keys(dynamicUniforms).forEach(function(key) {
+              var dyn = dynamicUniforms[key];
+              UNIFORMS[key] = createDynamicDecl(dyn, function(env2, scope) {
+                return env2.invoke(scope, dyn);
+              });
+            });
+            return UNIFORMS;
+          }
+          function parseAttributes(attributes, env) {
+            var staticAttributes = attributes.static;
+            var dynamicAttributes = attributes.dynamic;
+            var attributeDefs = {};
+            Object.keys(staticAttributes).forEach(function(attribute) {
+              var value = staticAttributes[attribute];
+              var id = stringStore.id(attribute);
+              var record = new AttributeRecord2();
+              if (isBufferArgs(value)) {
+                record.state = ATTRIB_STATE_POINTER;
+                record.buffer = bufferState.getBuffer(
+                  bufferState.create(value, GL_ARRAY_BUFFER$2, false, true)
+                );
+                record.type = 0;
+              } else {
+                var buffer = bufferState.getBuffer(value);
+                if (buffer) {
+                  record.state = ATTRIB_STATE_POINTER;
+                  record.buffer = buffer;
+                  record.type = 0;
+                } else {
+                  if ("constant" in value) {
+                    var constant = value.constant;
+                    record.buffer = "null";
+                    record.state = ATTRIB_STATE_CONSTANT;
+                    if (typeof constant === "number") {
+                      record.x = constant;
+                    } else {
+                      CUTE_COMPONENTS.forEach(function(c, i) {
+                        if (i < constant.length) {
+                          record[c] = constant[i];
+                        }
+                      });
+                    }
+                  } else {
+                    if (isBufferArgs(value.buffer)) {
+                      buffer = bufferState.getBuffer(
+                        bufferState.create(value.buffer, GL_ARRAY_BUFFER$2, false, true)
+                      );
+                    } else {
+                      buffer = bufferState.getBuffer(value.buffer);
+                    }
+                    var offset = value.offset | 0;
+                    var stride = value.stride | 0;
+                    var size = value.size | 0;
+                    var normalized = !!value.normalized;
+                    var type = 0;
+                    if ("type" in value) {
+                      type = glTypes[value.type];
+                    }
+                    var divisor = value.divisor | 0;
+                    record.buffer = buffer;
+                    record.state = ATTRIB_STATE_POINTER;
+                    record.size = size;
+                    record.normalized = normalized;
+                    record.type = type || buffer.dtype;
+                    record.offset = offset;
+                    record.stride = stride;
+                    record.divisor = divisor;
+                  }
+                }
+              }
+              attributeDefs[attribute] = createStaticDecl(function(env2, scope) {
+                var cache = env2.attribCache;
+                if (id in cache) {
+                  return cache[id];
+                }
+                var result = {
+                  isStream: false
+                };
+                Object.keys(record).forEach(function(key) {
+                  result[key] = record[key];
+                });
+                if (record.buffer) {
+                  result.buffer = env2.link(record.buffer);
+                  result.type = result.type || result.buffer + ".dtype";
+                }
+                cache[id] = result;
+                return result;
+              });
+            });
+            Object.keys(dynamicAttributes).forEach(function(attribute) {
+              var dyn = dynamicAttributes[attribute];
+              function appendAttributeCode(env2, block) {
+                var VALUE = env2.invoke(block, dyn);
+                var shared = env2.shared;
+                var constants = env2.constants;
+                var IS_BUFFER_ARGS = shared.isBufferArgs;
+                var BUFFER_STATE = shared.buffer;
+                var result = {
+                  isStream: block.def(false)
+                };
+                var defaultRecord = new AttributeRecord2();
+                defaultRecord.state = ATTRIB_STATE_POINTER;
+                Object.keys(defaultRecord).forEach(function(key) {
+                  result[key] = block.def("" + defaultRecord[key]);
+                });
+                var BUFFER = result.buffer;
+                var TYPE = result.type;
+                block(
+                  "if(",
+                  IS_BUFFER_ARGS,
+                  "(",
+                  VALUE,
+                  ")){",
+                  result.isStream,
+                  "=true;",
+                  BUFFER,
+                  "=",
+                  BUFFER_STATE,
+                  ".createStream(",
+                  GL_ARRAY_BUFFER$2,
+                  ",",
+                  VALUE,
+                  ");",
+                  TYPE,
+                  "=",
+                  BUFFER,
+                  ".dtype;",
+                  "}else{",
+                  BUFFER,
+                  "=",
+                  BUFFER_STATE,
+                  ".getBuffer(",
+                  VALUE,
+                  ");",
+                  "if(",
+                  BUFFER,
+                  "){",
+                  TYPE,
+                  "=",
+                  BUFFER,
+                  ".dtype;",
+                  '}else if("constant" in ',
+                  VALUE,
+                  "){",
+                  result.state,
+                  "=",
+                  ATTRIB_STATE_CONSTANT,
+                  ";",
+                  "if(typeof " + VALUE + '.constant === "number"){',
+                  result[CUTE_COMPONENTS[0]],
+                  "=",
+                  VALUE,
+                  ".constant;",
+                  CUTE_COMPONENTS.slice(1).map(function(n) {
+                    return result[n];
+                  }).join("="),
+                  "=0;",
+                  "}else{",
+                  CUTE_COMPONENTS.map(function(name, i) {
+                    return result[name] + "=" + VALUE + ".constant.length>" + i + "?" + VALUE + ".constant[" + i + "]:0;";
+                  }).join(""),
+                  "}}else{",
+                  "if(",
+                  IS_BUFFER_ARGS,
+                  "(",
+                  VALUE,
+                  ".buffer)){",
+                  BUFFER,
+                  "=",
+                  BUFFER_STATE,
+                  ".createStream(",
+                  GL_ARRAY_BUFFER$2,
+                  ",",
+                  VALUE,
+                  ".buffer);",
+                  "}else{",
+                  BUFFER,
+                  "=",
+                  BUFFER_STATE,
+                  ".getBuffer(",
+                  VALUE,
+                  ".buffer);",
+                  "}",
+                  TYPE,
+                  '="type" in ',
+                  VALUE,
+                  "?",
+                  constants.glTypes,
+                  "[",
+                  VALUE,
+                  ".type]:",
+                  BUFFER,
+                  ".dtype;",
+                  result.normalized,
+                  "=!!",
+                  VALUE,
+                  ".normalized;"
+                );
+                function emitReadRecord(name) {
+                  block(result[name], "=", VALUE, ".", name, "|0;");
+                }
+                emitReadRecord("size");
+                emitReadRecord("offset");
+                emitReadRecord("stride");
+                emitReadRecord("divisor");
+                block("}}");
+                block.exit(
+                  "if(",
+                  result.isStream,
+                  "){",
+                  BUFFER_STATE,
+                  ".destroyStream(",
+                  BUFFER,
+                  ");",
+                  "}"
+                );
+                return result;
+              }
+              attributeDefs[attribute] = createDynamicDecl(dyn, appendAttributeCode);
+            });
+            return attributeDefs;
+          }
+          function parseContext(context) {
+            var staticContext = context.static;
+            var dynamicContext = context.dynamic;
+            var result = {};
+            Object.keys(staticContext).forEach(function(name) {
+              var value = staticContext[name];
+              result[name] = createStaticDecl(function(env, scope) {
+                if (typeof value === "number" || typeof value === "boolean") {
+                  return "" + value;
+                } else {
+                  return env.link(value);
+                }
+              });
+            });
+            Object.keys(dynamicContext).forEach(function(name) {
+              var dyn = dynamicContext[name];
+              result[name] = createDynamicDecl(dyn, function(env, scope) {
+                return env.invoke(scope, dyn);
+              });
+            });
+            return result;
+          }
+          function parseArguments(options, attributes, uniforms, context, env) {
+            var staticOptions = options.static;
+            var dynamicOptions = options.dynamic;
+            var attribLocations = parseAttribLocations(options, attributes);
+            var framebuffer = parseFramebuffer(options, env);
+            var viewportAndScissor = parseViewportScissor(options, framebuffer, env);
+            var draw = parseDraw(options, env);
+            var state = parseGLState(options, env);
+            var shader = parseProgram(options, env, attribLocations);
+            function copyBox(name) {
+              var defn = viewportAndScissor[name];
+              if (defn) {
+                state[name] = defn;
+              }
+            }
+            copyBox(S_VIEWPORT);
+            copyBox(propName(S_SCISSOR_BOX));
+            var dirty = Object.keys(state).length > 0;
+            var result = {
+              framebuffer,
+              draw,
+              shader,
+              state,
+              dirty,
+              scopeVAO: null,
+              drawVAO: null,
+              useVAO: false,
+              attributes: {}
+            };
+            result.profile = parseProfile(options, env);
+            result.uniforms = parseUniforms(uniforms, env);
+            result.drawVAO = result.scopeVAO = draw.vao;
+            if (!result.drawVAO && shader.program && !attribLocations && extensions.angle_instanced_arrays && draw.static.elements) {
+              var useVAO = true;
+              var staticBindings = shader.program.attributes.map(function(attr) {
+                var binding = attributes.static[attr];
+                useVAO = useVAO && !!binding;
+                return binding;
+              });
+              if (useVAO && staticBindings.length > 0) {
+                var vao = attributeState.getVAO(attributeState.createVAO({
+                  attributes: staticBindings,
+                  elements: draw.static.elements
+                }));
+                result.drawVAO = new Declaration(null, null, null, function(env2, scope) {
+                  return env2.link(vao);
+                });
+                result.useVAO = true;
+              }
+            }
+            if (attribLocations) {
+              result.useVAO = true;
+            } else {
+              result.attributes = parseAttributes(attributes, env);
+            }
+            result.context = parseContext(context, env);
+            return result;
+          }
+          function emitContext(env, scope, context) {
+            var shared = env.shared;
+            var CONTEXT = shared.context;
+            var contextEnter = env.scope();
+            Object.keys(context).forEach(function(name) {
+              scope.save(CONTEXT, "." + name);
+              var defn = context[name];
+              var value = defn.append(env, scope);
+              if (Array.isArray(value)) {
+                contextEnter(CONTEXT, ".", name, "=[", value.join(), "];");
+              } else {
+                contextEnter(CONTEXT, ".", name, "=", value, ";");
+              }
+            });
+            scope(contextEnter);
+          }
+          function emitPollFramebuffer(env, scope, framebuffer, skipCheck) {
+            var shared = env.shared;
+            var GL = shared.gl;
+            var FRAMEBUFFER_STATE = shared.framebuffer;
+            var EXT_DRAW_BUFFERS;
+            if (extDrawBuffers) {
+              EXT_DRAW_BUFFERS = scope.def(shared.extensions, ".webgl_draw_buffers");
+            }
+            var constants = env.constants;
+            var DRAW_BUFFERS = constants.drawBuffer;
+            var BACK_BUFFER = constants.backBuffer;
+            var NEXT;
+            if (framebuffer) {
+              NEXT = framebuffer.append(env, scope);
+            } else {
+              NEXT = scope.def(FRAMEBUFFER_STATE, ".next");
+            }
+            if (!skipCheck) {
+              scope("if(", NEXT, "!==", FRAMEBUFFER_STATE, ".cur){");
+            }
+            scope(
+              "if(",
+              NEXT,
+              "){",
+              GL,
+              ".bindFramebuffer(",
+              GL_FRAMEBUFFER$2,
+              ",",
+              NEXT,
+              ".framebuffer);"
+            );
+            if (extDrawBuffers) {
+              scope(
+                EXT_DRAW_BUFFERS,
+                ".drawBuffersWEBGL(",
+                DRAW_BUFFERS,
+                "[",
+                NEXT,
+                ".colorAttachments.length]);"
+              );
+            }
+            scope(
+              "}else{",
+              GL,
+              ".bindFramebuffer(",
+              GL_FRAMEBUFFER$2,
+              ",null);"
+            );
+            if (extDrawBuffers) {
+              scope(EXT_DRAW_BUFFERS, ".drawBuffersWEBGL(", BACK_BUFFER, ");");
+            }
+            scope(
+              "}",
+              FRAMEBUFFER_STATE,
+              ".cur=",
+              NEXT,
+              ";"
+            );
+            if (!skipCheck) {
+              scope("}");
+            }
+          }
+          function emitPollState(env, scope, args) {
+            var shared = env.shared;
+            var GL = shared.gl;
+            var CURRENT_VARS = env.current;
+            var NEXT_VARS = env.next;
+            var CURRENT_STATE = shared.current;
+            var NEXT_STATE = shared.next;
+            var block = env.cond(CURRENT_STATE, ".dirty");
+            GL_STATE_NAMES.forEach(function(prop) {
+              var param = propName(prop);
+              if (param in args.state) {
+                return;
+              }
+              var NEXT, CURRENT;
+              if (param in NEXT_VARS) {
+                NEXT = NEXT_VARS[param];
+                CURRENT = CURRENT_VARS[param];
+                var parts = loop(currentState[param].length, function(i) {
+                  return block.def(NEXT, "[", i, "]");
+                });
+                block(env.cond(parts.map(function(p, i) {
+                  return p + "!==" + CURRENT + "[" + i + "]";
+                }).join("||")).then(
+                  GL,
+                  ".",
+                  GL_VARIABLES[param],
+                  "(",
+                  parts,
+                  ");",
+                  parts.map(function(p, i) {
+                    return CURRENT + "[" + i + "]=" + p;
+                  }).join(";"),
+                  ";"
+                ));
+              } else {
+                NEXT = block.def(NEXT_STATE, ".", param);
+                var ifte = env.cond(NEXT, "!==", CURRENT_STATE, ".", param);
+                block(ifte);
+                if (param in GL_FLAGS) {
+                  ifte(
+                    env.cond(NEXT).then(GL, ".enable(", GL_FLAGS[param], ");").else(GL, ".disable(", GL_FLAGS[param], ");"),
+                    CURRENT_STATE,
+                    ".",
+                    param,
+                    "=",
+                    NEXT,
+                    ";"
+                  );
+                } else {
+                  ifte(
+                    GL,
+                    ".",
+                    GL_VARIABLES[param],
+                    "(",
+                    NEXT,
+                    ");",
+                    CURRENT_STATE,
+                    ".",
+                    param,
+                    "=",
+                    NEXT,
+                    ";"
+                  );
+                }
+              }
+            });
+            if (Object.keys(args.state).length === 0) {
+              block(CURRENT_STATE, ".dirty=false;");
+            }
+            scope(block);
+          }
+          function emitSetOptions(env, scope, options, filter) {
+            var shared = env.shared;
+            var CURRENT_VARS = env.current;
+            var CURRENT_STATE = shared.current;
+            var GL = shared.gl;
+            var VALUE;
+            sortState(Object.keys(options)).forEach(function(param) {
+              var defn = options[param];
+              if (filter && !filter(defn)) {
+                return;
+              }
+              var variable = defn.append(env, scope);
+              if (GL_FLAGS[param]) {
+                var flag = GL_FLAGS[param];
+                if (isStatic(defn)) {
+                  VALUE = env.link(variable, { stable: true });
+                  scope(env.cond(VALUE).then(GL, ".enable(", flag, ");").else(GL, ".disable(", flag, ");"));
+                  scope(CURRENT_STATE, ".", param, "=", VALUE, ";");
+                } else {
+                  scope(env.cond(variable).then(GL, ".enable(", flag, ");").else(GL, ".disable(", flag, ");"));
+                  scope(CURRENT_STATE, ".", param, "=", variable, ";");
+                }
+              } else if (isArrayLike(variable)) {
+                var CURRENT = CURRENT_VARS[param];
+                scope(
+                  GL,
+                  ".",
+                  GL_VARIABLES[param],
+                  "(",
+                  variable,
+                  ");",
+                  variable.map(function(v, i) {
+                    return CURRENT + "[" + i + "]=" + v;
+                  }).join(";"),
+                  ";"
+                );
+              } else {
+                if (isStatic(defn)) {
+                  VALUE = env.link(variable, { stable: true });
+                  scope(
+                    GL,
+                    ".",
+                    GL_VARIABLES[param],
+                    "(",
+                    VALUE,
+                    ");",
+                    CURRENT_STATE,
+                    ".",
+                    param,
+                    "=",
+                    VALUE,
+                    ";"
+                  );
+                } else {
+                  scope(
+                    GL,
+                    ".",
+                    GL_VARIABLES[param],
+                    "(",
+                    variable,
+                    ");",
+                    CURRENT_STATE,
+                    ".",
+                    param,
+                    "=",
+                    variable,
+                    ";"
+                  );
+                }
+              }
+            });
+          }
+          function injectExtensions(env, scope) {
+            if (extInstancing) {
+              env.instancing = scope.def(
+                env.shared.extensions,
+                ".angle_instanced_arrays"
+              );
+            }
+          }
+          function emitProfile(env, scope, args, useScope, incrementCounter) {
+            var shared = env.shared;
+            var STATS = env.stats;
+            var CURRENT_STATE = shared.current;
+            var TIMER = shared.timer;
+            var profileArg = args.profile;
+            function perfCounter() {
+              if (typeof performance === "undefined") {
+                return "Date.now()";
+              } else {
+                return "performance.now()";
+              }
+            }
+            var CPU_START, QUERY_COUNTER;
+            function emitProfileStart(block) {
+              CPU_START = scope.def();
+              block(CPU_START, "=", perfCounter(), ";");
+              if (typeof incrementCounter === "string") {
+                block(STATS, ".count+=", incrementCounter, ";");
+              } else {
+                block(STATS, ".count++;");
+              }
+              if (timer) {
+                if (useScope) {
+                  QUERY_COUNTER = scope.def();
+                  block(QUERY_COUNTER, "=", TIMER, ".getNumPendingQueries();");
+                } else {
+                  block(TIMER, ".beginQuery(", STATS, ");");
+                }
+              }
+            }
+            function emitProfileEnd(block) {
+              block(STATS, ".cpuTime+=", perfCounter(), "-", CPU_START, ";");
+              if (timer) {
+                if (useScope) {
+                  block(
+                    TIMER,
+                    ".pushScopeStats(",
+                    QUERY_COUNTER,
+                    ",",
+                    TIMER,
+                    ".getNumPendingQueries(),",
+                    STATS,
+                    ");"
+                  );
+                } else {
+                  block(TIMER, ".endQuery();");
+                }
+              }
+            }
+            function scopeProfile(value) {
+              var prev = scope.def(CURRENT_STATE, ".profile");
+              scope(CURRENT_STATE, ".profile=", value, ";");
+              scope.exit(CURRENT_STATE, ".profile=", prev, ";");
+            }
+            var USE_PROFILE;
+            if (profileArg) {
+              if (isStatic(profileArg)) {
+                if (profileArg.enable) {
+                  emitProfileStart(scope);
+                  emitProfileEnd(scope.exit);
+                  scopeProfile("true");
+                } else {
+                  scopeProfile("false");
+                }
+                return;
+              }
+              USE_PROFILE = profileArg.append(env, scope);
+              scopeProfile(USE_PROFILE);
+            } else {
+              USE_PROFILE = scope.def(CURRENT_STATE, ".profile");
+            }
+            var start = env.block();
+            emitProfileStart(start);
+            scope("if(", USE_PROFILE, "){", start, "}");
+            var end = env.block();
+            emitProfileEnd(end);
+            scope.exit("if(", USE_PROFILE, "){", end, "}");
+          }
+          function emitAttributes(env, scope, args, attributes, filter) {
+            var shared = env.shared;
+            function typeLength(x) {
+              switch (x) {
+                case GL_FLOAT_VEC2:
+                case GL_INT_VEC2:
+                case GL_BOOL_VEC2:
+                  return 2;
+                case GL_FLOAT_VEC3:
+                case GL_INT_VEC3:
+                case GL_BOOL_VEC3:
+                  return 3;
+                case GL_FLOAT_VEC4:
+                case GL_INT_VEC4:
+                case GL_BOOL_VEC4:
+                  return 4;
+                default:
+                  return 1;
+              }
+            }
+            function emitBindAttribute(ATTRIBUTE, size, record) {
+              var GL = shared.gl;
+              var LOCATION = scope.def(ATTRIBUTE, ".location");
+              var BINDING = scope.def(shared.attributes, "[", LOCATION, "]");
+              var STATE = record.state;
+              var BUFFER = record.buffer;
+              var CONST_COMPONENTS = [
+                record.x,
+                record.y,
+                record.z,
+                record.w
+              ];
+              var COMMON_KEYS = [
+                "buffer",
+                "normalized",
+                "offset",
+                "stride"
+              ];
+              function emitBuffer() {
+                scope(
+                  "if(!",
+                  BINDING,
+                  ".buffer){",
+                  GL,
+                  ".enableVertexAttribArray(",
+                  LOCATION,
+                  ");}"
+                );
+                var TYPE = record.type;
+                var SIZE;
+                if (!record.size) {
+                  SIZE = size;
+                } else {
+                  SIZE = scope.def(record.size, "||", size);
+                }
+                scope(
+                  "if(",
+                  BINDING,
+                  ".type!==",
+                  TYPE,
+                  "||",
+                  BINDING,
+                  ".size!==",
+                  SIZE,
+                  "||",
+                  COMMON_KEYS.map(function(key) {
+                    return BINDING + "." + key + "!==" + record[key];
+                  }).join("||"),
+                  "){",
+                  GL,
+                  ".bindBuffer(",
+                  GL_ARRAY_BUFFER$2,
+                  ",",
+                  BUFFER,
+                  ".buffer);",
+                  GL,
+                  ".vertexAttribPointer(",
+                  [
+                    LOCATION,
+                    SIZE,
+                    TYPE,
+                    record.normalized,
+                    record.stride,
+                    record.offset
+                  ],
+                  ");",
+                  BINDING,
+                  ".type=",
+                  TYPE,
+                  ";",
+                  BINDING,
+                  ".size=",
+                  SIZE,
+                  ";",
+                  COMMON_KEYS.map(function(key) {
+                    return BINDING + "." + key + "=" + record[key] + ";";
+                  }).join(""),
+                  "}"
+                );
+                if (extInstancing) {
+                  var DIVISOR = record.divisor;
+                  scope(
+                    "if(",
+                    BINDING,
+                    ".divisor!==",
+                    DIVISOR,
+                    "){",
+                    env.instancing,
+                    ".vertexAttribDivisorANGLE(",
+                    [LOCATION, DIVISOR],
+                    ");",
+                    BINDING,
+                    ".divisor=",
+                    DIVISOR,
+                    ";}"
+                  );
+                }
+              }
+              function emitConstant() {
+                scope(
+                  "if(",
+                  BINDING,
+                  ".buffer){",
+                  GL,
+                  ".disableVertexAttribArray(",
+                  LOCATION,
+                  ");",
+                  BINDING,
+                  ".buffer=null;",
+                  "}if(",
+                  CUTE_COMPONENTS.map(function(c, i) {
+                    return BINDING + "." + c + "!==" + CONST_COMPONENTS[i];
+                  }).join("||"),
+                  "){",
+                  GL,
+                  ".vertexAttrib4f(",
+                  LOCATION,
+                  ",",
+                  CONST_COMPONENTS,
+                  ");",
+                  CUTE_COMPONENTS.map(function(c, i) {
+                    return BINDING + "." + c + "=" + CONST_COMPONENTS[i] + ";";
+                  }).join(""),
+                  "}"
+                );
+              }
+              if (STATE === ATTRIB_STATE_POINTER) {
+                emitBuffer();
+              } else if (STATE === ATTRIB_STATE_CONSTANT) {
+                emitConstant();
+              } else {
+                scope("if(", STATE, "===", ATTRIB_STATE_POINTER, "){");
+                emitBuffer();
+                scope("}else{");
+                emitConstant();
+                scope("}");
+              }
+            }
+            attributes.forEach(function(attribute) {
+              var name = attribute.name;
+              var arg = args.attributes[name];
+              var record;
+              if (arg) {
+                if (!filter(arg)) {
+                  return;
+                }
+                record = arg.append(env, scope);
+              } else {
+                if (!filter(SCOPE_DECL)) {
+                  return;
+                }
+                var scopeAttrib = env.scopeAttrib(name);
+                record = {};
+                Object.keys(new AttributeRecord2()).forEach(function(key) {
+                  record[key] = scope.def(scopeAttrib, ".", key);
+                });
+              }
+              emitBindAttribute(
+                env.link(attribute),
+                typeLength(attribute.info.type),
+                record
+              );
+            });
+          }
+          function emitUniforms(env, scope, args, uniforms, filter, isBatchInnerLoop) {
+            var shared = env.shared;
+            var GL = shared.gl;
+            var infix;
+            for (var i = 0; i < uniforms.length; ++i) {
+              var uniform = uniforms[i];
+              var name = uniform.name;
+              var type = uniform.info.type;
+              var arg = args.uniforms[name];
+              var UNIFORM = env.link(uniform);
+              var LOCATION = UNIFORM + ".location";
+              var VALUE;
+              if (arg) {
+                if (!filter(arg)) {
+                  continue;
+                }
+                if (isStatic(arg)) {
+                  var value = arg.value;
+                  if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
+                    var TEX_VALUE = env.link(value._texture || value.color[0]._texture);
+                    scope(GL, ".uniform1i(", LOCATION, ",", TEX_VALUE + ".bind());");
+                    scope.exit(TEX_VALUE, ".unbind();");
+                  } else if (type === GL_FLOAT_MAT2 || type === GL_FLOAT_MAT3 || type === GL_FLOAT_MAT4) {
+                    var MAT_VALUE = env.global.def("new Float32Array([" + Array.prototype.slice.call(value) + "])");
+                    var dim = 2;
+                    if (type === GL_FLOAT_MAT3) {
+                      dim = 3;
+                    } else if (type === GL_FLOAT_MAT4) {
+                      dim = 4;
+                    }
+                    scope(
+                      GL,
+                      ".uniformMatrix",
+                      dim,
+                      "fv(",
+                      LOCATION,
+                      ",false,",
+                      MAT_VALUE,
+                      ");"
+                    );
+                  } else {
+                    switch (type) {
+                      case GL_FLOAT$7:
+                        infix = "1f";
+                        break;
+                      case GL_FLOAT_VEC2:
+                        infix = "2f";
+                        break;
+                      case GL_FLOAT_VEC3:
+                        infix = "3f";
+                        break;
+                      case GL_FLOAT_VEC4:
+                        infix = "4f";
+                        break;
+                      case GL_BOOL:
+                        infix = "1i";
+                        break;
+                      case GL_INT$2:
+                        infix = "1i";
+                        break;
+                      case GL_BOOL_VEC2:
+                        infix = "2i";
+                        break;
+                      case GL_INT_VEC2:
+                        infix = "2i";
+                        break;
+                      case GL_BOOL_VEC3:
+                        infix = "3i";
+                        break;
+                      case GL_INT_VEC3:
+                        infix = "3i";
+                        break;
+                      case GL_BOOL_VEC4:
+                        infix = "4i";
+                        break;
+                      case GL_INT_VEC4:
+                        infix = "4i";
+                        break;
+                    }
+                    scope(
+                      GL,
+                      ".uniform",
+                      infix,
+                      "(",
+                      LOCATION,
+                      ",",
+                      isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+                      ");"
+                    );
+                  }
+                  continue;
+                } else {
+                  VALUE = arg.append(env, scope);
+                }
+              } else {
+                if (!filter(SCOPE_DECL)) {
+                  continue;
+                }
+                VALUE = scope.def(shared.uniforms, "[", stringStore.id(name), "]");
+              }
+              if (type === GL_SAMPLER_2D) {
+                scope(
+                  "if(",
+                  VALUE,
+                  "&&",
+                  VALUE,
+                  '._reglType==="framebuffer"){',
+                  VALUE,
+                  "=",
+                  VALUE,
+                  ".color[0];",
+                  "}"
+                );
+              } else if (type === GL_SAMPLER_CUBE) {
+                scope(
+                  "if(",
+                  VALUE,
+                  "&&",
+                  VALUE,
+                  '._reglType==="framebufferCube"){',
+                  VALUE,
+                  "=",
+                  VALUE,
+                  ".color[0];",
+                  "}"
+                );
+              }
+              var unroll = 1;
+              switch (type) {
+                case GL_SAMPLER_2D:
+                case GL_SAMPLER_CUBE:
+                  var TEX = scope.def(VALUE, "._texture");
+                  scope(GL, ".uniform1i(", LOCATION, ",", TEX, ".bind());");
+                  scope.exit(TEX, ".unbind();");
+                  continue;
+                case GL_INT$2:
+                case GL_BOOL:
+                  infix = "1i";
+                  break;
+                case GL_INT_VEC2:
+                case GL_BOOL_VEC2:
+                  infix = "2i";
+                  unroll = 2;
+                  break;
+                case GL_INT_VEC3:
+                case GL_BOOL_VEC3:
+                  infix = "3i";
+                  unroll = 3;
+                  break;
+                case GL_INT_VEC4:
+                case GL_BOOL_VEC4:
+                  infix = "4i";
+                  unroll = 4;
+                  break;
+                case GL_FLOAT$7:
+                  infix = "1f";
+                  break;
+                case GL_FLOAT_VEC2:
+                  infix = "2f";
+                  unroll = 2;
+                  break;
+                case GL_FLOAT_VEC3:
+                  infix = "3f";
+                  unroll = 3;
+                  break;
+                case GL_FLOAT_VEC4:
+                  infix = "4f";
+                  unroll = 4;
+                  break;
+                case GL_FLOAT_MAT2:
+                  infix = "Matrix2fv";
+                  break;
+                case GL_FLOAT_MAT3:
+                  infix = "Matrix3fv";
+                  break;
+                case GL_FLOAT_MAT4:
+                  infix = "Matrix4fv";
+                  break;
+              }
+              if (infix.charAt(0) === "M") {
+                scope(GL, ".uniform", infix, "(", LOCATION, ",");
+                var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2);
+                var STORAGE = env.global.def("new Float32Array(", matSize, ")");
+                if (Array.isArray(VALUE)) {
+                  scope(
+                    "false,(",
+                    loop(matSize, function(i2) {
+                      return STORAGE + "[" + i2 + "]=" + VALUE[i2];
+                    }),
+                    ",",
+                    STORAGE,
+                    ")"
+                  );
+                } else {
+                  scope(
+                    "false,(Array.isArray(",
+                    VALUE,
+                    ")||",
+                    VALUE,
+                    " instanceof Float32Array)?",
+                    VALUE,
+                    ":(",
+                    loop(matSize, function(i2) {
+                      return STORAGE + "[" + i2 + "]=" + VALUE + "[" + i2 + "]";
+                    }),
+                    ",",
+                    STORAGE,
+                    ")"
+                  );
+                }
+                scope(");");
+              } else if (unroll > 1) {
+                var prev = [];
+                var cur = [];
+                for (var j = 0; j < unroll; ++j) {
+                  if (Array.isArray(VALUE)) {
+                    cur.push(VALUE[j]);
+                  } else {
+                    cur.push(scope.def(VALUE + "[" + j + "]"));
+                  }
+                  if (isBatchInnerLoop) {
+                    prev.push(scope.def());
+                  }
+                }
+                if (isBatchInnerLoop) {
+                  scope("if(!", env.batchId, "||", prev.map(function(p, i2) {
+                    return p + "!==" + cur[i2];
+                  }).join("||"), "){", prev.map(function(p, i2) {
+                    return p + "=" + cur[i2] + ";";
+                  }).join(""));
+                }
+                scope(GL, ".uniform", infix, "(", LOCATION, ",", cur.join(","), ");");
+                if (isBatchInnerLoop) {
+                  scope("}");
+                }
+              } else {
+                if (isBatchInnerLoop) {
+                  var prevS = scope.def();
+                  scope(
+                    "if(!",
+                    env.batchId,
+                    "||",
+                    prevS,
+                    "!==",
+                    VALUE,
+                    "){",
+                    prevS,
+                    "=",
+                    VALUE,
+                    ";"
+                  );
+                }
+                scope(GL, ".uniform", infix, "(", LOCATION, ",", VALUE, ");");
+                if (isBatchInnerLoop) {
+                  scope("}");
+                }
+              }
+            }
+          }
+          function emitDraw(env, outer, inner, args) {
+            var shared = env.shared;
+            var GL = shared.gl;
+            var DRAW_STATE = shared.draw;
+            var drawOptions = args.draw;
+            function emitElements() {
+              var defn = drawOptions.elements;
+              var ELEMENTS2;
+              var scope = outer;
+              if (defn) {
+                if (defn.contextDep && args.contextDynamic || defn.propDep) {
+                  scope = inner;
+                }
+                ELEMENTS2 = defn.append(env, scope);
+                if (drawOptions.elementsActive) {
+                  scope(
+                    "if(" + ELEMENTS2 + ")" + GL + ".bindBuffer(" + GL_ELEMENT_ARRAY_BUFFER$2 + "," + ELEMENTS2 + ".buffer.buffer);"
+                  );
+                }
+              } else {
+                ELEMENTS2 = scope.def();
+                scope(
+                  ELEMENTS2,
+                  "=",
+                  DRAW_STATE,
+                  ".",
+                  S_ELEMENTS,
+                  ";",
+                  "if(",
+                  ELEMENTS2,
+                  "){",
+                  GL,
+                  ".bindBuffer(",
+                  GL_ELEMENT_ARRAY_BUFFER$2,
+                  ",",
+                  ELEMENTS2,
+                  ".buffer.buffer);}",
+                  "else if(",
+                  shared.vao,
+                  ".currentVAO){",
+                  ELEMENTS2,
+                  "=",
+                  env.shared.elements + ".getElements(" + shared.vao,
+                  ".currentVAO.elements);",
+                  !extVertexArrays ? "if(" + ELEMENTS2 + ")" + GL + ".bindBuffer(" + GL_ELEMENT_ARRAY_BUFFER$2 + "," + ELEMENTS2 + ".buffer.buffer);" : "",
+                  "}"
+                );
+              }
+              return ELEMENTS2;
+            }
+            function emitCount() {
+              var defn = drawOptions.count;
+              var COUNT2;
+              var scope = outer;
+              if (defn) {
+                if (defn.contextDep && args.contextDynamic || defn.propDep) {
+                  scope = inner;
+                }
+                COUNT2 = defn.append(env, scope);
+              } else {
+                COUNT2 = scope.def(DRAW_STATE, ".", S_COUNT);
+              }
+              return COUNT2;
+            }
+            var ELEMENTS = emitElements();
+            function emitValue(name) {
+              var defn = drawOptions[name];
+              if (defn) {
+                if (defn.contextDep && args.contextDynamic || defn.propDep) {
+                  return defn.append(env, inner);
+                } else {
+                  return defn.append(env, outer);
+                }
+              } else {
+                return outer.def(DRAW_STATE, ".", name);
+              }
+            }
+            var PRIMITIVE = emitValue(S_PRIMITIVE);
+            var OFFSET = emitValue(S_OFFSET);
+            var COUNT = emitCount();
+            if (typeof COUNT === "number") {
+              if (COUNT === 0) {
+                return;
+              }
+            } else {
+              inner("if(", COUNT, "){");
+              inner.exit("}");
+            }
+            var INSTANCES, EXT_INSTANCING;
+            if (extInstancing) {
+              INSTANCES = emitValue(S_INSTANCES);
+              EXT_INSTANCING = env.instancing;
+            }
+            var ELEMENT_TYPE = ELEMENTS + ".type";
+            var elementsStatic = drawOptions.elements && isStatic(drawOptions.elements) && !drawOptions.vaoActive;
+            function emitInstancing() {
+              function drawElements() {
+                inner(EXT_INSTANCING, ".drawElementsInstancedANGLE(", [
+                  PRIMITIVE,
+                  COUNT,
+                  ELEMENT_TYPE,
+                  OFFSET + "<<((" + ELEMENT_TYPE + "-" + GL_UNSIGNED_BYTE$7 + ")>>1)",
+                  INSTANCES
+                ], ");");
+              }
+              function drawArrays() {
+                inner(
+                  EXT_INSTANCING,
+                  ".drawArraysInstancedANGLE(",
+                  [PRIMITIVE, OFFSET, COUNT, INSTANCES],
+                  ");"
+                );
+              }
+              if (ELEMENTS && ELEMENTS !== "null") {
+                if (!elementsStatic) {
+                  inner("if(", ELEMENTS, "){");
+                  drawElements();
+                  inner("}else{");
+                  drawArrays();
+                  inner("}");
+                } else {
+                  drawElements();
+                }
+              } else {
+                drawArrays();
+              }
+            }
+            function emitRegular() {
+              function drawElements() {
+                inner(GL + ".drawElements(" + [
+                  PRIMITIVE,
+                  COUNT,
+                  ELEMENT_TYPE,
+                  OFFSET + "<<((" + ELEMENT_TYPE + "-" + GL_UNSIGNED_BYTE$7 + ")>>1)"
+                ] + ");");
+              }
+              function drawArrays() {
+                inner(GL + ".drawArrays(" + [PRIMITIVE, OFFSET, COUNT] + ");");
+              }
+              if (ELEMENTS && ELEMENTS !== "null") {
+                if (!elementsStatic) {
+                  inner("if(", ELEMENTS, "){");
+                  drawElements();
+                  inner("}else{");
+                  drawArrays();
+                  inner("}");
+                } else {
+                  drawElements();
+                }
+              } else {
+                drawArrays();
+              }
+            }
+            if (extInstancing && (typeof INSTANCES !== "number" || INSTANCES >= 0)) {
+              if (typeof INSTANCES === "string") {
+                inner("if(", INSTANCES, ">0){");
+                emitInstancing();
+                inner("}else if(", INSTANCES, "<0){");
+                emitRegular();
+                inner("}");
+              } else {
+                emitInstancing();
+              }
+            } else {
+              emitRegular();
+            }
+          }
+          function createBody(emitBody, parentEnv, args, program, count) {
+            var env = createREGLEnvironment();
+            var scope = env.proc("body", count);
+            if (extInstancing) {
+              env.instancing = scope.def(
+                env.shared.extensions,
+                ".angle_instanced_arrays"
+              );
+            }
+            emitBody(env, scope, args, program);
+            return env.compile().body;
+          }
+          function emitDrawBody(env, draw, args, program) {
+            injectExtensions(env, draw);
+            if (args.useVAO) {
+              if (args.drawVAO) {
+                draw(env.shared.vao, ".setVAO(", args.drawVAO.append(env, draw), ");");
+              } else {
+                draw(env.shared.vao, ".setVAO(", env.shared.vao, ".targetVAO);");
+              }
+            } else {
+              draw(env.shared.vao, ".setVAO(null);");
+              emitAttributes(env, draw, args, program.attributes, function() {
+                return true;
+              });
+            }
+            emitUniforms(env, draw, args, program.uniforms, function() {
+              return true;
+            }, false);
+            emitDraw(env, draw, draw, args);
+          }
+          function emitDrawProc(env, args) {
+            var draw = env.proc("draw", 1);
+            injectExtensions(env, draw);
+            emitContext(env, draw, args.context);
+            emitPollFramebuffer(env, draw, args.framebuffer);
+            emitPollState(env, draw, args);
+            emitSetOptions(env, draw, args.state);
+            emitProfile(env, draw, args, false, true);
+            var program = args.shader.progVar.append(env, draw);
+            draw(env.shared.gl, ".useProgram(", program, ".program);");
+            if (args.shader.program) {
+              emitDrawBody(env, draw, args, args.shader.program);
+            } else {
+              draw(env.shared.vao, ".setVAO(null);");
+              var drawCache = env.global.def("{}");
+              var PROG_ID = draw.def(program, ".id");
+              var CACHED_PROC = draw.def(drawCache, "[", PROG_ID, "]");
+              draw(
+                env.cond(CACHED_PROC).then(CACHED_PROC, ".call(this,a0);").else(
+                  CACHED_PROC,
+                  "=",
+                  drawCache,
+                  "[",
+                  PROG_ID,
+                  "]=",
+                  env.link(function(program2) {
+                    return createBody(emitDrawBody, env, args, program2, 1);
+                  }),
+                  "(",
+                  program,
+                  ");",
+                  CACHED_PROC,
+                  ".call(this,a0);"
+                )
+              );
+            }
+            if (Object.keys(args.state).length > 0) {
+              draw(env.shared.current, ".dirty=true;");
+            }
+            if (env.shared.vao) {
+              draw(env.shared.vao, ".setVAO(null);");
+            }
+          }
+          function emitBatchDynamicShaderBody(env, scope, args, program) {
+            env.batchId = "a1";
+            injectExtensions(env, scope);
+            function all() {
+              return true;
+            }
+            emitAttributes(env, scope, args, program.attributes, all);
+            emitUniforms(env, scope, args, program.uniforms, all, false);
+            emitDraw(env, scope, scope, args);
+          }
+          function emitBatchBody(env, scope, args, program) {
+            injectExtensions(env, scope);
+            var contextDynamic = args.contextDep;
+            var BATCH_ID = scope.def();
+            var PROP_LIST = "a0";
+            var NUM_PROPS = "a1";
+            var PROPS = scope.def();
+            env.shared.props = PROPS;
+            env.batchId = BATCH_ID;
+            var outer = env.scope();
+            var inner = env.scope();
+            scope(
+              outer.entry,
+              "for(",
+              BATCH_ID,
+              "=0;",
+              BATCH_ID,
+              "<",
+              NUM_PROPS,
+              ";++",
+              BATCH_ID,
+              "){",
+              PROPS,
+              "=",
+              PROP_LIST,
+              "[",
+              BATCH_ID,
+              "];",
+              inner,
+              "}",
+              outer.exit
+            );
+            function isInnerDefn(defn) {
+              return defn.contextDep && contextDynamic || defn.propDep;
+            }
+            function isOuterDefn(defn) {
+              return !isInnerDefn(defn);
+            }
+            if (args.needsContext) {
+              emitContext(env, inner, args.context);
+            }
+            if (args.needsFramebuffer) {
+              emitPollFramebuffer(env, inner, args.framebuffer);
+            }
+            emitSetOptions(env, inner, args.state, isInnerDefn);
+            if (args.profile && isInnerDefn(args.profile)) {
+              emitProfile(env, inner, args, false, true);
+            }
+            if (!program) {
+              var progCache = env.global.def("{}");
+              var PROGRAM = args.shader.progVar.append(env, inner);
+              var PROG_ID = inner.def(PROGRAM, ".id");
+              var CACHED_PROC = inner.def(progCache, "[", PROG_ID, "]");
+              inner(
+                env.shared.gl,
+                ".useProgram(",
+                PROGRAM,
+                ".program);",
+                "if(!",
+                CACHED_PROC,
+                "){",
+                CACHED_PROC,
+                "=",
+                progCache,
+                "[",
+                PROG_ID,
+                "]=",
+                env.link(function(program2) {
+                  return createBody(
+                    emitBatchDynamicShaderBody,
+                    env,
+                    args,
+                    program2,
+                    2
+                  );
+                }),
+                "(",
+                PROGRAM,
+                ");}",
+                CACHED_PROC,
+                ".call(this,a0[",
+                BATCH_ID,
+                "],",
+                BATCH_ID,
+                ");"
+              );
+            } else {
+              if (args.useVAO) {
+                if (args.drawVAO) {
+                  if (isInnerDefn(args.drawVAO)) {
+                    inner(env.shared.vao, ".setVAO(", args.drawVAO.append(env, inner), ");");
+                  } else {
+                    outer(env.shared.vao, ".setVAO(", args.drawVAO.append(env, outer), ");");
+                  }
+                } else {
+                  outer(env.shared.vao, ".setVAO(", env.shared.vao, ".targetVAO);");
+                }
+              } else {
+                outer(env.shared.vao, ".setVAO(null);");
+                emitAttributes(env, outer, args, program.attributes, isOuterDefn);
+                emitAttributes(env, inner, args, program.attributes, isInnerDefn);
+              }
+              emitUniforms(env, outer, args, program.uniforms, isOuterDefn, false);
+              emitUniforms(env, inner, args, program.uniforms, isInnerDefn, true);
+              emitDraw(env, outer, inner, args);
+            }
+          }
+          function emitBatchProc(env, args) {
+            var batch = env.proc("batch", 2);
+            env.batchId = "0";
+            injectExtensions(env, batch);
+            var contextDynamic = false;
+            var needsContext = true;
+            Object.keys(args.context).forEach(function(name) {
+              contextDynamic = contextDynamic || args.context[name].propDep;
+            });
+            if (!contextDynamic) {
+              emitContext(env, batch, args.context);
+              needsContext = false;
+            }
+            var framebuffer = args.framebuffer;
+            var needsFramebuffer = false;
+            if (framebuffer) {
+              if (framebuffer.propDep) {
+                contextDynamic = needsFramebuffer = true;
+              } else if (framebuffer.contextDep && contextDynamic) {
+                needsFramebuffer = true;
+              }
+              if (!needsFramebuffer) {
+                emitPollFramebuffer(env, batch, framebuffer);
+              }
+            } else {
+              emitPollFramebuffer(env, batch, null);
+            }
+            if (args.state.viewport && args.state.viewport.propDep) {
+              contextDynamic = true;
+            }
+            function isInnerDefn(defn) {
+              return defn.contextDep && contextDynamic || defn.propDep;
+            }
+            emitPollState(env, batch, args);
+            emitSetOptions(env, batch, args.state, function(defn) {
+              return !isInnerDefn(defn);
+            });
+            if (!args.profile || !isInnerDefn(args.profile)) {
+              emitProfile(env, batch, args, false, "a1");
+            }
+            args.contextDep = contextDynamic;
+            args.needsContext = needsContext;
+            args.needsFramebuffer = needsFramebuffer;
+            var progDefn = args.shader.progVar;
+            if (progDefn.contextDep && contextDynamic || progDefn.propDep) {
+              emitBatchBody(
+                env,
+                batch,
+                args,
+                null
+              );
+            } else {
+              var PROGRAM = progDefn.append(env, batch);
+              batch(env.shared.gl, ".useProgram(", PROGRAM, ".program);");
+              if (args.shader.program) {
+                emitBatchBody(
+                  env,
+                  batch,
+                  args,
+                  args.shader.program
+                );
+              } else {
+                batch(env.shared.vao, ".setVAO(null);");
+                var batchCache = env.global.def("{}");
+                var PROG_ID = batch.def(PROGRAM, ".id");
+                var CACHED_PROC = batch.def(batchCache, "[", PROG_ID, "]");
+                batch(
+                  env.cond(CACHED_PROC).then(CACHED_PROC, ".call(this,a0,a1);").else(
+                    CACHED_PROC,
+                    "=",
+                    batchCache,
+                    "[",
+                    PROG_ID,
+                    "]=",
+                    env.link(function(program) {
+                      return createBody(emitBatchBody, env, args, program, 2);
+                    }),
+                    "(",
+                    PROGRAM,
+                    ");",
+                    CACHED_PROC,
+                    ".call(this,a0,a1);"
+                  )
+                );
+              }
+            }
+            if (Object.keys(args.state).length > 0) {
+              batch(env.shared.current, ".dirty=true;");
+            }
+            if (env.shared.vao) {
+              batch(env.shared.vao, ".setVAO(null);");
+            }
+          }
+          function emitScopeProc(env, args) {
+            var scope = env.proc("scope", 3);
+            env.batchId = "a2";
+            var shared = env.shared;
+            var CURRENT_STATE = shared.current;
+            emitContext(env, scope, args.context);
+            if (args.framebuffer) {
+              args.framebuffer.append(env, scope);
+            }
+            sortState(Object.keys(args.state)).forEach(function(name) {
+              var defn = args.state[name];
+              var value = defn.append(env, scope);
+              if (isArrayLike(value)) {
+                value.forEach(function(v, i) {
+                  if (hasVariableReference(v)) {
+                    scope.set(env.next[name], "[" + i + "]", v);
+                  } else {
+                    scope.set(env.next[name], "[" + i + "]", env.link(v, { stable: true }));
+                  }
+                });
+              } else {
+                if (isStatic(defn)) {
+                  scope.set(shared.next, "." + name, env.link(value, { stable: true }));
+                } else {
+                  scope.set(shared.next, "." + name, value);
+                }
+              }
+            });
+            emitProfile(env, scope, args, true, true);
+            [S_ELEMENTS, S_OFFSET, S_COUNT, S_INSTANCES, S_PRIMITIVE].forEach(
+              function(opt) {
+                var variable = args.draw[opt];
+                if (!variable) {
+                  return;
+                }
+                var VARIABLE2 = variable.append(env, scope);
+                if (hasVariableReference(VARIABLE2)) {
+                  scope.set(shared.draw, "." + opt, VARIABLE2);
+                } else {
+                  scope.set(shared.draw, "." + opt, env.link(VARIABLE2), { stable: true });
+                }
+              }
+            );
+            Object.keys(args.uniforms).forEach(function(opt) {
+              var value = args.uniforms[opt].append(env, scope);
+              if (Array.isArray(value)) {
+                value = "[" + value.map(function(v) {
+                  if (hasVariableReference(v)) {
+                    return v;
+                  } else {
+                    return env.link(v, { stable: true });
+                  }
+                }) + "]";
+              }
+              scope.set(
+                shared.uniforms,
+                "[" + env.link(stringStore.id(opt), { stable: true }) + "]",
+                value
+              );
+            });
+            Object.keys(args.attributes).forEach(function(name) {
+              var record = args.attributes[name].append(env, scope);
+              var scopeAttrib = env.scopeAttrib(name);
+              Object.keys(new AttributeRecord2()).forEach(function(prop) {
+                scope.set(scopeAttrib, "." + prop, record[prop]);
+              });
+            });
+            if (args.scopeVAO) {
+              var VARIABLE = args.scopeVAO.append(env, scope);
+              if (hasVariableReference(VARIABLE)) {
+                scope.set(shared.vao, ".targetVAO", VARIABLE);
+              } else {
+                scope.set(shared.vao, ".targetVAO", env.link(VARIABLE, { stable: true }));
+              }
+            }
+            function saveShader(name) {
+              var shader = args.shader[name];
+              if (shader) {
+                var VARIABLE2 = shader.append(env, scope);
+                if (hasVariableReference(VARIABLE2)) {
+                  scope.set(shared.shader, "." + name, VARIABLE2);
+                } else {
+                  scope.set(shared.shader, "." + name, env.link(VARIABLE2, { stable: true }));
+                }
+              }
+            }
+            saveShader(S_VERT);
+            saveShader(S_FRAG);
+            if (Object.keys(args.state).length > 0) {
+              scope(CURRENT_STATE, ".dirty=true;");
+              scope.exit(CURRENT_STATE, ".dirty=true;");
+            }
+            scope("a1(", env.shared.context, ",a0,", env.batchId, ");");
+          }
+          function isDynamicObject(object) {
+            if (typeof object !== "object" || isArrayLike(object)) {
+              return;
+            }
+            var props = Object.keys(object);
+            for (var i = 0; i < props.length; ++i) {
+              if (dynamic.isDynamic(object[props[i]])) {
+                return true;
+              }
+            }
+            return false;
+          }
+          function splatObject(env, options, name) {
+            var object = options.static[name];
+            if (!object || !isDynamicObject(object)) {
+              return;
+            }
+            var globals = env.global;
+            var keys = Object.keys(object);
+            var thisDep = false;
+            var contextDep = false;
+            var propDep = false;
+            var objectRef = env.global.def("{}");
+            keys.forEach(function(key) {
+              var value = object[key];
+              if (dynamic.isDynamic(value)) {
+                if (typeof value === "function") {
+                  value = object[key] = dynamic.unbox(value);
+                }
+                var deps = createDynamicDecl(value, null);
+                thisDep = thisDep || deps.thisDep;
+                propDep = propDep || deps.propDep;
+                contextDep = contextDep || deps.contextDep;
+              } else {
+                globals(objectRef, ".", key, "=");
+                switch (typeof value) {
+                  case "number":
+                    globals(value);
+                    break;
+                  case "string":
+                    globals('"', value, '"');
+                    break;
+                  case "object":
+                    if (Array.isArray(value)) {
+                      globals("[", value.join(), "]");
+                    }
+                    break;
+                  default:
+                    globals(env.link(value));
+                    break;
+                }
+                globals(";");
+              }
+            });
+            function appendBlock(env2, block) {
+              keys.forEach(function(key) {
+                var value = object[key];
+                if (!dynamic.isDynamic(value)) {
+                  return;
+                }
+                var ref = env2.invoke(block, value);
+                block(objectRef, ".", key, "=", ref, ";");
+              });
+            }
+            options.dynamic[name] = new dynamic.DynamicVariable(DYN_THUNK, {
+              thisDep,
+              contextDep,
+              propDep,
+              ref: objectRef,
+              append: appendBlock
+            });
+            delete options.static[name];
+          }
+          function compileCommand(options, attributes, uniforms, context, stats2) {
+            var env = createREGLEnvironment();
+            env.stats = env.link(stats2);
+            Object.keys(attributes.static).forEach(function(key) {
+              splatObject(env, attributes, key);
+            });
+            NESTED_OPTIONS.forEach(function(name) {
+              splatObject(env, options, name);
+            });
+            var args = parseArguments(options, attributes, uniforms, context, env);
+            if (args.shader.program) {
+              args.shader.program.attributes.sort(function(a, b) {
+                return a.name < b.name ? -1 : 1;
+              });
+              args.shader.program.uniforms.sort(function(a, b) {
+                return a.name < b.name ? -1 : 1;
+              });
+            }
+            emitDrawProc(env, args);
+            emitScopeProc(env, args);
+            emitBatchProc(env, args);
+            return extend(env.compile(), {
+              destroy: function() {
+                args.shader.program.destroy();
+              }
+            });
+          }
+          return {
+            next: nextState,
+            current: currentState,
+            procs: function() {
+              var env = createREGLEnvironment();
+              var poll = env.proc("poll");
+              var refresh = env.proc("refresh");
+              var common = env.block();
+              poll(common);
+              refresh(common);
+              var shared = env.shared;
+              var GL = shared.gl;
+              var NEXT_STATE = shared.next;
+              var CURRENT_STATE = shared.current;
+              common(CURRENT_STATE, ".dirty=false;");
+              emitPollFramebuffer(env, poll);
+              emitPollFramebuffer(env, refresh, null, true);
+              var INSTANCING;
+              if (extInstancing) {
+                INSTANCING = env.link(extInstancing);
+              }
+              if (extensions.oes_vertex_array_object) {
+                refresh(env.link(extensions.oes_vertex_array_object), ".bindVertexArrayOES(null);");
+              }
+              var BINDING = refresh.def(shared.attributes);
+              var TEMP_BINDING = refresh.def(0);
+              var ifte = env.cond(TEMP_BINDING, ".buffer");
+              ifte.then(
+                GL,
+                ".enableVertexAttribArray(i);",
+                GL,
+                ".bindBuffer(",
+                GL_ARRAY_BUFFER$2,
+                ",",
+                TEMP_BINDING,
+                ".buffer.buffer);",
+                GL,
+                ".vertexAttribPointer(i,",
+                TEMP_BINDING,
+                ".size,",
+                TEMP_BINDING,
+                ".type,",
+                TEMP_BINDING,
+                ".normalized,",
+                TEMP_BINDING,
+                ".stride,",
+                TEMP_BINDING,
+                ".offset);"
+              ).else(
+                GL,
+                ".disableVertexAttribArray(i);",
+                GL,
+                ".vertexAttrib4f(i,",
+                TEMP_BINDING,
+                ".x,",
+                TEMP_BINDING,
+                ".y,",
+                TEMP_BINDING,
+                ".z,",
+                TEMP_BINDING,
+                ".w);",
+                TEMP_BINDING,
+                ".buffer=null;"
+              );
+              var MAX_ATTRIBUTES = env.link(limits.maxAttributes, { stable: true });
+              refresh(
+                "for(var i=0;i<",
+                MAX_ATTRIBUTES,
+                ";++i){",
+                TEMP_BINDING,
+                "=",
+                BINDING,
+                "[i];",
+                ifte,
+                "}"
+              );
+              if (extInstancing) {
+                refresh(
+                  "for(var i=0;i<",
+                  MAX_ATTRIBUTES,
+                  ";++i){",
+                  INSTANCING,
+                  ".vertexAttribDivisorANGLE(i,",
+                  BINDING,
+                  "[i].divisor);",
+                  "}"
+                );
+              }
+              refresh(
+                env.shared.vao,
+                ".currentVAO=null;",
+                env.shared.vao,
+                ".setVAO(",
+                env.shared.vao,
+                ".targetVAO);"
+              );
+              Object.keys(GL_FLAGS).forEach(function(flag) {
+                var cap = GL_FLAGS[flag];
+                var NEXT = common.def(NEXT_STATE, ".", flag);
+                var block = env.block();
+                block(
+                  "if(",
+                  NEXT,
+                  "){",
+                  GL,
+                  ".enable(",
+                  cap,
+                  ")}else{",
+                  GL,
+                  ".disable(",
+                  cap,
+                  ")}",
+                  CURRENT_STATE,
+                  ".",
+                  flag,
+                  "=",
+                  NEXT,
+                  ";"
+                );
+                refresh(block);
+                poll(
+                  "if(",
+                  NEXT,
+                  "!==",
+                  CURRENT_STATE,
+                  ".",
+                  flag,
+                  "){",
+                  block,
+                  "}"
+                );
+              });
+              Object.keys(GL_VARIABLES).forEach(function(name) {
+                var func = GL_VARIABLES[name];
+                var init = currentState[name];
+                var NEXT, CURRENT;
+                var block = env.block();
+                block(GL, ".", func, "(");
+                if (isArrayLike(init)) {
+                  var n = init.length;
+                  NEXT = env.global.def(NEXT_STATE, ".", name);
+                  CURRENT = env.global.def(CURRENT_STATE, ".", name);
+                  block(
+                    loop(n, function(i) {
+                      return NEXT + "[" + i + "]";
+                    }),
+                    ");",
+                    loop(n, function(i) {
+                      return CURRENT + "[" + i + "]=" + NEXT + "[" + i + "];";
+                    }).join("")
+                  );
+                  poll(
+                    "if(",
+                    loop(n, function(i) {
+                      return NEXT + "[" + i + "]!==" + CURRENT + "[" + i + "]";
+                    }).join("||"),
+                    "){",
+                    block,
+                    "}"
+                  );
+                } else {
+                  NEXT = common.def(NEXT_STATE, ".", name);
+                  CURRENT = common.def(CURRENT_STATE, ".", name);
+                  block(
+                    NEXT,
+                    ");",
+                    CURRENT_STATE,
+                    ".",
+                    name,
+                    "=",
+                    NEXT,
+                    ";"
+                  );
+                  poll(
+                    "if(",
+                    NEXT,
+                    "!==",
+                    CURRENT,
+                    "){",
+                    block,
+                    "}"
+                  );
+                }
+                refresh(block);
+              });
+              return env.compile();
+            }(),
+            compile: compileCommand
+          };
+        }
+        function stats() {
+          return {
+            vaoCount: 0,
+            bufferCount: 0,
+            elementsCount: 0,
+            framebufferCount: 0,
+            shaderCount: 0,
+            textureCount: 0,
+            cubeCount: 0,
+            renderbufferCount: 0,
+            maxTextureUnits: 0
+          };
+        }
+        var GL_QUERY_RESULT_EXT = 34918;
+        var GL_QUERY_RESULT_AVAILABLE_EXT = 34919;
+        var GL_TIME_ELAPSED_EXT = 35007;
+        var createTimer = function(gl, extensions) {
+          if (!extensions.ext_disjoint_timer_query) {
+            return null;
+          }
+          var queryPool = [];
+          function allocQuery() {
+            return queryPool.pop() || extensions.ext_disjoint_timer_query.createQueryEXT();
+          }
+          function freeQuery(query) {
+            queryPool.push(query);
+          }
+          var pendingQueries = [];
+          function beginQuery(stats2) {
+            var query = allocQuery();
+            extensions.ext_disjoint_timer_query.beginQueryEXT(GL_TIME_ELAPSED_EXT, query);
+            pendingQueries.push(query);
+            pushScopeStats(pendingQueries.length - 1, pendingQueries.length, stats2);
+          }
+          function endQuery() {
+            extensions.ext_disjoint_timer_query.endQueryEXT(GL_TIME_ELAPSED_EXT);
+          }
+          function PendingStats() {
+            this.startQueryIndex = -1;
+            this.endQueryIndex = -1;
+            this.sum = 0;
+            this.stats = null;
+          }
+          var pendingStatsPool = [];
+          function allocPendingStats() {
+            return pendingStatsPool.pop() || new PendingStats();
+          }
+          function freePendingStats(pendingStats2) {
+            pendingStatsPool.push(pendingStats2);
+          }
+          var pendingStats = [];
+          function pushScopeStats(start, end, stats2) {
+            var ps = allocPendingStats();
+            ps.startQueryIndex = start;
+            ps.endQueryIndex = end;
+            ps.sum = 0;
+            ps.stats = stats2;
+            pendingStats.push(ps);
+          }
+          var timeSum = [];
+          var queryPtr = [];
+          function update() {
+            var ptr, i;
+            var n = pendingQueries.length;
+            if (n === 0) {
+              return;
+            }
+            queryPtr.length = Math.max(queryPtr.length, n + 1);
+            timeSum.length = Math.max(timeSum.length, n + 1);
+            timeSum[0] = 0;
+            queryPtr[0] = 0;
+            var queryTime = 0;
+            ptr = 0;
+            for (i = 0; i < pendingQueries.length; ++i) {
+              var query = pendingQueries[i];
+              if (extensions.ext_disjoint_timer_query.getQueryObjectEXT(query, GL_QUERY_RESULT_AVAILABLE_EXT)) {
+                queryTime += extensions.ext_disjoint_timer_query.getQueryObjectEXT(query, GL_QUERY_RESULT_EXT);
+                freeQuery(query);
+              } else {
+                pendingQueries[ptr++] = query;
+              }
+              timeSum[i + 1] = queryTime;
+              queryPtr[i + 1] = ptr;
+            }
+            pendingQueries.length = ptr;
+            ptr = 0;
+            for (i = 0; i < pendingStats.length; ++i) {
+              var stats2 = pendingStats[i];
+              var start = stats2.startQueryIndex;
+              var end = stats2.endQueryIndex;
+              stats2.sum += timeSum[end] - timeSum[start];
+              var startPtr = queryPtr[start];
+              var endPtr = queryPtr[end];
+              if (endPtr === startPtr) {
+                stats2.stats.gpuTime += stats2.sum / 1e6;
+                freePendingStats(stats2);
+              } else {
+                stats2.startQueryIndex = startPtr;
+                stats2.endQueryIndex = endPtr;
+                pendingStats[ptr++] = stats2;
+              }
+            }
+            pendingStats.length = ptr;
+          }
+          return {
+            beginQuery,
+            endQuery,
+            pushScopeStats,
+            update,
+            getNumPendingQueries: function() {
+              return pendingQueries.length;
+            },
+            clear: function() {
+              queryPool.push.apply(queryPool, pendingQueries);
+              for (var i = 0; i < queryPool.length; i++) {
+                extensions.ext_disjoint_timer_query.deleteQueryEXT(queryPool[i]);
+              }
+              pendingQueries.length = 0;
+              queryPool.length = 0;
+            },
+            restore: function() {
+              pendingQueries.length = 0;
+              queryPool.length = 0;
+            }
+          };
+        };
+        var GL_COLOR_BUFFER_BIT = 16384;
+        var GL_DEPTH_BUFFER_BIT = 256;
+        var GL_STENCIL_BUFFER_BIT = 1024;
+        var GL_ARRAY_BUFFER = 34962;
+        var CONTEXT_LOST_EVENT = "webglcontextlost";
+        var CONTEXT_RESTORED_EVENT = "webglcontextrestored";
+        var DYN_PROP = 1;
+        var DYN_CONTEXT = 2;
+        var DYN_STATE = 3;
+        function find(haystack, needle) {
+          for (var i = 0; i < haystack.length; ++i) {
+            if (haystack[i] === needle) {
+              return i;
+            }
+          }
+          return -1;
+        }
+        function wrapREGL(args) {
+          var config = parseArgs(args);
+          if (!config) {
+            return null;
+          }
+          var gl = config.gl;
+          var glAttributes = gl.getContextAttributes();
+          var contextLost = gl.isContextLost();
+          var extensionState = createExtensionCache(gl, config);
+          if (!extensionState) {
+            return null;
+          }
+          var stringStore = createStringStore();
+          var stats$$1 = stats();
+          var cachedCode = config.cachedCode || {};
+          var extensions = extensionState.extensions;
+          var timer = createTimer(gl, extensions);
+          var START_TIME = clock();
+          var WIDTH = gl.drawingBufferWidth;
+          var HEIGHT = gl.drawingBufferHeight;
+          var contextState = {
+            tick: 0,
+            time: 0,
+            viewportWidth: WIDTH,
+            viewportHeight: HEIGHT,
+            framebufferWidth: WIDTH,
+            framebufferHeight: HEIGHT,
+            drawingBufferWidth: WIDTH,
+            drawingBufferHeight: HEIGHT,
+            pixelRatio: config.pixelRatio
+          };
+          var uniformState = {};
+          var drawState = {
+            elements: null,
+            primitive: 4,
+            // GL_TRIANGLES
+            count: -1,
+            offset: 0,
+            instances: -1
+          };
+          var limits = wrapLimits(gl, extensions);
+          var bufferState = wrapBufferState(
+            gl,
+            stats$$1,
+            config,
+            destroyBuffer
+          );
+          var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
+          var attributeState = wrapAttributeState(
+            gl,
+            extensions,
+            limits,
+            stats$$1,
+            bufferState,
+            elementState,
+            drawState
+          );
+          function destroyBuffer(buffer) {
+            return attributeState.destroyBuffer(buffer);
+          }
+          var shaderState = wrapShaderState(gl, stringStore, stats$$1, config);
+          var textureState = createTextureSet(
+            gl,
+            extensions,
+            limits,
+            function() {
+              core.procs.poll();
+            },
+            contextState,
+            stats$$1,
+            config
+          );
+          var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats$$1, config);
+          var framebufferState = wrapFBOState(
+            gl,
+            extensions,
+            limits,
+            textureState,
+            renderbufferState,
+            stats$$1
+          );
+          var core = reglCore(
+            gl,
+            stringStore,
+            extensions,
+            limits,
+            bufferState,
+            elementState,
+            textureState,
+            framebufferState,
+            uniformState,
+            attributeState,
+            shaderState,
+            drawState,
+            contextState,
+            timer,
+            cachedCode,
+            config
+          );
+          var readPixels = wrapReadPixels(
+            gl,
+            framebufferState,
+            core.procs.poll,
+            contextState,
+            glAttributes,
+            extensions,
+            limits
+          );
+          var nextState = core.next;
+          var canvas = gl.canvas;
+          var rafCallbacks = [];
+          var lossCallbacks = [];
+          var restoreCallbacks = [];
+          var destroyCallbacks = [config.onDestroy];
+          var activeRAF = null;
+          function handleRAF() {
+            if (rafCallbacks.length === 0) {
+              if (timer) {
+                timer.update();
+              }
+              activeRAF = null;
+              return;
+            }
+            activeRAF = raf.next(handleRAF);
+            poll();
+            for (var i = rafCallbacks.length - 1; i >= 0; --i) {
+              var cb = rafCallbacks[i];
+              if (cb) {
+                cb(contextState, null, 0);
+              }
+            }
+            gl.flush();
+            if (timer) {
+              timer.update();
+            }
+          }
+          function startRAF() {
+            if (!activeRAF && rafCallbacks.length > 0) {
+              activeRAF = raf.next(handleRAF);
+            }
+          }
+          function stopRAF() {
+            if (activeRAF) {
+              raf.cancel(handleRAF);
+              activeRAF = null;
+            }
+          }
+          function handleContextLoss(event) {
+            event.preventDefault();
+            contextLost = true;
+            stopRAF();
+            lossCallbacks.forEach(function(cb) {
+              cb();
+            });
+          }
+          function handleContextRestored(event) {
+            gl.getError();
+            contextLost = false;
+            extensionState.restore();
+            shaderState.restore();
+            bufferState.restore();
+            textureState.restore();
+            renderbufferState.restore();
+            framebufferState.restore();
+            attributeState.restore();
+            if (timer) {
+              timer.restore();
+            }
+            core.procs.refresh();
+            startRAF();
+            restoreCallbacks.forEach(function(cb) {
+              cb();
+            });
+          }
+          if (canvas) {
+            canvas.addEventListener(CONTEXT_LOST_EVENT, handleContextLoss, false);
+            canvas.addEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored, false);
+          }
+          function destroy() {
+            rafCallbacks.length = 0;
+            stopRAF();
+            if (canvas) {
+              canvas.removeEventListener(CONTEXT_LOST_EVENT, handleContextLoss);
+              canvas.removeEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored);
+            }
+            shaderState.clear();
+            framebufferState.clear();
+            renderbufferState.clear();
+            attributeState.clear();
+            textureState.clear();
+            elementState.clear();
+            bufferState.clear();
+            if (timer) {
+              timer.clear();
+            }
+            destroyCallbacks.forEach(function(cb) {
+              cb();
+            });
+          }
+          function compileProcedure(options) {
+            function flattenNestedOptions(options2) {
+              var result = extend({}, options2);
+              delete result.uniforms;
+              delete result.attributes;
+              delete result.context;
+              delete result.vao;
+              if ("stencil" in result && result.stencil.op) {
+                result.stencil.opBack = result.stencil.opFront = result.stencil.op;
+                delete result.stencil.op;
+              }
+              function merge(name) {
+                if (name in result) {
+                  var child = result[name];
+                  delete result[name];
+                  Object.keys(child).forEach(function(prop) {
+                    result[name + "." + prop] = child[prop];
+                  });
+                }
+              }
+              merge("blend");
+              merge("depth");
+              merge("cull");
+              merge("stencil");
+              merge("polygonOffset");
+              merge("scissor");
+              merge("sample");
+              if ("vao" in options2) {
+                result.vao = options2.vao;
+              }
+              return result;
+            }
+            function separateDynamic(object, useArrays) {
+              var staticItems = {};
+              var dynamicItems = {};
+              Object.keys(object).forEach(function(option) {
+                var value = object[option];
+                if (dynamic.isDynamic(value)) {
+                  dynamicItems[option] = dynamic.unbox(value, option);
+                  return;
+                } else if (useArrays && Array.isArray(value)) {
+                  for (var i = 0; i < value.length; ++i) {
+                    if (dynamic.isDynamic(value[i])) {
+                      dynamicItems[option] = dynamic.unbox(value, option);
+                      return;
+                    }
+                  }
+                }
+                staticItems[option] = value;
+              });
+              return {
+                dynamic: dynamicItems,
+                static: staticItems
+              };
+            }
+            var context = separateDynamic(options.context || {}, true);
+            var uniforms = separateDynamic(options.uniforms || {}, true);
+            var attributes = separateDynamic(options.attributes || {}, false);
+            var opts = separateDynamic(flattenNestedOptions(options), false);
+            var stats$$12 = {
+              gpuTime: 0,
+              cpuTime: 0,
+              count: 0
+            };
+            var compiled = core.compile(opts, attributes, uniforms, context, stats$$12);
+            var draw = compiled.draw;
+            var batch = compiled.batch;
+            var scope = compiled.scope;
+            var EMPTY_ARRAY = [];
+            function reserve(count) {
+              while (EMPTY_ARRAY.length < count) {
+                EMPTY_ARRAY.push(null);
+              }
+              return EMPTY_ARRAY;
+            }
+            function REGLCommand(args2, body) {
+              var i;
+              if (contextLost) {
+              }
+              if (typeof args2 === "function") {
+                return scope.call(this, null, args2, 0);
+              } else if (typeof body === "function") {
+                if (typeof args2 === "number") {
+                  for (i = 0; i < args2; ++i) {
+                    scope.call(this, null, body, i);
+                  }
+                } else if (Array.isArray(args2)) {
+                  for (i = 0; i < args2.length; ++i) {
+                    scope.call(this, args2[i], body, i);
+                  }
+                } else {
+                  return scope.call(this, args2, body, 0);
+                }
+              } else if (typeof args2 === "number") {
+                if (args2 > 0) {
+                  return batch.call(this, reserve(args2 | 0), args2 | 0);
+                }
+              } else if (Array.isArray(args2)) {
+                if (args2.length) {
+                  return batch.call(this, args2, args2.length);
+                }
+              } else {
+                return draw.call(this, args2);
+              }
+            }
+            return extend(REGLCommand, {
+              stats: stats$$12,
+              destroy: function() {
+                compiled.destroy();
+              }
+            });
+          }
+          var setFBO = framebufferState.setFBO = compileProcedure({
+            framebuffer: dynamic.define.call(null, DYN_PROP, "framebuffer")
+          });
+          function clearImpl(_, options) {
+            var clearFlags = 0;
+            core.procs.poll();
+            var c = options.color;
+            if (c) {
+              gl.clearColor(+c[0] || 0, +c[1] || 0, +c[2] || 0, +c[3] || 0);
+              clearFlags |= GL_COLOR_BUFFER_BIT;
+            }
+            if ("depth" in options) {
+              gl.clearDepth(+options.depth);
+              clearFlags |= GL_DEPTH_BUFFER_BIT;
+            }
+            if ("stencil" in options) {
+              gl.clearStencil(options.stencil | 0);
+              clearFlags |= GL_STENCIL_BUFFER_BIT;
+            }
+            gl.clear(clearFlags);
+          }
+          function clear(options) {
+            if ("framebuffer" in options) {
+              if (options.framebuffer && options.framebuffer_reglType === "framebufferCube") {
+                for (var i = 0; i < 6; ++i) {
+                  setFBO(extend({
+                    framebuffer: options.framebuffer.faces[i]
+                  }, options), clearImpl);
+                }
+              } else {
+                setFBO(options, clearImpl);
+              }
+            } else {
+              clearImpl(null, options);
+            }
+          }
+          function frame(cb) {
+            rafCallbacks.push(cb);
+            function cancel() {
+              var i = find(rafCallbacks, cb);
+              function pendingCancel() {
+                var index = find(rafCallbacks, pendingCancel);
+                rafCallbacks[index] = rafCallbacks[rafCallbacks.length - 1];
+                rafCallbacks.length -= 1;
+                if (rafCallbacks.length <= 0) {
+                  stopRAF();
+                }
+              }
+              rafCallbacks[i] = pendingCancel;
+            }
+            startRAF();
+            return {
+              cancel
+            };
+          }
+          function pollViewport() {
+            var viewport = nextState.viewport;
+            var scissorBox = nextState.scissor_box;
+            viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0;
+            contextState.viewportWidth = contextState.framebufferWidth = contextState.drawingBufferWidth = viewport[2] = scissorBox[2] = gl.drawingBufferWidth;
+            contextState.viewportHeight = contextState.framebufferHeight = contextState.drawingBufferHeight = viewport[3] = scissorBox[3] = gl.drawingBufferHeight;
+          }
+          function poll() {
+            contextState.tick += 1;
+            contextState.time = now();
+            pollViewport();
+            core.procs.poll();
+          }
+          function refresh() {
+            textureState.refresh();
+            pollViewport();
+            core.procs.refresh();
+            if (timer) {
+              timer.update();
+            }
+          }
+          function now() {
+            return (clock() - START_TIME) / 1e3;
+          }
+          refresh();
+          function addListener(event, callback) {
+            var callbacks;
+            switch (event) {
+              case "frame":
+                return frame(callback);
+              case "lost":
+                callbacks = lossCallbacks;
+                break;
+              case "restore":
+                callbacks = restoreCallbacks;
+                break;
+              case "destroy":
+                callbacks = destroyCallbacks;
+                break;
+              default:
+            }
+            callbacks.push(callback);
+            return {
+              cancel: function() {
+                for (var i = 0; i < callbacks.length; ++i) {
+                  if (callbacks[i] === callback) {
+                    callbacks[i] = callbacks[callbacks.length - 1];
+                    callbacks.pop();
+                    return;
+                  }
+                }
+              }
+            };
+          }
+          function getCachedCode() {
+            return cachedCode;
+          }
+          function preloadCachedCode(moreCache) {
+            Object.entries(moreCache).forEach(function(kv) {
+              cachedCode[kv[0]] = kv[1];
+            });
+          }
+          var regl = extend(compileProcedure, {
+            // Clear current FBO
+            clear,
+            // Short cuts for dynamic variables
+            prop: dynamic.define.bind(null, DYN_PROP),
+            context: dynamic.define.bind(null, DYN_CONTEXT),
+            this: dynamic.define.bind(null, DYN_STATE),
+            // executes an empty draw command
+            draw: compileProcedure({}),
+            // Resources
+            buffer: function(options) {
+              return bufferState.create(options, GL_ARRAY_BUFFER, false, false);
+            },
+            elements: function(options) {
+              return elementState.create(options, false);
+            },
+            texture: textureState.create2D,
+            cube: textureState.createCube,
+            renderbuffer: renderbufferState.create,
+            framebuffer: framebufferState.create,
+            framebufferCube: framebufferState.createCube,
+            vao: attributeState.createVAO,
+            // Expose context attributes
+            attributes: glAttributes,
+            // Frame rendering
+            frame,
+            on: addListener,
+            // System limits
+            limits,
+            hasExtension: function(name) {
+              return limits.extensions.indexOf(name.toLowerCase()) >= 0;
+            },
+            // Read pixels
+            read: readPixels,
+            // Destroy regl and all associated resources
+            destroy,
+            // Direct GL state manipulation
+            _gl: gl,
+            _refresh: refresh,
+            poll: function() {
+              poll();
+              if (timer) {
+                timer.update();
+              }
+            },
+            // Current time
+            now,
+            // regl Statistics Information
+            stats: stats$$1,
+            // cache generated code
+            getCachedCode,
+            preloadCachedCode
+          });
+          config.onDone(null, regl);
+          return regl;
+        }
+        return wrapREGL;
+      });
+    }
+  });
+
   // src/lib/prepare_regl.js
   var require_prepare_regl = __commonJS({
     "src/lib/prepare_regl.js"(exports, module) {
       "use strict";
       var showNoWebGlMsg = require_show_no_webgl_msg();
-      var createRegl = require_regl_unchecked();
+      var createRegl = require_regl_unchecked2();
       module.exports = function prepareRegl(gd, extensions, reglPrecompiled) {
         var fullLayout = gd._fullLayout;
         var success = true;
@@ -83477,11744 +92112,4989 @@ void main() {
     }
   });
 
-  // src/traces/splom/attributes.js
+  // src/traces/bar/constants.js
+  var require_constants15 = __commonJS({
+    "src/traces/bar/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // padding in pixels around text
+        TEXTPAD: 3,
+        // 'value' and 'label' are not really necessary for bar traces,
+        // but they were made available to `texttemplate` (maybe by accident)
+        // via tokens `%{value}` and `%{label}` starting in 1.50.0,
+        // so let's include them in the event data also.
+        eventDataKeys: ["value", "label"]
+      };
+    }
+  });
+
+  // src/traces/bar/attributes.js
   var require_attributes24 = __commonJS({
-    "src/traces/splom/attributes.js"(exports, module) {
+    "src/traces/bar/attributes.js"(exports, module) {
       "use strict";
       var scatterAttrs = require_attributes12();
-      var colorScaleAttrs = require_attributes8();
       var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
       var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var scatterGlAttrs = require_attributes23();
-      var cartesianIdRegex = require_constants2().idRegex;
-      var templatedArray = require_plot_template().templatedArray;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var fontAttrs = require_font_attributes();
+      var constants = require_constants15();
+      var pattern = require_attributes4().pattern;
       var extendFlat = require_extend().extendFlat;
+      var textFontAttrs = fontAttrs({
+        editType: "calc",
+        arrayOk: true,
+        colorEditType: "style"
+      });
       var scatterMarkerAttrs = scatterAttrs.marker;
       var scatterMarkerLineAttrs = scatterMarkerAttrs.line;
-      var markerLineAttrs = extendFlat(colorScaleAttrs("marker.line", { editTypeOverride: "calc" }), {
-        width: extendFlat({}, scatterMarkerLineAttrs.width, { editType: "calc" }),
+      var markerLineWidth = extendFlat(
+        {},
+        scatterMarkerLineAttrs.width,
+        { dflt: 0 }
+      );
+      var markerLine = extendFlat({
+        width: markerLineWidth,
         editType: "calc"
-      });
-      var markerAttrs = extendFlat(colorScaleAttrs("marker"), {
-        symbol: scatterMarkerAttrs.symbol,
-        angle: scatterMarkerAttrs.angle,
-        size: extendFlat({}, scatterMarkerAttrs.size, { editType: "markerSize" }),
-        sizeref: scatterMarkerAttrs.sizeref,
-        sizemin: scatterMarkerAttrs.sizemin,
-        sizemode: scatterMarkerAttrs.sizemode,
-        opacity: scatterMarkerAttrs.opacity,
-        colorbar: scatterMarkerAttrs.colorbar,
-        line: markerLineAttrs,
+      }, colorScaleAttrs("marker.line"));
+      var marker = extendFlat({
+        line: markerLine,
         editType: "calc"
+      }, colorScaleAttrs("marker"), {
+        opacity: {
+          valType: "number",
+          arrayOk: true,
+          dflt: 1,
+          min: 0,
+          max: 1,
+          editType: "style"
+        },
+        pattern,
+        cornerradius: {
+          valType: "any",
+          editType: "calc"
+        }
       });
-      markerAttrs.color.editType = markerAttrs.cmin.editType = markerAttrs.cmax.editType = "style";
-      function makeAxesValObject(axLetter) {
-        return {
-          valType: "info_array",
-          freeLength: true,
-          editType: "calc",
-          items: {
-            valType: "subplotid",
-            regex: cartesianIdRegex[axLetter],
-            editType: "plot"
-          }
-        };
-      }
       module.exports = {
-        dimensions: templatedArray("dimension", {
-          visible: {
-            valType: "boolean",
-            dflt: true,
-            editType: "calc"
-          },
-          label: {
-            valType: "string",
-            editType: "calc"
-          },
-          values: {
-            valType: "data_array",
-            editType: "calc+clearAxisTypes"
-          },
-          axis: {
-            type: {
-              valType: "enumerated",
-              values: ["linear", "log", "date", "category"],
-              editType: "calc+clearAxisTypes"
-            },
-            // TODO make 'true' the default in v3?
-            matches: {
-              valType: "boolean",
-              dflt: false,
-              editType: "calc"
-            },
-            editType: "calc+clearAxisTypes"
-          },
-          // TODO should add an attribute to pin down x only vars and y only vars
-          // like https://seaborn.pydata.org/generated/seaborn.pairplot.html
-          // x_vars and y_vars
-          // maybe more axis defaulting option e.g. `showgrid: false`
-          editType: "calc+clearAxisTypes"
-        }),
-        // mode: {}, (only 'markers' for now)
-        text: extendFlat({}, scatterGlAttrs.text, {}),
-        hovertext: extendFlat({}, scatterGlAttrs.hovertext, {}),
-        hovertemplate: hovertemplateAttrs(),
+        x: scatterAttrs.x,
+        x0: scatterAttrs.x0,
+        dx: scatterAttrs.dx,
+        y: scatterAttrs.y,
+        y0: scatterAttrs.y0,
+        dy: scatterAttrs.dy,
+        xperiod: scatterAttrs.xperiod,
+        yperiod: scatterAttrs.yperiod,
+        xperiod0: scatterAttrs.xperiod0,
+        yperiod0: scatterAttrs.yperiod0,
+        xperiodalignment: scatterAttrs.xperiodalignment,
+        yperiodalignment: scatterAttrs.yperiodalignment,
         xhoverformat: axisHoverFormat("x"),
         yhoverformat: axisHoverFormat("y"),
-        marker: markerAttrs,
-        xaxes: makeAxesValObject("x"),
-        yaxes: makeAxesValObject("y"),
-        diagonal: {
-          visible: {
-            valType: "boolean",
-            dflt: true,
-            editType: "calc"
-          },
-          // type: 'scattergl' | 'histogram' | 'box' | 'violin'
-          // ...
-          // more options
+        text: scatterAttrs.text,
+        texttemplate: texttemplateAttrs({ editType: "plot" }, {
+          keys: constants.eventDataKeys
+        }),
+        hovertext: scatterAttrs.hovertext,
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
+        }),
+        textposition: {
+          valType: "enumerated",
+          values: ["inside", "outside", "auto", "none"],
+          dflt: "auto",
+          arrayOk: true,
           editType: "calc"
         },
-        showupperhalf: {
-          valType: "boolean",
-          dflt: true,
+        insidetextanchor: {
+          valType: "enumerated",
+          values: ["end", "middle", "start"],
+          dflt: "end",
+          editType: "plot"
+        },
+        textangle: {
+          valType: "angle",
+          dflt: "auto",
+          editType: "plot"
+        },
+        textfont: extendFlat({}, textFontAttrs, {}),
+        insidetextfont: extendFlat({}, textFontAttrs, {}),
+        outsidetextfont: extendFlat({}, textFontAttrs, {}),
+        constraintext: {
+          valType: "enumerated",
+          values: ["inside", "outside", "both", "none"],
+          dflt: "both",
           editType: "calc"
         },
-        showlowerhalf: {
-          valType: "boolean",
-          dflt: true,
+        cliponaxis: extendFlat({}, scatterAttrs.cliponaxis, {}),
+        orientation: {
+          valType: "enumerated",
+          values: ["v", "h"],
+          editType: "calc+clearAxisTypes"
+        },
+        base: {
+          valType: "any",
+          dflt: null,
+          arrayOk: true,
           editType: "calc"
         },
+        offset: {
+          valType: "number",
+          dflt: null,
+          arrayOk: true,
+          editType: "calc"
+        },
+        width: {
+          valType: "number",
+          dflt: null,
+          min: 0,
+          arrayOk: true,
+          editType: "calc"
+        },
+        marker,
+        offsetgroup: scatterAttrs.offsetgroup,
+        alignmentgroup: scatterAttrs.alignmentgroup,
         selected: {
-          marker: scatterGlAttrs.selected.marker,
-          editType: "calc"
+          marker: {
+            opacity: scatterAttrs.selected.marker.opacity,
+            color: scatterAttrs.selected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.selected.textfont,
+          editType: "style"
         },
         unselected: {
-          marker: scatterGlAttrs.unselected.marker,
+          marker: {
+            opacity: scatterAttrs.unselected.marker.opacity,
+            color: scatterAttrs.unselected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.unselected.textfont,
+          editType: "style"
+        },
+        zorder: scatterAttrs.zorder
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_attributes.js
+  var require_bin_attributes = __commonJS({
+    "src/traces/histogram/bin_attributes.js"(exports, module) {
+      "use strict";
+      module.exports = function makeBinAttrs(axLetter, match) {
+        return {
+          start: {
+            valType: "any",
+            // for date axes
+            editType: "calc"
+          },
+          end: {
+            valType: "any",
+            // for date axes
+            editType: "calc"
+          },
+          size: {
+            valType: "any",
+            // for date axes
+            editType: "calc"
+          },
+          editType: "calc"
+        };
+      };
+    }
+  });
+
+  // src/traces/histogram/constants.js
+  var require_constants16 = __commonJS({
+    "src/traces/histogram/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        eventDataKeys: ["binNumber"]
+      };
+    }
+  });
+
+  // src/traces/histogram/attributes.js
+  var require_attributes25 = __commonJS({
+    "src/traces/histogram/attributes.js"(exports, module) {
+      "use strict";
+      var barAttrs = require_attributes24();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var fontAttrs = require_font_attributes();
+      var makeBinAttrs = require_bin_attributes();
+      var constants = require_constants16();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = {
+        x: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes"
+        },
+        y: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes"
+        },
+        xhoverformat: axisHoverFormat("x"),
+        yhoverformat: axisHoverFormat("y"),
+        text: extendFlat({}, barAttrs.text, {}),
+        hovertext: extendFlat({}, barAttrs.hovertext, {}),
+        orientation: barAttrs.orientation,
+        histfunc: {
+          valType: "enumerated",
+          values: ["count", "sum", "avg", "min", "max"],
+          dflt: "count",
           editType: "calc"
         },
-        opacity: scatterGlAttrs.opacity
+        histnorm: {
+          valType: "enumerated",
+          values: ["", "percent", "probability", "density", "probability density"],
+          dflt: "",
+          editType: "calc"
+        },
+        cumulative: {
+          enabled: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc"
+          },
+          direction: {
+            valType: "enumerated",
+            values: ["increasing", "decreasing"],
+            dflt: "increasing",
+            editType: "calc"
+          },
+          currentbin: {
+            valType: "enumerated",
+            values: ["include", "exclude", "half"],
+            dflt: "include",
+            editType: "calc"
+          },
+          editType: "calc"
+        },
+        nbinsx: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc"
+        },
+        xbins: makeBinAttrs("x", true),
+        nbinsy: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc"
+        },
+        ybins: makeBinAttrs("y", true),
+        autobinx: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc"
+        },
+        autobiny: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc"
+        },
+        bingroup: {
+          valType: "string",
+          dflt: "",
+          editType: "calc"
+        },
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
+        }),
+        texttemplate: texttemplateAttrs({
+          arrayOk: false,
+          editType: "plot"
+        }, {
+          keys: ["label", "value"]
+        }),
+        textposition: extendFlat({}, barAttrs.textposition, {
+          arrayOk: false
+        }),
+        textfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        outsidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        insidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        insidetextanchor: barAttrs.insidetextanchor,
+        textangle: barAttrs.textangle,
+        cliponaxis: barAttrs.cliponaxis,
+        constraintext: barAttrs.constraintext,
+        marker: barAttrs.marker,
+        offsetgroup: barAttrs.offsetgroup,
+        alignmentgroup: barAttrs.alignmentgroup,
+        selected: barAttrs.selected,
+        unselected: barAttrs.unselected,
+        zorder: barAttrs.zorder
       };
     }
   });
 
-  // src/traces/parcoords/merge_length.js
-  var require_merge_length = __commonJS({
-    "src/traces/parcoords/merge_length.js"(exports, module) {
+  // src/traces/heatmap/attributes.js
+  var require_attributes26 = __commonJS({
+    "src/traces/heatmap/attributes.js"(exports, module) {
       "use strict";
-      module.exports = function(traceOut, dimensions, dataAttr, len) {
-        if (!len) len = Infinity;
-        var i, dimi;
-        for (i = 0; i < dimensions.length; i++) {
-          dimi = dimensions[i];
-          if (dimi.visible) len = Math.min(len, dimi[dataAttr].length);
+      var scatterAttrs = require_attributes12();
+      var baseAttrs = require_attributes2();
+      var fontAttrs = require_font_attributes();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          z: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          x: extendFlat({}, scatterAttrs.x, { impliedEdits: { xtype: "array" } }),
+          x0: extendFlat({}, scatterAttrs.x0, { impliedEdits: { xtype: "scaled" } }),
+          dx: extendFlat({}, scatterAttrs.dx, { impliedEdits: { xtype: "scaled" } }),
+          y: extendFlat({}, scatterAttrs.y, { impliedEdits: { ytype: "array" } }),
+          y0: extendFlat({}, scatterAttrs.y0, { impliedEdits: { ytype: "scaled" } }),
+          dy: extendFlat({}, scatterAttrs.dy, { impliedEdits: { ytype: "scaled" } }),
+          xperiod: extendFlat({}, scatterAttrs.xperiod, { impliedEdits: { xtype: "scaled" } }),
+          yperiod: extendFlat({}, scatterAttrs.yperiod, { impliedEdits: { ytype: "scaled" } }),
+          xperiod0: extendFlat({}, scatterAttrs.xperiod0, { impliedEdits: { xtype: "scaled" } }),
+          yperiod0: extendFlat({}, scatterAttrs.yperiod0, { impliedEdits: { ytype: "scaled" } }),
+          xperiodalignment: extendFlat({}, scatterAttrs.xperiodalignment, { impliedEdits: { xtype: "scaled" } }),
+          yperiodalignment: extendFlat({}, scatterAttrs.yperiodalignment, { impliedEdits: { ytype: "scaled" } }),
+          text: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          hovertext: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          transpose: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc"
+          },
+          xtype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          ytype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          zsmooth: {
+            valType: "enumerated",
+            values: ["fast", "best", false],
+            dflt: false,
+            editType: "calc"
+          },
+          hoverongaps: {
+            valType: "boolean",
+            dflt: true,
+            editType: "none"
+          },
+          connectgaps: {
+            valType: "boolean",
+            editType: "calc"
+          },
+          xgap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          ygap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs(),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: ["x", "y", "z", "text"]
+          }),
+          textfont: fontAttrs({
+            editType: "plot",
+            autoSize: true,
+            autoColor: true,
+            colorEditType: "style"
+          }),
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false }),
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/attributes.js
+  var require_attributes27 = __commonJS({
+    "src/traces/histogram2d/attributes.js"(exports, module) {
+      "use strict";
+      var histogramAttrs = require_attributes25();
+      var makeBinAttrs = require_bin_attributes();
+      var heatmapAttrs = require_attributes26();
+      var baseAttrs = require_attributes2();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogramAttrs.x,
+          y: histogramAttrs.y,
+          z: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          marker: {
+            color: {
+              valType: "data_array",
+              editType: "calc"
+            },
+            editType: "calc"
+          },
+          histnorm: histogramAttrs.histnorm,
+          histfunc: histogramAttrs.histfunc,
+          nbinsx: histogramAttrs.nbinsx,
+          xbins: makeBinAttrs("x"),
+          nbinsy: histogramAttrs.nbinsy,
+          ybins: makeBinAttrs("y"),
+          autobinx: histogramAttrs.autobinx,
+          autobiny: histogramAttrs.autobiny,
+          bingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xbingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          ybingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xgap: heatmapAttrs.xgap,
+          ygap: heatmapAttrs.ygap,
+          zsmooth: heatmapAttrs.zsmooth,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs({}, { keys: "z" }),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: "z"
+          }),
+          textfont: heatmapAttrs.textfont,
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false })
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/constants/filter_ops.js
+  var require_filter_ops = __commonJS({
+    "src/constants/filter_ops.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        COMPARISON_OPS: ["=", "!=", "<", ">=", ">", "<="],
+        COMPARISON_OPS2: ["=", "<", ">=", ">", "<="],
+        INTERVAL_OPS: ["[]", "()", "[)", "(]", "][", ")(", "](", ")["],
+        SET_OPS: ["{}", "}{"],
+        CONSTRAINT_REDUCTION: {
+          // for contour constraints, open/closed endpoints are equivalent
+          "=": "=",
+          "<": "<",
+          "<=": "<",
+          ">": ">",
+          ">=": ">",
+          "[]": "[]",
+          "()": "[]",
+          "[)": "[]",
+          "(]": "[]",
+          "][": "][",
+          ")(": "][",
+          "](": "][",
+          ")[": "]["
         }
-        if (len === Infinity) len = 0;
-        traceOut._length = len;
-        for (i = 0; i < dimensions.length; i++) {
-          dimi = dimensions[i];
-          if (dimi.visible) dimi._length = len;
-        }
-        return len;
       };
     }
   });
 
-  // src/traces/splom/defaults.js
-  var require_defaults20 = __commonJS({
-    "src/traces/splom/defaults.js"(exports, module) {
+  // src/traces/contour/attributes.js
+  var require_attributes28 = __commonJS({
+    "src/traces/contour/attributes.js"(exports, module) {
+      "use strict";
+      var heatmapAttrs = require_attributes26();
+      var scatterAttrs = require_attributes12();
+      var axisFormat = require_axis_format_attributes();
+      var axisHoverFormat = axisFormat.axisHoverFormat;
+      var descriptionOnlyNumbers = axisFormat.descriptionOnlyNumbers;
+      var colorScaleAttrs = require_attributes8();
+      var dash = require_attributes4().dash;
+      var fontAttrs = require_font_attributes();
+      var extendFlat = require_extend().extendFlat;
+      var filterOps = require_filter_ops();
+      var COMPARISON_OPS2 = filterOps.COMPARISON_OPS2;
+      var INTERVAL_OPS = filterOps.INTERVAL_OPS;
+      var scatterLineAttrs = scatterAttrs.line;
+      module.exports = extendFlat(
+        {
+          z: heatmapAttrs.z,
+          x: heatmapAttrs.x,
+          x0: heatmapAttrs.x0,
+          dx: heatmapAttrs.dx,
+          y: heatmapAttrs.y,
+          y0: heatmapAttrs.y0,
+          dy: heatmapAttrs.dy,
+          xperiod: heatmapAttrs.xperiod,
+          yperiod: heatmapAttrs.yperiod,
+          xperiod0: scatterAttrs.xperiod0,
+          yperiod0: scatterAttrs.yperiod0,
+          xperiodalignment: heatmapAttrs.xperiodalignment,
+          yperiodalignment: heatmapAttrs.yperiodalignment,
+          text: heatmapAttrs.text,
+          hovertext: heatmapAttrs.hovertext,
+          transpose: heatmapAttrs.transpose,
+          xtype: heatmapAttrs.xtype,
+          ytype: heatmapAttrs.ytype,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: heatmapAttrs.hovertemplate,
+          texttemplate: extendFlat({}, heatmapAttrs.texttemplate, {}),
+          textfont: extendFlat({}, heatmapAttrs.textfont, {}),
+          hoverongaps: heatmapAttrs.hoverongaps,
+          connectgaps: extendFlat({}, heatmapAttrs.connectgaps, {}),
+          fillcolor: {
+            valType: "color",
+            editType: "calc"
+          },
+          autocontour: {
+            valType: "boolean",
+            dflt: true,
+            editType: "calc",
+            impliedEdits: {
+              "contours.start": void 0,
+              "contours.end": void 0,
+              "contours.size": void 0
+            }
+          },
+          ncontours: {
+            valType: "integer",
+            dflt: 15,
+            min: 1,
+            editType: "calc"
+          },
+          contours: {
+            type: {
+              valType: "enumerated",
+              values: ["levels", "constraint"],
+              dflt: "levels",
+              editType: "calc"
+            },
+            start: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            end: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            size: {
+              valType: "number",
+              dflt: null,
+              min: 0,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            thresholds: {
+              valType: "data_array",
+              dflt: null,
+              editType: "calc",
+              impliedEdits: { "^autocontour": false }
+            },
+            coloring: {
+              valType: "enumerated",
+              values: ["fill", "heatmap", "lines", "none"],
+              dflt: "fill",
+              editType: "calc"
+            },
+            showlines: {
+              valType: "boolean",
+              dflt: true,
+              editType: "plot"
+            },
+            showlabels: {
+              valType: "boolean",
+              dflt: false,
+              editType: "plot"
+            },
+            labelfont: fontAttrs({
+              editType: "plot",
+              colorEditType: "style"
+            }),
+            labelformat: {
+              valType: "string",
+              dflt: "",
+              editType: "plot",
+              description: descriptionOnlyNumbers("contour label")
+            },
+            operation: {
+              valType: "enumerated",
+              values: [].concat(COMPARISON_OPS2).concat(INTERVAL_OPS),
+              dflt: "=",
+              editType: "calc"
+            },
+            value: {
+              valType: "any",
+              dflt: 0,
+              editType: "calc"
+            },
+            editType: "calc",
+            impliedEdits: { autocontour: false }
+          },
+          line: {
+            color: extendFlat({}, scatterLineAttrs.color, {
+              editType: "style+colorbars"
+            }),
+            width: {
+              valType: "number",
+              min: 0,
+              editType: "style+colorbars"
+            },
+            dash,
+            smoothing: extendFlat({}, scatterLineAttrs.smoothing, {}),
+            editType: "plot"
+          },
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          autoColorDflt: false,
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2dcontour/attributes.js
+  var require_attributes29 = __commonJS({
+    "src/traces/histogram2dcontour/attributes.js"(exports, module) {
+      "use strict";
+      var histogram2dAttrs = require_attributes27();
+      var contourAttrs = require_attributes28();
+      var colorScaleAttrs = require_attributes8();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogram2dAttrs.x,
+          y: histogram2dAttrs.y,
+          z: histogram2dAttrs.z,
+          marker: histogram2dAttrs.marker,
+          histnorm: histogram2dAttrs.histnorm,
+          histfunc: histogram2dAttrs.histfunc,
+          nbinsx: histogram2dAttrs.nbinsx,
+          xbins: histogram2dAttrs.xbins,
+          nbinsy: histogram2dAttrs.nbinsy,
+          ybins: histogram2dAttrs.ybins,
+          autobinx: histogram2dAttrs.autobinx,
+          autobiny: histogram2dAttrs.autobiny,
+          bingroup: histogram2dAttrs.bingroup,
+          xbingroup: histogram2dAttrs.xbingroup,
+          ybingroup: histogram2dAttrs.ybingroup,
+          autocontour: contourAttrs.autocontour,
+          ncontours: contourAttrs.ncontours,
+          contours: contourAttrs.contours,
+          line: {
+            color: contourAttrs.line.color,
+            width: extendFlat({}, contourAttrs.line.width, {
+              dflt: 0.5
+            }),
+            dash: contourAttrs.line.dash,
+            smoothing: contourAttrs.line.smoothing,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: histogram2dAttrs.hovertemplate,
+          texttemplate: contourAttrs.texttemplate,
+          textfont: contourAttrs.textfont
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/sample_defaults.js
+  var require_sample_defaults = __commonJS({
+    "src/traces/histogram2d/sample_defaults.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      module.exports = function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
+        var x = coerce("x");
+        var y = coerce("y");
+        var xlen = Lib.minRowLength(x);
+        var ylen = Lib.minRowLength(y);
+        if (!xlen || !ylen) {
+          traceOut.visible = false;
+          return;
+        }
+        traceOut._length = Math.min(xlen, ylen);
+        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
+        handleCalendarDefaults(traceIn, traceOut, ["x", "y"], layout);
+        var hasAggregationData = coerce("z") || coerce("marker.color");
+        if (hasAggregationData) coerce("histfunc");
+        coerce("histnorm");
+        coerce("autobinx");
+        coerce("autobiny");
+      };
+    }
+  });
+
+  // src/traces/contour/contours_defaults.js
+  var require_contours_defaults = __commonJS({
+    "src/traces/contour/contours_defaults.js"(exports, module) {
+      "use strict";
+      module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+        var contourThresholds = coerce("contours.thresholds");
+        var hasThresholds = contourThresholds && contourThresholds.length > 0;
+        if (hasThresholds) {
+          traceOut.autocontour = false;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Contour defaults: using custom thresholds (" + contourThresholds.length + " levels)");
+          }
+          return;
+        }
+        var contourStart = coerce2("contours.start");
+        var contourEnd = coerce2("contours.end");
+        var missingEnd = contourStart === false || contourEnd === false;
+        var contourSize = coerce("contours.size");
+        var autoContour;
+        if (missingEnd) autoContour = traceOut.autocontour = true;
+        else autoContour = coerce("autocontour", false);
+        if (autoContour || !contourSize) coerce("ncontours");
+      };
+    }
+  });
+
+  // src/traces/contour/label_defaults.js
+  var require_label_defaults = __commonJS({
+    "src/traces/contour/label_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      var handleArrayContainerDefaults = require_array_container_defaults();
-      var attributes = require_attributes24();
-      var subTypes = require_subtypes();
-      var handleMarkerDefaults = require_marker_defaults();
-      var mergeLength = require_merge_length();
-      var isOpenSymbol = require_helpers12().isOpenSymbol;
+      module.exports = function handleLabelDefaults(coerce, layout, lineColor, opts) {
+        if (!opts) opts = {};
+        var showLabels = coerce("contours.showlabels");
+        if (showLabels) {
+          var globalFont = layout.font;
+          Lib.coerceFont(coerce, "contours.labelfont", globalFont, { overrideDflt: {
+            color: lineColor
+          } });
+          coerce("contours.labelformat");
+        }
+        if (opts.hasHover !== false) coerce("zhoverformat");
+      };
+    }
+  });
+
+  // src/traces/contour/style_defaults.js
+  var require_style_defaults = __commonJS({
+    "src/traces/contour/style_defaults.js"(exports, module) {
+      "use strict";
+      var colorscaleDefaults = require_defaults2();
+      var handleLabelDefaults = require_label_defaults();
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, layout, opts) {
+        var coloring = coerce("contours.coloring");
+        var showLines;
+        var lineColor = "";
+        if (coloring === "fill") showLines = coerce("contours.showlines");
+        if (showLines !== false) {
+          if (coloring !== "lines") lineColor = coerce("line.color", "#000");
+          coerce("line.width", 0.5);
+          coerce("line.dash");
+        }
+        if (coloring !== "none") {
+          if (traceIn.showlegend !== true) traceOut.showlegend = false;
+          traceOut._dfltShowLegend = false;
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "", cLetter: "z" }
+          );
+        }
+        coerce("line.smoothing");
+        handleLabelDefaults(coerce, layout, lineColor, opts);
+      };
+    }
+  });
+
+  // src/traces/heatmap/label_defaults.js
+  var require_label_defaults2 = __commonJS({
+    "src/traces/heatmap/label_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function handleHeatmapLabelDefaults(coerce, layout) {
+        coerce("texttemplate");
+        var fontDflt = Lib.extendFlat({}, layout.font, {
+          color: "auto",
+          size: "auto"
+        });
+        Lib.coerceFont(coerce, "textfont", fontDflt);
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/defaults.js
+  var require_defaults20 = __commonJS({
+    "src/traces/histogram2dcontour/defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var handleSampleDefaults = require_sample_defaults();
+      var handleContoursDefaults = require_contours_defaults();
+      var handleStyleDefaults = require_style_defaults();
+      var handleHeatmapLabelDefaults = require_label_defaults2();
+      var attributes = require_attributes29();
       module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
         function coerce(attr, dflt) {
           return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
         }
-        var dimensions = handleArrayContainerDefaults(traceIn, traceOut, {
-          name: "dimensions",
-          handleItemDefaults: dimensionDefaults
-        });
-        var showDiag = coerce("diagonal.visible");
-        var showUpper = coerce("showupperhalf");
-        var showLower = coerce("showlowerhalf");
-        var dimLength = mergeLength(traceOut, dimensions, "values");
-        if (!dimLength || !showDiag && !showUpper && !showLower) {
+        function coerce2(attr) {
+          return Lib.coerce2(traceIn, traceOut, attributes, attr);
+        }
+        handleSampleDefaults(traceIn, traceOut, coerce, layout);
+        if (traceOut.visible === false) return;
+        handleContoursDefaults(traceIn, traceOut, coerce, coerce2);
+        handleStyleDefaults(traceIn, traceOut, coerce, layout);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("hovertemplate");
+        if (traceOut.contours && traceOut.contours.coloring === "heatmap") {
+          handleHeatmapLabelDefaults(coerce, layout);
+        }
+      };
+    }
+  });
+
+  // src/traces/bar/style_defaults.js
+  var require_style_defaults2 = __commonJS({
+    "src/traces/bar/style_defaults.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var hasColorscale = require_helpers().hasColorscale;
+      var colorscaleDefaults = require_defaults2();
+      var coercePattern = require_lib().coercePattern;
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout) {
+        var markerColor = coerce("marker.color", defaultColor);
+        var hasMarkerColorscale = hasColorscale(traceIn, "marker");
+        if (hasMarkerColorscale) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.color", Color.defaultLine);
+        if (hasColorscale(traceIn, "marker.line")) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.line.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.width");
+        coerce("marker.opacity");
+        coercePattern(coerce, "marker.pattern", markerColor, hasMarkerColorscale);
+        coerce("selected.marker.color");
+        coerce("unselected.marker.color");
+      };
+    }
+  });
+
+  // src/traces/bar/defaults.js
+  var require_defaults21 = __commonJS({
+    "src/traces/bar/defaults.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Color = require_color();
+      var Registry = require_registry();
+      var handleXYDefaults = require_xy_defaults();
+      var handlePeriodDefaults = require_period_defaults();
+      var handleStyleDefaults = require_style_defaults2();
+      var handleGroupingDefaults = require_grouping_defaults();
+      var attributes = require_attributes24();
+      var coerceFont = Lib.coerceFont;
+      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
+        }
+        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
+        if (!len) {
           traceOut.visible = false;
           return;
         }
+        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("zorder");
+        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
+        coerce("base");
+        coerce("offset");
+        coerce("width");
         coerce("text");
         coerce("hovertext");
         coerce("hovertemplate");
-        coerce("xhoverformat");
-        coerce("yhoverformat");
-        handleMarkerDefaults(traceIn, traceOut, defaultColor, layout, coerce, { noAngleRef: true, noStandOff: true });
-        var isOpen = isOpenSymbol(traceOut.marker.symbol);
-        var isBubble = subTypes.isBubble(traceOut);
-        coerce("marker.line.width", isOpen || isBubble ? 1 : 0);
-        handleAxisDefaults(traceIn, traceOut, layout, coerce);
+        var textposition = coerce("textposition");
+        handleText(traceIn, traceOut, layout, coerce, textposition, {
+          moduleHasSelected: true,
+          moduleHasUnselected: true,
+          moduleHasConstrain: true,
+          moduleHasCliponaxis: true,
+          moduleHasTextangle: true,
+          moduleHasInsideanchor: true
+        });
+        handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout);
+        var lineColor = (traceOut.marker.line || {}).color;
+        var errorBarsSupplyDefaults = Registry.getComponentMethod("errorbars", "supplyDefaults");
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "y" });
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "x", inherit: "y" });
         Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
-      };
-      function dimensionDefaults(dimIn, dimOut) {
+      }
+      function crossTraceDefaults(fullData, fullLayout) {
+        var traceIn, traceOut;
         function coerce(attr, dflt) {
-          return Lib.coerce(dimIn, dimOut, attributes.dimensions, attr, dflt);
+          return Lib.coerce(traceOut._input, traceOut, attributes, attr, dflt);
         }
-        coerce("label");
-        var values = coerce("values");
-        if (!(values && values.length)) dimOut.visible = false;
-        else coerce("visible");
-        coerce("axis.type");
-        coerce("axis.matches");
-      }
-      function handleAxisDefaults(traceIn, traceOut, layout, coerce) {
-        var dimensions = traceOut.dimensions;
-        var dimLength = dimensions.length;
-        var showUpper = traceOut.showupperhalf;
-        var showLower = traceOut.showlowerhalf;
-        var showDiag = traceOut.diagonal.visible;
-        var i, j;
-        var xAxesDflt = new Array(dimLength);
-        var yAxesDflt = new Array(dimLength);
-        for (i = 0; i < dimLength; i++) {
-          var suffix = i ? i + 1 : "";
-          xAxesDflt[i] = "x" + suffix;
-          yAxesDflt[i] = "y" + suffix;
-        }
-        var xaxes = coerce("xaxes", xAxesDflt);
-        var yaxes = coerce("yaxes", yAxesDflt);
-        var diag = traceOut._diag = new Array(dimLength);
-        traceOut._xaxes = {};
-        traceOut._yaxes = {};
-        var xList = [];
-        var yList = [];
-        function fillAxisStashes(axId, counterAxId, dim2, list) {
-          if (!axId) return;
-          var axLetter = axId.charAt(0);
-          var stash = layout._splomAxes[axLetter];
-          traceOut["_" + axLetter + "axes"][axId] = 1;
-          list.push(axId);
-          if (!(axId in stash)) {
-            var s = stash[axId] = {};
-            if (dim2) {
-              s.label = dim2.label || "";
-              if (dim2.visible && dim2.axis) {
-                if (dim2.axis.type) s.type = dim2.axis.type;
-                if (dim2.axis.matches) s.matches = counterAxId;
-              }
+        for (var i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceOut.type === "bar") {
+            traceIn = traceOut._input;
+            var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+            if (traceOut.marker) {
+              traceOut.marker.cornerradius = validateCornerradius(r);
             }
+            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.barmode);
           }
         }
-        var mustShiftX = !showDiag && !showLower;
-        var mustShiftY = !showDiag && !showUpper;
-        traceOut._axesDim = {};
-        for (i = 0; i < dimLength; i++) {
-          var dim = dimensions[i];
-          var i0 = i === 0;
-          var iN = i === dimLength - 1;
-          var xaId = i0 && mustShiftX || iN && mustShiftY ? void 0 : xaxes[i];
-          var yaId = i0 && mustShiftY || iN && mustShiftX ? void 0 : yaxes[i];
-          fillAxisStashes(xaId, yaId, dim, xList);
-          fillAxisStashes(yaId, xaId, dim, yList);
-          diag[i] = [xaId, yaId];
-          traceOut._axesDim[xaId] = i;
-          traceOut._axesDim[yaId] = i;
-        }
-        for (i = 0; i < xList.length; i++) {
-          for (j = 0; j < yList.length; j++) {
-            var id = xList[i] + yList[j];
-            if (i > j && showUpper) {
-              layout._splomSubplots[id] = 1;
-            } else if (i < j && showLower) {
-              layout._splomSubplots[id] = 1;
-            } else if (i === j && (showDiag || !showLower || !showUpper)) {
-              layout._splomSubplots[id] = 1;
-            }
+      }
+      function validateCornerradius(r) {
+        if (isNumeric(r)) {
+          r = +r;
+          if (r >= 0) return r;
+        } else if (typeof r === "string") {
+          r = r.trim();
+          if (r.slice(-1) === "%" && isNumeric(r.slice(0, -1))) {
+            r = +r.slice(0, -1);
+            if (r >= 0) return r + "%";
           }
         }
-        if (!showLower || !showDiag && showUpper && showLower) {
-          layout._splomGridDflt.xside = "bottom";
-          layout._splomGridDflt.yside = "left";
+        return void 0;
+      }
+      function handleText(traceIn, traceOut, layout, coerce, textposition, opts) {
+        opts = opts || {};
+        var moduleHasSelected = !(opts.moduleHasSelected === false);
+        var moduleHasUnselected = !(opts.moduleHasUnselected === false);
+        var moduleHasConstrain = !(opts.moduleHasConstrain === false);
+        var moduleHasCliponaxis = !(opts.moduleHasCliponaxis === false);
+        var moduleHasTextangle = !(opts.moduleHasTextangle === false);
+        var moduleHasInsideanchor = !(opts.moduleHasInsideanchor === false);
+        var hasPathbar = !!opts.hasPathbar;
+        var hasBoth = Array.isArray(textposition) || textposition === "auto";
+        var hasInside = hasBoth || textposition === "inside";
+        var hasOutside = hasBoth || textposition === "outside";
+        if (hasInside || hasOutside) {
+          var dfltFont = coerceFont(coerce, "textfont", layout.font);
+          var insideTextFontDefault = Lib.extendFlat({}, dfltFont);
+          var isTraceTextfontColorSet = traceIn.textfont && traceIn.textfont.color;
+          var isColorInheritedFromLayoutFont = !isTraceTextfontColorSet;
+          if (isColorInheritedFromLayoutFont) {
+            delete insideTextFontDefault.color;
+          }
+          coerceFont(coerce, "insidetextfont", insideTextFontDefault);
+          if (hasPathbar) {
+            var pathbarTextFontDefault = Lib.extendFlat({}, dfltFont);
+            if (isColorInheritedFromLayoutFont) {
+              delete pathbarTextFontDefault.color;
+            }
+            coerceFont(coerce, "pathbar.textfont", pathbarTextFontDefault);
+          }
+          if (hasOutside) coerceFont(coerce, "outsidetextfont", dfltFont);
+          if (moduleHasSelected) coerce("selected.textfont.color");
+          if (moduleHasUnselected) coerce("unselected.textfont.color");
+          if (moduleHasConstrain) coerce("constraintext");
+          if (moduleHasCliponaxis) coerce("cliponaxis");
+          if (moduleHasTextangle) coerce("textangle");
+          coerce("texttemplate");
+        }
+        if (hasInside) {
+          if (moduleHasInsideanchor) coerce("insidetextanchor");
         }
       }
+      module.exports = {
+        supplyDefaults,
+        crossTraceDefaults,
+        handleText,
+        validateCornerradius
+      };
     }
   });
 
-  // src/traces/splom/scene_update.js
-  var require_scene_update2 = __commonJS({
-    "src/traces/splom/scene_update.js"(exports, module) {
+  // src/traces/histogram/cross_trace_defaults.js
+  var require_cross_trace_defaults3 = __commonJS({
+    "src/traces/histogram/cross_trace_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
-      module.exports = function sceneUpdate(gd, trace) {
-        var fullLayout = gd._fullLayout;
-        var uid = trace.uid;
-        var splomScenes = fullLayout._splomScenes;
-        if (!splomScenes) splomScenes = fullLayout._splomScenes = {};
-        var reset = {
-          dirty: true,
-          selectBatch: [],
-          unselectBatch: []
-        };
-        var first = {
-          matrix: false,
-          selectBatch: [],
-          unselectBatch: []
-        };
-        var scene = splomScenes[trace.uid];
-        if (!scene) {
-          scene = splomScenes[uid] = Lib.extendFlat({}, reset, first);
-          scene.draw = function draw() {
-            if (scene.matrix && scene.matrix.draw) {
-              if (scene.selectBatch.length || scene.unselectBatch.length) {
-                scene.matrix.draw(scene.unselectBatch, scene.selectBatch);
-              } else {
-                scene.matrix.draw();
-              }
-            }
-            scene.dirty = false;
-          };
-          scene.destroy = function destroy() {
-            if (scene.matrix && scene.matrix.destroy) {
-              scene.matrix.destroy();
-            }
-            scene.matrixOptions = null;
-            scene.selectBatch = null;
-            scene.unselectBatch = null;
-            scene = null;
-          };
-        }
-        if (!scene.dirty) {
-          Lib.extendFlat(scene, reset);
-        }
-        return scene;
-      };
-    }
-  });
-
-  // src/traces/splom/calc.js
-  var require_calc6 = __commonJS({
-    "src/traces/splom/calc.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var AxisIDs = require_axis_ids();
-      var calcMarkerSize = require_calc3().calcMarkerSize;
-      var calcAxisExpansion = require_calc3().calcAxisExpansion;
-      var calcColorscale = require_colorscale_calc();
-      var convertMarkerSelection = require_convert2().markerSelection;
-      var convertMarkerStyle = require_convert2().markerStyle;
-      var sceneUpdate = require_scene_update2();
-      var BADNUM = require_numerical().BADNUM;
-      var TOO_MANY_POINTS = require_constants14().TOO_MANY_POINTS;
-      module.exports = function calc(gd, trace) {
-        var dimensions = trace.dimensions;
-        var commonLength = trace._length;
-        var opts = {};
-        var cdata = opts.cdata = [];
-        var ldata = opts.data = [];
-        var visibleDims = trace._visibleDims = [];
-        var i, k, dim, xa, ya;
-        function makeCalcdata(ax, dim2) {
-          var ccol = ax.makeCalcdata({
-            v: dim2.values,
-            vcalendar: trace.calendar
-          }, "v");
-          for (var j = 0; j < ccol.length; j++) {
-            ccol[j] = ccol[j] === BADNUM ? NaN : ccol[j];
-          }
-          cdata.push(ccol);
-          ldata.push(ax.type === "log" ? Lib.simpleMap(ccol, ax.c2l) : ccol);
-        }
-        for (i = 0; i < dimensions.length; i++) {
-          dim = dimensions[i];
-          if (dim.visible) {
-            xa = AxisIDs.getFromId(gd, trace._diag[i][0]);
-            ya = AxisIDs.getFromId(gd, trace._diag[i][1]);
-            if (xa && ya && xa.type !== ya.type) {
-              Lib.log("Skipping splom dimension " + i + " with conflicting axis types");
-              continue;
-            }
-            if (xa) {
-              makeCalcdata(xa, dim);
-              if (ya && ya.type === "category") {
-                ya._categories = xa._categories.slice();
-              }
-            } else {
-              makeCalcdata(ya, dim);
-            }
-            visibleDims.push(i);
-          }
-        }
-        calcColorscale(gd, trace);
-        Lib.extendFlat(opts, convertMarkerStyle(gd, trace));
-        var visibleLength = cdata.length;
-        var hasTooManyPoints = visibleLength * commonLength > TOO_MANY_POINTS;
-        var ppad;
-        if (hasTooManyPoints) {
-          ppad = opts.sizeAvg || Math.max(opts.size, 3);
-        } else {
-          ppad = calcMarkerSize(trace, commonLength);
-        }
-        for (k = 0; k < visibleDims.length; k++) {
-          i = visibleDims[k];
-          dim = dimensions[i];
-          xa = AxisIDs.getFromId(gd, trace._diag[i][0]) || {};
-          ya = AxisIDs.getFromId(gd, trace._diag[i][1]) || {};
-          calcAxisExpansion(gd, trace, xa, ya, cdata[k], cdata[k], ppad);
-        }
-        var scene = sceneUpdate(gd, trace);
-        if (!scene.matrix) scene.matrix = true;
-        scene.matrixOptions = opts;
-        scene.selectedOptions = convertMarkerSelection(gd, trace, trace.selected);
-        scene.unselectedOptions = convertMarkerSelection(gd, trace, trace.unselected);
-        return [{ x: false, y: false, t: {}, trace }];
-      };
-    }
-  });
-
-  // node_modules/performance-now/lib/performance-now.js
-  var require_performance_now = __commonJS({
-    "node_modules/performance-now/lib/performance-now.js"(exports, module) {
-      (function() {
-        var getNanoSeconds, hrtime, loadTime, moduleLoadTime, nodeLoadTime, upTime;
-        if (typeof performance !== "undefined" && performance !== null && performance.now) {
-          module.exports = function() {
-            return performance.now();
-          };
-        } else if (typeof process !== "undefined" && process !== null && process.hrtime) {
-          module.exports = function() {
-            return (getNanoSeconds() - nodeLoadTime) / 1e6;
-          };
-          hrtime = process.hrtime;
-          getNanoSeconds = function() {
-            var hr;
-            hr = hrtime();
-            return hr[0] * 1e9 + hr[1];
-          };
-          moduleLoadTime = getNanoSeconds();
-          upTime = process.uptime() * 1e9;
-          nodeLoadTime = moduleLoadTime - upTime;
-        } else if (Date.now) {
-          module.exports = function() {
-            return Date.now() - loadTime;
-          };
-          loadTime = Date.now();
-        } else {
-          module.exports = function() {
-            return (/* @__PURE__ */ new Date()).getTime() - loadTime;
-          };
-          loadTime = (/* @__PURE__ */ new Date()).getTime();
-        }
-      }).call(exports);
-    }
-  });
-
-  // node_modules/raf/index.js
-  var require_raf = __commonJS({
-    "node_modules/raf/index.js"(exports, module) {
-      var now = require_performance_now();
-      var root = typeof window === "undefined" ? window : window;
-      var vendors = ["moz", "webkit"];
-      var suffix = "AnimationFrame";
-      var raf = root["request" + suffix];
-      var caf = root["cancel" + suffix] || root["cancelRequest" + suffix];
-      for (i = 0; !raf && i < vendors.length; i++) {
-        raf = root[vendors[i] + "Request" + suffix];
-        caf = root[vendors[i] + "Cancel" + suffix] || root[vendors[i] + "CancelRequest" + suffix];
-      }
-      var i;
-      if (!raf || !caf) {
-        last = 0, id = 0, queue = [], frameDuration = 1e3 / 60;
-        raf = function(callback) {
-          if (queue.length === 0) {
-            var _now = now(), next = Math.max(0, frameDuration - (_now - last));
-            last = next + _now;
-            setTimeout(function() {
-              var cp = queue.slice(0);
-              queue.length = 0;
-              for (var i2 = 0; i2 < cp.length; i2++) {
-                if (!cp[i2].cancelled) {
-                  try {
-                    cp[i2].callback(last);
-                  } catch (e) {
-                    setTimeout(function() {
-                      throw e;
-                    }, 0);
-                  }
-                }
-              }
-            }, Math.round(next));
-          }
-          queue.push({
-            handle: ++id,
-            callback,
-            cancelled: false
-          });
-          return id;
-        };
-        caf = function(handle) {
-          for (var i2 = 0; i2 < queue.length; i2++) {
-            if (queue[i2].handle === handle) {
-              queue[i2].cancelled = true;
-            }
-          }
-        };
-      }
-      var last;
-      var id;
-      var queue;
-      var frameDuration;
-      module.exports = function(fn) {
-        return raf.call(root, fn);
-      };
-      module.exports.cancel = function() {
-        caf.apply(root, arguments);
-      };
-      module.exports.polyfill = function(object) {
-        if (!object) {
-          object = root;
-        }
-        object.requestAnimationFrame = raf;
-        object.cancelAnimationFrame = caf;
-      };
-    }
-  });
-
-  // node_modules/array-range/index.js
-  var require_array_range = __commonJS({
-    "node_modules/array-range/index.js"(exports, module) {
-      module.exports = function newArray(start, end) {
-        var n0 = typeof start === "number", n1 = typeof end === "number";
-        if (n0 && !n1) {
-          end = start;
-          start = 0;
-        } else if (!n0 && !n1) {
-          start = 0;
-          end = 0;
-        }
-        start = start | 0;
-        end = end | 0;
-        var len = end - start;
-        if (len < 0)
-          throw new Error("array length must be positive");
-        var a = new Array(len);
-        for (var i = 0, c = start; i < len; i++, c++)
-          a[i] = c;
-        return a;
-      };
-    }
-  });
-
-  // node_modules/regl-splom/index.js
-  var require_regl_splom = __commonJS({
-    "node_modules/regl-splom/index.js"(exports, module) {
-      "use strict";
-      var createScatter = require_bundle();
-      var pick = require_pick_by_alias();
-      var getBounds = require_array_bounds();
-      var raf = require_raf();
-      var arrRange = require_array_range();
-      var rect = require_parse_rect();
-      var flatten = require_flatten_vertex_data();
-      module.exports = SPLOM;
-      function SPLOM(regl, options) {
-        if (!(this instanceof SPLOM)) return new SPLOM(regl, options);
-        this.traces = [];
-        this.passes = {};
-        this.regl = regl;
-        this.scatter = createScatter(regl);
-        this.canvas = this.scatter.canvas;
-      }
-      SPLOM.prototype.render = function(...args) {
-        if (args.length) {
-          this.update(...args);
-        }
-        if (this.regl.attributes.preserveDrawingBuffer) return this.draw();
-        if (this.dirty) {
-          if (this.planned == null) {
-            this.planned = raf(() => {
-              this.draw();
-              this.dirty = true;
-              this.planned = null;
-            });
-          }
-        } else {
-          this.draw();
-          this.dirty = true;
-          raf(() => {
-            this.dirty = false;
-          });
-        }
-        return this;
-      };
-      SPLOM.prototype.update = function(...args) {
-        if (!args.length) return;
-        for (let i = 0; i < args.length; i++) {
-          this.updateItem(i, args[i]);
-        }
-        this.traces = this.traces.filter(Boolean);
-        let passes = [];
-        let offset = 0;
-        for (let i = 0; i < this.traces.length; i++) {
-          let trace = this.traces[i];
-          let tracePasses = this.traces[i].passes;
-          for (let j = 0; j < tracePasses.length; j++) {
-            passes.push(this.passes[tracePasses[j]]);
-          }
-          trace.passOffset = offset;
-          offset += trace.passes.length;
-        }
-        this.scatter.update(...passes);
-        return this;
-      };
-      SPLOM.prototype.updateItem = function(i, options) {
-        let { regl } = this;
-        if (options === null) {
-          this.traces[i] = null;
-          return this;
-        }
-        if (!options) return this;
-        let o = pick(options, {
-          data: "data items columns rows values dimensions samples x",
-          snap: "snap cluster",
-          size: "sizes size radius",
-          color: "colors color fill fill-color fillColor",
-          opacity: "opacity alpha transparency opaque",
-          borderSize: "borderSizes borderSize border-size bordersize borderWidth borderWidths border-width borderwidth stroke-width strokeWidth strokewidth outline",
-          borderColor: "borderColors borderColor bordercolor stroke stroke-color strokeColor",
-          marker: "markers marker shape",
-          range: "range ranges databox dataBox",
-          viewport: "viewport viewBox viewbox",
-          domain: "domain domains area areas",
-          padding: "pad padding paddings pads margin margins",
-          transpose: "transpose transposed",
-          diagonal: "diagonal diag showDiagonal",
-          upper: "upper up top upperhalf upperHalf showupperhalf showUpper showUpperHalf",
-          lower: "lower low bottom lowerhalf lowerHalf showlowerhalf showLowerHalf showLower"
-        });
-        let trace = this.traces[i] || (this.traces[i] = {
-          id: i,
-          buffer: regl.buffer({
-            usage: "dynamic",
-            type: "float",
-            data: new Uint8Array()
-          }),
-          color: "black",
-          marker: null,
-          size: 12,
-          borderColor: "transparent",
-          borderSize: 1,
-          viewport: rect([regl._gl.drawingBufferWidth, regl._gl.drawingBufferHeight]),
-          padding: [0, 0, 0, 0],
-          opacity: 1,
-          diagonal: true,
-          upper: true,
-          lower: true
-        });
-        if (o.color != null) {
-          trace.color = o.color;
-        }
-        if (o.size != null) {
-          trace.size = o.size;
-        }
-        if (o.marker != null) {
-          trace.marker = o.marker;
-        }
-        if (o.borderColor != null) {
-          trace.borderColor = o.borderColor;
-        }
-        if (o.borderSize != null) {
-          trace.borderSize = o.borderSize;
-        }
-        if (o.opacity != null) {
-          trace.opacity = o.opacity;
-        }
-        if (o.viewport) {
-          trace.viewport = rect(o.viewport);
-        }
-        if (o.diagonal != null) trace.diagonal = o.diagonal;
-        if (o.upper != null) trace.upper = o.upper;
-        if (o.lower != null) trace.lower = o.lower;
-        if (o.data) {
-          trace.buffer(flatten(o.data));
-          trace.columns = o.data.length;
-          trace.count = o.data[0].length;
-          trace.bounds = [];
-          for (let i2 = 0; i2 < trace.columns; i2++) {
-            trace.bounds[i2] = getBounds(o.data[i2], 1);
-          }
-        }
-        let multirange;
-        if (o.range) {
-          trace.range = o.range;
-          multirange = trace.range && typeof trace.range[0] !== "number";
-        }
-        if (o.domain) {
-          trace.domain = o.domain;
-        }
-        let multipadding = false;
-        if (o.padding != null) {
-          if (Array.isArray(o.padding) && o.padding.length === trace.columns && typeof o.padding[o.padding.length - 1] === "number") {
-            trace.padding = o.padding.map(getPad);
-            multipadding = true;
-          } else {
-            trace.padding = getPad(o.padding);
-          }
-        }
-        let m = trace.columns;
-        let n = trace.count;
-        let w = trace.viewport.width;
-        let h = trace.viewport.height;
-        let left = trace.viewport.x;
-        let top = trace.viewport.y;
-        let iw = w / m;
-        let ih = h / m;
-        trace.passes = [];
-        for (let i2 = 0; i2 < m; i2++) {
-          for (let j = 0; j < m; j++) {
-            if (!trace.diagonal && j === i2) continue;
-            if (!trace.upper && i2 > j) continue;
-            if (!trace.lower && i2 < j) continue;
-            let key = passId(trace.id, i2, j);
-            let pass = this.passes[key] || (this.passes[key] = {});
-            if (o.data) {
-              if (o.transpose) {
-                pass.positions = {
-                  x: { buffer: trace.buffer, offset: j, count: n, stride: m },
-                  y: { buffer: trace.buffer, offset: i2, count: n, stride: m }
-                };
-              } else {
-                pass.positions = {
-                  x: { buffer: trace.buffer, offset: j * n, count: n },
-                  y: { buffer: trace.buffer, offset: i2 * n, count: n }
-                };
-              }
-              pass.bounds = getBox(trace.bounds, i2, j);
-            }
-            if (o.domain || o.viewport || o.data) {
-              let pad = multipadding ? getBox(trace.padding, i2, j) : trace.padding;
-              if (trace.domain) {
-                let [lox, loy, hix, hiy] = getBox(trace.domain, i2, j);
-                pass.viewport = [
-                  left + lox * w + pad[0],
-                  top + loy * h + pad[1],
-                  left + hix * w - pad[2],
-                  top + hiy * h - pad[3]
-                ];
-              } else {
-                pass.viewport = [
-                  left + j * iw + iw * pad[0],
-                  top + i2 * ih + ih * pad[1],
-                  left + (j + 1) * iw - iw * pad[2],
-                  top + (i2 + 1) * ih - ih * pad[3]
-                ];
-              }
-            }
-            if (o.color) pass.color = trace.color;
-            if (o.size) pass.size = trace.size;
-            if (o.marker) pass.marker = trace.marker;
-            if (o.borderSize) pass.borderSize = trace.borderSize;
-            if (o.borderColor) pass.borderColor = trace.borderColor;
-            if (o.opacity) pass.opacity = trace.opacity;
-            if (o.range) {
-              pass.range = multirange ? getBox(trace.range, i2, j) : trace.range || pass.bounds;
-            }
-            trace.passes.push(key);
-          }
-        }
-        return this;
-      };
-      SPLOM.prototype.draw = function(...args) {
-        if (!args.length) {
-          this.scatter.draw();
-        } else {
-          let idx = [];
-          for (let i = 0; i < args.length; i++) {
-            if (typeof args[i] === "number") {
-              let { passes, passOffset } = this.traces[args[i]];
-              idx.push(...arrRange(passOffset, passOffset + passes.length));
-            } else if (args[i].length) {
-              let els = args[i];
-              let { passes, passOffset } = this.traces[i];
-              passes = passes.map((passId2, i2) => {
-                idx[passOffset + i2] = els;
-              });
-            }
-          }
-          this.scatter.draw(...idx);
-        }
-        return this;
-      };
-      SPLOM.prototype.destroy = function() {
-        this.traces.forEach((trace) => {
-          if (trace.buffer && trace.buffer.destroy) trace.buffer.destroy();
-        });
-        this.traces = null;
-        this.passes = null;
-        this.scatter.destroy();
-        return this;
-      };
-      function passId(trace, i, j) {
-        let id = trace.id != null ? trace.id : trace;
-        let n = i;
-        let m = j;
-        let key = id << 16 | (n & 255) << 8 | m & 255;
-        return key;
-      }
-      function getBox(items, i, j) {
-        let ilox, iloy, ihix, ihiy, jlox, jloy, jhix, jhiy;
-        let iitem = items[i], jitem = items[j];
-        if (iitem.length > 2) {
-          ilox = iitem[0];
-          ihix = iitem[2];
-          iloy = iitem[1];
-          ihiy = iitem[3];
-        } else if (iitem.length) {
-          ilox = iloy = iitem[0];
-          ihix = ihiy = iitem[1];
-        } else {
-          ilox = iitem.x;
-          iloy = iitem.y;
-          ihix = iitem.x + iitem.width;
-          ihiy = iitem.y + iitem.height;
-        }
-        if (jitem.length > 2) {
-          jlox = jitem[0];
-          jhix = jitem[2];
-          jloy = jitem[1];
-          jhiy = jitem[3];
-        } else if (jitem.length) {
-          jlox = jloy = jitem[0];
-          jhix = jhiy = jitem[1];
-        } else {
-          jlox = jitem.x;
-          jloy = jitem.y;
-          jhix = jitem.x + jitem.width;
-          jhiy = jitem.y + jitem.height;
-        }
-        return [jlox, iloy, jhix, ihiy];
-      }
-      function getPad(arg) {
-        if (typeof arg === "number") return [arg, arg, arg, arg];
-        else if (arg.length === 2) return [arg[0], arg[1], arg[0], arg[1]];
-        else {
-          let box = rect(arg);
-          return [box.x, box.y, box.x + box.width, box.y + box.height];
-        }
-      }
-    }
-  });
-
-  // src/traces/splom/plot.js
-  var require_plot4 = __commonJS({
-    "src/traces/splom/plot.js"(exports, module) {
-      "use strict";
-      var createMatrix = require_regl_splom();
-      var Lib = require_lib();
-      var AxisIDs = require_axis_ids();
-      var selectMode = require_helpers5().selectMode;
-      module.exports = function plot(gd, _, splomCalcData) {
-        if (!splomCalcData.length) return;
-        for (var i = 0; i < splomCalcData.length; i++) {
-          plotOne(gd, splomCalcData[i][0]);
-        }
-      };
-      function plotOne(gd, cd0) {
-        var fullLayout = gd._fullLayout;
-        var gs = fullLayout._size;
-        var trace = cd0.trace;
-        var stash = cd0.t;
-        var scene = fullLayout._splomScenes[trace.uid];
-        var matrixOpts = scene.matrixOptions;
-        var cdata = matrixOpts.cdata;
-        var regl = fullLayout._glcanvas.data()[0].regl;
-        var dragmode = fullLayout.dragmode;
-        var xa, ya;
+      var axisIds = require_axis_ids();
+      var traceIs = require_registry().traceIs;
+      var handleGroupingDefaults = require_grouping_defaults();
+      var validateCornerradius = require_defaults21().validateCornerradius;
+      var nestedProperty = Lib.nestedProperty;
+      var getAxisGroup = require_constraints().getAxisGroup;
+      var BINATTRS = [
+        { aStr: { x: "xbins.start", y: "ybins.start" }, name: "start" },
+        { aStr: { x: "xbins.end", y: "ybins.end" }, name: "end" },
+        { aStr: { x: "xbins.size", y: "ybins.size" }, name: "size" },
+        { aStr: { x: "nbinsx", y: "nbinsy" }, name: "nbins" }
+      ];
+      var BINDIRECTIONS = ["x", "y"];
+      module.exports = function crossTraceDefaults(fullData, fullLayout) {
+        var allBinOpts = fullLayout._histogramBinOpts = {};
+        var histTraces = [];
+        var mustMatchTracesLookup = {};
+        var otherTracesList = [];
+        var traceOut, traces, groupName, binDir;
         var i, j, k;
-        if (cdata.length === 0) return;
-        matrixOpts.lower = trace.showupperhalf;
-        matrixOpts.upper = trace.showlowerhalf;
-        matrixOpts.diagonal = trace.diagonal.visible;
-        var visibleDims = trace._visibleDims;
-        var visibleLength = cdata.length;
-        var viewOpts = scene.viewOpts = {};
-        viewOpts.ranges = new Array(visibleLength);
-        viewOpts.domains = new Array(visibleLength);
-        for (k = 0; k < visibleDims.length; k++) {
-          i = visibleDims[k];
-          var rng = viewOpts.ranges[k] = new Array(4);
-          var dmn = viewOpts.domains[k] = new Array(4);
-          xa = AxisIDs.getFromId(gd, trace._diag[i][0]);
-          if (xa) {
-            rng[0] = xa._rl[0];
-            rng[2] = xa._rl[1];
-            dmn[0] = xa.domain[0];
-            dmn[2] = xa.domain[1];
-          }
-          ya = AxisIDs.getFromId(gd, trace._diag[i][1]);
-          if (ya) {
-            rng[1] = ya._rl[0];
-            rng[3] = ya._rl[1];
-            dmn[1] = ya.domain[0];
-            dmn[3] = ya.domain[1];
-          }
+        function coerce(attr2, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, traceOut._module.attributes, attr2, dflt);
         }
-        var plotGlPixelRatio = gd._context.plotGlPixelRatio;
-        var l = gs.l * plotGlPixelRatio;
-        var b = gs.b * plotGlPixelRatio;
-        var w = gs.w * plotGlPixelRatio;
-        var h = gs.h * plotGlPixelRatio;
-        viewOpts.viewport = [l, b, w + l, h + b];
-        if (scene.matrix === true) {
-          scene.matrix = createMatrix(regl);
+        function orientation2binDir(traceOut2) {
+          return traceOut2.orientation === "v" ? "x" : "y";
         }
-        var clickSelectEnabled = fullLayout.clickmode.indexOf("select") > -1;
-        var isSelectMode = selectMode(dragmode) || !!trace.selectedpoints || clickSelectEnabled;
-        var needsBaseUpdate = true;
-        if (isSelectMode) {
-          var commonLength = trace._length;
-          if (trace.selectedpoints) {
-            scene.selectBatch = trace.selectedpoints;
-            var selPts = trace.selectedpoints;
-            var selDict = {};
-            for (i = 0; i < selPts.length; i++) {
-              selDict[selPts[i]] = true;
-            }
-            var unselPts = [];
-            for (i = 0; i < commonLength; i++) {
-              if (!selDict[i]) unselPts.push(i);
-            }
-            scene.unselectBatch = unselPts;
-          }
-          var xpx = stash.xpx = new Array(visibleLength);
-          var ypx = stash.ypx = new Array(visibleLength);
-          for (k = 0; k < visibleDims.length; k++) {
-            i = visibleDims[k];
-            xa = AxisIDs.getFromId(gd, trace._diag[i][0]);
-            if (xa) {
-              xpx[k] = new Array(commonLength);
-              for (j = 0; j < commonLength; j++) {
-                xpx[k][j] = xa.c2p(cdata[k][j]);
+        function getAxisType(traceOut2, binDir2) {
+          var ax = axisIds.getFromTrace({ _fullLayout: fullLayout }, traceOut2, binDir2);
+          return ax.type;
+        }
+        function fillBinOpts(traceOut2, groupName2, binDir2) {
+          var fallbackGroupName = traceOut2.uid + "__" + binDir2;
+          if (!groupName2) groupName2 = fallbackGroupName;
+          var axType = getAxisType(traceOut2, binDir2);
+          var calendar = traceOut2[binDir2 + "calendar"] || "";
+          var binOpts2 = allBinOpts[groupName2];
+          var needsNewItem = true;
+          if (binOpts2) {
+            if (axType === binOpts2.axType && calendar === binOpts2.calendar) {
+              needsNewItem = false;
+              binOpts2.traces.push(traceOut2);
+              binOpts2.dirs.push(binDir2);
+            } else {
+              groupName2 = fallbackGroupName;
+              if (axType !== binOpts2.axType) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set on a",
+                  "type:" + axType,
+                  "axis",
+                  "with bins on",
+                  "type:" + binOpts2.axType,
+                  "axis."
+                ].join(" "));
               }
-            }
-            ya = AxisIDs.getFromId(gd, trace._diag[i][1]);
-            if (ya) {
-              ypx[k] = new Array(commonLength);
-              for (j = 0; j < commonLength; j++) {
-                ypx[k][j] = ya.c2p(cdata[k][j]);
+              if (calendar !== binOpts2.calendar) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set with a",
+                  calendar,
+                  "calendar",
+                  "with bins",
+                  binOpts2.calendar ? "on a " + binOpts2.calendar + " calendar" : "w/o a set calendar"
+                ].join(" "));
               }
             }
           }
-          if (scene.selectBatch.length || scene.unselectBatch.length) {
-            var unselOpts = Lib.extendFlat({}, matrixOpts, scene.unselectedOptions, viewOpts);
-            var selOpts = Lib.extendFlat({}, matrixOpts, scene.selectedOptions, viewOpts);
-            scene.matrix.update(unselOpts, selOpts);
-            needsBaseUpdate = false;
-          }
-        } else {
-          stash.xpx = stash.ypx = null;
-        }
-        if (needsBaseUpdate) {
-          var opts = Lib.extendFlat({}, matrixOpts, viewOpts);
-          scene.matrix.update(opts, null);
-        }
-      }
-    }
-  });
-
-  // src/traces/splom/helpers.js
-  var require_helpers13 = __commonJS({
-    "src/traces/splom/helpers.js"(exports) {
-      "use strict";
-      exports.getDimIndex = function getDimIndex(trace, ax) {
-        var axId = ax._id;
-        var axLetter = axId.charAt(0);
-        var ind = { x: 0, y: 1 }[axLetter];
-        var visibleDims = trace._visibleDims;
-        for (var k = 0; k < visibleDims.length; k++) {
-          var i = visibleDims[k];
-          if (trace._diag[i][ind] === axId) return k;
-        }
-        return false;
-      };
-    }
-  });
-
-  // src/traces/splom/hover.js
-  var require_hover4 = __commonJS({
-    "src/traces/splom/hover.js"(exports, module) {
-      "use strict";
-      var helpers = require_helpers13();
-      var calcHover = require_hover3().calcHover;
-      var getFromId = require_axes().getFromId;
-      var extendFlat = require_extend().extendFlat;
-      function hoverPoints(pointData, xval, yval, hovermode, opts) {
-        if (!opts) opts = {};
-        var hovermodeHasX = (hovermode || "").charAt(0) === "x";
-        var hovermodeHasY = (hovermode || "").charAt(0) === "y";
-        var points = _hoverPoints(pointData, xval, yval);
-        if ((hovermodeHasX || hovermodeHasY) && opts.hoversubplots === "axis" && points[0]) {
-          var subplotsWith = (hovermodeHasX ? pointData.xa : pointData.ya)._subplotsWith;
-          var gd = opts.gd;
-          var _pointData = extendFlat({}, pointData);
-          for (var i = 0; i < subplotsWith.length; i++) {
-            var spId = subplotsWith[i];
-            if (spId === pointData.xa._id + pointData.ya._id) continue;
-            if (hovermodeHasY) {
-              _pointData.xa = getFromId(gd, spId, "x");
-            } else {
-              _pointData.ya = getFromId(gd, spId, "y");
-            }
-            var axisHoversubplots = hovermodeHasX || hovermodeHasY;
-            var newPoints = _hoverPoints(_pointData, xval, yval, axisHoversubplots);
-            points = points.concat(newPoints);
-          }
-        }
-        return points;
-      }
-      function _hoverPoints(pointData, xval, yval, axisHoversubplots) {
-        var cd = pointData.cd;
-        var trace = cd[0].trace;
-        var scene = pointData.scene;
-        var cdata = scene.matrixOptions.cdata;
-        var xa = pointData.xa;
-        var ya = pointData.ya;
-        var xpx = xa.c2p(xval);
-        var ypx = ya.c2p(yval);
-        var maxDistance = pointData.distance;
-        var xi = helpers.getDimIndex(trace, xa);
-        var yi = helpers.getDimIndex(trace, ya);
-        if (xi === false || yi === false) return [pointData];
-        var x = cdata[xi];
-        var y = cdata[yi];
-        var id, dxy;
-        var minDist = maxDistance;
-        for (var i = 0; i < x.length; i++) {
-          if (axisHoversubplots && i !== pointData.index) continue;
-          var ptx = x[i];
-          var pty = y[i];
-          var dx = xa.c2p(ptx) - xpx;
-          var dy = ya.c2p(pty) - ypx;
-          var dist = Math.sqrt(dx * dx + dy * dy);
-          if (axisHoversubplots || dist < minDist) {
-            minDist = dxy = dist;
-            id = i;
-          }
-        }
-        pointData.index = id;
-        pointData.distance = minDist;
-        pointData.dxy = dxy;
-        if (id === void 0) return [pointData];
-        return [calcHover(pointData, x, y, trace)];
-      }
-      module.exports = {
-        hoverPoints
-      };
-    }
-  });
-
-  // src/traces/splom/select.js
-  var require_select4 = __commonJS({
-    "src/traces/splom/select.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var pushUnique = Lib.pushUnique;
-      var subTypes = require_subtypes();
-      var helpers = require_helpers13();
-      module.exports = function select(searchInfo, selectionTester) {
-        var cd = searchInfo.cd;
-        var trace = cd[0].trace;
-        var stash = cd[0].t;
-        var scene = searchInfo.scene;
-        var cdata = scene.matrixOptions.cdata;
-        var xa = searchInfo.xaxis;
-        var ya = searchInfo.yaxis;
-        var selection = [];
-        if (!scene) return selection;
-        var hasOnlyLines = !subTypes.hasMarkers(trace) && !subTypes.hasText(trace);
-        if (trace.visible !== true || hasOnlyLines) return selection;
-        var xi = helpers.getDimIndex(trace, xa);
-        var yi = helpers.getDimIndex(trace, ya);
-        if (xi === false || yi === false) return selection;
-        var xpx = stash.xpx[xi];
-        var ypx = stash.ypx[yi];
-        var x = cdata[xi];
-        var y = cdata[yi];
-        var els = (searchInfo.scene.selectBatch || []).slice();
-        var unels = [];
-        if (selectionTester !== false && !selectionTester.degenerate) {
-          for (var i = 0; i < x.length; i++) {
-            if (selectionTester.contains([xpx[i], ypx[i]], null, i, searchInfo)) {
-              selection.push({
-                pointNumber: i,
-                x: x[i],
-                y: y[i]
-              });
-              pushUnique(els, i);
-            } else if (els.indexOf(i) !== -1) {
-              pushUnique(els, i);
-            } else {
-              unels.push(i);
-            }
-          }
-        }
-        var matrixOpts = scene.matrixOptions;
-        if (!els.length && !unels.length) {
-          scene.matrix.update(matrixOpts, null);
-        } else if (!scene.selectBatch.length && !scene.unselectBatch.length) {
-          scene.matrix.update(
-            scene.unselectedOptions,
-            Lib.extendFlat({}, matrixOpts, scene.selectedOptions, scene.viewOpts)
-          );
-        }
-        scene.selectBatch = els;
-        scene.unselectBatch = unels;
-        return selection;
-      };
-    }
-  });
-
-  // src/traces/splom/edit_style.js
-  var require_edit_style2 = __commonJS({
-    "src/traces/splom/edit_style.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var calcColorscale = require_colorscale_calc();
-      var convertMarkerStyle = require_convert2().markerStyle;
-      module.exports = function editStyle(gd, cd0) {
-        var trace = cd0.trace;
-        var scene = gd._fullLayout._splomScenes[trace.uid];
-        if (scene) {
-          calcColorscale(gd, trace);
-          Lib.extendFlat(scene.matrixOptions, convertMarkerStyle(gd, trace));
-          var opts = Lib.extendFlat({}, scene.matrixOptions, scene.viewOpts);
-          scene.matrix.update(opts, null);
-        }
-      };
-    }
-  });
-
-  // src/traces/splom/base_index.js
-  var require_base_index2 = __commonJS({
-    "src/traces/splom/base_index.js"(exports, module) {
-      "use strict";
-      var Registry = require_registry();
-      var Grid = require_grid();
-      module.exports = {
-        moduleType: "trace",
-        name: "splom",
-        categories: ["gl", "regl", "cartesian", "symbols", "showLegend", "scatter-like"],
-        attributes: require_attributes24(),
-        supplyDefaults: require_defaults20(),
-        colorbar: require_marker_colorbar(),
-        calc: require_calc6(),
-        plot: require_plot4(),
-        hoverPoints: require_hover4().hoverPoints,
-        selectPoints: require_select4(),
-        editStyle: require_edit_style2(),
-        meta: {}
-      };
-      Registry.register(Grid);
-    }
-  });
-
-  // src/traces/splom/base_plot.js
-  var require_base_plot = __commonJS({
-    "src/traces/splom/base_plot.js"(exports, module) {
-      "use strict";
-      var createLine = require_regl_line2d();
-      var Registry = require_registry();
-      var prepareRegl = require_prepare_regl();
-      var getModuleCalcData = require_get_data().getModuleCalcData;
-      var Cartesian = require_cartesian();
-      var getFromId = require_axis_ids().getFromId;
-      var shouldShowZeroLine = require_axes().shouldShowZeroLine;
-      var SPLOM = "splom";
-      var reglPrecompiled = {};
-      function plot(gd) {
-        var fullLayout = gd._fullLayout;
-        var _module = Registry.getModule(SPLOM);
-        var splomCalcData = getModuleCalcData(gd.calcdata, _module)[0];
-        var success = prepareRegl(gd, ["ANGLE_instanced_arrays", "OES_element_index_uint"], reglPrecompiled);
-        if (!success) return;
-        if (fullLayout._hasOnlyLargeSploms) {
-          updateGrid(gd);
-        }
-        _module.plot(gd, {}, splomCalcData);
-      }
-      function drag(gd) {
-        var cd = gd.calcdata;
-        var fullLayout = gd._fullLayout;
-        if (fullLayout._hasOnlyLargeSploms) {
-          updateGrid(gd);
-        }
-        for (var i = 0; i < cd.length; i++) {
-          var cd0 = cd[i][0];
-          var trace = cd0.trace;
-          var scene = fullLayout._splomScenes[trace.uid];
-          if (trace.type === "splom" && scene && scene.matrix) {
-            dragOne(gd, trace, scene);
-          }
-        }
-      }
-      function dragOne(gd, trace, scene) {
-        var visibleLength = scene.matrixOptions.data.length;
-        var visibleDims = trace._visibleDims;
-        var ranges = scene.viewOpts.ranges = new Array(visibleLength);
-        for (var k = 0; k < visibleDims.length; k++) {
-          var i = visibleDims[k];
-          var rng = ranges[k] = new Array(4);
-          var xa = getFromId(gd, trace._diag[i][0]);
-          if (xa) {
-            rng[0] = xa.r2l(xa.range[0]);
-            rng[2] = xa.r2l(xa.range[1]);
-          }
-          var ya = getFromId(gd, trace._diag[i][1]);
-          if (ya) {
-            rng[1] = ya.r2l(ya.range[0]);
-            rng[3] = ya.r2l(ya.range[1]);
-          }
-        }
-        if (scene.selectBatch.length || scene.unselectBatch.length) {
-          scene.matrix.update({ ranges }, { ranges });
-        } else {
-          scene.matrix.update({ ranges });
-        }
-      }
-      function updateGrid(gd) {
-        var fullLayout = gd._fullLayout;
-        var regl = fullLayout._glcanvas.data()[0].regl;
-        var splomGrid = fullLayout._splomGrid;
-        if (!splomGrid) {
-          splomGrid = fullLayout._splomGrid = createLine(regl);
-        }
-        splomGrid.update(makeGridData(gd));
-      }
-      function makeGridData(gd) {
-        var plotGlPixelRatio = gd._context.plotGlPixelRatio;
-        var fullLayout = gd._fullLayout;
-        var gs = fullLayout._size;
-        var fullView = [
-          0,
-          0,
-          fullLayout.width * plotGlPixelRatio,
-          fullLayout.height * plotGlPixelRatio
-        ];
-        var lookup = {};
-        var k;
-        function push(prefix, ax, x0, x1, y0, y1) {
-          x0 *= plotGlPixelRatio;
-          x1 *= plotGlPixelRatio;
-          y0 *= plotGlPixelRatio;
-          y1 *= plotGlPixelRatio;
-          var lcolor = ax[prefix + "color"];
-          var lwidth = ax[prefix + "width"];
-          var key = String(lcolor + lwidth);
-          if (key in lookup) {
-            lookup[key].data.push(NaN, NaN, x0, x1, y0, y1);
-          } else {
-            lookup[key] = {
-              data: [x0, x1, y0, y1],
-              join: "rect",
-              thickness: lwidth * plotGlPixelRatio,
-              color: lcolor,
-              viewport: fullView,
-              range: fullView,
-              overlay: false
+          if (needsNewItem) {
+            allBinOpts[groupName2] = {
+              traces: [traceOut2],
+              dirs: [binDir2],
+              axType,
+              calendar: traceOut2[binDir2 + "calendar"] || ""
             };
           }
+          traceOut2["_" + binDir2 + "bingroup"] = groupName2;
         }
-        for (k in fullLayout._splomSubplots) {
-          var sp = fullLayout._plots[k];
-          var xa = sp.xaxis;
-          var ya = sp.yaxis;
-          var xVals = xa._gridVals;
-          var yVals = ya._gridVals;
-          var xOffset = xa._offset;
-          var xLength = xa._length;
-          var yLength = ya._length;
-          var yOffset = gs.b + ya.domain[0] * gs.h;
-          var ym = -ya._m;
-          var yb = -ym * ya.r2l(ya.range[0], ya.calendar);
-          var x, y;
-          if (xa.showgrid) {
-            for (k = 0; k < xVals.length; k++) {
-              x = xOffset + xa.l2p(xVals[k].x);
-              push("grid", xa, x, yOffset, x, yOffset + yLength);
+        for (i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceIs(traceOut, "histogram")) {
+            histTraces.push(traceOut);
+            delete traceOut._xautoBinFinished;
+            delete traceOut._yautoBinFinished;
+            if (traceOut.type === "histogram") {
+              var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+              if (traceOut.marker) {
+                traceOut.marker.cornerradius = validateCornerradius(r);
+              }
             }
-          }
-          if (ya.showgrid) {
-            for (k = 0; k < yVals.length; k++) {
-              y = yOffset + yb + ym * yVals[k].x;
-              push("grid", ya, xOffset, y, xOffset + xLength, y);
-            }
-          }
-          if (shouldShowZeroLine(gd, xa, ya)) {
-            x = xOffset + xa.l2p(0);
-            push("zeroline", xa, x, yOffset, x, yOffset + yLength);
-          }
-          if (shouldShowZeroLine(gd, ya, xa)) {
-            y = yOffset + yb + 0;
-            push("zeroline", ya, xOffset, y, xOffset + xLength, y);
-          }
-        }
-        var gridBatches = [];
-        for (k in lookup) {
-          gridBatches.push(lookup[k]);
-        }
-        return gridBatches;
-      }
-      function clean(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        var lookup = {};
-        var i;
-        if (oldFullLayout._splomScenes) {
-          for (i = 0; i < newFullData.length; i++) {
-            var newTrace = newFullData[i];
-            if (newTrace.type === "splom") {
-              lookup[newTrace.uid] = 1;
-            }
-          }
-          for (i = 0; i < oldFullData.length; i++) {
-            var oldTrace = oldFullData[i];
-            if (!lookup[oldTrace.uid]) {
-              var scene = oldFullLayout._splomScenes[oldTrace.uid];
-              if (scene && scene.destroy) scene.destroy();
-              oldFullLayout._splomScenes[oldTrace.uid] = null;
-              delete oldFullLayout._splomScenes[oldTrace.uid];
+            if (!traceIs(traceOut, "2dMap")) {
+              handleGroupingDefaults(traceOut._input, traceOut, fullLayout, coerce, fullLayout.barmode);
             }
           }
         }
-        if (Object.keys(oldFullLayout._splomScenes || {}).length === 0) {
-          delete oldFullLayout._splomScenes;
-        }
-        if (oldFullLayout._splomGrid && (!newFullLayout._hasOnlyLargeSploms && oldFullLayout._hasOnlyLargeSploms)) {
-          oldFullLayout._splomGrid.destroy();
-          oldFullLayout._splomGrid = null;
-          delete oldFullLayout._splomGrid;
-        }
-        Cartesian.clean(newFullData, newFullLayout, oldFullData, oldFullLayout);
-      }
-      module.exports = {
-        name: SPLOM,
-        attr: Cartesian.attr,
-        attrRegex: Cartesian.attrRegex,
-        layoutAttributes: Cartesian.layoutAttributes,
-        supplyLayoutDefaults: Cartesian.supplyLayoutDefaults,
-        drawFramework: Cartesian.drawFramework,
-        plot,
-        drag,
-        updateGrid,
-        clean,
-        updateFx: Cartesian.updateFx,
-        toSVG: Cartesian.toSVG,
-        reglPrecompiled
-      };
-    }
-  });
-
-  // src/traces/splom/index.js
-  var require_splom = __commonJS({
-    "src/traces/splom/index.js"(exports, module) {
-      "use strict";
-      var index = require_base_index2();
-      index.basePlotModule = require_base_plot(), module.exports = index;
-    }
-  });
-
-  // lib/splom.js
-  var require_splom2 = __commonJS({
-    "lib/splom.js"(exports, module) {
-      "use strict";
-      module.exports = require_splom();
-    }
-  });
-
-  // src/traces/parcoords/attributes.js
-  var require_attributes25 = __commonJS({
-    "src/traces/parcoords/attributes.js"(exports, module) {
-      "use strict";
-      var colorScaleAttrs = require_attributes8();
-      var axesAttrs = require_layout_attributes4();
-      var fontAttrs = require_font_attributes();
-      var domainAttrs = require_domain().attributes;
-      var extendFlat = require_extend().extendFlat;
-      var templatedArray = require_plot_template().templatedArray;
-      module.exports = {
-        domain: domainAttrs({ name: "parcoords", trace: true, editType: "plot" }),
-        labelangle: {
-          valType: "angle",
-          dflt: 0,
-          editType: "plot"
-        },
-        labelside: {
-          valType: "enumerated",
-          values: ["top", "bottom"],
-          dflt: "top",
-          editType: "plot"
-        },
-        labelfont: fontAttrs({
-          editType: "plot"
-        }),
-        tickfont: fontAttrs({
-          autoShadowDflt: true,
-          editType: "plot"
-        }),
-        rangefont: fontAttrs({
-          editType: "plot"
-        }),
-        dimensions: templatedArray("dimension", {
-          label: {
-            valType: "string",
-            editType: "plot"
-          },
-          // TODO: better way to determine ordinal vs continuous axes,
-          // so users can use tickvals/ticktext with a continuous axis.
-          tickvals: extendFlat({}, axesAttrs.tickvals, {
-            editType: "plot"
-          }),
-          ticktext: extendFlat({}, axesAttrs.ticktext, {
-            editType: "plot"
-          }),
-          tickformat: extendFlat({}, axesAttrs.tickformat, {
-            editType: "plot"
-          }),
-          visible: {
-            valType: "boolean",
-            dflt: true,
-            editType: "plot"
-          },
-          range: {
-            valType: "info_array",
-            items: [
-              { valType: "number", editType: "plot" },
-              { valType: "number", editType: "plot" }
-            ],
-            editType: "plot"
-          },
-          constraintrange: {
-            valType: "info_array",
-            freeLength: true,
-            dimensions: "1-2",
-            items: [
-              { valType: "any", editType: "plot" },
-              { valType: "any", editType: "plot" }
-            ],
-            editType: "plot"
-          },
-          multiselect: {
-            valType: "boolean",
-            dflt: true,
-            editType: "plot"
-          },
-          values: {
-            valType: "data_array",
-            editType: "calc"
-          },
-          editType: "calc"
-        }),
-        line: extendFlat(
-          { editType: "calc" },
-          colorScaleAttrs("line", {
-            // the default autocolorscale isn't quite usable for parcoords due to context ambiguity around 0 (grey, off-white)
-            // autocolorscale therefore defaults to false too, to avoid being overridden by the blue-white-red autocolor palette
-            colorscaleDflt: "Viridis",
-            autoColorDflt: false,
-            editTypeOverride: "calc"
-          })
-        ),
-        unselected: {
-          line: {
-            color: {
-              valType: "color",
-              dflt: "#7f7f7f",
-              editType: "plot"
-            },
-            opacity: {
-              valType: "number",
-              min: 0,
-              max: 1,
-              dflt: "auto",
-              editType: "plot"
-            },
-            editType: "plot"
-          },
-          editType: "plot"
-        }
-      };
-    }
-  });
-
-  // src/traces/parcoords/constants.js
-  var require_constants15 = __commonJS({
-    "src/traces/parcoords/constants.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        maxDimensionCount: 60,
-        // this cannot be increased without WebGL code refactoring
-        overdrag: 45,
-        verticalPadding: 2,
-        // otherwise, horizontal lines on top or bottom are of lower width
-        tickDistance: 50,
-        canvasPixelRatio: 1,
-        blockLineCount: 5e3,
-        layers: ["contextLineLayer", "focusLineLayer", "pickLineLayer"],
-        axisTitleOffset: 28,
-        axisExtentOffset: 10,
-        bar: {
-          width: 4,
-          // Visible width of the filter bar
-          captureWidth: 10,
-          // Mouse-sensitive width for interaction (Fitts law)
-          fillColor: "magenta",
-          // Color of the filter bar fill
-          fillOpacity: 1,
-          // Filter bar fill opacity
-          snapDuration: 150,
-          // tween duration in ms for brush snap for ordinal axes
-          snapRatio: 0.25,
-          // ratio of bar extension relative to the distance between two adjacent ordinal values
-          snapClose: 0.01,
-          // fraction of inter-value distance to snap to the closer one, even if you're not over it
-          strokeOpacity: 1,
-          // Filter bar side stroke opacity
-          strokeWidth: 1,
-          // Filter bar side stroke width in pixels
-          handleHeight: 8,
-          // Height of the filter bar vertical resize areas on top and bottom
-          handleOpacity: 1,
-          // Opacity of the filter bar vertical resize areas on top and bottom
-          handleOverlap: 0
-          // A larger than 0 value causes overlaps with the filter bar, represented as pixels
-        },
-        cn: {
-          axisExtentText: "axis-extent-text",
-          parcoordsLineLayers: "parcoords-line-layers",
-          parcoordsLineLayer: "parcoords-lines",
-          parcoords: "parcoords",
-          parcoordsControlView: "parcoords-control-view",
-          yAxis: "y-axis",
-          axisOverlays: "axis-overlays",
-          axis: "axis",
-          axisHeading: "axis-heading",
-          axisTitle: "axis-title",
-          axisExtent: "axis-extent",
-          axisExtentTop: "axis-extent-top",
-          axisExtentTopText: "axis-extent-top-text",
-          axisExtentBottom: "axis-extent-bottom",
-          axisExtentBottomText: "axis-extent-bottom-text",
-          axisBrush: "axis-brush"
-        },
-        id: {
-          filterBarPattern: "filter-bar-pattern"
-        }
-      };
-    }
-  });
-
-  // src/lib/gup.js
-  var require_gup = __commonJS({
-    "src/lib/gup.js"(exports, module) {
-      "use strict";
-      var identity = require_identity2();
-      function wrap(d) {
-        return [d];
-      }
-      module.exports = {
-        // The D3 data binding concept and the General Update Pattern promotes the idea of
-        // traversing into the scenegraph by using the `.data(fun, keyFun)` call.
-        // The `fun` is most often a `repeat`, ie. the elements beneath a `<g>` element need
-        // access to the same data, or a `descend`, which fans a scenegraph node into a bunch of
-        // of elements, e.g. points, lines, rows, requiring an array as input.
-        // The role of the `keyFun` is to identify what elements are being entered/exited/updated,
-        // otherwise D3 reverts to using a plain index which would screw up `transition`s.
-        keyFun: function(d) {
-          return d.key;
-        },
-        repeat: wrap,
-        descend: identity,
-        // Plotly.js uses a convention of storing the actual contents of the `calcData` as the
-        // element zero of a container array. These helpers are just used for clarity as a
-        // newcomer to the codebase may not know what the `[0]` is, and whether there can be further
-        // elements (not atm).
-        wrap,
-        unwrap: function(d) {
-          return d[0];
-        }
-      };
-    }
-  });
-
-  // src/traces/parcoords/axisbrush.js
-  var require_axisbrush = __commonJS({
-    "src/traces/parcoords/axisbrush.js"(exports, module) {
-      "use strict";
-      var c = require_constants15();
-      var d3 = require_d3();
-      var keyFun = require_gup().keyFun;
-      var repeat = require_gup().repeat;
-      var sortAsc = require_lib().sorterAsc;
-      var strTranslate = require_lib().strTranslate;
-      var snapRatio = c.bar.snapRatio;
-      function snapOvershoot(v, vAdjacent) {
-        return v * (1 - snapRatio) + vAdjacent * snapRatio;
-      }
-      var snapClose = c.bar.snapClose;
-      function closeToCovering(v, vAdjacent) {
-        return v * (1 - snapClose) + vAdjacent * snapClose;
-      }
-      function ordinalScaleSnap(isHigh, a, v, existingRanges) {
-        if (overlappingExisting(v, existingRanges)) return v;
-        var dir = isHigh ? -1 : 1;
-        var first = 0;
-        var last = a.length - 1;
-        if (dir < 0) {
-          var tmp = first;
-          first = last;
-          last = tmp;
-        }
-        var aHere = a[first];
-        var aPrev = aHere;
-        for (var i = first; dir * i < dir * last; i += dir) {
-          var nextI = i + dir;
-          var aNext = a[nextI];
-          if (dir * v < dir * closeToCovering(aHere, aNext)) return snapOvershoot(aHere, aPrev);
-          if (dir * v < dir * aNext || nextI === last) return snapOvershoot(aNext, aHere);
-          aPrev = aHere;
-          aHere = aNext;
-        }
-      }
-      function overlappingExisting(v, existingRanges) {
-        for (var i = 0; i < existingRanges.length; i++) {
-          if (v >= existingRanges[i][0] && v <= existingRanges[i][1]) return true;
-        }
-        return false;
-      }
-      function barHorizontalSetup(selection) {
-        selection.attr("x", -c.bar.captureWidth / 2).attr("width", c.bar.captureWidth);
-      }
-      function backgroundBarHorizontalSetup(selection) {
-        selection.attr("visibility", "visible").style("visibility", "visible").attr("fill", "yellow").attr("opacity", 0);
-      }
-      function setHighlight(d) {
-        if (!d.brush.filterSpecified) {
-          return "0," + d.height;
-        }
-        var pixelRanges = unitToPx(d.brush.filter.getConsolidated(), d.height);
-        var dashArray = [0];
-        var p, sectionHeight, iNext;
-        var currentGap = pixelRanges.length ? pixelRanges[0][0] : null;
-        for (var i = 0; i < pixelRanges.length; i++) {
-          p = pixelRanges[i];
-          sectionHeight = p[1] - p[0];
-          dashArray.push(currentGap);
-          dashArray.push(sectionHeight);
-          iNext = i + 1;
-          if (iNext < pixelRanges.length) {
-            currentGap = pixelRanges[iNext][0] - p[1];
+        var alignmentOpts = fullLayout._alignmentOpts || {};
+        for (i = 0; i < histTraces.length; i++) {
+          traceOut = histTraces[i];
+          groupName = "";
+          if (!traceIs(traceOut, "2dMap")) {
+            binDir = orientation2binDir(traceOut);
+            if (fullLayout.barmode === "group" && traceOut.alignmentgroup) {
+              var pa = traceOut[binDir + "axis"];
+              var aGroupId = getAxisGroup(fullLayout, pa) + traceOut.orientation;
+              if ((alignmentOpts[aGroupId] || {})[traceOut.alignmentgroup]) {
+                groupName = aGroupId;
+              }
+            }
+            if (!groupName && fullLayout.barmode !== "overlay") {
+              groupName = getAxisGroup(fullLayout, traceOut.xaxis) + getAxisGroup(fullLayout, traceOut.yaxis) + orientation2binDir(traceOut);
+            }
+          }
+          if (groupName) {
+            if (!mustMatchTracesLookup[groupName]) {
+              mustMatchTracesLookup[groupName] = [];
+            }
+            mustMatchTracesLookup[groupName].push(traceOut);
+          } else {
+            otherTracesList.push(traceOut);
           }
         }
-        dashArray.push(d.height);
-        return dashArray;
-      }
-      function unitToPx(unitRanges, height) {
-        return unitRanges.map(function(pr) {
-          return pr.map(function(v) {
-            return Math.max(0, v * height);
-          }).sort(sortAsc);
-        });
-      }
-      function getRegion(fPix, y) {
-        var pad = c.bar.handleHeight;
-        if (y > fPix[1] + pad || y < fPix[0] - pad) return;
-        if (y >= 0.9 * fPix[1] + 0.1 * fPix[0]) return "n";
-        if (y <= 0.9 * fPix[0] + 0.1 * fPix[1]) return "s";
-        return "ns";
-      }
-      function clearCursor() {
-        d3.select(document.body).style("cursor", null);
-      }
-      function styleHighlight(selection) {
-        selection.attr("stroke-dasharray", setHighlight);
-      }
-      function renderHighlight(root, tweenCallback) {
-        var bar = d3.select(root).selectAll(".highlight, .highlight-shadow");
-        var barToStyle = tweenCallback ? bar.transition().duration(c.bar.snapDuration).each("end", tweenCallback) : bar;
-        styleHighlight(barToStyle);
-      }
-      function getInterval(d, y) {
-        var b = d.brush;
-        var active = b.filterSpecified;
-        var closestInterval = NaN;
-        var out = {};
-        var i;
-        if (active) {
-          var height = d.height;
-          var intervals = b.filter.getConsolidated();
-          var pixIntervals = unitToPx(intervals, height);
-          var hoveredInterval = NaN;
-          var previousInterval = NaN;
-          var nextInterval = NaN;
-          for (i = 0; i <= pixIntervals.length; i++) {
-            var p = pixIntervals[i];
-            if (p && p[0] <= y && y <= p[1]) {
-              hoveredInterval = i;
-              break;
-            } else {
-              previousInterval = i ? i - 1 : NaN;
-              if (p && p[0] > y) {
-                nextInterval = i;
+        for (groupName in mustMatchTracesLookup) {
+          traces = mustMatchTracesLookup[groupName];
+          if (traces.length === 1) {
+            otherTracesList.push(traces[0]);
+            continue;
+          }
+          var binGroupFound = false;
+          if (traces.length) {
+            traceOut = traces[0];
+            binGroupFound = coerce("bingroup");
+          }
+          groupName = binGroupFound || groupName;
+          for (i = 0; i < traces.length; i++) {
+            traceOut = traces[i];
+            var bingroupIn = traceOut._input.bingroup;
+            if (bingroupIn && bingroupIn !== groupName) {
+              Lib.warn([
+                "Trace",
+                traceOut.index,
+                "must match",
+                "within bingroup",
+                groupName + ".",
+                "Ignoring its bingroup:",
+                bingroupIn,
+                "setting."
+              ].join(" "));
+            }
+            traceOut.bingroup = groupName;
+            fillBinOpts(traceOut, groupName, orientation2binDir(traceOut));
+          }
+        }
+        for (i = 0; i < otherTracesList.length; i++) {
+          traceOut = otherTracesList[i];
+          var binGroup = coerce("bingroup");
+          if (traceIs(traceOut, "2dMap")) {
+            for (k = 0; k < 2; k++) {
+              binDir = BINDIRECTIONS[k];
+              var binGroupInDir = coerce(
+                binDir + "bingroup",
+                binGroup ? binGroup + "__" + binDir : null
+              );
+              fillBinOpts(traceOut, binGroupInDir, binDir);
+            }
+          } else {
+            fillBinOpts(traceOut, binGroup, orientation2binDir(traceOut));
+          }
+        }
+        for (groupName in allBinOpts) {
+          var binOpts = allBinOpts[groupName];
+          traces = binOpts.traces;
+          for (j = 0; j < BINATTRS.length; j++) {
+            var attrSpec = BINATTRS[j];
+            var attr = attrSpec.name;
+            var aStr;
+            var autoVals;
+            if (attr === "nbins" && binOpts.sizeFound) continue;
+            for (i = 0; i < traces.length; i++) {
+              traceOut = traces[i];
+              binDir = binOpts.dirs[i];
+              aStr = attrSpec.aStr[binDir];
+              if (nestedProperty(traceOut._input, aStr).get() !== void 0) {
+                binOpts[attr] = coerce(aStr);
+                binOpts[attr + "Found"] = true;
                 break;
               }
+              autoVals = (traceOut._autoBin || {})[binDir] || {};
+              if (autoVals[attr]) {
+                nestedProperty(traceOut, aStr).set(autoVals[attr]);
+              }
             }
-          }
-          closestInterval = hoveredInterval;
-          if (isNaN(closestInterval)) {
-            if (isNaN(previousInterval) || isNaN(nextInterval)) {
-              closestInterval = isNaN(previousInterval) ? nextInterval : previousInterval;
-            } else {
-              closestInterval = y - pixIntervals[previousInterval][1] < pixIntervals[nextInterval][0] - y ? previousInterval : nextInterval;
+            if (attr === "start" || attr === "end") {
+              for (; i < traces.length; i++) {
+                traceOut = traces[i];
+                if (traceOut["_" + binDir + "bingroup"]) {
+                  autoVals = (traceOut._autoBin || {})[binDir] || {};
+                  coerce(aStr, autoVals[attr]);
+                }
+              }
             }
-          }
-          if (!isNaN(closestInterval)) {
-            var fPix = pixIntervals[closestInterval];
-            var region = getRegion(fPix, y);
-            if (region) {
-              out.interval = intervals[closestInterval];
-              out.intervalPix = fPix;
-              out.region = region;
-            }
-          }
-        }
-        if (d.ordinal && !out.region) {
-          var a = d.unitTickvals;
-          var unitLocation = d.unitToPaddedPx.invert(y);
-          for (i = 0; i < a.length; i++) {
-            var rangei = [
-              a[Math.max(i - 1, 0)] * 0.25 + a[i] * 0.75,
-              a[Math.min(i + 1, a.length - 1)] * 0.25 + a[i] * 0.75
-            ];
-            if (unitLocation >= rangei[0] && unitLocation <= rangei[1]) {
-              out.clickableOrdinalRange = rangei;
-              break;
+            if (attr === "nbins" && !binOpts.sizeFound && !binOpts.nbinsFound) {
+              traceOut = traces[0];
+              binOpts[attr] = coerce(aStr);
             }
           }
         }
-        return out;
-      }
-      function dragstart(lThis, d) {
-        d3.event.sourceEvent.stopPropagation();
-        var y = d.height - d3.mouse(lThis)[1] - 2 * c.verticalPadding;
-        var unitLocation = d.unitToPaddedPx.invert(y);
-        var b = d.brush;
-        var interval = getInterval(d, y);
-        var unitRange = interval.interval;
-        var s = b.svgBrush;
-        s.wasDragged = false;
-        s.grabbingBar = interval.region === "ns";
-        if (s.grabbingBar) {
-          var pixelRange = unitRange.map(d.unitToPaddedPx);
-          s.grabPoint = y - pixelRange[0] - c.verticalPadding;
-          s.barLength = pixelRange[1] - pixelRange[0];
-        }
-        s.clickableOrdinalRange = interval.clickableOrdinalRange;
-        s.stayingIntervals = d.multiselect && b.filterSpecified ? b.filter.getConsolidated() : [];
-        if (unitRange) {
-          s.stayingIntervals = s.stayingIntervals.filter(function(int2) {
-            return int2[0] !== unitRange[0] && int2[1] !== unitRange[1];
-          });
-        }
-        s.startExtent = interval.region ? unitRange[interval.region === "s" ? 1 : 0] : unitLocation;
-        d.parent.inBrushDrag = true;
-        s.brushStartCallback();
-      }
-      function drag(lThis, d) {
-        d3.event.sourceEvent.stopPropagation();
-        var y = d.height - d3.mouse(lThis)[1] - 2 * c.verticalPadding;
-        var s = d.brush.svgBrush;
-        s.wasDragged = true;
-        s._dragging = true;
-        if (s.grabbingBar) {
-          s.newExtent = [y - s.grabPoint, y + s.barLength - s.grabPoint].map(d.unitToPaddedPx.invert);
-        } else {
-          s.newExtent = [s.startExtent, d.unitToPaddedPx.invert(y)].sort(sortAsc);
-        }
-        d.brush.filterSpecified = true;
-        s.extent = s.stayingIntervals.concat([s.newExtent]);
-        s.brushCallback(d);
-        renderHighlight(lThis.parentNode);
-      }
-      function dragend(lThis, d) {
-        var brush = d.brush;
-        var filter = brush.filter;
-        var s = brush.svgBrush;
-        if (!s._dragging) {
-          mousemove(lThis, d);
-          drag(lThis, d);
-          d.brush.svgBrush.wasDragged = false;
-        }
-        s._dragging = false;
-        var e = d3.event;
-        e.sourceEvent.stopPropagation();
-        var grabbingBar = s.grabbingBar;
-        s.grabbingBar = false;
-        s.grabLocation = void 0;
-        d.parent.inBrushDrag = false;
-        clearCursor();
-        if (!s.wasDragged) {
-          s.wasDragged = void 0;
-          if (s.clickableOrdinalRange) {
-            if (brush.filterSpecified && d.multiselect) {
-              s.extent.push(s.clickableOrdinalRange);
-            } else {
-              s.extent = [s.clickableOrdinalRange];
-              brush.filterSpecified = true;
-            }
-          } else if (grabbingBar) {
-            s.extent = s.stayingIntervals;
-            if (s.extent.length === 0) {
-              brushClear(brush);
-            }
-          } else {
-            brushClear(brush);
-          }
-          s.brushCallback(d);
-          renderHighlight(lThis.parentNode);
-          s.brushEndCallback(brush.filterSpecified ? filter.getConsolidated() : []);
-          return;
-        }
-        var mergeIntervals = function() {
-          filter.set(filter.getConsolidated());
-        };
-        if (d.ordinal) {
-          var a = d.unitTickvals;
-          if (a[a.length - 1] < a[0]) a.reverse();
-          s.newExtent = [
-            ordinalScaleSnap(0, a, s.newExtent[0], s.stayingIntervals),
-            ordinalScaleSnap(1, a, s.newExtent[1], s.stayingIntervals)
-          ];
-          var hasNewExtent = s.newExtent[1] > s.newExtent[0];
-          s.extent = s.stayingIntervals.concat(hasNewExtent ? [s.newExtent] : []);
-          if (!s.extent.length) {
-            brushClear(brush);
-          }
-          s.brushCallback(d);
-          if (hasNewExtent) {
-            renderHighlight(lThis.parentNode, mergeIntervals);
-          } else {
-            mergeIntervals();
-            renderHighlight(lThis.parentNode);
-          }
-        } else {
-          mergeIntervals();
-        }
-        s.brushEndCallback(brush.filterSpecified ? filter.getConsolidated() : []);
-      }
-      function mousemove(lThis, d) {
-        var y = d.height - d3.mouse(lThis)[1] - 2 * c.verticalPadding;
-        var interval = getInterval(d, y);
-        var cursor = "crosshair";
-        if (interval.clickableOrdinalRange) cursor = "pointer";
-        else if (interval.region) cursor = interval.region + "-resize";
-        d3.select(document.body).style("cursor", cursor);
-      }
-      function attachDragBehavior(selection) {
-        selection.on("mousemove", function(d) {
-          d3.event.preventDefault();
-          if (!d.parent.inBrushDrag) mousemove(this, d);
-        }).on("mouseleave", function(d) {
-          if (!d.parent.inBrushDrag) clearCursor();
-        }).call(
-          d3.behavior.drag().on("dragstart", function(d) {
-            dragstart(this, d);
-          }).on("drag", function(d) {
-            drag(this, d);
-          }).on("dragend", function(d) {
-            dragend(this, d);
-          })
-        );
-      }
-      function startAsc(a, b) {
-        return a[0] - b[0];
-      }
-      function renderAxisBrush(axisBrush, paperColor, gd) {
-        var isStatic = gd._context.staticPlot;
-        var background = axisBrush.selectAll(".background").data(repeat);
-        background.enter().append("rect").classed("background", true).call(barHorizontalSetup).call(backgroundBarHorizontalSetup).style("pointer-events", isStatic ? "none" : "auto").attr("transform", strTranslate(0, c.verticalPadding));
-        background.call(attachDragBehavior).attr("height", function(d) {
-          return d.height - c.verticalPadding;
-        });
-        var highlightShadow = axisBrush.selectAll(".highlight-shadow").data(repeat);
-        highlightShadow.enter().append("line").classed("highlight-shadow", true).attr("x", -c.bar.width / 2).attr("stroke-width", c.bar.width + c.bar.strokeWidth).attr("stroke", paperColor).attr("opacity", c.bar.strokeOpacity).attr("stroke-linecap", "butt");
-        highlightShadow.attr("y1", function(d) {
-          return d.height;
-        }).call(styleHighlight);
-        var highlight = axisBrush.selectAll(".highlight").data(repeat);
-        highlight.enter().append("line").classed("highlight", true).attr("x", -c.bar.width / 2).attr("stroke-width", c.bar.width - c.bar.strokeWidth).attr("stroke", c.bar.fillColor).attr("opacity", c.bar.fillOpacity).attr("stroke-linecap", "butt");
-        highlight.attr("y1", function(d) {
-          return d.height;
-        }).call(styleHighlight);
-      }
-      function ensureAxisBrush(axisOverlays, paperColor, gd) {
-        var axisBrush = axisOverlays.selectAll("." + c.cn.axisBrush).data(repeat, keyFun);
-        axisBrush.enter().append("g").classed(c.cn.axisBrush, true);
-        renderAxisBrush(axisBrush, paperColor, gd);
-      }
-      function getBrushExtent(brush) {
-        return brush.svgBrush.extent.map(function(e) {
-          return e.slice();
-        });
-      }
-      function brushClear(brush) {
-        brush.filterSpecified = false;
-        brush.svgBrush.extent = [[-Infinity, Infinity]];
-      }
-      function axisBrushMoved(callback) {
-        return function axisBrushMoved2(dimension) {
-          var brush = dimension.brush;
-          var extent = getBrushExtent(brush);
-          var newExtent = extent.slice();
-          brush.filter.set(newExtent);
-          callback();
-        };
-      }
-      function dedupeRealRanges(intervals) {
-        var queue = intervals.slice();
-        var result = [];
-        var currentInterval;
-        var current = queue.shift();
-        while (current) {
-          currentInterval = current.slice();
-          while ((current = queue.shift()) && current[0] <= /* right-open interval would need `<` */
-          currentInterval[1]) {
-            currentInterval[1] = Math.max(currentInterval[1], current[1]);
-          }
-          result.push(currentInterval);
-        }
-        if (result.length === 1 && result[0][0] > result[0][1]) {
-          result = [];
-        }
-        return result;
-      }
-      function makeFilter() {
-        var filter = [];
-        var consolidated;
-        var bounds;
-        return {
-          set: function(a) {
-            filter = a.map(function(d) {
-              return d.slice().sort(sortAsc);
-            }).sort(startAsc);
-            if (filter.length === 1 && filter[0][0] === -Infinity && filter[0][1] === Infinity) {
-              filter = [[0, -1]];
-            }
-            consolidated = dedupeRealRanges(filter);
-            bounds = filter.reduce(function(p, n) {
-              return [Math.min(p[0], n[0]), Math.max(p[1], n[1])];
-            }, [Infinity, -Infinity]);
-          },
-          get: function() {
-            return filter.slice();
-          },
-          getConsolidated: function() {
-            return consolidated;
-          },
-          getBounds: function() {
-            return bounds;
-          }
-        };
-      }
-      function makeBrush(state, rangeSpecified, initialRange, brushStartCallback, brushCallback, brushEndCallback) {
-        var filter = makeFilter();
-        filter.set(initialRange);
-        return {
-          filter,
-          filterSpecified: rangeSpecified,
-          // there's a difference between not filtering and filtering a non-proper subset
-          svgBrush: {
-            extent: [],
-            // this is where the svgBrush writes contents into
-            brushStartCallback,
-            brushCallback: axisBrushMoved(brushCallback),
-            brushEndCallback
-          }
-        };
-      }
-      function cleanRanges(ranges, dimension) {
-        if (Array.isArray(ranges[0])) {
-          ranges = ranges.map(function(ri) {
-            return ri.sort(sortAsc);
-          });
-          if (!dimension.multiselect) ranges = [ranges[0]];
-          else ranges = dedupeRealRanges(ranges.sort(startAsc));
-        } else ranges = [ranges.sort(sortAsc)];
-        if (dimension.tickvals) {
-          var sortedTickVals = dimension.tickvals.slice().sort(sortAsc);
-          ranges = ranges.map(function(ri) {
-            var rSnapped = [
-              ordinalScaleSnap(0, sortedTickVals, ri[0], []),
-              ordinalScaleSnap(1, sortedTickVals, ri[1], [])
-            ];
-            if (rSnapped[1] > rSnapped[0]) return rSnapped;
-          }).filter(function(ri) {
-            return ri;
-          });
-          if (!ranges.length) return;
-        }
-        return ranges.length > 1 ? ranges : ranges[0];
-      }
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_functions.js
+  var require_bin_functions = __commonJS({
+    "src/traces/histogram/bin_functions.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
       module.exports = {
-        makeBrush,
-        ensureAxisBrush,
-        cleanRanges
-      };
-    }
-  });
-
-  // src/traces/parcoords/defaults.js
-  var require_defaults21 = __commonJS({
-    "src/traces/parcoords/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var hasColorscale = require_helpers().hasColorscale;
-      var colorscaleDefaults = require_defaults2();
-      var handleDomainDefaults = require_domain().defaults;
-      var handleArrayContainerDefaults = require_array_container_defaults();
-      var Axes = require_axes();
-      var attributes = require_attributes25();
-      var axisBrush = require_axisbrush();
-      var maxDimensionCount = require_constants15().maxDimensionCount;
-      var mergeLength = require_merge_length();
-      function handleLineDefaults(traceIn, traceOut, defaultColor, layout, coerce) {
-        var lineColor = coerce("line.color", defaultColor);
-        if (hasColorscale(traceIn, "line") && Lib.isArrayOrTypedArray(lineColor)) {
-          if (lineColor.length) {
-            coerce("line.colorscale");
-            colorscaleDefaults(traceIn, traceOut, layout, coerce, { prefix: "line.", cLetter: "c" });
-            return lineColor.length;
-          } else {
-            traceOut.line.color = defaultColor;
+        count: function(n, i, size) {
+          size[n]++;
+          return 1;
+        },
+        sum: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            size[n] += v;
+            return v;
           }
-        }
-        return Infinity;
-      }
-      function dimensionDefaults(dimensionIn, dimensionOut, parentOut, opts) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(dimensionIn, dimensionOut, attributes.dimensions, attr, dflt);
-        }
-        var values = coerce("values");
-        var visible = coerce("visible");
-        if (!(values && values.length)) {
-          visible = dimensionOut.visible = false;
-        }
-        if (visible) {
-          coerce("label");
-          coerce("tickvals");
-          coerce("ticktext");
-          coerce("tickformat");
-          var range = coerce("range");
-          dimensionOut._ax = {
-            _id: "y",
-            type: "linear",
-            showexponent: "all",
-            exponentformat: "B",
-            range
-          };
-          Axes.setConvert(dimensionOut._ax, opts.layout);
-          coerce("multiselect");
-          var constraintRange = coerce("constraintrange");
-          if (constraintRange) {
-            dimensionOut.constraintrange = axisBrush.cleanRanges(constraintRange, dimensionOut);
-          }
-        }
-      }
-      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var dimensionsIn = traceIn.dimensions;
-        if (Array.isArray(dimensionsIn) && dimensionsIn.length > maxDimensionCount) {
-          Lib.log("parcoords traces support up to " + maxDimensionCount + " dimensions at the moment");
-          dimensionsIn.splice(maxDimensionCount);
-        }
-        var dimensions = handleArrayContainerDefaults(traceIn, traceOut, {
-          name: "dimensions",
-          layout,
-          handleItemDefaults: dimensionDefaults
-        });
-        var len = handleLineDefaults(traceIn, traceOut, defaultColor, layout, coerce);
-        handleDomainDefaults(traceOut, layout, coerce);
-        if (!Array.isArray(dimensions) || !dimensions.length) {
-          traceOut.visible = false;
-        }
-        mergeLength(traceOut, dimensions, "values", len);
-        var fontDflt = Lib.extendFlat({}, layout.font, {
-          size: Math.round(layout.font.size / 1.2)
-        });
-        Lib.coerceFont(coerce, "labelfont", fontDflt);
-        Lib.coerceFont(coerce, "tickfont", fontDflt, { autoShadowDflt: true });
-        Lib.coerceFont(coerce, "rangefont", fontDflt);
-        coerce("labelangle");
-        coerce("labelside");
-        coerce("unselected.line.color");
-        coerce("unselected.line.opacity");
-      };
-    }
-  });
-
-  // src/traces/parcoords/calc.js
-  var require_calc7 = __commonJS({
-    "src/traces/parcoords/calc.js"(exports, module) {
-      "use strict";
-      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
-      var Colorscale = require_colorscale();
-      var wrap = require_gup().wrap;
-      module.exports = function calc(gd, trace) {
-        var lineColor;
-        var cscale;
-        if (Colorscale.hasColorscale(trace, "line") && isArrayOrTypedArray(trace.line.color)) {
-          lineColor = trace.line.color;
-          cscale = Colorscale.extractOpts(trace.line).colorscale;
-          Colorscale.calc(gd, trace, {
-            vals: lineColor,
-            containerStr: "line",
-            cLetter: "c"
-          });
-        } else {
-          lineColor = constHalf(trace._length);
-          cscale = [[0, trace.line.color], [1, trace.line.color]];
-        }
-        return wrap({ lineColor, cscale });
-      };
-      function constHalf(len) {
-        var out = new Array(len);
-        for (var i = 0; i < len; i++) {
-          out[i] = 0.5;
-        }
-        return out;
-      }
-    }
-  });
-
-  // node_modules/color-parse/index.js
-  function parse(cstr) {
-    var _a, _b;
-    var m, parts = [], alpha = 1, space;
-    if (typeof cstr === "number") {
-      return { space: "rgb", values: [cstr >>> 16, (cstr & 65280) >>> 8, cstr & 255], alpha: 1 };
-    }
-    if (typeof cstr === "number") return { space: "rgb", values: [cstr >>> 16, (cstr & 65280) >>> 8, cstr & 255], alpha: 1 };
-    cstr = String(cstr).toLowerCase();
-    if (import_color_name.default[cstr]) {
-      parts = import_color_name.default[cstr].slice();
-      space = "rgb";
-    } else if (cstr === "transparent") {
-      alpha = 0;
-      space = "rgb";
-      parts = [0, 0, 0];
-    } else if (cstr[0] === "#") {
-      var base = cstr.slice(1);
-      var size = base.length;
-      var isShort = size <= 4;
-      alpha = 1;
-      if (isShort) {
-        parts = [
-          parseInt(base[0] + base[0], 16),
-          parseInt(base[1] + base[1], 16),
-          parseInt(base[2] + base[2], 16)
-        ];
-        if (size === 4) {
-          alpha = parseInt(base[3] + base[3], 16) / 255;
-        }
-      } else {
-        parts = [
-          parseInt(base[0] + base[1], 16),
-          parseInt(base[2] + base[3], 16),
-          parseInt(base[4] + base[5], 16)
-        ];
-        if (size === 8) {
-          alpha = parseInt(base[6] + base[7], 16) / 255;
-        }
-      }
-      if (!parts[0]) parts[0] = 0;
-      if (!parts[1]) parts[1] = 0;
-      if (!parts[2]) parts[2] = 0;
-      space = "rgb";
-    } else if (m = /^((?:rgba?|hs[lvb]a?|hwba?|cmyk?|xy[zy]|gray|lab|lchu?v?|[ly]uv|lms|oklch|oklab|color))\s*\(([^\)]*)\)/.exec(cstr)) {
-      var name = m[1];
-      space = name.replace(/a$/, "");
-      var dims = space === "cmyk" ? 4 : space === "gray" ? 1 : 3;
-      parts = m[2].trim().split(/\s*[,\/]\s*|\s+/);
-      if (space === "color") space = parts.shift();
-      parts = parts.map(function(x, i) {
-        if (x[x.length - 1] === "%") {
-          x = parseFloat(x) / 100;
-          if (i === 3) return x;
-          if (space === "rgb") return x * 255;
-          if (space[0] === "h") return x * 100;
-          if (space[0] === "l" && !i) return x * 100;
-          if (space === "lab") return x * 125;
-          if (space === "lch") return i < 2 ? x * 150 : x * 360;
-          if (space[0] === "o" && !i) return x;
-          if (space === "oklab") return x * 0.4;
-          if (space === "oklch") return i < 2 ? x * 0.4 : x * 360;
-          return x;
-        }
-        if (space[i] === "h" || i === 2 && space[space.length - 1] === "h") {
-          if (baseHues[x] !== void 0) return baseHues[x];
-          if (x.endsWith("deg")) return parseFloat(x);
-          if (x.endsWith("turn")) return parseFloat(x) * 360;
-          if (x.endsWith("grad")) return parseFloat(x) * 360 / 400;
-          if (x.endsWith("rad")) return parseFloat(x) * 180 / Math.PI;
-        }
-        if (x === "none") return 0;
-        return parseFloat(x);
-      });
-      alpha = parts.length > dims ? parts.pop() : 1;
-    } else if (/[0-9](?:\s|\/|,)/.test(cstr)) {
-      parts = cstr.match(/([0-9]+)/g).map(function(value) {
-        return parseFloat(value);
-      });
-      space = ((_b = (_a = cstr.match(/([a-z])/ig)) == null ? void 0 : _a.join("")) == null ? void 0 : _b.toLowerCase()) || "rgb";
-    }
-    return {
-      space,
-      values: parts,
-      alpha
-    };
-  }
-  var import_color_name, color_parse_default, baseHues;
-  var init_color_parse = __esm({
-    "node_modules/color-parse/index.js"() {
-      import_color_name = __toESM(require_color_name(), 1);
-      color_parse_default = parse;
-      baseHues = {
-        red: 0,
-        orange: 60,
-        yellow: 120,
-        green: 180,
-        blue: 240,
-        purple: 300
-      };
-    }
-  });
-
-  // node_modules/color-space/rgb.js
-  var rgb_default;
-  var init_rgb = __esm({
-    "node_modules/color-space/rgb.js"() {
-      rgb_default = {
-        name: "rgb",
-        min: [0, 0, 0],
-        max: [255, 255, 255],
-        channel: ["red", "green", "blue"],
-        alias: ["RGB"]
-      };
-    }
-  });
-
-  // node_modules/color-space/hsl.js
-  var hsl_default;
-  var init_hsl = __esm({
-    "node_modules/color-space/hsl.js"() {
-      init_rgb();
-      hsl_default = {
-        name: "hsl",
-        min: [0, 0, 0],
-        max: [360, 100, 100],
-        channel: ["hue", "saturation", "lightness"],
-        alias: ["HSL"],
-        rgb: function(hsl) {
-          var h = hsl[0] / 360, s = hsl[1] / 100, l = hsl[2] / 100, t1, t2, t3, rgb, val, i = 0;
-          if (s === 0) return val = l * 255, [val, val, val];
-          t2 = l < 0.5 ? l * (1 + s) : l + s - l * s;
-          t1 = 2 * l - t2;
-          rgb = [0, 0, 0];
-          for (; i < 3; ) {
-            t3 = h + 1 / 3 * -(i - 1);
-            t3 < 0 ? t3++ : t3 > 1 && t3--;
-            val = 6 * t3 < 1 ? t1 + (t2 - t1) * 6 * t3 : 2 * t3 < 1 ? t2 : 3 * t3 < 2 ? t1 + (t2 - t1) * (2 / 3 - t3) * 6 : t1;
-            rgb[i++] = val * 255;
-          }
-          return rgb;
-        }
-      };
-      rgb_default.hsl = function(rgb) {
-        var r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255, min = Math.min(r, g, b), max = Math.max(r, g, b), delta = max - min, h, s, l;
-        if (max === min) {
-          h = 0;
-        } else if (r === max) {
-          h = (g - b) / delta;
-        } else if (g === max) {
-          h = 2 + (b - r) / delta;
-        } else if (b === max) {
-          h = 4 + (r - g) / delta;
-        }
-        h = Math.min(h * 60, 360);
-        if (h < 0) {
-          h += 360;
-        }
-        l = (min + max) / 2;
-        if (max === min) {
-          s = 0;
-        } else if (l <= 0.5) {
-          s = delta / (max + min);
-        } else {
-          s = delta / (2 - max - min);
-        }
-        return [h, s * 100, l * 100];
-      };
-    }
-  });
-
-  // node_modules/color-rgba/index.js
-  var color_rgba_exports = {};
-  __export(color_rgba_exports, {
-    default: () => rgba
-  });
-  function rgba(color) {
-    if (Array.isArray(color) && color.raw) color = String.raw(...arguments);
-    if (color instanceof Number) color = +color;
-    var values, i, l;
-    var parsed = color_parse_default(color);
-    if (!parsed.space) return [];
-    const min = parsed.space[0] === "h" ? hsl_default.min : rgb_default.min;
-    const max = parsed.space[0] === "h" ? hsl_default.max : rgb_default.max;
-    values = Array(3);
-    values[0] = Math.min(Math.max(parsed.values[0], min[0]), max[0]);
-    values[1] = Math.min(Math.max(parsed.values[1], min[1]), max[1]);
-    values[2] = Math.min(Math.max(parsed.values[2], min[2]), max[2]);
-    if (parsed.space[0] === "h") {
-      values = hsl_default.rgb(values);
-    }
-    values.push(Math.min(Math.max(parsed.alpha, 0), 1));
-    return values;
-  }
-  var init_color_rgba = __esm({
-    "node_modules/color-rgba/index.js"() {
-      init_color_parse();
-      init_rgb();
-      init_hsl();
-    }
-  });
-
-  // src/traces/parcoords/helpers.js
-  var require_helpers14 = __commonJS({
-    "src/traces/parcoords/helpers.js"(exports) {
-      "use strict";
-      var isTypedArray = require_lib().isTypedArray;
-      exports.convertTypedArray = function(a) {
-        return isTypedArray(a) ? Array.prototype.slice.call(a) : a;
-      };
-      exports.isOrdinal = function(dimension) {
-        return !!dimension.tickvals;
-      };
-      exports.isVisible = function(dimension) {
-        return dimension.visible || !("visible" in dimension);
-      };
-    }
-  });
-
-  // src/traces/parcoords/lines.js
-  var require_lines = __commonJS({
-    "src/traces/parcoords/lines.js"(exports, module) {
-      "use strict";
-      var vertexShaderSource = [
-        "precision highp float;",
-        "",
-        "varying vec4 fragColor;",
-        "",
-        "attribute vec4 p01_04, p05_08, p09_12, p13_16,",
-        "               p17_20, p21_24, p25_28, p29_32,",
-        "               p33_36, p37_40, p41_44, p45_48,",
-        "               p49_52, p53_56, p57_60, colors;",
-        "",
-        "uniform mat4 dim0A, dim1A, dim0B, dim1B, dim0C, dim1C, dim0D, dim1D,",
-        "             loA, hiA, loB, hiB, loC, hiC, loD, hiD;",
-        "",
-        "uniform vec2 resolution, viewBoxPos, viewBoxSize;",
-        "uniform float maskHeight;",
-        "uniform float drwLayer; // 0: context, 1: focus, 2: pick",
-        "uniform vec4 contextColor;",
-        "uniform sampler2D maskTexture, palette;",
-        "",
-        "bool isPick    = (drwLayer > 1.5);",
-        "bool isContext = (drwLayer < 0.5);",
-        "",
-        "const vec4 ZEROS = vec4(0.0, 0.0, 0.0, 0.0);",
-        "const vec4 UNITS = vec4(1.0, 1.0, 1.0, 1.0);",
-        "",
-        "float val(mat4 p, mat4 v) {",
-        "    return dot(matrixCompMult(p, v) * UNITS, UNITS);",
-        "}",
-        "",
-        "float axisY(float ratio, mat4 A, mat4 B, mat4 C, mat4 D) {",
-        "    float y1 = val(A, dim0A) + val(B, dim0B) + val(C, dim0C) + val(D, dim0D);",
-        "    float y2 = val(A, dim1A) + val(B, dim1B) + val(C, dim1C) + val(D, dim1D);",
-        "    return y1 * (1.0 - ratio) + y2 * ratio;",
-        "}",
-        "",
-        "int iMod(int a, int b) {",
-        "    return a - b * (a / b);",
-        "}",
-        "",
-        "bool fOutside(float p, float lo, float hi) {",
-        "    return (lo < hi) && (lo > p || p > hi);",
-        "}",
-        "",
-        "bool vOutside(vec4 p, vec4 lo, vec4 hi) {",
-        "    return (",
-        "        fOutside(p[0], lo[0], hi[0]) ||",
-        "        fOutside(p[1], lo[1], hi[1]) ||",
-        "        fOutside(p[2], lo[2], hi[2]) ||",
-        "        fOutside(p[3], lo[3], hi[3])",
-        "    );",
-        "}",
-        "",
-        "bool mOutside(mat4 p, mat4 lo, mat4 hi) {",
-        "    return (",
-        "        vOutside(p[0], lo[0], hi[0]) ||",
-        "        vOutside(p[1], lo[1], hi[1]) ||",
-        "        vOutside(p[2], lo[2], hi[2]) ||",
-        "        vOutside(p[3], lo[3], hi[3])",
-        "    );",
-        "}",
-        "",
-        "bool outsideBoundingBox(mat4 A, mat4 B, mat4 C, mat4 D) {",
-        "    return mOutside(A, loA, hiA) ||",
-        "           mOutside(B, loB, hiB) ||",
-        "           mOutside(C, loC, hiC) ||",
-        "           mOutside(D, loD, hiD);",
-        "}",
-        "",
-        "bool outsideRasterMask(mat4 A, mat4 B, mat4 C, mat4 D) {",
-        "    mat4 pnts[4];",
-        "    pnts[0] = A;",
-        "    pnts[1] = B;",
-        "    pnts[2] = C;",
-        "    pnts[3] = D;",
-        "",
-        "    for(int i = 0; i < 4; ++i) {",
-        "        for(int j = 0; j < 4; ++j) {",
-        "            for(int k = 0; k < 4; ++k) {",
-        "                if(0 == iMod(",
-        "                    int(255.0 * texture2D(maskTexture,",
-        "                        vec2(",
-        "                            (float(i * 2 + j / 2) + 0.5) / 8.0,",
-        "                            (pnts[i][j][k] * (maskHeight - 1.0) + 1.0) / maskHeight",
-        "                        ))[3]",
-        "                    ) / int(pow(2.0, float(iMod(j * 4 + k, 8)))),",
-        "                    2",
-        "                )) return true;",
-        "            }",
-        "        }",
-        "    }",
-        "    return false;",
-        "}",
-        "",
-        "vec4 position(bool isContext, float v, mat4 A, mat4 B, mat4 C, mat4 D) {",
-        "    float x = 0.5 * sign(v) + 0.5;",
-        "    float y = axisY(x, A, B, C, D);",
-        "    float z = 1.0 - abs(v);",
-        "",
-        "    z += isContext ? 0.0 : 2.0 * float(",
-        "        outsideBoundingBox(A, B, C, D) ||",
-        "        outsideRasterMask(A, B, C, D)",
-        "    );",
-        "",
-        "    return vec4(",
-        "        2.0 * (vec2(x, y) * viewBoxSize + viewBoxPos) / resolution - 1.0,",
-        "        z,",
-        "        1.0",
-        "    );",
-        "}",
-        "",
-        "void main() {",
-        "    mat4 A = mat4(p01_04, p05_08, p09_12, p13_16);",
-        "    mat4 B = mat4(p17_20, p21_24, p25_28, p29_32);",
-        "    mat4 C = mat4(p33_36, p37_40, p41_44, p45_48);",
-        "    mat4 D = mat4(p49_52, p53_56, p57_60, ZEROS);",
-        "",
-        "    float v = colors[3];",
-        "",
-        "    gl_Position = position(isContext, v, A, B, C, D);",
-        "",
-        "    fragColor =",
-        "        isContext ? vec4(contextColor) :",
-        "        isPick ? vec4(colors.rgb, 1.0) : texture2D(palette, vec2(abs(v), 0.5));",
-        "}"
-      ].join("\n");
-      var fragmentShaderSource = [
-        "precision highp float;",
-        "",
-        "varying vec4 fragColor;",
-        "",
-        "void main() {",
-        "    gl_FragColor = fragColor;",
-        "}"
-      ].join("\n");
-      var maxDim = require_constants15().maxDimensionCount;
-      var Lib = require_lib();
-      var depthLimitEpsilon = 1e-6;
-      var maskHeight = 2048;
-      var dummyPixel = new Uint8Array(4);
-      var dataPixel = new Uint8Array(4);
-      var paletteTextureConfig = {
-        shape: [256, 1],
-        format: "rgba",
-        type: "uint8",
-        mag: "nearest",
-        min: "nearest"
-      };
-      function ensureDraw(regl) {
-        regl.read({
-          x: 0,
-          y: 0,
-          width: 1,
-          height: 1,
-          data: dummyPixel
-        });
-      }
-      function clear(regl, x, y, width, height) {
-        var gl = regl._gl;
-        gl.enable(gl.SCISSOR_TEST);
-        gl.scissor(x, y, width, height);
-        regl.clear({ color: [0, 0, 0, 0], depth: 1 });
-      }
-      function renderBlock(regl, glAes, renderState, blockLineCount, sampleCount, item) {
-        var rafKey = item.key;
-        function render(blockNumber) {
-          var count = Math.min(blockLineCount, sampleCount - blockNumber * blockLineCount);
-          if (blockNumber === 0) {
-            window.cancelAnimationFrame(renderState.currentRafs[rafKey]);
-            delete renderState.currentRafs[rafKey];
-            clear(regl, item.scissorX, item.scissorY, item.scissorWidth, item.viewBoxSize[1]);
-          }
-          if (renderState.clearOnly) {
-            return;
-          }
-          item.count = 2 * count;
-          item.offset = 2 * blockNumber * blockLineCount;
-          glAes(item);
-          if (blockNumber * blockLineCount + count < sampleCount) {
-            renderState.currentRafs[rafKey] = window.requestAnimationFrame(function() {
-              render(blockNumber + 1);
-            });
-          }
-          renderState.drawCompleted = false;
-        }
-        if (!renderState.drawCompleted) {
-          ensureDraw(regl);
-          renderState.drawCompleted = true;
-        }
-        render(0);
-      }
-      function adjustDepth(d) {
-        return Math.max(depthLimitEpsilon, Math.min(1 - depthLimitEpsilon, d));
-      }
-      function palette(unitToColor, opacity) {
-        var result = new Array(256);
-        for (var i = 0; i < 256; i++) {
-          result[i] = unitToColor(i / 255).concat(opacity);
-        }
-        return result;
-      }
-      function calcPickColor(i, rgbIndex) {
-        return (i >>> 8 * rgbIndex) % 256 / 255;
-      }
-      function makePoints(sampleCount, dims, color) {
-        var points = new Array(sampleCount * (maxDim + 4));
-        var n = 0;
-        for (var i = 0; i < sampleCount; i++) {
-          for (var k = 0; k < maxDim; k++) {
-            points[n++] = k < dims.length ? dims[k].paddedUnitValues[i] : 0.5;
-          }
-          points[n++] = calcPickColor(i, 2);
-          points[n++] = calcPickColor(i, 1);
-          points[n++] = calcPickColor(i, 0);
-          points[n++] = adjustDepth(color[i]);
-        }
-        return points;
-      }
-      function makeVecAttr(vecIndex, sampleCount, points) {
-        var pointPairs = new Array(sampleCount * 8);
-        var n = 0;
-        for (var i = 0; i < sampleCount; i++) {
-          for (var j = 0; j < 2; j++) {
-            for (var k = 0; k < 4; k++) {
-              var q = vecIndex * 4 + k;
-              var v = points[i * 64 + q];
-              if (q === 63 && j === 0) {
-                v *= -1;
-              }
-              pointPairs[n++] = v;
-            }
-          }
-        }
-        return pointPairs;
-      }
-      function pad2(num) {
-        var s = "0" + num;
-        return s.substr(s.length - 2);
-      }
-      function getAttrName(i) {
-        return i < maxDim ? "p" + pad2(i + 1) + "_" + pad2(i + 4) : "colors";
-      }
-      function setAttributes(attributes, sampleCount, points) {
-        for (var i = 0; i <= maxDim; i += 4) {
-          attributes[getAttrName(i)](makeVecAttr(i / 4, sampleCount, points));
-        }
-      }
-      function emptyAttributes(regl) {
-        var attributes = {};
-        for (var i = 0; i <= maxDim; i += 4) {
-          attributes[getAttrName(i)] = regl.buffer({ usage: "dynamic", type: "float", data: new Uint8Array(0) });
-        }
-        return attributes;
-      }
-      function makeItem(model, leftmost, rightmost, itemNumber, i0, i1, x, y, panelSizeX, panelSizeY, crossfilterDimensionIndex, drwLayer, constraints, plotGlPixelRatio) {
-        var dims = [[], []];
-        for (var k = 0; k < 64; k++) {
-          dims[0][k] = k === i0 ? 1 : 0;
-          dims[1][k] = k === i1 ? 1 : 0;
-        }
-        x *= plotGlPixelRatio;
-        y *= plotGlPixelRatio;
-        panelSizeX *= plotGlPixelRatio;
-        panelSizeY *= plotGlPixelRatio;
-        var overdrag = model.lines.canvasOverdrag * plotGlPixelRatio;
-        var domain = model.domain;
-        var canvasWidth = model.canvasWidth * plotGlPixelRatio;
-        var canvasHeight = model.canvasHeight * plotGlPixelRatio;
-        var padL = model.pad.l * plotGlPixelRatio;
-        var padB = model.pad.b * plotGlPixelRatio;
-        var layoutHeight = model.layoutHeight * plotGlPixelRatio;
-        var layoutWidth = model.layoutWidth * plotGlPixelRatio;
-        var deselectedLinesColor = model.deselectedLines.color;
-        var deselectedLinesOpacity = model.deselectedLines.opacity;
-        var itemModel = Lib.extendFlat({
-          key: crossfilterDimensionIndex,
-          resolution: [canvasWidth, canvasHeight],
-          viewBoxPos: [x + overdrag, y],
-          viewBoxSize: [panelSizeX, panelSizeY],
-          i0,
-          i1,
-          dim0A: dims[0].slice(0, 16),
-          dim0B: dims[0].slice(16, 32),
-          dim0C: dims[0].slice(32, 48),
-          dim0D: dims[0].slice(48, 64),
-          dim1A: dims[1].slice(0, 16),
-          dim1B: dims[1].slice(16, 32),
-          dim1C: dims[1].slice(32, 48),
-          dim1D: dims[1].slice(48, 64),
-          drwLayer,
-          contextColor: [
-            deselectedLinesColor[0] / 255,
-            deselectedLinesColor[1] / 255,
-            deselectedLinesColor[2] / 255,
-            deselectedLinesOpacity !== "auto" ? deselectedLinesColor[3] * deselectedLinesOpacity : Math.max(1 / 255, Math.pow(1 / model.lines.color.length, 1 / 3))
-          ],
-          scissorX: (itemNumber === leftmost ? 0 : x + overdrag) + (padL - overdrag) + layoutWidth * domain.x[0],
-          scissorWidth: (itemNumber === rightmost ? canvasWidth - x + overdrag : panelSizeX + 0.5) + (itemNumber === leftmost ? x + overdrag : 0),
-          scissorY: y + padB + layoutHeight * domain.y[0],
-          scissorHeight: panelSizeY,
-          viewportX: padL - overdrag + layoutWidth * domain.x[0],
-          viewportY: padB + layoutHeight * domain.y[0],
-          viewportWidth: canvasWidth,
-          viewportHeight: canvasHeight
-        }, constraints);
-        return itemModel;
-      }
-      function expandedPixelRange(bounds) {
-        var dh = maskHeight - 1;
-        var a = Math.max(0, Math.floor(bounds[0] * dh), 0);
-        var b = Math.min(dh, Math.ceil(bounds[1] * dh), dh);
-        return [
-          Math.min(a, b),
-          Math.max(a, b)
-        ];
-      }
-      module.exports = function(canvasGL, d) {
-        var isContext = d.context;
-        var isPick = d.pick;
-        var regl = d.regl;
-        var gl = regl._gl;
-        var supportedLineWidth = gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE);
-        var plotGlPixelRatio = Math.max(
-          supportedLineWidth[0],
-          Math.min(
-            supportedLineWidth[1],
-            d.viewModel.plotGlPixelRatio
-          )
-        );
-        var renderState = {
-          currentRafs: {},
-          drawCompleted: true,
-          clearOnly: false
-        };
-        var model;
-        var vm;
-        var initialDims;
-        var sampleCount;
-        var attributes = emptyAttributes(regl);
-        var maskTexture;
-        var paletteTexture = regl.texture(paletteTextureConfig);
-        var prevAxisOrder = [];
-        update(d);
-        var glAes = regl({
-          profile: false,
-          blend: {
-            enable: isContext,
-            func: {
-              srcRGB: "src alpha",
-              dstRGB: "one minus src alpha",
-              srcAlpha: 1,
-              dstAlpha: 1
-              // 'one minus src alpha'
-            },
-            equation: {
-              rgb: "add",
-              alpha: "add"
-            },
-            color: [0, 0, 0, 0]
-          },
-          depth: {
-            enable: !isContext,
-            mask: true,
-            func: "less",
-            range: [0, 1]
-          },
-          // for polygons
-          cull: {
-            enable: true,
-            face: "back"
-          },
-          scissor: {
-            enable: true,
-            box: {
-              x: regl.prop("scissorX"),
-              y: regl.prop("scissorY"),
-              width: regl.prop("scissorWidth"),
-              height: regl.prop("scissorHeight")
-            }
-          },
-          viewport: {
-            x: regl.prop("viewportX"),
-            y: regl.prop("viewportY"),
-            width: regl.prop("viewportWidth"),
-            height: regl.prop("viewportHeight")
-          },
-          dither: false,
-          vert: vertexShaderSource,
-          frag: fragmentShaderSource,
-          primitive: "lines",
-          lineWidth: plotGlPixelRatio,
-          attributes,
-          uniforms: {
-            resolution: regl.prop("resolution"),
-            viewBoxPos: regl.prop("viewBoxPos"),
-            viewBoxSize: regl.prop("viewBoxSize"),
-            dim0A: regl.prop("dim0A"),
-            dim1A: regl.prop("dim1A"),
-            dim0B: regl.prop("dim0B"),
-            dim1B: regl.prop("dim1B"),
-            dim0C: regl.prop("dim0C"),
-            dim1C: regl.prop("dim1C"),
-            dim0D: regl.prop("dim0D"),
-            dim1D: regl.prop("dim1D"),
-            loA: regl.prop("loA"),
-            hiA: regl.prop("hiA"),
-            loB: regl.prop("loB"),
-            hiB: regl.prop("hiB"),
-            loC: regl.prop("loC"),
-            hiC: regl.prop("hiC"),
-            loD: regl.prop("loD"),
-            hiD: regl.prop("hiD"),
-            palette: paletteTexture,
-            contextColor: regl.prop("contextColor"),
-            maskTexture: regl.prop("maskTexture"),
-            drwLayer: regl.prop("drwLayer"),
-            maskHeight: regl.prop("maskHeight")
-          },
-          offset: regl.prop("offset"),
-          count: regl.prop("count")
-        });
-        function update(dNew) {
-          model = dNew.model;
-          vm = dNew.viewModel;
-          initialDims = vm.dimensions.slice();
-          sampleCount = initialDims[0] ? initialDims[0].values.length : 0;
-          var lines = model.lines;
-          var color = isPick ? lines.color.map(function(_, i) {
-            return i / lines.color.length;
-          }) : lines.color;
-          var points = makePoints(sampleCount, initialDims, color);
-          setAttributes(attributes, sampleCount, points);
-          if (!isContext && !isPick) {
-            paletteTexture = regl.texture(Lib.extendFlat({
-              data: palette(model.unitToColor, 255)
-            }, paletteTextureConfig));
-          }
-        }
-        function makeConstraints(isContext2) {
-          var i, j, k;
-          var limits = [[], []];
-          for (k = 0; k < 64; k++) {
-            var p = !isContext2 && k < initialDims.length ? initialDims[k].brush.filter.getBounds() : [-Infinity, Infinity];
-            limits[0][k] = p[0];
-            limits[1][k] = p[1];
-          }
-          var len = maskHeight * 8;
-          var mask = new Array(len);
-          for (i = 0; i < len; i++) {
-            mask[i] = 255;
-          }
-          if (!isContext2) {
-            for (i = 0; i < initialDims.length; i++) {
-              var u = i % 8;
-              var v = (i - u) / 8;
-              var bitMask = Math.pow(2, u);
-              var dim = initialDims[i];
-              var ranges = dim.brush.filter.get();
-              if (ranges.length < 2) continue;
-              var prevEnd = expandedPixelRange(ranges[0])[1];
-              for (j = 1; j < ranges.length; j++) {
-                var nextRange = expandedPixelRange(ranges[j]);
-                for (k = prevEnd + 1; k < nextRange[0]; k++) {
-                  mask[k * 8 + v] &= ~bitMask;
-                }
-                prevEnd = Math.max(prevEnd, nextRange[1]);
-              }
-            }
-          }
-          var textureData = {
-            // 8 units x 8 bits = 64 bits, just sufficient for the almost 64 dimensions we support
-            shape: [8, maskHeight],
-            format: "alpha",
-            type: "uint8",
-            mag: "nearest",
-            min: "nearest",
-            data: mask
-          };
-          if (maskTexture) maskTexture(textureData);
-          else maskTexture = regl.texture(textureData);
-          return {
-            maskTexture,
-            maskHeight,
-            loA: limits[0].slice(0, 16),
-            loB: limits[0].slice(16, 32),
-            loC: limits[0].slice(32, 48),
-            loD: limits[0].slice(48, 64),
-            hiA: limits[1].slice(0, 16),
-            hiB: limits[1].slice(16, 32),
-            hiC: limits[1].slice(32, 48),
-            hiD: limits[1].slice(48, 64)
-          };
-        }
-        function renderGLParcoords(panels, setChanged, clearOnly) {
-          var panelCount = panels.length;
-          var i;
-          var leftmost;
-          var rightmost;
-          var lowestX = Infinity;
-          var highestX = -Infinity;
-          for (i = 0; i < panelCount; i++) {
-            if (panels[i].dim0.canvasX < lowestX) {
-              lowestX = panels[i].dim0.canvasX;
-              leftmost = i;
-            }
-            if (panels[i].dim1.canvasX > highestX) {
-              highestX = panels[i].dim1.canvasX;
-              rightmost = i;
-            }
-          }
-          if (panelCount === 0) {
-            clear(regl, 0, 0, model.canvasWidth, model.canvasHeight);
-          }
-          var constraints = makeConstraints(isContext);
-          for (i = 0; i < panelCount; i++) {
-            var p = panels[i];
-            var i0 = p.dim0.crossfilterDimensionIndex;
-            var i1 = p.dim1.crossfilterDimensionIndex;
-            var x = p.canvasX;
-            var y = p.canvasY;
-            var nextX = x + p.panelSizeX;
-            var plotGlPixelRatio2 = p.plotGlPixelRatio;
-            if (setChanged || !prevAxisOrder[i0] || prevAxisOrder[i0][0] !== x || prevAxisOrder[i0][1] !== nextX) {
-              prevAxisOrder[i0] = [x, nextX];
-              var item = makeItem(
-                model,
-                leftmost,
-                rightmost,
-                i,
-                i0,
-                i1,
-                x,
-                y,
-                p.panelSizeX,
-                p.panelSizeY,
-                p.dim0.crossfilterDimensionIndex,
-                isContext ? 0 : isPick ? 2 : 1,
-                constraints,
-                plotGlPixelRatio2
-              );
-              renderState.clearOnly = clearOnly;
-              var blockLineCount = setChanged ? model.lines.blockLineCount : sampleCount;
-              renderBlock(
-                regl,
-                glAes,
-                renderState,
-                blockLineCount,
-                sampleCount,
-                item
-              );
-            }
-          }
-        }
-        function readPixel(canvasX, canvasY) {
-          regl.read({
-            x: canvasX,
-            y: canvasY,
-            width: 1,
-            height: 1,
-            data: dataPixel
-          });
-          return dataPixel;
-        }
-        function readPixels(canvasX, canvasY, width, height) {
-          var pixelArray = new Uint8Array(4 * width * height);
-          regl.read({
-            x: canvasX,
-            y: canvasY,
-            width,
-            height,
-            data: pixelArray
-          });
-          return pixelArray;
-        }
-        function destroy() {
-          canvasGL.style["pointer-events"] = "none";
-          paletteTexture.destroy();
-          if (maskTexture) maskTexture.destroy();
-          for (var k in attributes) attributes[k].destroy();
-        }
-        return {
-          render: renderGLParcoords,
-          readPixel,
-          readPixels,
-          destroy,
-          update
-        };
-      };
-    }
-  });
-
-  // src/traces/parcoords/parcoords.js
-  var require_parcoords = __commonJS({
-    "src/traces/parcoords/parcoords.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var isArrayOrTypedArray = Lib.isArrayOrTypedArray;
-      var numberFormat = Lib.numberFormat;
-      var rgba2 = (init_color_rgba(), __toCommonJS(color_rgba_exports)).default;
-      var Axes = require_axes();
-      var strRotate = Lib.strRotate;
-      var strTranslate = Lib.strTranslate;
-      var svgTextUtils = require_svg_text_utils();
-      var Drawing = require_drawing();
-      var Colorscale = require_colorscale();
-      var gup = require_gup();
-      var keyFun = gup.keyFun;
-      var repeat = gup.repeat;
-      var unwrap = gup.unwrap;
-      var helpers = require_helpers14();
-      var c = require_constants15();
-      var brush = require_axisbrush();
-      var lineLayerMaker = require_lines();
-      function findExtreme(fn, values, len) {
-        return Lib.aggNums(fn, null, values, len);
-      }
-      function findExtremes(values, len) {
-        return fixExtremes(
-          findExtreme(Math.min, values, len),
-          findExtreme(Math.max, values, len)
-        );
-      }
-      function dimensionExtent(dimension) {
-        var range = dimension.range;
-        return range ? fixExtremes(range[0], range[1]) : findExtremes(dimension.values, dimension._length);
-      }
-      function fixExtremes(lo, hi) {
-        if (isNaN(lo) || !isFinite(lo)) {
-          lo = 0;
-        }
-        if (isNaN(hi) || !isFinite(hi)) {
-          hi = 0;
-        }
-        if (lo === hi) {
-          if (lo === 0) {
-            lo -= 1;
-            hi += 1;
-          } else {
-            lo *= 0.9;
-            hi *= 1.1;
-          }
-        }
-        return [lo, hi];
-      }
-      function toText(formatter, texts) {
-        if (texts) {
-          return function(v, i) {
-            var text = texts[i];
-            if (text === null || text === void 0) return formatter(v);
-            return text;
-          };
-        }
-        return formatter;
-      }
-      function domainScale(height, padding, dimension, tickvals, ticktext) {
-        var extent = dimensionExtent(dimension);
-        if (tickvals) {
-          return d3.scale.ordinal().domain(tickvals.map(toText(numberFormat(dimension.tickformat), ticktext))).range(
-            tickvals.map(function(d) {
-              var unitVal = (d - extent[0]) / (extent[1] - extent[0]);
-              return height - padding + unitVal * (2 * padding - height);
-            })
-          );
-        }
-        return d3.scale.linear().domain(extent).range([height - padding, padding]);
-      }
-      function unitToPaddedPx(height, padding) {
-        return d3.scale.linear().range([padding, height - padding]);
-      }
-      function domainToPaddedUnitScale(dimension, padFraction) {
-        return d3.scale.linear().domain(dimensionExtent(dimension)).range([padFraction, 1 - padFraction]);
-      }
-      function ordinalScale(dimension) {
-        if (!dimension.tickvals) return;
-        var extent = dimensionExtent(dimension);
-        return d3.scale.ordinal().domain(dimension.tickvals).range(dimension.tickvals.map(function(d) {
-          return (d - extent[0]) / (extent[1] - extent[0]);
-        }));
-      }
-      function unitToColorScale(cscale) {
-        var colorStops = cscale.map(function(d) {
-          return d[0];
-        });
-        var colorTuples = cscale.map(function(d) {
-          var RGBA = rgba2(d[1]);
-          return d3.rgb("rgb(" + RGBA[0] + "," + RGBA[1] + "," + RGBA[2] + ")");
-        });
-        var prop = function(n) {
-          return function(o) {
-            return o[n];
-          };
-        };
-        var polylinearUnitScales = "rgb".split("").map(function(key) {
-          return d3.scale.linear().clamp(true).domain(colorStops).range(colorTuples.map(prop(key)));
-        });
-        return function(d) {
-          return polylinearUnitScales.map(function(s) {
-            return s(d);
-          });
-        };
-      }
-      function someFiltersActive(view) {
-        return view.dimensions.some(function(p) {
-          return p.brush.filterSpecified;
-        });
-      }
-      function model(layout, d, i) {
-        var cd0 = unwrap(d);
-        var trace = cd0.trace;
-        var lineColor = helpers.convertTypedArray(cd0.lineColor);
-        var line = trace.line;
-        var deselectedLines = {
-          color: rgba2(trace.unselected.line.color),
-          opacity: trace.unselected.line.opacity
-        };
-        var cOpts = Colorscale.extractOpts(line);
-        var cscale = cOpts.reversescale ? Colorscale.flipScale(cd0.cscale) : cd0.cscale;
-        var domain = trace.domain;
-        var dimensions = trace.dimensions;
-        var width = layout.width;
-        var labelAngle = trace.labelangle;
-        var labelSide = trace.labelside;
-        var labelFont = trace.labelfont;
-        var tickFont = trace.tickfont;
-        var rangeFont = trace.rangefont;
-        var lines = Lib.extendDeepNoArrays({}, line, {
-          color: lineColor.map(d3.scale.linear().domain(
-            dimensionExtent({
-              values: lineColor,
-              range: [cOpts.min, cOpts.max],
-              _length: trace._length
-            })
-          )),
-          blockLineCount: c.blockLineCount,
-          canvasOverdrag: c.overdrag * c.canvasPixelRatio
-        });
-        var groupWidth = Math.floor(width * (domain.x[1] - domain.x[0]));
-        var groupHeight = Math.floor(layout.height * (domain.y[1] - domain.y[0]));
-        var pad = layout.margin || { l: 80, r: 80, t: 100, b: 80 };
-        var rowContentWidth = groupWidth;
-        var rowHeight = groupHeight;
-        return {
-          key: i,
-          colCount: dimensions.filter(helpers.isVisible).length,
-          dimensions,
-          tickDistance: c.tickDistance,
-          unitToColor: unitToColorScale(cscale),
-          lines,
-          deselectedLines,
-          labelAngle,
-          labelSide,
-          labelFont,
-          tickFont,
-          rangeFont,
-          layoutWidth: width,
-          layoutHeight: layout.height,
-          domain,
-          translateX: domain.x[0] * width,
-          translateY: layout.height - domain.y[1] * layout.height,
-          pad,
-          canvasWidth: rowContentWidth * c.canvasPixelRatio + 2 * lines.canvasOverdrag,
-          canvasHeight: rowHeight * c.canvasPixelRatio,
-          width: rowContentWidth,
-          height: rowHeight,
-          canvasPixelRatio: c.canvasPixelRatio
-        };
-      }
-      function viewModel(state, callbacks, model2) {
-        var width = model2.width;
-        var height = model2.height;
-        var dimensions = model2.dimensions;
-        var canvasPixelRatio = model2.canvasPixelRatio;
-        var xScale = function(d) {
-          return width * d / Math.max(1, model2.colCount - 1);
-        };
-        var unitPad = c.verticalPadding / height;
-        var _unitToPaddedPx = unitToPaddedPx(height, c.verticalPadding);
-        var vm = {
-          key: model2.key,
-          xScale,
-          model: model2,
-          inBrushDrag: false
-          // consider factoring it out and putting it in a centralized global-ish gesture state object
-        };
-        var uniqueKeys = {};
-        vm.dimensions = dimensions.filter(helpers.isVisible).map(function(dimension, i) {
-          var domainToPaddedUnit = domainToPaddedUnitScale(dimension, unitPad);
-          var foundKey = uniqueKeys[dimension.label];
-          uniqueKeys[dimension.label] = (foundKey || 0) + 1;
-          var key = dimension.label + (foundKey ? "__" + foundKey : "");
-          var specifiedConstraint = dimension.constraintrange;
-          var filterRangeSpecified = specifiedConstraint && specifiedConstraint.length;
-          if (filterRangeSpecified && !isArrayOrTypedArray(specifiedConstraint[0])) {
-            specifiedConstraint = [specifiedConstraint];
-          }
-          var filterRange = filterRangeSpecified ? specifiedConstraint.map(function(d) {
-            return d.map(domainToPaddedUnit);
-          }) : [[-Infinity, Infinity]];
-          var brushMove = function() {
-            var p = vm;
-            p.focusLayer && p.focusLayer.render(p.panels, true);
-            var filtersActive = someFiltersActive(p);
-            if (!state.contextShown() && filtersActive) {
-              p.contextLayer && p.contextLayer.render(p.panels, true);
-              state.contextShown(true);
-            } else if (state.contextShown() && !filtersActive) {
-              p.contextLayer && p.contextLayer.render(p.panels, true, true);
-              state.contextShown(false);
-            }
-          };
-          var truncatedValues = dimension.values;
-          if (truncatedValues.length > dimension._length) {
-            truncatedValues = truncatedValues.slice(0, dimension._length);
-          }
-          var tickvals = dimension.tickvals;
-          var ticktext;
-          function makeTickItem(v, i2) {
-            return { val: v, text: ticktext[i2] };
-          }
-          function sortTickItem(a, b) {
-            return a.val - b.val;
-          }
-          if (isArrayOrTypedArray(tickvals) && tickvals.length) {
-            if (Lib.isTypedArray(tickvals)) tickvals = Array.from(tickvals);
-            ticktext = dimension.ticktext;
-            if (!isArrayOrTypedArray(ticktext) || !ticktext.length) {
-              ticktext = tickvals.map(numberFormat(dimension.tickformat));
-            } else if (ticktext.length > tickvals.length) {
-              ticktext = ticktext.slice(0, tickvals.length);
-            } else if (tickvals.length > ticktext.length) {
-              tickvals = tickvals.slice(0, ticktext.length);
-            }
-            for (var j = 1; j < tickvals.length; j++) {
-              if (tickvals[j] < tickvals[j - 1]) {
-                var tickItems = tickvals.map(makeTickItem).sort(sortTickItem);
-                for (var k = 0; k < tickvals.length; k++) {
-                  tickvals[k] = tickItems[k].val;
-                  ticktext[k] = tickItems[k].text;
-                }
-                break;
-              }
-            }
-          } else tickvals = void 0;
-          truncatedValues = helpers.convertTypedArray(truncatedValues);
-          return {
-            key,
-            label: dimension.label,
-            tickFormat: dimension.tickformat,
-            tickvals,
-            ticktext,
-            ordinal: helpers.isOrdinal(dimension),
-            multiselect: dimension.multiselect,
-            xIndex: i,
-            crossfilterDimensionIndex: i,
-            visibleIndex: dimension._index,
-            height,
-            values: truncatedValues,
-            paddedUnitValues: truncatedValues.map(domainToPaddedUnit),
-            unitTickvals: tickvals && tickvals.map(domainToPaddedUnit),
-            xScale,
-            x: xScale(i),
-            canvasX: xScale(i) * canvasPixelRatio,
-            unitToPaddedPx: _unitToPaddedPx,
-            domainScale: domainScale(height, c.verticalPadding, dimension, tickvals, ticktext),
-            ordinalScale: ordinalScale(dimension),
-            parent: vm,
-            model: model2,
-            brush: brush.makeBrush(
-              state,
-              filterRangeSpecified,
-              filterRange,
-              function() {
-                state.linePickActive(false);
-              },
-              brushMove,
-              function(f) {
-                vm.focusLayer.render(vm.panels, true);
-                vm.pickLayer && vm.pickLayer.render(vm.panels, true);
-                state.linePickActive(true);
-                if (callbacks && callbacks.filterChanged) {
-                  var invScale = domainToPaddedUnit.invert;
-                  var newRanges = f.map(function(r) {
-                    return r.map(invScale).sort(Lib.sorterAsc);
-                  }).sort(function(a, b) {
-                    return a[0] - b[0];
-                  });
-                  callbacks.filterChanged(vm.key, dimension._index, newRanges);
-                }
-              }
-            )
-          };
-        });
-        return vm;
-      }
-      function styleExtentTexts(selection) {
-        selection.classed(c.cn.axisExtentText, true).attr("text-anchor", "middle").style("cursor", "default");
-      }
-      function parcoordsInteractionState() {
-        var linePickActive = true;
-        var contextShown = false;
-        return {
-          linePickActive: function(val) {
-            return arguments.length ? linePickActive = !!val : linePickActive;
-          },
-          contextShown: function(val) {
-            return arguments.length ? contextShown = !!val : contextShown;
-          }
-        };
-      }
-      function calcTilt(angle, position) {
-        var dir = position === "top" ? 1 : -1;
-        var radians = angle * Math.PI / 180;
-        var dx = Math.sin(radians);
-        var dy = Math.cos(radians);
-        return {
-          dir,
-          dx,
-          dy,
-          degrees: angle
-        };
-      }
-      function updatePanelLayout(yAxis, vm, plotGlPixelRatio) {
-        var panels = vm.panels || (vm.panels = []);
-        var data = yAxis.data();
-        for (var i = 0; i < data.length - 1; i++) {
-          var p = panels[i] || (panels[i] = {});
-          var dim0 = data[i];
-          var dim1 = data[i + 1];
-          p.dim0 = dim0;
-          p.dim1 = dim1;
-          p.canvasX = dim0.canvasX;
-          p.panelSizeX = dim1.canvasX - dim0.canvasX;
-          p.panelSizeY = vm.model.canvasHeight;
-          p.y = 0;
-          p.canvasY = 0;
-          p.plotGlPixelRatio = plotGlPixelRatio;
-        }
-      }
-      function calcAllTicks(cd) {
-        for (var i = 0; i < cd.length; i++) {
-          for (var j = 0; j < cd[i].length; j++) {
-            var trace = cd[i][j].trace;
-            var dimensions = trace.dimensions;
-            for (var k = 0; k < dimensions.length; k++) {
-              var values = dimensions[k].values;
-              var dim = dimensions[k]._ax;
-              if (dim) {
-                if (!dim.range) {
-                  dim.range = findExtremes(values, trace._length);
-                } else {
-                  dim.range = fixExtremes(dim.range[0], dim.range[1]);
-                }
-                if (!dim.dtick) {
-                  dim.dtick = 0.01 * (Math.abs(dim.range[1] - dim.range[0]) || 1);
-                }
-                dim.tickformat = dimensions[k].tickformat;
-                Axes.calcTicks(dim);
-                dim.cleanRange();
-              }
-            }
-          }
-        }
-      }
-      function linearFormat(dim, v) {
-        return Axes.tickText(dim._ax, v, false).text;
-      }
-      function extremeText(d, isTop) {
-        if (d.ordinal) return "";
-        var domain = d.domainScale.domain();
-        var v = domain[isTop ? domain.length - 1 : 0];
-        return linearFormat(d.model.dimensions[d.visibleIndex], v);
-      }
-      module.exports = function parcoords(gd, cdModule, layout, callbacks) {
-        var isStatic = gd._context.staticPlot;
-        var fullLayout = gd._fullLayout;
-        var svg = fullLayout._toppaper;
-        var glContainer = fullLayout._glcontainer;
-        var plotGlPixelRatio = gd._context.plotGlPixelRatio;
-        var paperColor = gd._fullLayout.paper_bgcolor;
-        calcAllTicks(cdModule);
-        var state = parcoordsInteractionState();
-        var vm = cdModule.filter(function(d) {
-          return unwrap(d).trace.visible;
-        }).map(model.bind(0, layout)).map(viewModel.bind(0, state, callbacks));
-        glContainer.each(function(d, i) {
-          return Lib.extendFlat(d, vm[i]);
-        });
-        var glLayers = glContainer.selectAll(".gl-canvas").each(function(d) {
-          d.viewModel = vm[0];
-          d.viewModel.plotGlPixelRatio = plotGlPixelRatio;
-          d.viewModel.paperColor = paperColor;
-          d.model = d.viewModel ? d.viewModel.model : null;
-        });
-        var lastHovered = null;
-        var pickLayer = glLayers.filter(function(d) {
-          return d.pick;
-        });
-        pickLayer.style("pointer-events", isStatic ? "none" : "auto").on("mousemove", function(d) {
-          if (state.linePickActive() && d.lineLayer && callbacks && callbacks.hover) {
-            var event = d3.event;
-            var cw = this.width;
-            var ch = this.height;
-            var pointer = d3.mouse(this);
-            var x = pointer[0];
-            var y = pointer[1];
-            if (x < 0 || y < 0 || x >= cw || y >= ch) {
-              return;
-            }
-            var pixel = d.lineLayer.readPixel(x, ch - 1 - y);
-            var found = pixel[3] !== 0;
-            var curveNumber = found ? pixel[2] + 256 * (pixel[1] + 256 * pixel[0]) : null;
-            var eventData = {
-              x,
-              y,
-              clientX: event.clientX,
-              clientY: event.clientY,
-              dataIndex: d.model.key,
-              curveNumber
-            };
-            if (curveNumber !== lastHovered) {
-              if (found) {
-                callbacks.hover(eventData);
-              } else if (callbacks.unhover) {
-                callbacks.unhover(eventData);
-              }
-              lastHovered = curveNumber;
-            }
-          }
-        });
-        glLayers.style("opacity", function(d) {
-          return d.pick ? 0 : 1;
-        });
-        svg.style("background", "rgba(255, 255, 255, 0)");
-        var controlOverlay = svg.selectAll("." + c.cn.parcoords).data(vm, keyFun);
-        controlOverlay.exit().remove();
-        controlOverlay.enter().append("g").classed(c.cn.parcoords, true).style("shape-rendering", "crispEdges").style("pointer-events", "none");
-        controlOverlay.attr("transform", function(d) {
-          return strTranslate(d.model.translateX, d.model.translateY);
-        });
-        var parcoordsControlView = controlOverlay.selectAll("." + c.cn.parcoordsControlView).data(repeat, keyFun);
-        parcoordsControlView.enter().append("g").classed(c.cn.parcoordsControlView, true);
-        parcoordsControlView.attr("transform", function(d) {
-          return strTranslate(d.model.pad.l, d.model.pad.t);
-        });
-        var yAxis = parcoordsControlView.selectAll("." + c.cn.yAxis).data(function(p) {
-          return p.dimensions;
-        }, keyFun);
-        yAxis.enter().append("g").classed(c.cn.yAxis, true);
-        parcoordsControlView.each(function(p) {
-          updatePanelLayout(yAxis, p, plotGlPixelRatio);
-        });
-        glLayers.each(function(d) {
-          if (d.viewModel) {
-            if (!d.lineLayer || callbacks) {
-              d.lineLayer = lineLayerMaker(this, d);
-            } else d.lineLayer.update(d);
-            if (d.key || d.key === 0) d.viewModel[d.key] = d.lineLayer;
-            var setChanged = !d.context || // don't update background
-            callbacks;
-            d.lineLayer.render(d.viewModel.panels, setChanged);
-          }
-        });
-        yAxis.attr("transform", function(d) {
-          return strTranslate(d.xScale(d.xIndex), 0);
-        });
-        yAxis.call(
-          d3.behavior.drag().origin(function(d) {
-            return d;
-          }).on("drag", function(d) {
-            var p = d.parent;
-            state.linePickActive(false);
-            d.x = Math.max(-c.overdrag, Math.min(d.model.width + c.overdrag, d3.event.x));
-            d.canvasX = d.x * d.model.canvasPixelRatio;
-            yAxis.sort(function(a, b) {
-              return a.x - b.x;
-            }).each(function(e, i) {
-              e.xIndex = i;
-              e.x = d === e ? e.x : e.xScale(e.xIndex);
-              e.canvasX = e.x * e.model.canvasPixelRatio;
-            });
-            updatePanelLayout(yAxis, p, plotGlPixelRatio);
-            yAxis.filter(function(e) {
-              return Math.abs(d.xIndex - e.xIndex) !== 0;
-            }).attr("transform", function(d2) {
-              return strTranslate(d2.xScale(d2.xIndex), 0);
-            });
-            d3.select(this).attr("transform", strTranslate(d.x, 0));
-            yAxis.each(function(e, i0, i1) {
-              if (i1 === d.parent.key) p.dimensions[i0] = e;
-            });
-            p.contextLayer && p.contextLayer.render(p.panels, false, !someFiltersActive(p));
-            p.focusLayer.render && p.focusLayer.render(p.panels);
-          }).on("dragend", function(d) {
-            var p = d.parent;
-            d.x = d.xScale(d.xIndex);
-            d.canvasX = d.x * d.model.canvasPixelRatio;
-            updatePanelLayout(yAxis, p, plotGlPixelRatio);
-            d3.select(this).attr("transform", function(d2) {
-              return strTranslate(d2.x, 0);
-            });
-            p.contextLayer && p.contextLayer.render(p.panels, false, !someFiltersActive(p));
-            p.focusLayer && p.focusLayer.render(p.panels);
-            p.pickLayer && p.pickLayer.render(p.panels, true);
-            state.linePickActive(true);
-            if (callbacks && callbacks.axesMoved) {
-              callbacks.axesMoved(p.key, p.dimensions.map(function(e) {
-                return e.crossfilterDimensionIndex;
-              }));
-            }
-          })
-        );
-        yAxis.exit().remove();
-        var axisOverlays = yAxis.selectAll("." + c.cn.axisOverlays).data(repeat, keyFun);
-        axisOverlays.enter().append("g").classed(c.cn.axisOverlays, true);
-        axisOverlays.selectAll("." + c.cn.axis).remove();
-        var axis = axisOverlays.selectAll("." + c.cn.axis).data(repeat, keyFun);
-        axis.enter().append("g").classed(c.cn.axis, true);
-        axis.each(function(d) {
-          var wantedTickCount = d.model.height / d.model.tickDistance;
-          var scale = d.domainScale;
-          var sdom = scale.domain();
-          d3.select(this).call(d3.svg.axis().orient("left").tickSize(4).outerTickSize(2).ticks(wantedTickCount, d.tickFormat).tickValues(d.ordinal ? (
-            // and this works for ordinal scales
-            sdom
-          ) : null).tickFormat(function(v) {
-            return helpers.isOrdinal(d) ? v : linearFormat(d.model.dimensions[d.visibleIndex], v);
-          }).scale(scale));
-          Drawing.font(axis.selectAll("text"), d.model.tickFont);
-        });
-        axis.selectAll(".domain, .tick>line").attr("fill", "none").attr("stroke", "black").attr("stroke-opacity", 0.25).attr("stroke-width", "1px");
-        axis.selectAll("text").style("cursor", "default");
-        var axisHeading = axisOverlays.selectAll("." + c.cn.axisHeading).data(repeat, keyFun);
-        axisHeading.enter().append("g").classed(c.cn.axisHeading, true);
-        var axisTitle = axisHeading.selectAll("." + c.cn.axisTitle).data(repeat, keyFun);
-        axisTitle.enter().append("text").classed(c.cn.axisTitle, true).attr("text-anchor", "middle").style("cursor", "ew-resize").style("pointer-events", isStatic ? "none" : "auto");
-        axisTitle.text(function(d) {
-          return d.label;
-        }).each(function(d) {
-          var e = d3.select(this);
-          Drawing.font(e, d.model.labelFont);
-          svgTextUtils.convertToTspans(e, gd);
-        }).attr("transform", function(d) {
-          var tilt = calcTilt(d.model.labelAngle, d.model.labelSide);
-          var r = c.axisTitleOffset;
-          return (tilt.dir > 0 ? "" : strTranslate(0, 2 * r + d.model.height)) + strRotate(tilt.degrees) + strTranslate(-r * tilt.dx, -r * tilt.dy);
-        }).attr("text-anchor", function(d) {
-          var tilt = calcTilt(d.model.labelAngle, d.model.labelSide);
-          var adx = Math.abs(tilt.dx);
-          var ady = Math.abs(tilt.dy);
-          if (2 * adx > ady) {
-            return tilt.dir * tilt.dx < 0 ? "start" : "end";
-          } else {
-            return "middle";
-          }
-        });
-        var axisExtent = axisOverlays.selectAll("." + c.cn.axisExtent).data(repeat, keyFun);
-        axisExtent.enter().append("g").classed(c.cn.axisExtent, true);
-        var axisExtentTop = axisExtent.selectAll("." + c.cn.axisExtentTop).data(repeat, keyFun);
-        axisExtentTop.enter().append("g").classed(c.cn.axisExtentTop, true);
-        axisExtentTop.attr("transform", strTranslate(0, -c.axisExtentOffset));
-        var axisExtentTopText = axisExtentTop.selectAll("." + c.cn.axisExtentTopText).data(repeat, keyFun);
-        axisExtentTopText.enter().append("text").classed(c.cn.axisExtentTopText, true).call(styleExtentTexts);
-        axisExtentTopText.text(function(d) {
-          return extremeText(d, true);
-        }).each(function(d) {
-          Drawing.font(d3.select(this), d.model.rangeFont);
-        });
-        var axisExtentBottom = axisExtent.selectAll("." + c.cn.axisExtentBottom).data(repeat, keyFun);
-        axisExtentBottom.enter().append("g").classed(c.cn.axisExtentBottom, true);
-        axisExtentBottom.attr("transform", function(d) {
-          return strTranslate(0, d.model.height + c.axisExtentOffset);
-        });
-        var axisExtentBottomText = axisExtentBottom.selectAll("." + c.cn.axisExtentBottomText).data(repeat, keyFun);
-        axisExtentBottomText.enter().append("text").classed(c.cn.axisExtentBottomText, true).attr("dy", "0.75em").call(styleExtentTexts);
-        axisExtentBottomText.text(function(d) {
-          return extremeText(d, false);
-        }).each(function(d) {
-          Drawing.font(d3.select(this), d.model.rangeFont);
-        });
-        brush.ensureAxisBrush(axisOverlays, paperColor, gd);
-      };
-    }
-  });
-
-  // src/traces/parcoords/plot.js
-  var require_plot5 = __commonJS({
-    "src/traces/parcoords/plot.js"(exports, module) {
-      "use strict";
-      var parcoords = require_parcoords();
-      var prepareRegl = require_prepare_regl();
-      var isVisible = require_helpers14().isVisible;
-      var reglPrecompiled = {};
-      function newIndex(visibleIndices, orig, dim) {
-        var origIndex = orig.indexOf(dim);
-        var currentIndex = visibleIndices.indexOf(origIndex);
-        if (currentIndex === -1) {
-          currentIndex += orig.length;
-        }
-        return currentIndex;
-      }
-      function sorter(visibleIndices, orig) {
-        return function sorter2(d1, d2) {
-          return newIndex(visibleIndices, orig, d1) - newIndex(visibleIndices, orig, d2);
-        };
-      }
-      var exports = module.exports = function plot(gd, cdModule) {
-        var fullLayout = gd._fullLayout;
-        var success = prepareRegl(gd, [], reglPrecompiled);
-        if (!success) return;
-        var currentDims = {};
-        var initialDims = {};
-        var fullIndices = {};
-        var inputIndices = {};
-        var size = fullLayout._size;
-        cdModule.forEach(function(d, i) {
-          var trace = d[0].trace;
-          fullIndices[i] = trace.index;
-          var iIn = inputIndices[i] = trace.index;
-          currentDims[i] = gd.data[iIn].dimensions;
-          initialDims[i] = gd.data[iIn].dimensions.slice();
-        });
-        var filterChanged = function(i, initialDimIndex, newRanges) {
-          var dim = initialDims[i][initialDimIndex];
-          var newConstraints = newRanges.map(function(r) {
-            return r.slice();
-          });
-          var aStr = "dimensions[" + initialDimIndex + "].constraintrange";
-          var preGUI = fullLayout._tracePreGUI[gd._fullData[fullIndices[i]]._fullInput.uid];
-          if (preGUI[aStr] === void 0) {
-            var initialVal = dim.constraintrange;
-            preGUI[aStr] = initialVal || null;
-          }
-          var fullDimension = gd._fullData[fullIndices[i]].dimensions[initialDimIndex];
-          if (!newConstraints.length) {
-            delete dim.constraintrange;
-            delete fullDimension.constraintrange;
-            newConstraints = null;
-          } else {
-            if (newConstraints.length === 1) newConstraints = newConstraints[0];
-            dim.constraintrange = newConstraints;
-            fullDimension.constraintrange = newConstraints.slice();
-            newConstraints = [newConstraints];
-          }
-          var restyleData = {};
-          restyleData[aStr] = newConstraints;
-          gd.emit("plotly_restyle", [restyleData, [inputIndices[i]]]);
-        };
-        var hover = function(eventData) {
-          gd.emit("plotly_hover", eventData);
-        };
-        var unhover = function(eventData) {
-          gd.emit("plotly_unhover", eventData);
-        };
-        var axesMoved = function(i, visibleIndices) {
-          var orig = sorter(visibleIndices, initialDims[i].filter(isVisible));
-          currentDims[i].sort(orig);
-          initialDims[i].filter(function(d) {
-            return !isVisible(d);
-          }).sort(function(d) {
-            return initialDims[i].indexOf(d);
-          }).forEach(function(d) {
-            currentDims[i].splice(currentDims[i].indexOf(d), 1);
-            currentDims[i].splice(initialDims[i].indexOf(d), 0, d);
-          });
-          gd.emit("plotly_restyle", [{ dimensions: [currentDims[i]] }, [inputIndices[i]]]);
-        };
-        parcoords(
-          gd,
-          cdModule,
-          {
-            // layout
-            width: size.w,
-            height: size.h,
-            margin: {
-              t: size.t,
-              r: size.r,
-              b: size.b,
-              l: size.l
-            }
-          },
-          {
-            // callbacks
-            filterChanged,
-            hover,
-            unhover,
-            axesMoved
-          }
-        );
-      };
-      exports.reglPrecompiled = reglPrecompiled;
-    }
-  });
-
-  // src/traces/parcoords/base_plot.js
-  var require_base_plot2 = __commonJS({
-    "src/traces/parcoords/base_plot.js"(exports) {
-      "use strict";
-      var d3 = require_d3();
-      var getModuleCalcData = require_get_data().getModuleCalcData;
-      var parcoordsPlot = require_plot5();
-      var xmlnsNamespaces = require_xmlns_namespaces();
-      exports.name = "parcoords";
-      exports.plot = function(gd) {
-        var calcData = getModuleCalcData(gd.calcdata, "parcoords")[0];
-        if (calcData.length) parcoordsPlot(gd, calcData);
-      };
-      exports.clean = function(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        var hadParcoords = oldFullLayout._has && oldFullLayout._has("parcoords");
-        var hasParcoords = newFullLayout._has && newFullLayout._has("parcoords");
-        if (hadParcoords && !hasParcoords) {
-          oldFullLayout._paperdiv.selectAll(".parcoords").remove();
-          oldFullLayout._glimages.selectAll("*").remove();
-        }
-      };
-      exports.toSVG = function(gd) {
-        var imageRoot = gd._fullLayout._glimages;
-        var root = d3.select(gd).selectAll(".svg-container");
-        var canvases = root.filter(function(d, i) {
-          return i === root.size() - 1;
-        }).selectAll(".gl-canvas-context, .gl-canvas-focus");
-        function canvasToImage() {
-          var canvas = this;
-          var imageData = canvas.toDataURL("image/png");
-          var image = imageRoot.append("svg:image");
-          image.attr({
-            xmlns: xmlnsNamespaces.svg,
-            "xlink:href": imageData,
-            preserveAspectRatio: "none",
-            x: 0,
-            y: 0,
-            width: canvas.style.width,
-            height: canvas.style.height
-          });
-        }
-        canvases.each(canvasToImage);
-        window.setTimeout(function() {
-          d3.selectAll("#filterBarPattern").attr("id", "filterBarPattern");
-        }, 60);
-      };
-    }
-  });
-
-  // src/traces/parcoords/base_index.js
-  var require_base_index3 = __commonJS({
-    "src/traces/parcoords/base_index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes25(),
-        supplyDefaults: require_defaults21(),
-        calc: require_calc7(),
-        colorbar: {
-          container: "line",
-          min: "cmin",
-          max: "cmax"
-        },
-        moduleType: "trace",
-        name: "parcoords",
-        basePlotModule: require_base_plot2(),
-        categories: ["gl", "regl", "noOpacity", "noHover"],
-        meta: {}
-      };
-    }
-  });
-
-  // src/traces/parcoords/index.js
-  var require_parcoords2 = __commonJS({
-    "src/traces/parcoords/index.js"(exports, module) {
-      "use strict";
-      var index = require_base_index3();
-      index.plot = require_plot5();
-      module.exports = index;
-    }
-  });
-
-  // lib/parcoords.js
-  var require_parcoords3 = __commonJS({
-    "lib/parcoords.js"(exports, module) {
-      "use strict";
-      module.exports = require_parcoords2();
-    }
-  });
-
-  // node_modules/world-calendars/dist/main.js
-  var require_main = __commonJS({
-    "node_modules/world-calendars/dist/main.js"(exports, module) {
-      var assign = require_object_assign();
-      function Calendars() {
-        this.regionalOptions = [];
-        this.regionalOptions[""] = {
-          invalidCalendar: "Calendar {0} not found",
-          invalidDate: "Invalid {0} date",
-          invalidMonth: "Invalid {0} month",
-          invalidYear: "Invalid {0} year",
-          differentCalendars: "Cannot mix {0} and {1} dates"
-        };
-        this.local = this.regionalOptions[""];
-        this.calendars = {};
-        this._localCals = {};
-      }
-      assign(Calendars.prototype, {
-        /** Obtain a calendar implementation and localisation.
-            @memberof Calendars
-            @param [name='gregorian'] {string} The name of the calendar, e.g. 'gregorian', 'persian', 'islamic'.
-            @param [language=''] {string} The language code to use for localisation (default is English).
-            @return {Calendar} The calendar and localisation.
-            @throws Error if calendar not found. */
-        instance: function(name, language) {
-          name = (name || "gregorian").toLowerCase();
-          language = language || "";
-          var cal = this._localCals[name + "-" + language];
-          if (!cal && this.calendars[name]) {
-            cal = new this.calendars[name](language);
-            this._localCals[name + "-" + language] = cal;
-          }
-          if (!cal) {
-            throw (this.local.invalidCalendar || this.regionalOptions[""].invalidCalendar).replace(/\{0\}/, name);
-          }
-          return cal;
-        },
-        /** Create a new date - for today if no other parameters given.
-            @memberof Calendars
-            @param year {CDate|number} The date to copy or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @param [calendar='gregorian'] {BaseCalendar|string} The underlying calendar or the name of the calendar.
-            @param [language=''] {string} The language to use for localisation (default English).
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day, calendar, language) {
-          calendar = (year != null && year.year ? year.calendar() : typeof calendar === "string" ? this.instance(calendar, language) : calendar) || this.instance();
-          return calendar.newDate(year, month, day);
-        },
-        /** A simple digit substitution function for localising numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @return {function} The substitution function. */
-        substituteDigits: function(digits) {
-          return function(value) {
-            return (value + "").replace(/[0-9]/g, function(digit) {
-              return digits[digit];
-            });
-          };
-        },
-        /** Digit substitution function for localising Chinese style numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @param powers {string[]} The characters denoting powers of 10, i.e. 1, 10, 100, 1000.
-            @return {function} The substitution function. */
-        substituteChineseDigits: function(digits, powers) {
-          return function(value) {
-            var localNumber = "";
-            var power = 0;
-            while (value > 0) {
-              var units = value % 10;
-              localNumber = (units === 0 ? "" : digits[units] + powers[power]) + localNumber;
-              power++;
-              value = Math.floor(value / 10);
-            }
-            if (localNumber.indexOf(digits[1] + powers[1]) === 0) {
-              localNumber = localNumber.substr(1);
-            }
-            return localNumber || digits[0];
-          };
-        }
-      });
-      function CDate(calendar, year, month, day) {
-        this._calendar = calendar;
-        this._year = year;
-        this._month = month;
-        this._day = day;
-        if (this._calendar._validateLevel === 0 && !this._calendar.isValid(this._year, this._month, this._day)) {
-          throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-        }
-      }
-      function pad(value, length) {
-        value = "" + value;
-        return "000000".substring(0, length - value.length) + value;
-      }
-      assign(CDate.prototype, {
-        /** Create a new date.
-            @memberof CDate
-            @param [year] {CDate|number} The date to copy or the year for the date (default this date).
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day) {
-          return this._calendar.newDate(year == null ? this : year, month, day);
-        },
-        /** Set or retrieve the year for this date.
-            @memberof CDate
-            @param [year] {number} The year for the date.
-            @return {number|CDate} The date's year (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        year: function(year) {
-          return arguments.length === 0 ? this._year : this.set(year, "y");
-        },
-        /** Set or retrieve the month for this date.
-            @memberof CDate
-            @param [month] {number} The month for the date.
-            @return {number|CDate} The date's month (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        month: function(month) {
-          return arguments.length === 0 ? this._month : this.set(month, "m");
-        },
-        /** Set or retrieve the day for this date.
-            @memberof CDate
-            @param [day] {number} The day for the date.
-            @return {number|CData} The date's day (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        day: function(day) {
-          return arguments.length === 0 ? this._day : this.set(day, "d");
-        },
-        /** Set new values for this date.
-            @memberof CDate
-            @param year {number} The year for the date.
-            @param month {number} The month for the date.
-            @param day {number} The day for the date.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date. */
-        date: function(year, month, day) {
-          if (!this._calendar.isValid(year, month, day)) {
-            throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-          }
-          this._year = year;
-          this._month = month;
-          this._day = day;
-          return this;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CDate
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not. */
-        leapYear: function() {
-          return this._calendar.leapYear(this);
-        },
-        /** Retrieve the epoch designator for this date, e.g. BCE or CE.
-            @memberof CDate
-            @return {string} The current epoch. */
-        epoch: function() {
-          return this._calendar.epoch(this);
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof CDate
-            @return {string} The formatted year. */
-        formatYear: function() {
-          return this._calendar.formatYear(this);
-        },
-        /** Retrieve the month of the year for this date,
-            i.e. the month's position within a numbered year.
-            @memberof CDate
-            @return {number} The month of the year: <code>minMonth</code> to months per year. */
-        monthOfYear: function() {
-          return this._calendar.monthOfYear(this);
-        },
-        /** Retrieve the week of the year for this date.
-            @memberof CDate
-            @return {number} The week of the year: 1 to weeks per year. */
-        weekOfYear: function() {
-          return this._calendar.weekOfYear(this);
-        },
-        /** Retrieve the number of days in the year for this date.
-            @memberof CDate
-            @return {number} The number of days in this year. */
-        daysInYear: function() {
-          return this._calendar.daysInYear(this);
-        },
-        /** Retrieve the day of the year for this date.
-            @memberof CDate
-            @return {number} The day of the year: 1 to days per year. */
-        dayOfYear: function() {
-          return this._calendar.dayOfYear(this);
-        },
-        /** Retrieve the number of days in the month for this date.
-            @memberof CDate
-            @return {number} The number of days. */
-        daysInMonth: function() {
-          return this._calendar.daysInMonth(this);
-        },
-        /** Retrieve the day of the week for this date.
-            @memberof CDate
-            @return {number} The day of the week: 0 to number of days - 1. */
-        dayOfWeek: function() {
-          return this._calendar.dayOfWeek(this);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CDate
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not. */
-        weekDay: function() {
-          return this._calendar.weekDay(this);
-        },
-        /** Retrieve additional information about this date.
-            @memberof CDate
-            @return {object} Additional information - contents depends on calendar. */
-        extraInfo: function() {
-          return this._calendar.extraInfo(this);
-        },
-        /** Add period(s) to a date.
-            @memberof CDate
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        add: function(offset, period) {
-          return this._calendar.add(this, offset, period);
-        },
-        /** Set a portion of the date.
-            @memberof CDate
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if not a valid date. */
-        set: function(value, period) {
-          return this._calendar.set(this, value, period);
-        },
-        /** Compare this date to another date.
-            @memberof CDate
-            @param date {CDate} The other date.
-            @return {number} -1 if this date is before the other date,
-                    0 if they are equal, or +1 if this date is after the other date. */
-        compareTo: function(date) {
-          if (this._calendar.name !== date._calendar.name) {
-            throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this._calendar.local.name).replace(/\{1\}/, date._calendar.local.name);
-          }
-          var c = this._year !== date._year ? this._year - date._year : this._month !== date._month ? this.monthOfYear() - date.monthOfYear() : this._day - date._day;
-          return c === 0 ? 0 : c < 0 ? -1 : 1;
-        },
-        /** Retrieve the calendar backing this date.
-            @memberof CDate
-            @return {BaseCalendar} The calendar implementation. */
-        calendar: function() {
-          return this._calendar;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CDate
-            @return {number} The equivalent Julian date. */
-        toJD: function() {
-          return this._calendar.toJD(this);
-        },
-        /** Create a new date from a Julian date.
-            @memberof CDate
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          return this._calendar.fromJD(jd);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @return {Date} The equivalent JavaScript date. */
-        toJSDate: function() {
-          return this._calendar.toJSDate(this);
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this._calendar.fromJSDate(jsd);
-        },
-        /** Convert to a string for display.
-            @memberof CDate
-            @return {string} This date as a string. */
-        toString: function() {
-          return (this.year() < 0 ? "-" : "") + pad(Math.abs(this.year()), 4) + "-" + pad(this.month(), 2) + "-" + pad(this.day(), 2);
-        }
-      });
-      function BaseCalendar() {
-        this.shortYearCutoff = "+10";
-      }
-      assign(BaseCalendar.prototype, {
-        _validateLevel: 0,
-        // "Stack" to turn validation on/off
-        /** Create a new date within this calendar - today if no parameters given.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to duplicate or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if not a valid date or a different calendar used. */
-        newDate: function(year, month, day) {
-          if (year == null) {
-            return this.today();
-          }
-          if (year.year) {
-            this._validate(
-              year,
-              month,
-              day,
-              _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-            );
-            day = year.day();
-            month = year.month();
-            year = year.year();
-          }
-          return new CDate(this, year, month, day);
-        },
-        /** Create a new date for today.
-            @memberof BaseCalendar
-            @return {CDate} Today's date. */
-        today: function() {
-          return this.fromJSDate(/* @__PURE__ */ new Date());
-        },
-        /** Retrieve the epoch designator for this date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {string} The current epoch.
-            @throws Error if an invalid year or a different calendar used. */
-        epoch: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return date.year() < 0 ? this.local.epochs[0] : this.local.epochs[1];
-        },
-        /** Format the year, if not a simple sequential number
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return (date.year() < 0 ? "-" : "") + pad(Math.abs(date.year()), 4);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return 12;
-        },
-        /** Calculate the month's ordinal position within the year -
-            for those calendars that don't start at month 1!
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @return {number} The ordinal position, starting from <code>minMonth</code>.
-            @throws Error if an invalid year/month or a different calendar used. */
-        monthOfYear: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return (date.month() + this.monthsInYear(date) - this.firstMonth) % this.monthsInYear(date) + this.minMonth;
-        },
-        /** Calculate actual month from ordinal position, starting from minMonth.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param ord {number} The month's ordinal position.
-            @return {number} The month's number.
-            @throws Error if an invalid year/month. */
-        fromMonthOfYear: function(year, ord) {
-          var m = (ord + this.firstMonth - 2 * this.minMonth) % this.monthsInYear(year) + this.minMonth;
-          this._validate(
-            year,
-            m,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return m;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return this.leapYear(date) ? 366 : 365;
-        },
-        /** Retrieve the day of the year for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The day of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfYear: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return date.toJD() - this.newDate(
-            date.year(),
-            this.fromMonthOfYear(date.year(), this.minMonth),
-            this.minDay
-          ).toJD() + 1;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof BaseCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 7;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return (Math.floor(this.toJD(date)) + 2) % this.daysInWeek();
-        },
-        /** Retrieve additional information about a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return {};
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return this._correctAdd(date, this._add(date, offset, period), offset, period);
-        },
-        /** Add period(s) to a date.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _add: function(date, offset, period) {
-          this._validateLevel++;
-          if (period === "d" || period === "w") {
-            var jd = date.toJD() + offset * (period === "w" ? this.daysInWeek() : 1);
-            var d = date.calendar().fromJD(jd);
-            this._validateLevel--;
-            return [d.year(), d.month(), d.day()];
-          }
-          try {
-            var y = date.year() + (period === "y" ? offset : 0);
-            var m = date.monthOfYear() + (period === "m" ? offset : 0);
-            var d = date.day();
-            var resyncYearMonth = function(calendar) {
-              while (m < calendar.minMonth) {
-                y--;
-                m += calendar.monthsInYear(y);
-              }
-              var yearMonths = calendar.monthsInYear(y);
-              while (m > yearMonths - 1 + calendar.minMonth) {
-                y++;
-                m -= yearMonths;
-                yearMonths = calendar.monthsInYear(y);
-              }
-            };
-            if (period === "y") {
-              if (date.month() !== this.fromMonthOfYear(y, m)) {
-                m = this.newDate(y, date.month(), this.minDay).monthOfYear();
-              }
-              m = Math.min(m, this.monthsInYear(y));
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            } else if (period === "m") {
-              resyncYearMonth(this);
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            }
-            var ymd = [y, this.fromMonthOfYear(y, m), d];
-            this._validateLevel--;
-            return ymd;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        },
-        /** Correct a candidate date after adding period(s) to a date.
-            Handle no year zero if necessary.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param ymd {number[]} The added date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _correctAdd: function(date, ymd, offset, period) {
-          if (!this.hasYearZero && (period === "y" || period === "m")) {
-            if (ymd[0] === 0 || // In year zero
-            date.year() > 0 !== ymd[0] > 0) {
-              var adj = {
-                y: [1, 1, "y"],
-                m: [1, this.monthsInYear(-1), "m"],
-                w: [this.daysInWeek(), this.daysInYear(-1), "d"],
-                d: [1, this.daysInYear(-1), "d"]
-              }[period];
-              var dir = offset < 0 ? -1 : 1;
-              ymd = this._add(date, offset * adj[0] + dir * adj[1], adj[2]);
-            }
-          }
-          return date.date(ymd[0], ymd[1], ymd[2]);
-        },
-        /** Set a portion of the date.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date or a different calendar used. */
-        set: function(date, value, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var y = period === "y" ? value : date.year();
-          var m = period === "m" ? value : date.month();
-          var d = period === "d" ? value : date.day();
-          if (period === "y" || period === "m") {
-            d = Math.min(d, this.daysInMonth(y, m));
-          }
-          return date.date(y, m, d);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          this._validateLevel++;
-          var valid = this.hasYearZero || year !== 0;
-          if (valid) {
-            var date = this.newDate(year, month, this.minDay);
-            valid = month >= this.minMonth && month - this.minMonth < this.monthsInYear(date) && (day >= this.minDay && day - this.minDay < this.daysInMonth(date));
-          }
-          this._validateLevel--;
-          return valid;
-        },
-        /** Convert the date to a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return _exports.instance().fromJD(this.toJD(date)).toJSDate();
-        },
-        /** Convert the date from a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param jsd {Date} The JavaScript date.
-            @return {CDate} The equivalent calendar date. */
-        fromJSDate: function(jsd) {
-          return this.fromJD(_exports.instance().fromJSDate(jsd).toJD());
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param [month] {number} The month to validate.
-            @param [day] {number} The day to validate.
-            @param error {string} Rrror message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          if (year.year) {
-            if (this._validateLevel === 0 && this.name !== year.calendar().name) {
-              throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this.local.name).replace(/\{1\}/, year.calendar().local.name);
-            }
-            return year;
-          }
-          try {
-            this._validateLevel++;
-            if (this._validateLevel === 1 && !this.isValid(year, month, day)) {
-              throw error.replace(/\{0\}/, this.local.name);
-            }
-            var date = this.newDate(year, month, day);
-            this._validateLevel--;
-            return date;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        }
-      });
-      function GregorianCalendar(language) {
-        this.local = this.regionalOptions[language] || this.regionalOptions[""];
-      }
-      GregorianCalendar.prototype = new BaseCalendar();
-      assign(GregorianCalendar.prototype, {
-        /** The calendar name.
-            @memberof GregorianCalendar */
-        name: "Gregorian",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-           @memberof GregorianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-           @memberof GregorianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof GregorianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof GregorianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-           @memberof GregorianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof GregorianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Gregorian",
-            epochs: ["BCE", "CE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year, starting from 1.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month < 3) {
-            month += 12;
-            year--;
-          }
-          var a = Math.floor(year / 100);
-          var b = 2 - a + Math.floor(a / 4);
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof GregorianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var z = Math.floor(jd + 0.5);
-          var a = Math.floor((z - 186721625e-2) / 36524.25);
-          a = z + 1 + a - Math.floor(a / 4);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var day = b - d - Math.floor(e * 30.6001);
-          var month = e - (e > 13.5 ? 13 : 1);
-          var year = c - (month > 2.5 ? 4716 : 4715);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var jsd = new Date(date.year(), date.month() - 1, date.day());
-          jsd.setHours(0);
-          jsd.setMinutes(0);
-          jsd.setSeconds(0);
-          jsd.setMilliseconds(0);
-          jsd.setHours(jsd.getHours() > 12 ? jsd.getHours() + 2 : 0);
-          return jsd;
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this.newDate(jsd.getFullYear(), jsd.getMonth() + 1, jsd.getDate());
-        }
-      });
-      var _exports = module.exports = new Calendars();
-      _exports.cdate = CDate;
-      _exports.baseCalendar = BaseCalendar;
-      _exports.calendars.gregorian = GregorianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/plus.js
-  var require_plus = __commonJS({
-    "node_modules/world-calendars/dist/plus.js"() {
-      var assign = require_object_assign();
-      var main = require_main();
-      assign(main.regionalOptions[""], {
-        invalidArguments: "Invalid arguments",
-        invalidFormat: "Cannot format a date from another calendar",
-        missingNumberAt: "Missing number at position {0}",
-        unknownNameAt: "Unknown name at position {0}",
-        unexpectedLiteralAt: "Unexpected literal at position {0}",
-        unexpectedText: "Additional text found at end"
-      });
-      main.local = main.regionalOptions[""];
-      assign(main.cdate.prototype, {
-        /** Format this date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof CDate
-            @param [format] {string} The date format to use (see <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a>).
-            @param [settings] {object} Options for the <code>formatDate</code> function.
-            @return {string} The formatted date. */
-        formatDate: function(format, settings) {
-          if (typeof format !== "string") {
-            settings = format;
-            format = "";
-          }
-          return this._calendar.formatDate(format || "", this, settings);
-        }
-      });
-      assign(main.baseCalendar.prototype, {
-        UNIX_EPOCH: main.instance().newDate(1970, 1, 1).toJD(),
-        SECS_PER_DAY: 24 * 60 * 60,
-        TICKS_EPOCH: main.instance().jdEpoch,
-        // 1 January 0001 CE
-        TICKS_PER_DAY: 24 * 60 * 60 * 1e7,
-        /** Date form for ATOM (RFC 3339/ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ATOM: "yyyy-mm-dd",
-        /** Date form for cookies.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        COOKIE: "D, dd M yyyy",
-        /** Date form for full date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        FULL: "DD, MM d, yyyy",
-        /** Date form for ISO 8601.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ISO_8601: "yyyy-mm-dd",
-        /** Date form for Julian date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        JULIAN: "J",
-        /** Date form for RFC 822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_822: "D, d M yy",
-        /** Date form for RFC 850.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_850: "DD, dd-M-yy",
-        /** Date form for RFC 1036.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1036: "D, d M yy",
-        /** Date form for RFC 1123.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1123: "D, d M yyyy",
-        /** Date form for RFC 2822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_2822: "D, d M yyyy",
-        /** Date form for RSS (RFC 822).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RSS: "D, d M yy",
-        /** Date form for Windows ticks.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TICKS: "!",
-        /** Date form for Unix timestamp.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TIMESTAMP: "@",
-        /** Date form for W3c (ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        W3C: "yyyy-mm-dd",
-        /** Format a date object into a string value.
-            The format can be combinations of the following:
-            <ul>
-            <li>d  - day of month (no leading zero)</li>
-            <li>dd - day of month (two digit)</li>
-            <li>o  - day of year (no leading zeros)</li>
-            <li>oo - day of year (three digit)</li>
-            <li>D  - day name short</li>
-            <li>DD - day name long</li>
-            <li>w  - week of year (no leading zero)</li>
-            <li>ww - week of year (two digit)</li>
-            <li>m  - month of year (no leading zero)</li>
-            <li>mm - month of year (two digit)</li>
-            <li>M  - month name short</li>
-            <li>MM - month name long</li>
-            <li>yy - year (two digit)</li>
-            <li>yyyy - year (four digit)</li>
-            <li>YYYY - formatted year</li>
-            <li>J  - Julian date (days since January 1, 4713 BCE Greenwich noon)</li>
-            <li>@  - Unix timestamp (s since 01/01/1970)</li>
-            <li>!  - Windows ticks (100ns since 01/01/0001)</li>
-            <li>'...' - literal text</li>
-            <li>'' - single quote</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param [format] {string} The desired format of the date (defaults to calendar format).
-            @param date {CDate} The date value to format.
-            @param [settings] {object} Addition options, whose attributes include:
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @property [calculateWeek] {CalendarsPickerCalculateWeek} Function that determines week of the year.
-            @property [localNumbers=false] {boolean} <code>true</code> to localise numbers (if available),
-                      <code>false</code> to use normal Arabic numerals.
-            @return {string} The date in the above format.
-            @throws Errors if the date is from a different calendar. */
-        formatDate: function(format, date, settings) {
-          if (typeof format !== "string") {
-            settings = date;
-            date = format;
-            format = "";
-          }
-          if (!date) {
-            return "";
-          }
-          if (date.calendar() !== this) {
-            throw main.local.invalidFormat || main.regionalOptions[""].invalidFormat;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var calculateWeek = settings.calculateWeek || this.local.calculateWeek;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var formatNumber = function(match, value, len, step) {
-            var num = "" + value;
-            if (doubled(match, step)) {
-              while (num.length < len) {
-                num = "0" + num;
-              }
-            }
-            return num;
-          };
-          var formatName = function(match, value, shortNames, longNames) {
-            return doubled(match) ? longNames[value] : shortNames[value];
-          };
-          var calendar = this;
-          var formatMonth = function(date2) {
-            return typeof monthNumbers === "function" ? monthNumbers.call(calendar, date2, doubled("m")) : localiseNumbers(formatNumber("m", date2.month(), 2));
-          };
-          var formatMonthName = function(date2, useLongName) {
-            if (useLongName) {
-              return typeof monthNames === "function" ? monthNames.call(calendar, date2) : monthNames[date2.month() - calendar.minMonth];
-            } else {
-              return typeof monthNamesShort === "function" ? monthNamesShort.call(calendar, date2) : monthNamesShort[date2.month() - calendar.minMonth];
-            }
-          };
-          var digits = this.local.digits;
-          var localiseNumbers = function(value) {
-            return settings.localNumbers && digits ? digits(value) : value;
-          };
-          var output = "";
-          var literal = false;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                output += format.charAt(iFormat);
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  output += localiseNumbers(formatNumber("d", date.day(), 2));
-                  break;
-                case "D":
-                  output += formatName(
-                    "D",
-                    date.dayOfWeek(),
-                    dayNamesShort,
-                    dayNames
-                  );
-                  break;
-                case "o":
-                  output += formatNumber("o", date.dayOfYear(), 3);
-                  break;
-                case "w":
-                  output += formatNumber("w", date.weekOfYear(), 2);
-                  break;
-                case "m":
-                  output += formatMonth(date);
-                  break;
-                case "M":
-                  output += formatMonthName(date, doubled("M"));
-                  break;
-                case "y":
-                  output += doubled("y", 2) ? date.year() : (date.year() % 100 < 10 ? "0" : "") + date.year() % 100;
-                  break;
-                case "Y":
-                  doubled("Y", 2);
-                  output += date.formatYear();
-                  break;
-                case "J":
-                  output += date.toJD();
-                  break;
-                case "@":
-                  output += (date.toJD() - this.UNIX_EPOCH) * this.SECS_PER_DAY;
-                  break;
-                case "!":
-                  output += (date.toJD() - this.TICKS_EPOCH) * this.TICKS_PER_DAY;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    output += "'";
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  output += format.charAt(iFormat);
-              }
-            }
-          }
-          return output;
-        },
-        /** Parse a string value into a date object.
-            See <a href="#formatDate"><code>formatDate</code></a> for the possible formats, plus:
-            <ul>
-            <li>* - ignore rest of string</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param format {string} The expected format of the date ('' for default calendar format).
-            @param value {string} The date in the above format.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The extracted date value or <code>null</code> if value is blank.
-            @throws Errors if the format and/or value are missing,
-                    if the value doesn't match the format, or if the date is invalid. */
-        parseDate: function(format, value, settings) {
-          if (value == null) {
-            throw main.local.invalidArguments || main.regionalOptions[""].invalidArguments;
-          }
-          value = typeof value === "object" ? value.toString() : value + "";
-          if (value === "") {
-            return null;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var shortYearCutoff = settings.shortYearCutoff || this.shortYearCutoff;
-          shortYearCutoff = typeof shortYearCutoff !== "string" ? shortYearCutoff : this.today().year() % 100 + parseInt(shortYearCutoff, 10);
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var parseMonth = settings.parseMonth || this.local.parseMonth;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var jd = -1;
-          var year = -1;
-          var month = -1;
-          var day = -1;
-          var doy = -1;
-          var shortYear = false;
-          var literal = false;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var getNumber = function(match, step) {
-            var isDoubled = doubled(match, step);
-            var size = [2, 3, isDoubled ? 4 : 2, isDoubled ? 4 : 2, 10, 11, 20]["oyYJ@!".indexOf(match) + 1];
-            var digits = new RegExp("^-?\\d{1," + size + "}");
-            var num = value.substring(iValue).match(digits);
-            if (!num) {
-              throw (main.local.missingNumberAt || main.regionalOptions[""].missingNumberAt).replace(/\{0\}/, iValue);
-            }
-            iValue += num[0].length;
-            return parseInt(num[0], 10);
-          };
-          var calendar = this;
-          var getMonthNumber = function() {
-            if (typeof monthNumbers === "function") {
-              doubled("m");
-              var month2 = monthNumbers.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getNumber("m");
-          };
-          var getName = function(match, shortNames, longNames, step) {
-            var names2 = doubled(match, step) ? longNames : shortNames;
-            for (var i = 0; i < names2.length; i++) {
-              if (value.substr(iValue, names2[i].length).toLowerCase() === names2[i].toLowerCase()) {
-                iValue += names2[i].length;
-                return i + calendar.minMonth;
-              }
-            }
-            throw (main.local.unknownNameAt || main.regionalOptions[""].unknownNameAt).replace(/\{0\}/, iValue);
-          };
-          var getMonthName = function() {
-            if (typeof monthNames === "function") {
-              var month2 = doubled("M") ? monthNames.call(calendar, value.substring(iValue)) : monthNamesShort.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getName("M", monthNamesShort, monthNames);
-          };
-          var checkLiteral = function() {
-            if (value.charAt(iValue) !== format.charAt(iFormat)) {
-              throw (main.local.unexpectedLiteralAt || main.regionalOptions[""].unexpectedLiteralAt).replace(/\{0\}/, iValue);
-            }
-            iValue++;
-          };
-          var iValue = 0;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                checkLiteral();
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  day = getNumber("d");
-                  break;
-                case "D":
-                  getName("D", dayNamesShort, dayNames);
-                  break;
-                case "o":
-                  doy = getNumber("o");
-                  break;
-                case "w":
-                  getNumber("w");
-                  break;
-                case "m":
-                  month = getMonthNumber();
-                  break;
-                case "M":
-                  month = getMonthName();
-                  break;
-                case "y":
-                  var iSave = iFormat;
-                  shortYear = !doubled("y", 2);
-                  iFormat = iSave;
-                  year = getNumber("y", 2);
-                  break;
-                case "Y":
-                  year = getNumber("Y", 2);
-                  break;
-                case "J":
-                  jd = getNumber("J") + 0.5;
-                  if (value.charAt(iValue) === ".") {
-                    iValue++;
-                    getNumber("J");
-                  }
-                  break;
-                case "@":
-                  jd = getNumber("@") / this.SECS_PER_DAY + this.UNIX_EPOCH;
-                  break;
-                case "!":
-                  jd = getNumber("!") / this.TICKS_PER_DAY + this.TICKS_EPOCH;
-                  break;
-                case "*":
-                  iValue = value.length;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    checkLiteral();
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  checkLiteral();
-              }
-            }
-          }
-          if (iValue < value.length) {
-            throw main.local.unexpectedText || main.regionalOptions[""].unexpectedText;
-          }
-          if (year === -1) {
-            year = this.today().year();
-          } else if (year < 100 && shortYear) {
-            year += shortYearCutoff === -1 ? 1900 : this.today().year() - this.today().year() % 100 - (year <= shortYearCutoff ? 0 : 100);
-          }
-          if (typeof month === "string") {
-            month = parseMonth.call(this, year, month);
-          }
-          if (doy > -1) {
-            month = 1;
-            day = doy;
-            for (var dim = this.daysInMonth(year, month); day > dim; dim = this.daysInMonth(year, month)) {
-              month++;
-              day -= dim;
-            }
-          }
-          return jd > -1 ? this.fromJD(jd) : this.newDate(year, month, day);
-        },
-        /** A date may be specified as an exact value or a relative one.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param dateSpec {CDate|number|string} The date as an object or string in the given format or
-                    an offset - numeric days from today, or string amounts and periods, e.g. '+1m +2w'.
-            @param defaultDate {CDate} The date to use if no other supplied, may be <code>null</code>.
-            @param currentDate {CDate} The current date as a possible basis for relative dates,
-                    if <code>null</code> today is used (optional)
-            @param [dateFormat] {string} The expected date format - see <a href="#formatDate"><code>formatDate</code></a>.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The decoded date. */
-        determineDate: function(dateSpec, defaultDate, currentDate, dateFormat, settings) {
-          if (currentDate && typeof currentDate !== "object") {
-            settings = dateFormat;
-            dateFormat = currentDate;
-            currentDate = null;
-          }
-          if (typeof dateFormat !== "string") {
-            settings = dateFormat;
-            dateFormat = "";
-          }
-          var calendar = this;
-          var offsetString = function(offset) {
-            try {
-              return calendar.parseDate(dateFormat, offset, settings);
-            } catch (e) {
-            }
-            offset = offset.toLowerCase();
-            var date = (offset.match(/^c/) && currentDate ? currentDate.newDate() : null) || calendar.today();
-            var pattern = /([+-]?[0-9]+)\s*(d|w|m|y)?/g;
-            var matches = pattern.exec(offset);
-            while (matches) {
-              date.add(parseInt(matches[1], 10), matches[2] || "d");
-              matches = pattern.exec(offset);
-            }
-            return date;
-          };
-          defaultDate = defaultDate ? defaultDate.newDate() : null;
-          dateSpec = dateSpec == null ? defaultDate : typeof dateSpec === "string" ? offsetString(dateSpec) : typeof dateSpec === "number" ? isNaN(dateSpec) || dateSpec === Infinity || dateSpec === -Infinity ? defaultDate : calendar.today().add(dateSpec, "d") : calendar.newDate(dateSpec);
-          return dateSpec;
-        }
-      });
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/chinese.js
-  var require_chinese = __commonJS({
-    "node_modules/world-calendars/dist/calendars/chinese.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ChineseCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ChineseCalendar.prototype = new main.baseCalendar();
-      assign(ChineseCalendar.prototype, {
-        /** The calendar name.
-            @memberof ChineseCalendar */
-        name: "Chinese",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ChineseCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof ChineseCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ChineseCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Chinese",
-            epochs: ["BEC", "EC"],
-            monthNumbers: function(date, padded) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NUMBER_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = "" + this.toChineseMonth(year, monthIndex);
-              if (padded && month.length < 2) {
-                month = "0" + month;
-              }
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                month += "i";
-              }
-              return month;
-            },
-            monthNames: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00\u6708",
-                "\u4E8C\u6708",
-                "\u4E09\u6708",
-                "\u56DB\u6708",
-                "\u4E94\u6708",
-                "\u516D\u6708",
-                "\u4E03\u6708",
-                "\u516B\u6708",
-                "\u4E5D\u6708",
-                "\u5341\u6708",
-                "\u5341\u4E00\u6708",
-                "\u5341\u4E8C\u6708"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            monthNamesShort: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_SHORT_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00",
-                "\u4E8C",
-                "\u4E09",
-                "\u56DB",
-                "\u4E94",
-                "\u516D",
-                "\u4E03",
-                "\u516B",
-                "\u4E5D",
-                "\u5341",
-                "\u5341\u4E00",
-                "\u5341\u4E8C"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            parseMonth: function(year, monthString) {
-              year = this._validateYear(year);
-              var month = parseInt(monthString);
-              var isIntercalary;
-              if (!isNaN(month)) {
-                var i = monthString[monthString.length - 1];
-                isIntercalary = i === "i" || i === "I";
-              } else {
-                if (monthString[0] === "\u95F0") {
-                  isIntercalary = true;
-                  monthString = monthString.substring(1);
-                }
-                if (monthString[monthString.length - 1] === "\u6708") {
-                  monthString = monthString.substring(0, monthString.length - 1);
-                }
-                month = 1 + [
-                  "\u4E00",
-                  "\u4E8C",
-                  "\u4E09",
-                  "\u56DB",
-                  "\u4E94",
-                  "\u516D",
-                  "\u4E03",
-                  "\u516B",
-                  "\u4E5D",
-                  "\u5341",
-                  "\u5341\u4E00",
-                  "\u5341\u4E8C"
-                ].indexOf(monthString);
-              }
-              var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-              return monthIndex;
-            },
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date or the year to validate.
-            @param error {string} Error message if invalid.
-            @return {number} The year.
-            @throws Error if year out of range. */
-        _validateYear: function(year, error) {
-          if (year.year) {
-            year = year.year();
-          }
-          if (typeof year !== "number" || year < 1888 || year > 2111) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return year;
-        },
-        /** Retrieve the month index (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {number} The year.
-            @param month {number} The month (1 for first month).
-            @param [isIntercalary=false] {boolean} If month is intercalary.
-            @return {number} The month index (0 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toMonthIndex: function(year, month, isIntercalary) {
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var invalidIntercalaryMonth = isIntercalary && month !== intercalaryMonth;
-          if (invalidIntercalaryMonth || month < 1 || month > 12) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var monthIndex;
-          if (!intercalaryMonth) {
-            monthIndex = month - 1;
-          } else if (!isIntercalary && month <= intercalaryMonth) {
-            monthIndex = month - 1;
-          } else {
-            monthIndex = month;
-          }
-          return monthIndex;
-        },
-        /** Retrieve the month (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date or the year to examine.
-            @param monthIndex {number} The month index (0 for first month).
-            @return {number} The month (1 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toChineseMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex < 0 || monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var month;
-          if (!intercalaryMonth) {
-            month = monthIndex + 1;
-          } else if (monthIndex < intercalaryMonth) {
-            month = monthIndex + 1;
-          } else {
-            month = monthIndex;
-          }
-          return month;
-        },
-        /** Determine the intercalary month of a year (if any).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The intercalary month number, or 0 if none.
-            @throws Error if an invalid year or a different calendar used. */
-        intercalaryMonth: function(year) {
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          return intercalaryMonth;
-        },
-        /** Determine whether this date is an intercalary month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @return {boolean} <code>true</code> if this is an intercalary month, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        isIntercalaryMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          return !!intercalaryMonth && intercalaryMonth === monthIndex;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.intercalaryMonth(year) !== 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, monthIndex, day) {
-          var validatedYear = this._validateYear(year, main.local.invalidyear);
-          var packedDate = CHINESE_NEW_YEAR[validatedYear - CHINESE_NEW_YEAR[0]];
-          var y = packedDate >> 9 & 4095;
-          var m = packedDate >> 5 & 15;
-          var d = packedDate & 31;
-          var firstThursday;
-          firstThursday = gregorianCalendar.newDate(y, m, d);
-          firstThursday.add(4 - (firstThursday.dayOfWeek() || 7), "d");
-          var offset = this.toJD(year, monthIndex, day) - firstThursday.toJD();
-          return 1 + Math.floor(offset / 7);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          return this.leapYear(year) ? 13 : 12;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [monthIndex] {number} The month index.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, monthIndex) {
-          if (year.year) {
-            monthIndex = year.month();
-            year = year.year();
-          }
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var daysInMonth = monthDaysTable & 1 << 12 - monthIndex ? 30 : 29;
-          return daysInMonth;
-        },
-        /** Determine whether this date is a week day.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, monthIndex, day) {
-          return (this.dayOfWeek(year, monthIndex, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [monthIndex] {number} The month index to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, monthIndex, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = this._validateYear(date.year());
-          monthIndex = date.month();
-          day = date.day();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var solar = toSolar(year, month, day, isIntercalary);
-          return gregorianCalendar.toJD(solar.year, solar.month, solar.day);
-        },
-        /** Create a new date from a Julian date.
-            @memberof ChineseCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var lunar = toLunar(date.year(), date.month(), date.day());
-          var monthIndex = this.toMonthIndex(
-            lunar.year,
-            lunar.month,
-            lunar.isIntercalary
-          );
-          return this.newDate(lunar.year, monthIndex, lunar.day);
-        },
-        /** Create a new date from a string.
-            @memberof ChineseCalendar
-            @param dateString {string} String representing a Chinese date
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        fromString: function(dateString) {
-          var match = dateString.match(DATE_REGEXP);
-          var year = this._validateYear(+match[1]);
-          var month = +match[2];
-          var isIntercalary = !!match[3];
-          var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-          var day = +match[4];
-          return this.newDate(year, monthIndex, day);
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof ChineseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          var year = date.year();
-          var monthIndex = date.month();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var cdate = Object.getPrototypeOf(ChineseCalendar.prototype).add.call(this, date, offset, period);
-          if (period === "y") {
-            var resultYear = cdate.year();
-            var resultMonthIndex = cdate.month();
-            var resultCanBeIntercalaryMonth = this.isIntercalaryMonth(resultYear, month);
-            var correctedMonthIndex = isIntercalary && resultCanBeIntercalaryMonth ? this.toMonthIndex(resultYear, month, true) : this.toMonthIndex(resultYear, month, false);
-            if (correctedMonthIndex !== resultMonthIndex) {
-              cdate.month(correctedMonthIndex);
-            }
-          }
-          return cdate;
-        }
-      });
-      var DATE_REGEXP = /^\s*(-?\d\d\d\d|\d\d)[-/](\d?\d)([iI]?)[-/](\d?\d)/m;
-      var MONTH_NUMBER_REGEXP = /^\d?\d[iI]?/m;
-      var MONTH_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?月/m;
-      var MONTH_SHORT_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?/m;
-      main.calendars.chinese = ChineseCalendar;
-      var LUNAR_MONTH_DAYS = [
-        1887,
-        5780,
-        5802,
-        19157,
-        2742,
-        50359,
-        1198,
-        2646,
-        46378,
-        7466,
-        3412,
-        30122,
-        5482,
-        67949,
-        2396,
-        5294,
-        43597,
-        6732,
-        6954,
-        36181,
-        2772,
-        4954,
-        18781,
-        2396,
-        54427,
-        5274,
-        6730,
-        47781,
-        5800,
-        6868,
-        21210,
-        4790,
-        59703,
-        2350,
-        5270,
-        46667,
-        3402,
-        3496,
-        38325,
-        1388,
-        4782,
-        18735,
-        2350,
-        52374,
-        6804,
-        7498,
-        44457,
-        2906,
-        1388,
-        29294,
-        4700,
-        63789,
-        6442,
-        6804,
-        56138,
-        5802,
-        2772,
-        38235,
-        1210,
-        4698,
-        22827,
-        5418,
-        63125,
-        3476,
-        5802,
-        43701,
-        2484,
-        5302,
-        27223,
-        2646,
-        70954,
-        7466,
-        3412,
-        54698,
-        5482,
-        2412,
-        38062,
-        5294,
-        2636,
-        32038,
-        6954,
-        60245,
-        2772,
-        4826,
-        43357,
-        2394,
-        5274,
-        39501,
-        6730,
-        72357,
-        5800,
-        5844,
-        53978,
-        4790,
-        2358,
-        38039,
-        5270,
-        87627,
-        3402,
-        3496,
-        54708,
-        5484,
-        4782,
-        43311,
-        2350,
-        3222,
-        27978,
-        7498,
-        68965,
-        2904,
-        5484,
-        45677,
-        4700,
-        6444,
-        39573,
-        6804,
-        6986,
-        19285,
-        2772,
-        62811,
-        1210,
-        4698,
-        47403,
-        5418,
-        5780,
-        38570,
-        5546,
-        76469,
-        2420,
-        5302,
-        51799,
-        2646,
-        5414,
-        36501,
-        3412,
-        5546,
-        18869,
-        2412,
-        54446,
-        5276,
-        6732,
-        48422,
-        6822,
-        2900,
-        28010,
-        4826,
-        92509,
-        2394,
-        5274,
-        55883,
-        6730,
-        6820,
-        47956,
-        5812,
-        2778,
-        18779,
-        2358,
-        62615,
-        5270,
-        5450,
-        46757,
-        3492,
-        5556,
-        27318,
-        4718,
-        67887,
-        2350,
-        3222,
-        52554,
-        7498,
-        3428,
-        38252,
-        5468,
-        4700,
-        31022,
-        6444,
-        64149,
-        6804,
-        6986,
-        43861,
-        2772,
-        5338,
-        35421,
-        2650,
-        70955,
-        5418,
-        5780,
-        54954,
-        5546,
-        2740,
-        38074,
-        5302,
-        2646,
-        29991,
-        3366,
-        61011,
-        3412,
-        5546,
-        43445,
-        2412,
-        5294,
-        35406,
-        6732,
-        72998,
-        6820,
-        6996,
-        52586,
-        2778,
-        2396,
-        38045,
-        5274,
-        6698,
-        23333,
-        6820,
-        64338,
-        5812,
-        2746,
-        43355,
-        2358,
-        5270,
-        39499,
-        5450,
-        79525,
-        3492,
-        5548
-      ];
-      var CHINESE_NEW_YEAR = [
-        1887,
-        966732,
-        967231,
-        967733,
-        968265,
-        968766,
-        969297,
-        969798,
-        970298,
-        970829,
-        971330,
-        971830,
-        972362,
-        972863,
-        973395,
-        973896,
-        974397,
-        974928,
-        975428,
-        975929,
-        976461,
-        976962,
-        977462,
-        977994,
-        978494,
-        979026,
-        979526,
-        980026,
-        980558,
-        981059,
-        981559,
-        982091,
-        982593,
-        983124,
-        983624,
-        984124,
-        984656,
-        985157,
-        985656,
-        986189,
-        986690,
-        987191,
-        987722,
-        988222,
-        988753,
-        989254,
-        989754,
-        990286,
-        990788,
-        991288,
-        991819,
-        992319,
-        992851,
-        993352,
-        993851,
-        994383,
-        994885,
-        995385,
-        995917,
-        996418,
-        996918,
-        997450,
-        997949,
-        998481,
-        998982,
-        999483,
-        1000014,
-        1000515,
-        1001016,
-        1001548,
-        1002047,
-        1002578,
-        1003080,
-        1003580,
-        1004111,
-        1004613,
-        1005113,
-        1005645,
-        1006146,
-        1006645,
-        1007177,
-        1007678,
-        1008209,
-        1008710,
-        1009211,
-        1009743,
-        1010243,
-        1010743,
-        1011275,
-        1011775,
-        1012306,
-        1012807,
-        1013308,
-        1013840,
-        1014341,
-        1014841,
-        1015373,
-        1015874,
-        1016404,
-        1016905,
-        1017405,
-        1017937,
-        1018438,
-        1018939,
-        1019471,
-        1019972,
-        1020471,
-        1021002,
-        1021503,
-        1022035,
-        1022535,
-        1023036,
-        1023568,
-        1024069,
-        1024568,
-        1025100,
-        1025601,
-        1026102,
-        1026633,
-        1027133,
-        1027666,
-        1028167,
-        1028666,
-        1029198,
-        1029699,
-        1030199,
-        1030730,
-        1031231,
-        1031763,
-        1032264,
-        1032764,
-        1033296,
-        1033797,
-        1034297,
-        1034828,
-        1035329,
-        1035830,
-        1036362,
-        1036861,
-        1037393,
-        1037894,
-        1038394,
-        1038925,
-        1039427,
-        1039927,
-        1040459,
-        1040959,
-        1041491,
-        1041992,
-        1042492,
-        1043023,
-        1043524,
-        1044024,
-        1044556,
-        1045057,
-        1045558,
-        1046090,
-        1046590,
-        1047121,
-        1047622,
-        1048122,
-        1048654,
-        1049154,
-        1049655,
-        1050187,
-        1050689,
-        1051219,
-        1051720,
-        1052220,
-        1052751,
-        1053252,
-        1053752,
-        1054284,
-        1054786,
-        1055285,
-        1055817,
-        1056317,
-        1056849,
-        1057349,
-        1057850,
-        1058382,
-        1058883,
-        1059383,
-        1059915,
-        1060415,
-        1060947,
-        1061447,
-        1061947,
-        1062479,
-        1062981,
-        1063480,
-        1064012,
-        1064514,
-        1065014,
-        1065545,
-        1066045,
-        1066577,
-        1067078,
-        1067578,
-        1068110,
-        1068611,
-        1069112,
-        1069642,
-        1070142,
-        1070674,
-        1071175,
-        1071675,
-        1072207,
-        1072709,
-        1073209,
-        1073740,
-        1074241,
-        1074741,
-        1075273,
-        1075773,
-        1076305,
-        1076807,
-        1077308,
-        1077839,
-        1078340,
-        1078840,
-        1079372,
-        1079871,
-        1080403,
-        1080904
-      ];
-      function toLunar(yearOrDate, monthOrResult, day, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          solarDate = yearOrDate;
-          lunarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Solar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Solar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 31;
-          if (!isValidDay)
-            throw new Error("Solar day outside range 1 - 31");
-          solarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day
-          };
-          lunarDate = result || {};
-        }
-        var chineseNewYearPackedDate = CHINESE_NEW_YEAR[solarDate.year - CHINESE_NEW_YEAR[0]];
-        var packedDate = solarDate.year << 9 | solarDate.month << 5 | solarDate.day;
-        lunarDate.year = packedDate >= chineseNewYearPackedDate ? solarDate.year : solarDate.year - 1;
-        chineseNewYearPackedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = chineseNewYearPackedDate >> 9 & 4095;
-        var m = chineseNewYearPackedDate >> 5 & 15;
-        var d = chineseNewYearPackedDate & 31;
-        var daysFromNewYear;
-        var chineseNewYearJSDate = new Date(y, m - 1, d);
-        var jsDate = new Date(solarDate.year, solarDate.month - 1, solarDate.day);
-        daysFromNewYear = Math.round(
-          (jsDate - chineseNewYearJSDate) / (24 * 3600 * 1e3)
-        );
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var i;
-        for (i = 0; i < 13; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          if (daysFromNewYear < daysInMonth) {
-            break;
-          }
-          daysFromNewYear -= daysInMonth;
-        }
-        var intercalaryMonth = monthDaysTable >> 13;
-        if (!intercalaryMonth || i < intercalaryMonth) {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = 1 + i;
-        } else if (i === intercalaryMonth) {
-          lunarDate.isIntercalary = true;
-          lunarDate.month = i;
-        } else {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = i;
-        }
-        lunarDate.day = 1 + daysFromNewYear;
-        return lunarDate;
-      }
-      function toSolar(yearOrDate, monthOrResult, day, isIntercalaryOrResult, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          lunarDate = yearOrDate;
-          solarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Lunar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Lunar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 30;
-          if (!isValidDay)
-            throw new Error("Lunar day outside range 1 - 30");
-          var isIntercalary;
-          if (typeof isIntercalaryOrResult === "object") {
-            isIntercalary = false;
-            solarDate = isIntercalaryOrResult;
-          } else {
-            isIntercalary = !!isIntercalaryOrResult;
-            solarDate = result || {};
-          }
-          lunarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day,
-            isIntercalary
-          };
-        }
-        var daysFromNewYear;
-        daysFromNewYear = lunarDate.day - 1;
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var intercalaryMonth = monthDaysTable >> 13;
-        var monthsFromNewYear;
-        if (!intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month - 1;
-        } else if (lunarDate.month > intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month;
-        } else if (lunarDate.isIntercalary) {
-          monthsFromNewYear = lunarDate.month;
-        } else {
-          monthsFromNewYear = lunarDate.month - 1;
-        }
-        for (var i = 0; i < monthsFromNewYear; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          daysFromNewYear += daysInMonth;
-        }
-        var packedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = packedDate >> 9 & 4095;
-        var m = packedDate >> 5 & 15;
-        var d = packedDate & 31;
-        var jsDate = new Date(y, m - 1, d + daysFromNewYear);
-        solarDate.year = jsDate.getFullYear();
-        solarDate.month = 1 + jsDate.getMonth();
-        solarDate.day = jsDate.getDate();
-        return solarDate;
-      }
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/coptic.js
-  var require_coptic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/coptic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function CopticCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      CopticCalendar.prototype = new main.baseCalendar();
-      assign(CopticCalendar.prototype, {
-        /** The calendar name.
-            @memberof CopticCalendar */
-        name: "Coptic",
-        /** Julian date of start of Coptic epoch: 29 August 284 CE (Gregorian).
-            @memberof CopticCalendar */
-        jdEpoch: 18250295e-1,
-        /** Days per month in a common year.
-            @memberof CopticCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof CopticCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof CopticCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof CopticCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof CopticCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof CopticCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Coptic",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Thout",
-              "Paopi",
-              "Hathor",
-              "Koiak",
-              "Tobi",
-              "Meshir",
-              "Paremhat",
-              "Paremoude",
-              "Pashons",
-              "Paoni",
-              "Epip",
-              "Mesori",
-              "Pi Kogi Enavot"
-            ],
-            monthNamesShort: [
-              "Tho",
-              "Pao",
-              "Hath",
-              "Koi",
-              "Tob",
-              "Mesh",
-              "Pat",
-              "Pad",
-              "Pash",
-              "Pao",
-              "Epi",
-              "Meso",
-              "PiK"
-            ],
-            dayNames: ["Tkyriaka", "Pesnau", "Pshoment", "Peftoou", "Ptiou", "Psoou", "Psabbaton"],
-            dayNamesShort: ["Tky", "Pes", "Psh", "Pef", "Pti", "Pso", "Psa"],
-            dayNamesMin: ["Tk", "Pes", "Psh", "Pef", "Pt", "Pso", "Psa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number) the month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number) the month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof CopticCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.coptic = CopticCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/discworld.js
-  var require_discworld = __commonJS({
-    "node_modules/world-calendars/dist/calendars/discworld.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function DiscworldCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      DiscworldCalendar.prototype = new main.baseCalendar();
-      assign(DiscworldCalendar.prototype, {
-        /** The calendar name.
-            @memberof DiscworldCalendar */
-        name: "Discworld",
-        /** Julian date of start of Discworld epoch: 1 January 0001 CE.
-            @memberof DiscworldCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-            @memberof DiscworldCalendar */
-        daysPerMonth: [16, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof DiscworldCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof DiscworldCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof DiscworldCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof DiscworldCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof DiscworldCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Discworld",
-            epochs: ["BUC", "UC"],
-            monthNames: [
-              "Ick",
-              "Offle",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "Grune",
-              "August",
-              "Spune",
-              "Sektober",
-              "Ember",
-              "December"
-            ],
-            monthNamesShort: ["Ick", "Off", "Feb", "Mar", "Apr", "May", "Jun", "Gru", "Aug", "Spu", "Sek", "Emb", "Dec"],
-            dayNames: ["Sunday", "Octeday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Oct", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Oc", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 2,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 13;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 400;
-        },
-        /** Determine the week of the year for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 8) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1];
-        },
-        /** Retrieve the number of days in a week.
-            @memberof DiscworldCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 8;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return (date.day() + 1) % 8;
-        },
-        /** Determine whether this date is a week day.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          var dow = this.dayOfWeek(year, month, day);
-          return dow >= 2 && dow <= 6;
-        },
-        /** Retrieve additional information about a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { century: centuries[Math.floor((date.year() - 1) / 100) + 1] || "" };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year() + (date.year() < 0 ? 1 : 0);
-          month = date.month();
-          day = date.day();
-          return day + (month > 1 ? 16 : 0) + (month > 2 ? (month - 2) * 32 : 0) + (year - 1) * 400 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof DiscworldCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5) - Math.floor(this.jdEpoch) - 1;
-          var year = Math.floor(jd / 400) + 1;
-          jd -= (year - 1) * 400;
-          jd += jd > 15 ? 16 : 0;
-          var month = Math.floor(jd / 32) + 1;
-          var day = jd - (month - 1) * 32 + 1;
-          return this.newDate(year <= 0 ? year - 1 : year, month, day);
-        }
-      });
-      var centuries = {
-        20: "Fruitbat",
-        21: "Anchovy"
-      };
-      main.calendars.discworld = DiscworldCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ethiopian.js
-  var require_ethiopian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ethiopian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function EthiopianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      EthiopianCalendar.prototype = new main.baseCalendar();
-      assign(EthiopianCalendar.prototype, {
-        /** The calendar name.
-            @memberof EthiopianCalendar */
-        name: "Ethiopian",
-        /** Julian date of start of Ethiopian epoch: 27 August 8 CE (Gregorian).
-            @memberof EthiopianCalendar */
-        jdEpoch: 17242205e-1,
-        /** Days per month in a common year.
-            @memberof EthiopianCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof EthiopianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof EthiopianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof EthiopianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof EthiopianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof EthiopianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Ethiopian",
-            epochs: ["BEE", "EE"],
-            monthNames: [
-              "Meskerem",
-              "Tikemet",
-              "Hidar",
-              "Tahesas",
-              "Tir",
-              "Yekatit",
-              "Megabit",
-              "Miazia",
-              "Genbot",
-              "Sene",
-              "Hamle",
-              "Nehase",
-              "Pagume"
-            ],
-            monthNamesShort: [
-              "Mes",
-              "Tik",
-              "Hid",
-              "Tah",
-              "Tir",
-              "Yek",
-              "Meg",
-              "Mia",
-              "Gen",
-              "Sen",
-              "Ham",
-              "Neh",
-              "Pag"
-            ],
-            dayNames: ["Ehud", "Segno", "Maksegno", "Irob", "Hamus", "Arb", "Kidame"],
-            dayNamesShort: ["Ehu", "Seg", "Mak", "Iro", "Ham", "Arb", "Kid"],
-            dayNamesMin: ["Eh", "Se", "Ma", "Ir", "Ha", "Ar", "Ki"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof EthiopianCalendar
-            @param jd {number} the Julian date to convert.
-            @return {CDate} the equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.ethiopian = EthiopianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/hebrew.js
-  var require_hebrew = __commonJS({
-    "node_modules/world-calendars/dist/calendars/hebrew.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function HebrewCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      HebrewCalendar.prototype = new main.baseCalendar();
-      assign(HebrewCalendar.prototype, {
-        /** The calendar name.
-            @memberof HebrewCalendar */
-        name: "Hebrew",
-        /** Julian date of start of Hebrew epoch: 7 October 3761 BCE.
-            @memberof HebrewCalendar */
-        jdEpoch: 347995.5,
-        /** Days per month in a common year.
-            @memberof HebrewCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof HebrewCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof HebrewCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof HebrewCalendar */
-        firstMonth: 7,
-        /** The minimum day number.
-            @memberof HebrewCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof HebrewCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Hebrew",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Nisan",
-              "Iyar",
-              "Sivan",
-              "Tammuz",
-              "Av",
-              "Elul",
-              "Tishrei",
-              "Cheshvan",
-              "Kislev",
-              "Tevet",
-              "Shevat",
-              "Adar",
-              "Adar II"
-            ],
-            monthNamesShort: ["Nis", "Iya", "Siv", "Tam", "Av", "Elu", "Tis", "Che", "Kis", "Tev", "She", "Ada", "Ad2"],
-            dayNames: ["Yom Rishon", "Yom Sheni", "Yom Shlishi", "Yom Revi'i", "Yom Chamishi", "Yom Shishi", "Yom Shabbat"],
-            dayNamesShort: ["Ris", "She", "Shl", "Rev", "Cha", "Shi", "Sha"],
-            dayNamesMin: ["Ri", "She", "Shl", "Re", "Ch", "Shi", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(date.year());
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        _leapYear: function(year) {
-          year = year < 0 ? year + 1 : year;
-          return mod(year * 7 + 1, 19) < 7;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(year.year ? year.year() : year) ? 13 : 12;
-        },
-        /** Determine the week of the year for a date.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          return this.toJD(year === -1 ? 1 : year + 1, 7, 1) - this.toJD(year, 7, 1);
-        },
-        /** Retrieve the number of days in a month.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return month === 12 && this.leapYear(year) ? 30 : (
-            // Adar I
-            month === 8 && mod(this.daysInYear(year), 10) === 5 ? 30 : (
-              // Cheshvan in shlemah year
-              month === 9 && mod(this.daysInYear(year), 10) === 3 ? 29 : (
-                // Kislev in chaserah year
-                this.daysPerMonth[month - 1]
-              )
-            )
-          );
-        },
-        /** Determine whether this date is a week day.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve additional information about a date - year type.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { yearType: (this.leapYear(date) ? "embolismic" : "common") + " " + ["deficient", "regular", "complete"][this.daysInYear(date) % 10 - 3] };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof HebrewCalendar
-            @param year {CDate)|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var adjYear = year <= 0 ? year + 1 : year;
-          var jd = this.jdEpoch + this._delay1(adjYear) + this._delay2(adjYear) + day + 1;
-          if (month < 7) {
-            for (var m = 7; m <= this.monthsInYear(year); m++) {
-              jd += this.daysInMonth(year, m);
-            }
-            for (var m = 1; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          } else {
-            for (var m = 7; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          }
-          return jd;
-        },
-        /** Test for delay of start of new year and to avoid
-            Sunday, Wednesday, or Friday as start of the new year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay1: function(year) {
-          var months = Math.floor((235 * year - 234) / 19);
-          var parts = 12084 + 13753 * months;
-          var day = months * 29 + Math.floor(parts / 25920);
-          if (mod(3 * (day + 1), 7) < 3) {
-            day++;
-          }
-          return day;
-        },
-        /** Check for delay in start of new year due to length of adjacent years.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay2: function(year) {
-          var last = this._delay1(year - 1);
-          var present = this._delay1(year);
-          var next = this._delay1(year + 1);
-          return next - present === 356 ? 2 : present - last === 382 ? 1 : 0;
-        },
-        /** Create a new date from a Julian date.
-            @memberof HebrewCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((jd - this.jdEpoch) * 98496 / 35975351) - 1;
-          while (jd >= this.toJD(year === -1 ? 1 : year + 1, 7, 1)) {
-            year++;
-          }
-          var month = jd < this.toJD(year, 1, 1) ? 7 : 1;
-          while (jd > this.toJD(year, month, this.daysInMonth(year, month))) {
-            month++;
-          }
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.hebrew = HebrewCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/islamic.js
-  var require_islamic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/islamic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function IslamicCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      IslamicCalendar.prototype = new main.baseCalendar();
-      assign(IslamicCalendar.prototype, {
-        /** The calendar name.
-            @memberof IslamicCalendar */
-        name: "Islamic",
-        /** Julian date of start of Islamic epoch: 16 July 622 CE.
-            @memberof IslamicCalendar */
-        jdEpoch: 19484395e-1,
-        /** Days per month in a common year.
-            @memberof IslamicCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof IslamicCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof IslamicCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof IslamicCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof IslamicCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof IslamicCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Islamic",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' al-thani",
-              "Jumada al-awwal",
-              "Jumada al-thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: [
-              "Yawm al-ahad",
-              "Yawm al-ithnayn",
-              "Yawm ath-thulaathaa'",
-              "Yawm al-arbi'aa'",
-              "Yawm al-kham\u012Bs",
-              "Yawm al-jum'a",
-              "Yawm as-sabt"
-            ],
-            dayNamesShort: ["Aha", "Ith", "Thu", "Arb", "Kha", "Jum", "Sab"],
-            dayNamesMin: ["Ah", "It", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return (date.year() * 11 + 14) % 30 < 11;
-        },
-        /** Determine the week of the year for a date.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          return this.leapYear(year) ? 355 : 354;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          year = year <= 0 ? year + 1 : year;
-          return day + Math.ceil(29.5 * (month - 1)) + (year - 1) * 354 + Math.floor((3 + 11 * year) / 30) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof IslamicCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((30 * (jd - this.jdEpoch) + 10646) / 10631);
-          year = year <= 0 ? year - 1 : year;
-          var month = Math.min(12, Math.ceil((jd - 29 - this.toJD(year, 1, 1)) / 29.5) + 1);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.islamic = IslamicCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/julian.js
-  var require_julian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/julian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function JulianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      JulianCalendar.prototype = new main.baseCalendar();
-      assign(JulianCalendar.prototype, {
-        /** The calendar name.
-            @memberof JulianCalendar */
-        name: "Julian",
-        /** Julian date of start of Julian epoch: 1 January 0001 AD = 30 December 0001 BCE.
-            @memberof JulianCalendar */
-        jdEpoch: 17214235e-1,
-        /** Days per month in a common year.
-            @memberof JulianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof JulianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof JulianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof JulianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof JulianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof JulianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Julian",
-            epochs: ["BC", "AD"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() < 0 ? date.year() + 1 : date.year();
-          return year % 4 === 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} True if a week day, false if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month <= 2) {
-            year--;
-            month += 12;
-          }
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof JulianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var a = Math.floor(jd + 0.5);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var month = e - Math.floor(e < 14 ? 1 : 13);
-          var year = c - Math.floor(month > 2 ? 4716 : 4715);
-          var day = b - d - Math.floor(30.6001 * e);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.julian = JulianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/mayan.js
-  var require_mayan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/mayan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function MayanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      MayanCalendar.prototype = new main.baseCalendar();
-      assign(MayanCalendar.prototype, {
-        /** The calendar name.
-            @memberof MayanCalendar */
-        name: "Mayan",
-        /** Julian date of start of Mayan epoch: 11 August 3114 BCE.
-            @memberof MayanCalendar */
-        jdEpoch: 584282.5,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof MayanCalendar */
-        hasYearZero: true,
-        /** The minimum month number.
-            @memberof MayanCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            @memberof MayanCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof MayanCalendar */
-        minDay: 0,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof MayanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left.
-            @property haabMonths {string[]} The names of the Haab months.
-            @property tzolkinMonths {string[]} The names of the Tzolkin months. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Mayan",
-            epochs: ["", ""],
-            monthNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            monthNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            dayNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesMin: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            digits: null,
-            dateFormat: "YYYY.m.d",
-            firstDay: 0,
-            isRTL: false,
-            haabMonths: [
-              "Pop",
-              "Uo",
-              "Zip",
-              "Zotz",
-              "Tzec",
-              "Xul",
-              "Yaxkin",
-              "Mol",
-              "Chen",
-              "Yax",
-              "Zac",
-              "Ceh",
-              "Mac",
-              "Kankin",
-              "Muan",
-              "Pax",
-              "Kayab",
-              "Cumku",
-              "Uayeb"
-            ],
-            tzolkinMonths: [
-              "Imix",
-              "Ik",
-              "Akbal",
-              "Kan",
-              "Chicchan",
-              "Cimi",
-              "Manik",
-              "Lamat",
-              "Muluc",
-              "Oc",
-              "Chuen",
-              "Eb",
-              "Ben",
-              "Ix",
-              "Men",
-              "Cib",
-              "Caban",
-              "Etznab",
-              "Cauac",
-              "Ahau"
-            ]
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          var baktun = Math.floor(year / 400);
-          year = year % 400;
-          year += year < 0 ? 400 : 0;
-          var katun = Math.floor(year / 20);
-          return baktun + "." + katun + "." + year % 20;
-        },
-        /** Convert from the formatted year back to a single number.
-            @memberof MayanCalendar
-            @param years {string} The year as n.n.n.
-            @return {number} The sequential year.
-            @throws Error if an invalid value is supplied. */
-        forYear: function(years) {
-          years = years.split(".");
-          if (years.length < 3) {
-            throw "Invalid Mayan year";
-          }
-          var year = 0;
-          for (var i = 0; i < years.length; i++) {
-            var y = parseInt(years[i], 10);
-            if (Math.abs(y) > 19 || i > 0 && y < 0) {
-              throw "Invalid Mayan year";
-            }
-            year = year * 20 + y;
-          }
-          return year;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 18;
-        },
-        /** Determine the week of the year for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
           return 0;
         },
-        /** Retrieve the number of days in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 360;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return 20;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof MayanCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 5;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day();
-        },
-        /** Determine whether this date is a week day.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
-          return true;
-        },
-        /** Retrieve additional information about a date - Haab and Tzolkin equivalents.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var jd = date.toJD();
-          var haab = this._toHaab(jd);
-          var tzolkin = this._toTzolkin(jd);
-          return {
-            haabMonthName: this.local.haabMonths[haab[0] - 1],
-            haabMonth: haab[0],
-            haabDay: haab[1],
-            tzolkinDayName: this.local.tzolkinMonths[tzolkin[0] - 1],
-            tzolkinDay: tzolkin[0],
-            tzolkinTrecena: tzolkin[1]
-          };
-        },
-        /** Retrieve Haab date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd  {number} The Julian date.
-            @return {number[]} Corresponding Haab month and day. */
-        _toHaab: function(jd) {
-          jd -= this.jdEpoch;
-          var day = mod(jd + 8 + (18 - 1) * 20, 365);
-          return [Math.floor(day / 20) + 1, mod(day, 20)];
-        },
-        /** Retrieve Tzolkin date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd {number} The Julian date.
-            @return {number[]} Corresponding Tzolkin day and trecena. */
-        _toTzolkin: function(jd) {
-          jd -= this.jdEpoch;
-          return [amod(jd + 20, 20), amod(jd + 4, 13)];
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day() + date.month() * 20 + date.year() * 360 + this.jdEpoch;
-        },
-        /** Create a new date from a Julian date.
-            @memberof MayanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor(jd / 360);
-          jd = jd % 360;
-          jd += jd < 0 ? 360 : 0;
-          var month = Math.floor(jd / 20);
-          var day = jd % 20;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      function amod(a, b) {
-        return mod(a - 1, b) + 1;
-      }
-      main.calendars.mayan = MayanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nanakshahi.js
-  var require_nanakshahi = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nanakshahi.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NanakshahiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NanakshahiCalendar.prototype = new main.baseCalendar();
-      var gregorian = main.instance("gregorian");
-      assign(NanakshahiCalendar.prototype, {
-        /** The calendar name.
-            @memberof NanakshahiCalendar */
-        name: "Nanakshahi",
-        /** Julian date of start of Nanakshahi epoch: 14 March 1469 CE.
-            @memberof NanakshahiCalendar */
-        jdEpoch: 22576735e-1,
-        /** Days per month in a common year.
-            @memberof NanakshahiCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NanakshahiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NanakshahiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NanakshahiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NanakshahiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NanakshahiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nanakshahi",
-            epochs: ["BN", "AN"],
-            monthNames: [
-              "Chet",
-              "Vaisakh",
-              "Jeth",
-              "Harh",
-              "Sawan",
-              "Bhadon",
-              "Assu",
-              "Katak",
-              "Maghar",
-              "Poh",
-              "Magh",
-              "Phagun"
-            ],
-            monthNamesShort: ["Che", "Vai", "Jet", "Har", "Saw", "Bha", "Ass", "Kat", "Mgr", "Poh", "Mgh", "Pha"],
-            dayNames: ["Somvaar", "Mangalvar", "Budhvaar", "Veervaar", "Shukarvaar", "Sanicharvaar", "Etvaar"],
-            dayNamesShort: ["Som", "Mangal", "Budh", "Veer", "Shukar", "Sanichar", "Et"],
-            dayNamesMin: ["So", "Ma", "Bu", "Ve", "Sh", "Sa", "Et"],
-            digits: null,
-            dateFormat: "dd-mm-yyyy",
-            firstDay: 0,
-            isRTL: false
+        avg: function(n, i, size, counterData, counts) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            size[n] += v;
+            counts[n]++;
           }
+          return 0;
         },
-        /** Determine whether this date is in a leap year.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return gregorian.leapYear(date.year() + (date.year() < 1 ? 1 : 0) + 1469);
-        },
-        /** Determine the week of the year for a date.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(1 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidMonth);
-          var year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          var doy = date.day();
-          for (var m = 1; m < date.month(); m++) {
-            doy += this.daysPerMonth[m - 1];
-          }
-          return doy + gregorian.toJD(year + 1468, 3, 13);
-        },
-        /** Create a new date from a Julian date.
-            @memberof NanakshahiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5);
-          var year = Math.floor((jd - (this.jdEpoch - 1)) / 366);
-          while (jd >= this.toJD(year + 1, 1, 1)) {
-            year++;
-          }
-          var day = jd - Math.floor(this.toJD(year, 1, 1) + 0.5) + 1;
-          var month = 1;
-          while (day > this.daysInMonth(year, month)) {
-            day -= this.daysInMonth(year, month);
-            month++;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.nanakshahi = NanakshahiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nepali.js
-  var require_nepali = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nepali.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NepaliCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NepaliCalendar.prototype = new main.baseCalendar();
-      assign(NepaliCalendar.prototype, {
-        /** The calendar name.
-            @memberof NepaliCalendar */
-        name: "Nepali",
-        /** Julian date of start of Nepali epoch: 14 April 57 BCE.
-            @memberof NepaliCalendar */
-        jdEpoch: 17007095e-1,
-        /** Days per month in a common year.
-            @memberof NepaliCalendar */
-        daysPerMonth: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NepaliCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NepaliCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NepaliCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NepaliCalendar */
-        minDay: 1,
-        /** The number of days in the year.
-            @memberof NepaliCalendar */
-        daysPerYear: 365,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NepaliCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nepali",
-            epochs: ["BBS", "ABS"],
-            monthNames: [
-              "Baisakh",
-              "Jestha",
-              "Ashadh",
-              "Shrawan",
-              "Bhadra",
-              "Ashwin",
-              "Kartik",
-              "Mangsir",
-              "Paush",
-              "Mangh",
-              "Falgun",
-              "Chaitra"
-            ],
-            monthNamesShort: ["Bai", "Je", "As", "Shra", "Bha", "Ash", "Kar", "Mang", "Pau", "Ma", "Fal", "Chai"],
-            dayNames: ["Aaitabaar", "Sombaar", "Manglbaar", "Budhabaar", "Bihibaar", "Shukrabaar", "Shanibaar"],
-            dayNamesShort: ["Aaita", "Som", "Mangl", "Budha", "Bihi", "Shukra", "Shani"],
-            dayNamesMin: ["Aai", "So", "Man", "Bu", "Bi", "Shu", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.daysInYear(year) !== this.daysPerYear;
-        },
-        /** Determine the week of the year for a date.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          if (typeof this.NEPALI_CALENDAR_DATA[year] === "undefined") {
-            return this.daysPerYear;
-          }
-          var daysPerYear = 0;
-          for (var month_number = this.minMonth; month_number <= 12; month_number++) {
-            daysPerYear += this.NEPALI_CALENDAR_DATA[year][month_number];
-          }
-          return daysPerYear;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NepaliCalendar
-            @param year {CDate|number| The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return typeof this.NEPALI_CALENDAR_DATA[year] === "undefined" ? this.daysPerMonth[month - 1] : this.NEPALI_CALENDAR_DATA[year][month];
-        },
-        /** Determine whether this date is a week day.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(nepaliYear, nepaliMonth, nepaliDay) {
-          var date = this._validate(nepaliYear, nepaliMonth, nepaliDay, main.local.invalidDate);
-          nepaliYear = date.year();
-          nepaliMonth = date.month();
-          nepaliDay = date.day();
-          var gregorianCalendar = main.instance();
-          var gregorianDayOfYear = 0;
-          var nepaliMonthToCheck = nepaliMonth;
-          var nepaliYearToCheck = nepaliYear;
-          this._createMissingCalendarData(nepaliYear);
-          var gregorianYear = nepaliYear - (nepaliMonthToCheck > 9 || nepaliMonthToCheck === 9 && nepaliDay >= this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0] ? 56 : 57);
-          if (nepaliMonth !== 9) {
-            gregorianDayOfYear = nepaliDay;
-            nepaliMonthToCheck--;
-          }
-          while (nepaliMonthToCheck !== 9) {
-            if (nepaliMonthToCheck <= 0) {
-              nepaliMonthToCheck = 12;
-              nepaliYearToCheck--;
-            }
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][nepaliMonthToCheck];
-            nepaliMonthToCheck--;
-          }
-          if (nepaliMonth === 9) {
-            gregorianDayOfYear += nepaliDay - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-            if (gregorianDayOfYear < 0) {
-              gregorianDayOfYear += gregorianCalendar.daysInYear(gregorianYear);
-            }
-          } else {
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][9] - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-          }
-          return gregorianCalendar.newDate(gregorianYear, 1, 1).add(gregorianDayOfYear, "d").toJD();
-        },
-        /** Create a new date from a Julian date.
-            @memberof NepaliCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var gregorianCalendar = main.instance();
-          var gregorianDate = gregorianCalendar.fromJD(jd);
-          var gregorianYear = gregorianDate.year();
-          var gregorianDayOfYear = gregorianDate.dayOfYear();
-          var nepaliYear = gregorianYear + 56;
-          this._createMissingCalendarData(nepaliYear);
-          var nepaliMonth = 9;
-          var dayOfFirstJanInPaush = this.NEPALI_CALENDAR_DATA[nepaliYear][0];
-          var daysSinceJanFirstToEndOfNepaliMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - dayOfFirstJanInPaush + 1;
-          while (gregorianDayOfYear > daysSinceJanFirstToEndOfNepaliMonth) {
-            nepaliMonth++;
-            if (nepaliMonth > 12) {
-              nepaliMonth = 1;
-              nepaliYear++;
-            }
-            daysSinceJanFirstToEndOfNepaliMonth += this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth];
-          }
-          var nepaliDayOfMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - (daysSinceJanFirstToEndOfNepaliMonth - gregorianDayOfYear);
-          return this.newDate(nepaliYear, nepaliMonth, nepaliDayOfMonth);
-        },
-        /** Creates missing data in the NEPALI_CALENDAR_DATA table.
-            This data will not be correct but just give an estimated result. Mostly -/+ 1 day
-            @private
-            @param nepaliYear {number} The missing year number. */
-        _createMissingCalendarData: function(nepaliYear) {
-          var tmp_calendar_data = this.daysPerMonth.slice(0);
-          tmp_calendar_data.unshift(17);
-          for (var nepaliYearToCreate = nepaliYear - 1; nepaliYearToCreate < nepaliYear + 2; nepaliYearToCreate++) {
-            if (typeof this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] === "undefined") {
-              this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] = tmp_calendar_data;
+        min: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            if (!isNumeric(size[n])) {
+              size[n] = v;
+              return v;
+            } else if (size[n] > v) {
+              var delta = v - size[n];
+              size[n] = v;
+              return delta;
             }
           }
+          return 0;
         },
-        NEPALI_CALENDAR_DATA: {
-          // These data are from http://www.ashesh.com.np
-          1970: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1971: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          1972: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1973: [19, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1974: [19, 31, 31, 32, 30, 31, 31, 30, 29, 30, 29, 30, 30],
-          1975: [18, 31, 31, 32, 32, 30, 31, 30, 29, 30, 29, 30, 30],
-          1976: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1977: [18, 31, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          1978: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1979: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1980: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1981: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1982: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1983: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1984: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1985: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1986: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1987: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1988: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1989: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1990: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1991: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          // These data are from http://nepalicalendar.rat32.com/index.php
-          1992: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1993: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1994: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1995: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1996: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1997: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1998: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1999: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2e3: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2001: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2002: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2003: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2004: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2005: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2006: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2007: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2008: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2009: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2010: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2011: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2012: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2013: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2014: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2015: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2016: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2017: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2018: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2019: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2020: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2021: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2022: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2023: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2024: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2025: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2026: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2027: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2028: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2029: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2030: [17, 31, 32, 31, 32, 31, 30, 30, 30, 30, 30, 30, 31],
-          2031: [17, 31, 32, 31, 32, 31, 31, 31, 31, 31, 31, 31, 31],
-          2032: [17, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-          2033: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2034: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2035: [17, 30, 32, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2036: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2037: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2038: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2039: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2040: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2041: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2042: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2043: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2044: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2045: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2046: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2047: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2048: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2049: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2050: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2051: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2052: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2053: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2054: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2055: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 29, 30],
-          2056: [17, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2057: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2058: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2059: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2060: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2061: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2062: [17, 30, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          2063: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2064: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2065: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2066: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2067: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2068: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2069: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2070: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2071: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2072: [17, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2073: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2074: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2075: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2076: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2077: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2078: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2079: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2080: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          // These data are from http://www.ashesh.com.np/nepali-calendar/
-          2081: [17, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2082: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2083: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2084: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2085: [17, 31, 32, 31, 32, 31, 31, 30, 30, 29, 30, 30, 30],
-          2086: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2087: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2088: [16, 30, 31, 32, 32, 30, 31, 30, 30, 29, 30, 30, 30],
-          2089: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2090: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2091: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2092: [16, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2093: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2094: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2095: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
-          2096: [17, 30, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2097: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2098: [17, 31, 31, 32, 31, 31, 31, 29, 30, 29, 30, 30, 31],
-          2099: [17, 31, 31, 32, 31, 31, 31, 30, 29, 29, 30, 30, 30],
-          2100: [17, 31, 32, 31, 32, 30, 31, 30, 29, 30, 29, 30, 30]
-        }
-      });
-      main.calendars.nepali = NepaliCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/persian.js
-  var require_persian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/persian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function PersianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      PersianCalendar.prototype = new main.baseCalendar();
-      assign(PersianCalendar.prototype, {
-        /** The calendar name.
-            @memberof PersianCalendar */
-        name: "Persian",
-        /** Julian date of start of Persian epoch: 19 March 622 CE.
-            @memberof PersianCalendar */
-        jdEpoch: 19483205e-1,
-        /** Days per month in a common year.
-            @memberof PersianCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof PersianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof PersianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof PersianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof PersianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof PersianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Persian",
-            epochs: ["BP", "AP"],
-            monthNames: [
-              "Farvardin",
-              "Ordibehesht",
-              "Khordad",
-              "Tir",
-              "Mordad",
-              "Shahrivar",
-              "Mehr",
-              "Aban",
-              "Azar",
-              "Day",
-              "Bahman",
-              "Esfand"
-            ],
-            monthNamesShort: ["Far", "Ord", "Kho", "Tir", "Mor", "Sha", "Meh", "Aba", "Aza", "Day", "Bah", "Esf"],
-            dayNames: ["Yekshambe", "Doshambe", "Seshambe", "Ch\xE6harshambe", "Panjshambe", "Jom'e", "Shambe"],
-            dayNamesShort: ["Yek", "Do", "Se", "Ch\xE6", "Panj", "Jom", "Sha"],
-            dayNamesMin: ["Ye", "Do", "Se", "Ch", "Pa", "Jo", "Sh"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return ((date.year() - (date.year() > 0 ? 474 : 473)) % 2820 + 474 + 38) * 682 % 2816 < 682;
-        },
-        /** Determine the week of the year for a date.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-((checkDate.dayOfWeek() + 1) % 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var epBase = year - (year >= 0 ? 474 : 473);
-          var epYear = 474 + mod(epBase, 2820);
-          return day + (month <= 7 ? (month - 1) * 31 : (month - 1) * 30 + 6) + Math.floor((epYear * 682 - 110) / 2816) + (epYear - 1) * 365 + Math.floor(epBase / 2820) * 1029983 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof PersianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var depoch = jd - this.toJD(475, 1, 1);
-          var cycle = Math.floor(depoch / 1029983);
-          var cyear = mod(depoch, 1029983);
-          var ycycle = 2820;
-          if (cyear !== 1029982) {
-            var aux1 = Math.floor(cyear / 366);
-            var aux2 = mod(cyear, 366);
-            ycycle = Math.floor((2134 * aux1 + 2816 * aux2 + 2815) / 1028522) + aux1 + 1;
-          }
-          var year = ycycle + 2820 * cycle + 474;
-          year = year <= 0 ? year - 1 : year;
-          var yday = jd - this.toJD(year, 1, 1) + 1;
-          var month = yday <= 186 ? Math.ceil(yday / 31) : Math.ceil((yday - 6) / 30);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.persian = PersianCalendar;
-      main.calendars.jalali = PersianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/taiwan.js
-  var require_taiwan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/taiwan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function TaiwanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      TaiwanCalendar.prototype = new main.baseCalendar();
-      assign(TaiwanCalendar.prototype, {
-        /** The calendar name.
-            @memberof TaiwanCalendar */
-        name: "Taiwan",
-        /** Julian date of start of Taiwan epoch: 1 January 1912 CE (Gregorian).
-            @memberof TaiwanCalendar */
-        jdEpoch: 24194025e-1,
-        /** Difference in years between Taiwan and Gregorian calendars.
-            @memberof TaiwanCalendar */
-        yearsOffset: 1911,
-        /** Days per month in a common year.
-            @memberof TaiwanCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof TaiwanCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof TaiwanCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof TaiwanCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof TaiwanCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof TaiwanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Taiwan",
-            epochs: ["BROC", "ROC"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof TaiwanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Taiwanese to Gregorian year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Taiwanese year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        },
-        /** Convert Gregorian to Taiwanese year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Taiwanese year. */
-        _g2tYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        }
-      });
-      main.calendars.taiwan = TaiwanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/thai.js
-  var require_thai = __commonJS({
-    "node_modules/world-calendars/dist/calendars/thai.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ThaiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ThaiCalendar.prototype = new main.baseCalendar();
-      assign(ThaiCalendar.prototype, {
-        /** The calendar name.
-            @memberof ThaiCalendar */
-        name: "Thai",
-        /** Julian date of start of Thai epoch: 1 January 543 BCE (Gregorian).
-            @memberof ThaiCalendar */
-        jdEpoch: 15230985e-1,
-        /** Difference in years between Thai and Gregorian calendars.
-            @memberof ThaiCalendar */
-        yearsOffset: 543,
-        /** Days per month in a common year.
-            @memberof ThaiCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ThaiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof ThaiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof ThaiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof ThaiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ThaiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Thai",
-            epochs: ["BBE", "BE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof ThaiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Thai to Gregorian year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Thai year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        },
-        /** Convert Gregorian to Thai year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Thai year. */
-        _g2tYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        }
-      });
-      main.calendars.thai = ThaiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ummalqura.js
-  var require_ummalqura = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ummalqura.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function UmmAlQuraCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      UmmAlQuraCalendar.prototype = new main.baseCalendar();
-      assign(UmmAlQuraCalendar.prototype, {
-        /** The calendar name.
-            @memberof UmmAlQuraCalendar */
-        name: "UmmAlQura",
-        //jdEpoch: 1948440, // Julian date of start of UmmAlQura epoch: 14 March 1937 CE
-        //daysPerMonth: // Days per month in a common year, replaced by a method.
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof UmmAlQuraCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof UmmAlQuraCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof UmmAlQuraCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof UmmAlQuraCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof UmmAlQuraCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Umm al-Qura",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Al-Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' Al-Thani",
-              "Jumada Al-Awwal",
-              "Jumada Al-Thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: ["Yawm al-Ahad", "Yawm al-Ithnain", "Yawm al-Thal\u0101th\u0101\u2019", "Yawm al-Arba\u2018\u0101\u2019", "Yawm al-Kham\u012Bs", "Yawm al-Jum\u2018a", "Yawm al-Sabt"],
-            dayNamesMin: ["Ah", "Ith", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: true
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this.daysInYear(date.year()) === 355;
-        },
-        /** Determine the week of the year for a date.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var daysCount = 0;
-          for (var i = 1; i <= 12; i++) {
-            daysCount += this.daysInMonth(year, i);
-          }
-          return daysCount;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          var mcjdn = date.toJD() - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) {
-              return ummalqura_dat[index] - ummalqura_dat[index - 1];
+        max: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            if (!isNumeric(size[n])) {
+              size[n] = v;
+              return v;
+            } else if (size[n] < v) {
+              var delta = v - size[n];
+              size[n] = v;
+              return delta;
             }
-            index++;
           }
-          return 30;
-        },
-        /** Determine whether this date is a week day.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var index = 12 * (date.year() - 1) + date.month() - 15292;
-          var mcjdn = date.day() + ummalqura_dat[index - 1] - 1;
-          return mcjdn + 24e5 - 0.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof UmmAlQuraCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var mcjdn = jd - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) break;
-            index++;
-          }
-          var lunation = index + 15292;
-          var ii = Math.floor((lunation - 1) / 12);
-          var year = ii + 1;
-          var month = lunation - 12 * ii;
-          var day = mcjdn - ummalqura_dat[index - 1] + 1;
-          return this.newDate(year, month, day);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof UmmAlQuraCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          var valid = main.baseCalendar.prototype.isValid.apply(this, arguments);
-          if (valid) {
-            year = year.year != null ? year.year : year;
-            valid = year >= 1276 && year <= 1500;
-          }
-          return valid;
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof UmmAlQuraCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param month {number} The month to validate.
-            @param day {number} The day to validate.
-            @param error {string} Error message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          var date = main.baseCalendar.prototype._validate.apply(this, arguments);
-          if (date.year < 1276 || date.year > 1500) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return date;
+          return 0;
         }
-      });
-      main.calendars.ummalqura = UmmAlQuraCalendar;
-      var ummalqura_dat = [
-        20,
-        50,
-        79,
-        109,
-        138,
-        168,
-        197,
-        227,
-        256,
-        286,
-        315,
-        345,
-        374,
-        404,
-        433,
-        463,
-        492,
-        522,
-        551,
-        581,
-        611,
-        641,
-        670,
-        700,
-        729,
-        759,
-        788,
-        818,
-        847,
-        877,
-        906,
-        936,
-        965,
-        995,
-        1024,
-        1054,
-        1083,
-        1113,
-        1142,
-        1172,
-        1201,
-        1231,
-        1260,
-        1290,
-        1320,
-        1350,
-        1379,
-        1409,
-        1438,
-        1468,
-        1497,
-        1527,
-        1556,
-        1586,
-        1615,
-        1645,
-        1674,
-        1704,
-        1733,
-        1763,
-        1792,
-        1822,
-        1851,
-        1881,
-        1910,
-        1940,
-        1969,
-        1999,
-        2028,
-        2058,
-        2087,
-        2117,
-        2146,
-        2176,
-        2205,
-        2235,
-        2264,
-        2294,
-        2323,
-        2353,
-        2383,
-        2413,
-        2442,
-        2472,
-        2501,
-        2531,
-        2560,
-        2590,
-        2619,
-        2649,
-        2678,
-        2708,
-        2737,
-        2767,
-        2796,
-        2826,
-        2855,
-        2885,
-        2914,
-        2944,
-        2973,
-        3003,
-        3032,
-        3062,
-        3091,
-        3121,
-        3150,
-        3180,
-        3209,
-        3239,
-        3268,
-        3298,
-        3327,
-        3357,
-        3386,
-        3416,
-        3446,
-        3476,
-        3505,
-        3535,
-        3564,
-        3594,
-        3623,
-        3653,
-        3682,
-        3712,
-        3741,
-        3771,
-        3800,
-        3830,
-        3859,
-        3889,
-        3918,
-        3948,
-        3977,
-        4007,
-        4036,
-        4066,
-        4095,
-        4125,
-        4155,
-        4185,
-        4214,
-        4244,
-        4273,
-        4303,
-        4332,
-        4362,
-        4391,
-        4421,
-        4450,
-        4480,
-        4509,
-        4539,
-        4568,
-        4598,
-        4627,
-        4657,
-        4686,
-        4716,
-        4745,
-        4775,
-        4804,
-        4834,
-        4863,
-        4893,
-        4922,
-        4952,
-        4981,
-        5011,
-        5040,
-        5070,
-        5099,
-        5129,
-        5158,
-        5188,
-        5218,
-        5248,
-        5277,
-        5307,
-        5336,
-        5366,
-        5395,
-        5425,
-        5454,
-        5484,
-        5513,
-        5543,
-        5572,
-        5602,
-        5631,
-        5661,
-        5690,
-        5720,
-        5749,
-        5779,
-        5808,
-        5838,
-        5867,
-        5897,
-        5926,
-        5956,
-        5985,
-        6015,
-        6044,
-        6074,
-        6103,
-        6133,
-        6162,
-        6192,
-        6221,
-        6251,
-        6281,
-        6311,
-        6340,
-        6370,
-        6399,
-        6429,
-        6458,
-        6488,
-        6517,
-        6547,
-        6576,
-        6606,
-        6635,
-        6665,
-        6694,
-        6724,
-        6753,
-        6783,
-        6812,
-        6842,
-        6871,
-        6901,
-        6930,
-        6960,
-        6989,
-        7019,
-        7048,
-        7078,
-        7107,
-        7137,
-        7166,
-        7196,
-        7225,
-        7255,
-        7284,
-        7314,
-        7344,
-        7374,
-        7403,
-        7433,
-        7462,
-        7492,
-        7521,
-        7551,
-        7580,
-        7610,
-        7639,
-        7669,
-        7698,
-        7728,
-        7757,
-        7787,
-        7816,
-        7846,
-        7875,
-        7905,
-        7934,
-        7964,
-        7993,
-        8023,
-        8053,
-        8083,
-        8112,
-        8142,
-        8171,
-        8201,
-        8230,
-        8260,
-        8289,
-        8319,
-        8348,
-        8378,
-        8407,
-        8437,
-        8466,
-        8496,
-        8525,
-        8555,
-        8584,
-        8614,
-        8643,
-        8673,
-        8702,
-        8732,
-        8761,
-        8791,
-        8821,
-        8850,
-        8880,
-        8909,
-        8938,
-        8968,
-        8997,
-        9027,
-        9056,
-        9086,
-        9115,
-        9145,
-        9175,
-        9205,
-        9234,
-        9264,
-        9293,
-        9322,
-        9352,
-        9381,
-        9410,
-        9440,
-        9470,
-        9499,
-        9529,
-        9559,
-        9589,
-        9618,
-        9648,
-        9677,
-        9706,
-        9736,
-        9765,
-        9794,
-        9824,
-        9853,
-        9883,
-        9913,
-        9943,
-        9972,
-        10002,
-        10032,
-        10061,
-        10090,
-        10120,
-        10149,
-        10178,
-        10208,
-        10237,
-        10267,
-        10297,
-        10326,
-        10356,
-        10386,
-        10415,
-        10445,
-        10474,
-        10504,
-        10533,
-        10562,
-        10592,
-        10621,
-        10651,
-        10680,
-        10710,
-        10740,
-        10770,
-        10799,
-        10829,
-        10858,
-        10888,
-        10917,
-        10947,
-        10976,
-        11005,
-        11035,
-        11064,
-        11094,
-        11124,
-        11153,
-        11183,
-        11213,
-        11242,
-        11272,
-        11301,
-        11331,
-        11360,
-        11389,
-        11419,
-        11448,
-        11478,
-        11507,
-        11537,
-        11567,
-        11596,
-        11626,
-        11655,
-        11685,
-        11715,
-        11744,
-        11774,
-        11803,
-        11832,
-        11862,
-        11891,
-        11921,
-        11950,
-        11980,
-        12010,
-        12039,
-        12069,
-        12099,
-        12128,
-        12158,
-        12187,
-        12216,
-        12246,
-        12275,
-        12304,
-        12334,
-        12364,
-        12393,
-        12423,
-        12453,
-        12483,
-        12512,
-        12542,
-        12571,
-        12600,
-        12630,
-        12659,
-        12688,
-        12718,
-        12747,
-        12777,
-        12807,
-        12837,
-        12866,
-        12896,
-        12926,
-        12955,
-        12984,
-        13014,
-        13043,
-        13072,
-        13102,
-        13131,
-        13161,
-        13191,
-        13220,
-        13250,
-        13280,
-        13310,
-        13339,
-        13368,
-        13398,
-        13427,
-        13456,
-        13486,
-        13515,
-        13545,
-        13574,
-        13604,
-        13634,
-        13664,
-        13693,
-        13723,
-        13752,
-        13782,
-        13811,
-        13840,
-        13870,
-        13899,
-        13929,
-        13958,
-        13988,
-        14018,
-        14047,
-        14077,
-        14107,
-        14136,
-        14166,
-        14195,
-        14224,
-        14254,
-        14283,
-        14313,
-        14342,
-        14372,
-        14401,
-        14431,
-        14461,
-        14490,
-        14520,
-        14550,
-        14579,
-        14609,
-        14638,
-        14667,
-        14697,
-        14726,
-        14756,
-        14785,
-        14815,
-        14844,
-        14874,
-        14904,
-        14933,
-        14963,
-        14993,
-        15021,
-        15051,
-        15081,
-        15110,
-        15140,
-        15169,
-        15199,
-        15228,
-        15258,
-        15287,
-        15317,
-        15347,
-        15377,
-        15406,
-        15436,
-        15465,
-        15494,
-        15524,
-        15553,
-        15582,
-        15612,
-        15641,
-        15671,
-        15701,
-        15731,
-        15760,
-        15790,
-        15820,
-        15849,
-        15878,
-        15908,
-        15937,
-        15966,
-        15996,
-        16025,
-        16055,
-        16085,
-        16114,
-        16144,
-        16174,
-        16204,
-        16233,
-        16262,
-        16292,
-        16321,
-        16350,
-        16380,
-        16409,
-        16439,
-        16468,
-        16498,
-        16528,
-        16558,
-        16587,
-        16617,
-        16646,
-        16676,
-        16705,
-        16734,
-        16764,
-        16793,
-        16823,
-        16852,
-        16882,
-        16912,
-        16941,
-        16971,
-        17001,
-        17030,
-        17060,
-        17089,
-        17118,
-        17148,
-        17177,
-        17207,
-        17236,
-        17266,
-        17295,
-        17325,
-        17355,
-        17384,
-        17414,
-        17444,
-        17473,
-        17502,
-        17532,
-        17561,
-        17591,
-        17620,
-        17650,
-        17679,
-        17709,
-        17738,
-        17768,
-        17798,
-        17827,
-        17857,
-        17886,
-        17916,
-        17945,
-        17975,
-        18004,
-        18034,
-        18063,
-        18093,
-        18122,
-        18152,
-        18181,
-        18211,
-        18241,
-        18270,
-        18300,
-        18330,
-        18359,
-        18388,
-        18418,
-        18447,
-        18476,
-        18506,
-        18535,
-        18565,
-        18595,
-        18625,
-        18654,
-        18684,
-        18714,
-        18743,
-        18772,
-        18802,
-        18831,
-        18860,
-        18890,
-        18919,
-        18949,
-        18979,
-        19008,
-        19038,
-        19068,
-        19098,
-        19127,
-        19156,
-        19186,
-        19215,
-        19244,
-        19274,
-        19303,
-        19333,
-        19362,
-        19392,
-        19422,
-        19452,
-        19481,
-        19511,
-        19540,
-        19570,
-        19599,
-        19628,
-        19658,
-        19687,
-        19717,
-        19746,
-        19776,
-        19806,
-        19836,
-        19865,
-        19895,
-        19924,
-        19954,
-        19983,
-        20012,
-        20042,
-        20071,
-        20101,
-        20130,
-        20160,
-        20190,
-        20219,
-        20249,
-        20279,
-        20308,
-        20338,
-        20367,
-        20396,
-        20426,
-        20455,
-        20485,
-        20514,
-        20544,
-        20573,
-        20603,
-        20633,
-        20662,
-        20692,
-        20721,
-        20751,
-        20780,
-        20810,
-        20839,
-        20869,
-        20898,
-        20928,
-        20957,
-        20987,
-        21016,
-        21046,
-        21076,
-        21105,
-        21135,
-        21164,
-        21194,
-        21223,
-        21253,
-        21282,
-        21312,
-        21341,
-        21371,
-        21400,
-        21430,
-        21459,
-        21489,
-        21519,
-        21548,
-        21578,
-        21607,
-        21637,
-        21666,
-        21696,
-        21725,
-        21754,
-        21784,
-        21813,
-        21843,
-        21873,
-        21902,
-        21932,
-        21962,
-        21991,
-        22021,
-        22050,
-        22080,
-        22109,
-        22138,
-        22168,
-        22197,
-        22227,
-        22256,
-        22286,
-        22316,
-        22346,
-        22375,
-        22405,
-        22434,
-        22464,
-        22493,
-        22522,
-        22552,
-        22581,
-        22611,
-        22640,
-        22670,
-        22700,
-        22730,
-        22759,
-        22789,
-        22818,
-        22848,
-        22877,
-        22906,
-        22936,
-        22965,
-        22994,
-        23024,
-        23054,
-        23083,
-        23113,
-        23143,
-        23173,
-        23202,
-        23232,
-        23261,
-        23290,
-        23320,
-        23349,
-        23379,
-        23408,
-        23438,
-        23467,
-        23497,
-        23527,
-        23556,
-        23586,
-        23616,
-        23645,
-        23674,
-        23704,
-        23733,
-        23763,
-        23792,
-        23822,
-        23851,
-        23881,
-        23910,
-        23940,
-        23970,
-        23999,
-        24029,
-        24058,
-        24088,
-        24117,
-        24147,
-        24176,
-        24206,
-        24235,
-        24265,
-        24294,
-        24324,
-        24353,
-        24383,
-        24413,
-        24442,
-        24472,
-        24501,
-        24531,
-        24560,
-        24590,
-        24619,
-        24648,
-        24678,
-        24707,
-        24737,
-        24767,
-        24796,
-        24826,
-        24856,
-        24885,
-        24915,
-        24944,
-        24974,
-        25003,
-        25032,
-        25062,
-        25091,
-        25121,
-        25150,
-        25180,
-        25210,
-        25240,
-        25269,
-        25299,
-        25328,
-        25358,
-        25387,
-        25416,
-        25446,
-        25475,
-        25505,
-        25534,
-        25564,
-        25594,
-        25624,
-        25653,
-        25683,
-        25712,
-        25742,
-        25771,
-        25800,
-        25830,
-        25859,
-        25888,
-        25918,
-        25948,
-        25977,
-        26007,
-        26037,
-        26067,
-        26096,
-        26126,
-        26155,
-        26184,
-        26214,
-        26243,
-        26272,
-        26302,
-        26332,
-        26361,
-        26391,
-        26421,
-        26451,
-        26480,
-        26510,
-        26539,
-        26568,
-        26598,
-        26627,
-        26656,
-        26686,
-        26715,
-        26745,
-        26775,
-        26805,
-        26834,
-        26864,
-        26893,
-        26923,
-        26952,
-        26982,
-        27011,
-        27041,
-        27070,
-        27099,
-        27129,
-        27159,
-        27188,
-        27218,
-        27248,
-        27277,
-        27307,
-        27336,
-        27366,
-        27395,
-        27425,
-        27454,
-        27484,
-        27513,
-        27542,
-        27572,
-        27602,
-        27631,
-        27661,
-        27691,
-        27720,
-        27750,
-        27779,
-        27809,
-        27838,
-        27868,
-        27897,
-        27926,
-        27956,
-        27985,
-        28015,
-        28045,
-        28074,
-        28104,
-        28134,
-        28163,
-        28193,
-        28222,
-        28252,
-        28281,
-        28310,
-        28340,
-        28369,
-        28399,
-        28428,
-        28458,
-        28488,
-        28517,
-        28547,
-        28577,
-        // From 1356
-        28607,
-        28636,
-        28665,
-        28695,
-        28724,
-        28754,
-        28783,
-        28813,
-        28843,
-        28872,
-        28901,
-        28931,
-        28960,
-        28990,
-        29019,
-        29049,
-        29078,
-        29108,
-        29137,
-        29167,
-        29196,
-        29226,
-        29255,
-        29285,
-        29315,
-        29345,
-        29375,
-        29404,
-        29434,
-        29463,
-        29492,
-        29522,
-        29551,
-        29580,
-        29610,
-        29640,
-        29669,
-        29699,
-        29729,
-        29759,
-        29788,
-        29818,
-        29847,
-        29876,
-        29906,
-        29935,
-        29964,
-        29994,
-        30023,
-        30053,
-        30082,
-        30112,
-        30141,
-        30171,
-        30200,
-        30230,
-        30259,
-        30289,
-        30318,
-        30348,
-        30378,
-        30408,
-        30437,
-        30467,
-        30496,
-        30526,
-        30555,
-        30585,
-        30614,
-        30644,
-        30673,
-        30703,
-        30732,
-        30762,
-        30791,
-        30821,
-        30850,
-        30880,
-        30909,
-        30939,
-        30968,
-        30998,
-        31027,
-        31057,
-        31086,
-        31116,
-        31145,
-        31175,
-        31204,
-        31234,
-        31263,
-        31293,
-        31322,
-        31352,
-        31381,
-        31411,
-        31441,
-        31471,
-        31500,
-        31530,
-        31559,
-        31589,
-        31618,
-        31648,
-        31676,
-        31706,
-        31736,
-        31766,
-        31795,
-        31825,
-        31854,
-        31884,
-        31913,
-        31943,
-        31972,
-        32002,
-        32031,
-        32061,
-        32090,
-        32120,
-        32150,
-        32180,
-        32209,
-        32239,
-        32268,
-        32298,
-        32327,
-        32357,
-        32386,
-        32416,
-        32445,
-        32475,
-        32504,
-        32534,
-        32563,
-        32593,
-        32622,
-        32652,
-        32681,
-        32711,
-        32740,
-        32770,
-        32799,
-        32829,
-        32858,
-        32888,
-        32917,
-        32947,
-        32976,
-        33006,
-        33035,
-        33065,
-        33094,
-        33124,
-        33153,
-        33183,
-        33213,
-        33243,
-        33272,
-        33302,
-        33331,
-        33361,
-        33390,
-        33420,
-        33450,
-        33479,
-        33509,
-        33539,
-        33568,
-        33598,
-        33627,
-        33657,
-        33686,
-        33716,
-        33745,
-        33775,
-        33804,
-        33834,
-        33863,
-        33893,
-        33922,
-        33952,
-        33981,
-        34011,
-        34040,
-        34069,
-        34099,
-        34128,
-        34158,
-        34187,
-        34217,
-        34247,
-        34277,
-        34306,
-        34336,
-        34365,
-        34395,
-        34424,
-        34454,
-        34483,
-        34512,
-        34542,
-        34571,
-        34601,
-        34631,
-        34660,
-        34690,
-        34719,
-        34749,
-        34778,
-        34808,
-        34837,
-        34867,
-        34896,
-        34926,
-        34955,
-        34985,
-        35015,
-        35044,
-        35074,
-        35103,
-        35133,
-        35162,
-        35192,
-        35222,
-        35251,
-        35280,
-        35310,
-        35340,
-        35370,
-        35399,
-        35429,
-        35458,
-        35488,
-        35517,
-        35547,
-        35576,
-        35605,
-        35635,
-        35665,
-        35694,
-        35723,
-        35753,
-        35782,
-        35811,
-        35841,
-        35871,
-        35901,
-        35930,
-        35960,
-        35989,
-        36019,
-        36048,
-        36078,
-        36107,
-        36136,
-        36166,
-        36195,
-        36225,
-        36254,
-        36284,
-        36314,
-        36343,
-        36373,
-        36403,
-        36433,
-        36462,
-        36492,
-        36521,
-        36551,
-        36580,
-        36610,
-        36639,
-        36669,
-        36698,
-        36728,
-        36757,
-        36786,
-        36816,
-        36845,
-        36875,
-        36904,
-        36934,
-        36963,
-        36993,
-        37022,
-        37052,
-        37081,
-        37111,
-        37141,
-        37170,
-        37200,
-        37229,
-        37259,
-        37288,
-        37318,
-        37347,
-        37377,
-        37406,
-        37436,
-        37465,
-        37495,
-        37524,
-        37554,
-        37584,
-        37613,
-        37643,
-        37672,
-        37701,
-        37731,
-        37760,
-        37790,
-        37819,
-        37849,
-        37878,
-        37908,
-        37938,
-        37967,
-        37997,
-        38027,
-        38056,
-        38085,
-        38115,
-        38144,
-        38174,
-        38203,
-        38233,
-        38262,
-        38292,
-        38322,
-        38351,
-        38381,
-        38410,
-        38440,
-        38469,
-        38499,
-        38528,
-        38558,
-        38587,
-        38617,
-        38646,
-        38676,
-        38705,
-        38735,
-        38764,
-        38794,
-        38823,
-        38853,
-        38882,
-        38912,
-        38941,
-        38971,
-        39001,
-        39030,
-        39059,
-        39089,
-        39118,
-        39148,
-        39178,
-        39208,
-        39237,
-        39267,
-        39297,
-        39326,
-        39355,
-        39385,
-        39414,
-        39444,
-        39473,
-        39503,
-        39532,
-        39562,
-        39592,
-        39621,
-        39650,
-        39680,
-        39709,
-        39739,
-        39768,
-        39798,
-        39827,
-        39857,
-        39886,
-        39916,
-        39946,
-        39975,
-        40005,
-        40035,
-        40064,
-        40094,
-        40123,
-        40153,
-        40182,
-        40212,
-        40241,
-        40271,
-        40300,
-        40330,
-        40359,
-        40389,
-        40418,
-        40448,
-        40477,
-        40507,
-        40536,
-        40566,
-        40595,
-        40625,
-        40655,
-        40685,
-        40714,
-        40744,
-        40773,
-        40803,
-        40832,
-        40862,
-        40892,
-        40921,
-        40951,
-        40980,
-        41009,
-        41039,
-        41068,
-        41098,
-        41127,
-        41157,
-        41186,
-        41216,
-        41245,
-        41275,
-        41304,
-        41334,
-        41364,
-        41393,
-        41422,
-        41452,
-        41481,
-        41511,
-        41540,
-        41570,
-        41599,
-        41629,
-        41658,
-        41688,
-        41718,
-        41748,
-        41777,
-        41807,
-        41836,
-        41865,
-        41894,
-        41924,
-        41953,
-        41983,
-        42012,
-        42042,
-        42072,
-        42102,
-        42131,
-        42161,
-        42190,
-        42220,
-        42249,
-        42279,
-        42308,
-        42337,
-        42367,
-        42397,
-        42426,
-        42456,
-        42485,
-        42515,
-        42545,
-        42574,
-        42604,
-        42633,
-        42662,
-        42692,
-        42721,
-        42751,
-        42780,
-        42810,
-        42839,
-        42869,
-        42899,
-        42929,
-        42958,
-        42988,
-        43017,
-        43046,
-        43076,
-        43105,
-        43135,
-        43164,
-        43194,
-        43223,
-        43253,
-        43283,
-        43312,
-        43342,
-        43371,
-        43401,
-        43430,
-        43460,
-        43489,
-        43519,
-        43548,
-        43578,
-        43607,
-        43637,
-        43666,
-        43696,
-        43726,
-        43755,
-        43785,
-        43814,
-        43844,
-        43873,
-        43903,
-        43932,
-        43962,
-        43991,
-        44021,
-        44050,
-        44080,
-        44109,
-        44139,
-        44169,
-        44198,
-        44228,
-        44258,
-        44287,
-        44317,
-        44346,
-        44375,
-        44405,
-        44434,
-        44464,
-        44493,
-        44523,
-        44553,
-        44582,
-        44612,
-        44641,
-        44671,
-        44700,
-        44730,
-        44759,
-        44788,
-        44818,
-        44847,
-        44877,
-        44906,
-        44936,
-        44966,
-        44996,
-        45025,
-        45055,
-        45084,
-        45114,
-        45143,
-        45172,
-        45202,
-        45231,
-        45261,
-        45290,
-        45320,
-        45350,
-        45380,
-        45409,
-        45439,
-        45468,
-        45498,
-        45527,
-        45556,
-        45586,
-        45615,
-        45644,
-        45674,
-        45704,
-        45733,
-        45763,
-        45793,
-        45823,
-        45852,
-        45882,
-        45911,
-        45940,
-        45970,
-        45999,
-        46028,
-        46058,
-        46088,
-        46117,
-        46147,
-        46177,
-        46206,
-        46236,
-        46265,
-        46295,
-        46324,
-        46354,
-        46383,
-        46413,
-        46442,
-        46472,
-        46501,
-        46531,
-        46560,
-        46590,
-        46620,
-        46649,
-        46679,
-        46708,
-        46738,
-        46767,
-        46797,
-        46826,
-        46856,
-        46885,
-        46915,
-        46944,
-        46974,
-        47003,
-        47033,
-        47063,
-        47092,
-        47122,
-        47151,
-        47181,
-        47210,
-        47240,
-        47269,
-        47298,
-        47328,
-        47357,
-        47387,
-        47417,
-        47446,
-        47476,
-        47506,
-        47535,
-        47565,
-        47594,
-        47624,
-        47653,
-        47682,
-        47712,
-        47741,
-        47771,
-        47800,
-        47830,
-        47860,
-        47890,
-        47919,
-        47949,
-        47978,
-        48008,
-        48037,
-        48066,
-        48096,
-        48125,
-        48155,
-        48184,
-        48214,
-        48244,
-        48273,
-        48303,
-        48333,
-        48362,
-        48392,
-        48421,
-        48450,
-        48480,
-        48509,
-        48538,
-        48568,
-        48598,
-        48627,
-        48657,
-        48687,
-        48717,
-        48746,
-        48776,
-        48805,
-        48834,
-        48864,
-        48893,
-        48922,
-        48952,
-        48982,
-        49011,
-        49041,
-        49071,
-        49100,
-        49130,
-        49160,
-        49189,
-        49218,
-        49248,
-        49277,
-        49306,
-        49336,
-        49365,
-        49395,
-        49425,
-        49455,
-        49484,
-        49514,
-        49543,
-        49573,
-        49602,
-        49632,
-        49661,
-        49690,
-        49720,
-        49749,
-        49779,
-        49809,
-        49838,
-        49868,
-        49898,
-        49927,
-        49957,
-        49986,
-        50016,
-        50045,
-        50075,
-        50104,
-        50133,
-        50163,
-        50192,
-        50222,
-        50252,
-        50281,
-        50311,
-        50340,
-        50370,
-        50400,
-        50429,
-        50459,
-        50488,
-        50518,
-        50547,
-        50576,
-        50606,
-        50635,
-        50665,
-        50694,
-        50724,
-        50754,
-        50784,
-        50813,
-        50843,
-        50872,
-        50902,
-        50931,
-        50960,
-        50990,
-        51019,
-        51049,
-        51078,
-        51108,
-        51138,
-        51167,
-        51197,
-        51227,
-        51256,
-        51286,
-        51315,
-        51345,
-        51374,
-        51403,
-        51433,
-        51462,
-        51492,
-        51522,
-        51552,
-        51582,
-        51611,
-        51641,
-        51670,
-        51699,
-        51729,
-        51758,
-        51787,
-        51816,
-        51846,
-        51876,
-        51906,
-        51936,
-        51965,
-        51995,
-        52025,
-        52054,
-        52083,
-        52113,
-        52142,
-        52171,
-        52200,
-        52230,
-        52260,
-        52290,
-        52319,
-        52349,
-        52379,
-        52408,
-        52438,
-        52467,
-        52497,
-        52526,
-        52555,
-        52585,
-        52614,
-        52644,
-        52673,
-        52703,
-        52733,
-        52762,
-        52792,
-        52822,
-        52851,
-        52881,
-        52910,
-        52939,
-        52969,
-        52998,
-        53028,
-        53057,
-        53087,
-        53116,
-        53146,
-        53176,
-        53205,
-        53235,
-        53264,
-        53294,
-        53324,
-        53353,
-        53383,
-        53412,
-        53441,
-        53471,
-        53500,
-        53530,
-        53559,
-        53589,
-        53619,
-        53648,
-        53678,
-        53708,
-        53737,
-        53767,
-        53796,
-        53825,
-        53855,
-        53884,
-        53913,
-        53943,
-        53973,
-        54003,
-        54032,
-        54062,
-        54092,
-        54121,
-        54151,
-        54180,
-        54209,
-        54239,
-        54268,
-        54297,
-        54327,
-        54357,
-        54387,
-        54416,
-        54446,
-        54476,
-        54505,
-        54535,
-        54564,
-        54593,
-        54623,
-        54652,
-        54681,
-        54711,
-        54741,
-        54770,
-        54800,
-        54830,
-        54859,
-        54889,
-        54919,
-        54948,
-        54977,
-        55007,
-        55036,
-        55066,
-        55095,
-        55125,
-        55154,
-        55184,
-        55213,
-        55243,
-        55273,
-        55302,
-        55332,
-        55361,
-        55391,
-        55420,
-        55450,
-        55479,
-        55508,
-        55538,
-        55567,
-        55597,
-        55627,
-        55657,
-        55686,
-        55716,
-        55745,
-        55775,
-        55804,
-        55834,
-        55863,
-        55892,
-        55922,
-        55951,
-        55981,
-        56011,
-        56040,
-        56070,
-        56100,
-        56129,
-        56159,
-        56188,
-        56218,
-        56247,
-        56276,
-        56306,
-        56335,
-        56365,
-        56394,
-        56424,
-        56454,
-        56483,
-        56513,
-        56543,
-        56572,
-        56601,
-        56631,
-        56660,
-        56690,
-        56719,
-        56749,
-        56778,
-        56808,
-        56837,
-        56867,
-        56897,
-        56926,
-        56956,
-        56985,
-        57015,
-        57044,
-        57074,
-        57103,
-        57133,
-        57162,
-        57192,
-        57221,
-        57251,
-        57280,
-        57310,
-        57340,
-        57369,
-        57399,
-        57429,
-        57458,
-        57487,
-        57517,
-        57546,
-        57576,
-        57605,
-        57634,
-        57664,
-        57694,
-        57723,
-        57753,
-        57783,
-        57813,
-        57842,
-        57871,
-        57901,
-        57930,
-        57959,
-        57989,
-        58018,
-        58048,
-        58077,
-        58107,
-        58137,
-        58167,
-        58196,
-        58226,
-        58255,
-        58285,
-        58314,
-        58343,
-        58373,
-        58402,
-        58432,
-        58461,
-        58491,
-        58521,
-        58551,
-        58580,
-        58610,
-        58639,
-        58669,
-        58698,
-        58727,
-        58757,
-        58786,
-        58816,
-        58845,
-        58875,
-        58905,
-        58934,
-        58964,
-        58994,
-        59023,
-        59053,
-        59082,
-        59111,
-        59141,
-        59170,
-        59200,
-        59229,
-        59259,
-        59288,
-        59318,
-        59348,
-        59377,
-        59407,
-        59436,
-        59466,
-        59495,
-        59525,
-        59554,
-        59584,
-        59613,
-        59643,
-        59672,
-        59702,
-        59731,
-        59761,
-        59791,
-        59820,
-        59850,
-        59879,
-        59909,
-        59939,
-        59968,
-        59997,
-        60027,
-        60056,
-        60086,
-        60115,
-        60145,
-        60174,
-        60204,
-        60234,
-        60264,
-        60293,
-        60323,
-        60352,
-        60381,
-        60411,
-        60440,
-        60469,
-        60499,
-        60528,
-        60558,
-        60588,
-        60618,
-        60648,
-        60677,
-        60707,
-        60736,
-        60765,
-        60795,
-        60824,
-        60853,
-        60883,
-        60912,
-        60942,
-        60972,
-        61002,
-        61031,
-        61061,
-        61090,
-        61120,
-        61149,
-        61179,
-        61208,
-        61237,
-        61267,
-        61296,
-        61326,
-        61356,
-        61385,
-        61415,
-        61445,
-        61474,
-        61504,
-        61533,
-        61563,
-        61592,
-        61621,
-        61651,
-        61680,
-        61710,
-        61739,
-        61769,
-        61799,
-        61828,
-        61858,
-        61888,
-        61917,
-        61947,
-        61976,
-        62006,
-        62035,
-        62064,
-        62094,
-        62123,
-        62153,
-        62182,
-        62212,
-        62242,
-        62271,
-        62301,
-        62331,
-        62360,
-        62390,
-        62419,
-        62448,
-        62478,
-        62507,
-        62537,
-        62566,
-        62596,
-        62625,
-        62655,
-        62685,
-        62715,
-        62744,
-        62774,
-        62803,
-        62832,
-        62862,
-        62891,
-        62921,
-        62950,
-        62980,
-        63009,
-        63039,
-        63069,
-        63099,
-        63128,
-        63157,
-        63187,
-        63216,
-        63246,
-        63275,
-        63305,
-        63334,
-        63363,
-        63393,
-        63423,
-        63453,
-        63482,
-        63512,
-        63541,
-        63571,
-        63600,
-        63630,
-        63659,
-        63689,
-        63718,
-        63747,
-        63777,
-        63807,
-        63836,
-        63866,
-        63895,
-        63925,
-        63955,
-        63984,
-        64014,
-        64043,
-        64073,
-        64102,
-        64131,
-        64161,
-        64190,
-        64220,
-        64249,
-        64279,
-        64309,
-        64339,
-        64368,
-        64398,
-        64427,
-        64457,
-        64486,
-        64515,
-        64545,
-        64574,
-        64603,
-        64633,
-        64663,
-        64692,
-        64722,
-        64752,
-        64782,
-        64811,
-        64841,
-        64870,
-        64899,
-        64929,
-        64958,
-        64987,
-        65017,
-        65047,
-        65076,
-        65106,
-        65136,
-        65166,
-        65195,
-        65225,
-        65254,
-        65283,
-        65313,
-        65342,
-        65371,
-        65401,
-        65431,
-        65460,
-        65490,
-        65520,
-        65549,
-        65579,
-        65608,
-        65638,
-        65667,
-        65697,
-        65726,
-        65755,
-        65785,
-        65815,
-        65844,
-        65874,
-        65903,
-        65933,
-        65963,
-        65992,
-        66022,
-        66051,
-        66081,
-        66110,
-        66140,
-        66169,
-        66199,
-        66228,
-        66258,
-        66287,
-        66317,
-        66346,
-        66376,
-        66405,
-        66435,
-        66465,
-        66494,
-        66524,
-        66553,
-        66583,
-        66612,
-        66641,
-        66671,
-        66700,
-        66730,
-        66760,
-        66789,
-        66819,
-        66849,
-        66878,
-        66908,
-        66937,
-        66967,
-        66996,
-        67025,
-        67055,
-        67084,
-        67114,
-        67143,
-        67173,
-        67203,
-        67233,
-        67262,
-        67292,
-        67321,
-        67351,
-        67380,
-        67409,
-        67439,
-        67468,
-        67497,
-        67527,
-        67557,
-        67587,
-        67617,
-        67646,
-        67676,
-        67705,
-        67735,
-        67764,
-        67793,
-        67823,
-        67852,
-        67882,
-        67911,
-        67941,
-        67971,
-        68e3,
-        68030,
-        68060,
-        68089,
-        68119,
-        68148,
-        68177,
-        68207,
-        68236,
-        68266,
-        68295,
-        68325,
-        68354,
-        68384,
-        68414,
-        68443,
-        68473,
-        68502,
-        68532,
-        68561,
-        68591,
-        68620,
-        68650,
-        68679,
-        68708,
-        68738,
-        68768,
-        68797,
-        68827,
-        68857,
-        68886,
-        68916,
-        68946,
-        68975,
-        69004,
-        69034,
-        69063,
-        69092,
-        69122,
-        69152,
-        69181,
-        69211,
-        69240,
-        69270,
-        69300,
-        69330,
-        69359,
-        69388,
-        69418,
-        69447,
-        69476,
-        69506,
-        69535,
-        69565,
-        69595,
-        69624,
-        69654,
-        69684,
-        69713,
-        69743,
-        69772,
-        69802,
-        69831,
-        69861,
-        69890,
-        69919,
-        69949,
-        69978,
-        70008,
-        70038,
-        70067,
-        70097,
-        70126,
-        70156,
-        70186,
-        70215,
-        70245,
-        70274,
-        70303,
-        70333,
-        70362,
-        70392,
-        70421,
-        70451,
-        70481,
-        70510,
-        70540,
-        70570,
-        70599,
-        70629,
-        70658,
-        70687,
-        70717,
-        70746,
-        70776,
-        70805,
-        70835,
-        70864,
-        70894,
-        70924,
-        70954,
-        70983,
-        71013,
-        71042,
-        71071,
-        71101,
-        71130,
-        71159,
-        71189,
-        71218,
-        71248,
-        71278,
-        71308,
-        71337,
-        71367,
-        71397,
-        71426,
-        71455,
-        71485,
-        71514,
-        71543,
-        71573,
-        71602,
-        71632,
-        71662,
-        71691,
-        71721,
-        71751,
-        71781,
-        71810,
-        71839,
-        71869,
-        71898,
-        71927,
-        71957,
-        71986,
-        72016,
-        72046,
-        72075,
-        72105,
-        72135,
-        72164,
-        72194,
-        72223,
-        72253,
-        72282,
-        72311,
-        72341,
-        72370,
-        72400,
-        72429,
-        72459,
-        72489,
-        72518,
-        72548,
-        72577,
-        72607,
-        72637,
-        72666,
-        72695,
-        72725,
-        72754,
-        72784,
-        72813,
-        72843,
-        72872,
-        72902,
-        72931,
-        72961,
-        72991,
-        73020,
-        73050,
-        73080,
-        73109,
-        73139,
-        73168,
-        73197,
-        73227,
-        73256,
-        73286,
-        73315,
-        73345,
-        73375,
-        73404,
-        73434,
-        73464,
-        73493,
-        73523,
-        73552,
-        73581,
-        73611,
-        73640,
-        73669,
-        73699,
-        73729,
-        73758,
-        73788,
-        73818,
-        73848,
-        73877,
-        73907,
-        73936,
-        73965,
-        73995,
-        74024,
-        74053,
-        74083,
-        74113,
-        74142,
-        74172,
-        74202,
-        74231,
-        74261,
-        74291,
-        74320,
-        74349,
-        74379,
-        74408,
-        74437,
-        74467,
-        74497,
-        74526,
-        74556,
-        74586,
-        74615,
-        74645,
-        74675,
-        74704,
-        74733,
-        74763,
-        74792,
-        74822,
-        74851,
-        74881,
-        74910,
-        74940,
-        74969,
-        74999,
-        75029,
-        75058,
-        75088,
-        75117,
-        75147,
-        75176,
-        75206,
-        75235,
-        75264,
-        75294,
-        75323,
-        75353,
-        75383,
-        75412,
-        75442,
-        75472,
-        75501,
-        75531,
-        75560,
-        75590,
-        75619,
-        75648,
-        75678,
-        75707,
-        75737,
-        75766,
-        75796,
-        75826,
-        75856,
-        75885,
-        75915,
-        75944,
-        75974,
-        76003,
-        76032,
-        76062,
-        76091,
-        76121,
-        76150,
-        76180,
-        76210,
-        76239,
-        76269,
-        76299,
-        76328,
-        76358,
-        76387,
-        76416,
-        76446,
-        76475,
-        76505,
-        76534,
-        76564,
-        76593,
-        76623,
-        76653,
-        76682,
-        76712,
-        76741,
-        76771,
-        76801,
-        76830,
-        76859,
-        76889,
-        76918,
-        76948,
-        76977,
-        77007,
-        77036,
-        77066,
-        77096,
-        77125,
-        77155,
-        77185,
-        77214,
-        77243,
-        77273,
-        77302,
-        77332,
-        77361,
-        77390,
-        77420,
-        77450,
-        77479,
-        77509,
-        77539,
-        77569,
-        77598,
-        77627,
-        77657,
-        77686,
-        77715,
-        77745,
-        77774,
-        77804,
-        77833,
-        77863,
-        77893,
-        77923,
-        77952,
-        77982,
-        78011,
-        78041,
-        78070,
-        78099,
-        78129,
-        78158,
-        78188,
-        78217,
-        78247,
-        78277,
-        78307,
-        78336,
-        78366,
-        78395,
-        78425,
-        78454,
-        78483,
-        78513,
-        78542,
-        78572,
-        78601,
-        78631,
-        78661,
-        78690,
-        78720,
-        78750,
-        78779,
-        78808,
-        78838,
-        78867,
-        78897,
-        78926,
-        78956,
-        78985,
-        79015,
-        79044,
-        79074,
-        79104,
-        79133,
-        79163,
-        79192,
-        79222,
-        79251,
-        79281,
-        79310,
-        79340,
-        79369,
-        79399,
-        79428,
-        79458,
-        79487,
-        79517,
-        79546,
-        79576,
-        79606,
-        79635,
-        79665,
-        79695,
-        79724,
-        79753,
-        79783,
-        79812,
-        79841,
-        79871,
-        79900,
-        79930,
-        79960,
-        79990
-      ];
+      };
     }
   });
 
-  // src/components/calendars/calendars.js
-  var require_calendars = __commonJS({
-    "src/components/calendars/calendars.js"(exports, module) {
+  // src/traces/histogram/norm_functions.js
+  var require_norm_functions = __commonJS({
+    "src/traces/histogram/norm_functions.js"(exports, module) {
       "use strict";
-      module.exports = require_main();
-      require_plus();
-      require_chinese();
-      require_coptic();
-      require_discworld();
-      require_ethiopian();
-      require_hebrew();
-      require_islamic();
-      require_julian();
-      require_mayan();
-      require_nanakshahi();
-      require_nepali();
-      require_persian();
-      require_taiwan();
-      require_thai();
-      require_ummalqura();
-    }
-  });
-
-  // src/components/calendars/index.js
-  var require_calendars2 = __commonJS({
-    "src/components/calendars/index.js"(exports, module) {
-      "use strict";
-      var calendars = require_calendars();
-      var Lib = require_lib();
-      var constants = require_numerical();
-      var EPOCHJD = constants.EPOCHJD;
-      var ONEDAY = constants.ONEDAY;
-      var attributes = {
-        valType: "enumerated",
-        values: Lib.sortObjectKeys(calendars.calendars),
-        editType: "calc",
-        dflt: "gregorian"
-      };
-      var handleDefaults = function(contIn, contOut, attr, dflt) {
-        var attrs = {};
-        attrs[attr] = attributes;
-        return Lib.coerce(contIn, contOut, attrs, attr, dflt);
-      };
-      var handleTraceDefaults = function(traceIn, traceOut, coords, layout) {
-        for (var i = 0; i < coords.length; i++) {
-          handleDefaults(traceIn, traceOut, coords[i] + "calendar", layout.calendar);
-        }
-      };
-      var CANONICAL_TICK = {
-        chinese: "2000-01-01",
-        coptic: "2000-01-01",
-        discworld: "2000-01-01",
-        ethiopian: "2000-01-01",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-01",
-        julian: "2000-01-01",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-01",
-        nepali: "2000-01-01",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-01",
-        thai: "2000-01-01",
-        ummalqura: "1400-01-01"
-      };
-      var CANONICAL_SUNDAY = {
-        chinese: "2000-01-02",
-        coptic: "2000-01-03",
-        discworld: "2000-01-03",
-        ethiopian: "2000-01-05",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-02",
-        julian: "2000-01-03",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-05",
-        nepali: "2000-01-05",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-04",
-        thai: "2000-01-04",
-        ummalqura: "1400-01-06"
-      };
-      var DFLTRANGE = {
-        chinese: ["2000-01-01", "2001-01-01"],
-        coptic: ["1700-01-01", "1701-01-01"],
-        discworld: ["1800-01-01", "1801-01-01"],
-        ethiopian: ["2000-01-01", "2001-01-01"],
-        hebrew: ["5700-01-01", "5701-01-01"],
-        islamic: ["1400-01-01", "1401-01-01"],
-        julian: ["2000-01-01", "2001-01-01"],
-        mayan: ["5200-01-01", "5201-01-01"],
-        nanakshahi: ["0500-01-01", "0501-01-01"],
-        nepali: ["2000-01-01", "2001-01-01"],
-        persian: ["1400-01-01", "1401-01-01"],
-        jalali: ["1400-01-01", "1401-01-01"],
-        taiwan: ["0100-01-01", "0101-01-01"],
-        thai: ["2500-01-01", "2501-01-01"],
-        ummalqura: ["1400-01-01", "1401-01-01"]
-      };
-      var UNKNOWN = "##";
-      var d3ToWorldCalendars = {
-        d: { 0: "dd", "-": "d" },
-        // 2-digit or unpadded day of month
-        e: { 0: "d", "-": "d" },
-        // alternate, always unpadded day of month
-        a: { 0: "D", "-": "D" },
-        // short weekday name
-        A: { 0: "DD", "-": "DD" },
-        // full weekday name
-        j: { 0: "oo", "-": "o" },
-        // 3-digit or unpadded day of the year
-        W: { 0: "ww", "-": "w" },
-        // 2-digit or unpadded week of the year (Monday first)
-        m: { 0: "mm", "-": "m" },
-        // 2-digit or unpadded month number
-        b: { 0: "M", "-": "M" },
-        // short month name
-        B: { 0: "MM", "-": "MM" },
-        // full month name
-        y: { 0: "yy", "-": "yy" },
-        // 2-digit year (map unpadded to zero-padded)
-        Y: { 0: "yyyy", "-": "yyyy" },
-        // 4-digit year (map unpadded to zero-padded)
-        U: UNKNOWN,
-        // Sunday-first week of the year
-        w: UNKNOWN,
-        // day of the week [0(sunday),6]
-        // combined format, we replace the date part with the world-calendar version
-        // and the %X stays there for d3 to handle with time parts
-        c: { 0: "D M d %X yyyy", "-": "D M d %X yyyy" },
-        x: { 0: "mm/dd/yyyy", "-": "mm/dd/yyyy" }
-      };
-      function worldCalFmt(fmt, x, calendar) {
-        var dateJD = Math.floor((x + 0.05) / ONEDAY) + EPOCHJD;
-        var cDate = getCal(calendar).fromJD(dateJD);
-        var i = 0;
-        var modifier, directive, directiveLen, directiveObj, replacementPart;
-        while ((i = fmt.indexOf("%", i)) !== -1) {
-          modifier = fmt.charAt(i + 1);
-          if (modifier === "0" || modifier === "-" || modifier === "_") {
-            directiveLen = 3;
-            directive = fmt.charAt(i + 2);
-            if (modifier === "_") modifier = "-";
-          } else {
-            directive = modifier;
-            modifier = "0";
-            directiveLen = 2;
-          }
-          directiveObj = d3ToWorldCalendars[directive];
-          if (!directiveObj) {
-            i += directiveLen;
-          } else {
-            if (directiveObj === UNKNOWN) replacementPart = UNKNOWN;
-            else replacementPart = cDate.formatDate(directiveObj[modifier]);
-            fmt = fmt.substr(0, i) + replacementPart + fmt.substr(i + directiveLen);
-            i += replacementPart.length;
-          }
-        }
-        return fmt;
-      }
-      var allCals = {};
-      function getCal(calendar) {
-        var calendarObj = allCals[calendar];
-        if (calendarObj) return calendarObj;
-        calendarObj = allCals[calendar] = calendars.instance(calendar);
-        return calendarObj;
-      }
-      function makeAttrs(description) {
-        return Lib.extendFlat({}, attributes, { description });
-      }
-      function makeTraceAttrsDescription(coord) {
-        return "Sets the calendar system to use with `" + coord + "` date data.";
-      }
-      var xAttrs = {
-        xcalendar: makeAttrs(makeTraceAttrsDescription("x"))
-      };
-      var xyAttrs = Lib.extendFlat({}, xAttrs, {
-        ycalendar: makeAttrs(makeTraceAttrsDescription("y"))
-      });
-      var xyzAttrs = Lib.extendFlat({}, xyAttrs, {
-        zcalendar: makeAttrs(makeTraceAttrsDescription("z"))
-      });
-      var axisAttrs = makeAttrs([
-        "Sets the calendar system to use for `range` and `tick0`",
-        "if this is a date axis. This does not set the calendar for",
-        "interpreting data on this axis, that's specified in the trace",
-        "or via the global `layout.calendar`"
-      ].join(" "));
       module.exports = {
-        moduleType: "component",
-        name: "calendars",
-        schema: {
-          traces: {
-            scatter: xyAttrs,
-            bar: xyAttrs,
-            box: xyAttrs,
-            heatmap: xyAttrs,
-            contour: xyAttrs,
-            histogram: xyAttrs,
-            histogram2d: xyAttrs,
-            histogram2dcontour: xyAttrs,
-            scatter3d: xyzAttrs,
-            surface: xyzAttrs,
-            mesh3d: xyzAttrs,
-            scattergl: xyAttrs,
-            ohlc: xAttrs,
-            candlestick: xAttrs
-          },
-          layout: {
-            calendar: makeAttrs([
-              "Sets the default calendar system to use for interpreting and",
-              "displaying dates throughout the plot."
-            ].join(" "))
-          },
-          subplots: {
-            xaxis: { calendar: axisAttrs },
-            yaxis: { calendar: axisAttrs },
-            scene: {
-              xaxis: { calendar: axisAttrs },
-              // TODO: it's actually redundant to include yaxis and zaxis here
-              // because in the scene attributes these are the same object so merging
-              // into one merges into them all. However, I left them in for parity with
-              // cartesian, where yaxis is unused until we Plotschema.get() when we
-              // use its presence or absence to determine whether to delete attributes
-              // from yaxis if they only apply to x (rangeselector/rangeslider)
-              yaxis: { calendar: axisAttrs },
-              zaxis: { calendar: axisAttrs }
-            },
-            polar: {
-              radialaxis: { calendar: axisAttrs }
-            }
-          }
+        percent: function(size, total) {
+          var nMax = size.length;
+          var norm = 100 / total;
+          for (var n = 0; n < nMax; n++) size[n] *= norm;
         },
-        layoutAttributes: attributes,
-        handleDefaults,
-        handleTraceDefaults,
-        CANONICAL_SUNDAY,
-        CANONICAL_TICK,
-        DFLTRANGE,
-        getCal,
-        worldCalFmt
+        probability: function(size, total) {
+          var nMax = size.length;
+          for (var n = 0; n < nMax; n++) size[n] /= total;
+        },
+        density: function(size, total, inc, yinc) {
+          var nMax = size.length;
+          yinc = yinc || 1;
+          for (var n = 0; n < nMax; n++) size[n] *= inc[n] * yinc;
+        },
+        "probability density": function(size, total, inc, yinc) {
+          var nMax = size.length;
+          if (yinc) total /= yinc;
+          for (var n = 0; n < nMax; n++) size[n] *= inc[n] / total;
+        }
       };
     }
   });
 
-  // lib/calendars.js
-  var require_calendars3 = __commonJS({
-    "lib/calendars.js"(exports, module) {
+  // src/traces/histogram/average.js
+  var require_average = __commonJS({
+    "src/traces/histogram/average.js"(exports, module) {
       "use strict";
-      module.exports = require_calendars2();
+      module.exports = function doAvg(size, counts) {
+        var nMax = size.length;
+        var total = 0;
+        for (var i = 0; i < nMax; i++) {
+          if (counts[i]) {
+            size[i] /= counts[i];
+            total += size[i];
+          } else size[i] = null;
+        }
+        return total;
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_label_vals.js
+  var require_bin_label_vals = __commonJS({
+    "src/traces/histogram/bin_label_vals.js"(exports, module) {
+      "use strict";
+      var numConstants = require_numerical();
+      var oneYear = numConstants.ONEAVGYEAR;
+      var oneMonth = numConstants.ONEAVGMONTH;
+      var oneDay = numConstants.ONEDAY;
+      var oneHour = numConstants.ONEHOUR;
+      var oneMin = numConstants.ONEMIN;
+      var oneSec = numConstants.ONESEC;
+      var tickIncrement = require_axes().tickIncrement;
+      module.exports = function getBinSpanLabelRound(leftGap, rightGap, binEdges, pa, calendar) {
+        var dv0 = -1.1 * rightGap;
+        var dv1 = -0.1 * rightGap;
+        var dv2 = leftGap - dv1;
+        var edge0 = binEdges[0];
+        var edge1 = binEdges[1];
+        var leftDigit = Math.min(
+          biggestDigitChanged(edge0 + dv1, edge0 + dv2, pa, calendar),
+          biggestDigitChanged(edge1 + dv1, edge1 + dv2, pa, calendar)
+        );
+        var rightDigit = Math.min(
+          biggestDigitChanged(edge0 + dv0, edge0 + dv1, pa, calendar),
+          biggestDigitChanged(edge1 + dv0, edge1 + dv1, pa, calendar)
+        );
+        var digit, disambiguateEdges;
+        if (leftDigit > rightDigit && rightDigit < Math.abs(edge1 - edge0) / 4e3) {
+          digit = leftDigit;
+          disambiguateEdges = false;
+        } else {
+          digit = Math.min(leftDigit, rightDigit);
+          disambiguateEdges = true;
+        }
+        if (pa.type === "date" && digit > oneDay) {
+          var dashExclude = digit === oneYear ? 1 : 6;
+          var increment = digit === oneYear ? "M12" : "M1";
+          return function(v, isRightEdge) {
+            var dateStr = pa.c2d(v, oneYear, calendar);
+            var dashPos = dateStr.indexOf("-", dashExclude);
+            if (dashPos > 0) dateStr = dateStr.substr(0, dashPos);
+            var roundedV = pa.d2c(dateStr, 0, calendar);
+            if (roundedV < v) {
+              var nextV = tickIncrement(roundedV, increment, false, calendar);
+              if ((roundedV + nextV) / 2 < v + leftGap) roundedV = nextV;
+            }
+            if (isRightEdge && disambiguateEdges) {
+              return tickIncrement(roundedV, increment, true, calendar);
+            }
+            return roundedV;
+          };
+        }
+        return function(v, isRightEdge) {
+          var roundedV = digit * Math.round(v / digit);
+          if (roundedV + digit / 10 < v && roundedV + digit * 0.9 < v + leftGap) {
+            roundedV += digit;
+          }
+          if (isRightEdge && disambiguateEdges) {
+            roundedV -= digit;
+          }
+          return roundedV;
+        };
+      };
+      function biggestDigitChanged(v1, v2, pa, calendar) {
+        if (v1 * v2 <= 0) return Infinity;
+        var dv = Math.abs(v2 - v1);
+        var isDate = pa.type === "date";
+        var digit = biggestGuaranteedDigitChanged(dv, isDate);
+        for (var i = 0; i < 10; i++) {
+          var nextDigit = biggestGuaranteedDigitChanged(digit * 80, isDate);
+          if (digit === nextDigit) break;
+          if (didDigitChange(nextDigit, v1, v2, isDate, pa, calendar)) digit = nextDigit;
+          else break;
+        }
+        return digit;
+      }
+      function biggestGuaranteedDigitChanged(dv, isDate) {
+        if (isDate && dv > oneSec) {
+          if (dv > oneDay) {
+            if (dv > oneYear * 1.1) return oneYear;
+            if (dv > oneMonth * 1.1) return oneMonth;
+            return oneDay;
+          }
+          if (dv > oneHour) return oneHour;
+          if (dv > oneMin) return oneMin;
+          return oneSec;
+        }
+        return Math.pow(10, Math.floor(Math.log(dv) / Math.LN10));
+      }
+      function didDigitChange(digit, v1, v2, isDate, pa, calendar) {
+        if (isDate && digit > oneDay) {
+          var dateParts1 = dateParts(v1, pa, calendar);
+          var dateParts2 = dateParts(v2, pa, calendar);
+          var parti = digit === oneYear ? 0 : 1;
+          return dateParts1[parti] !== dateParts2[parti];
+        }
+        return Math.floor(v2 / digit) - Math.floor(v1 / digit) > 0.1;
+      }
+      function dateParts(v, pa, calendar) {
+        var parts = pa.c2d(v, oneYear, calendar).split("-");
+        if (parts[0] === "") {
+          parts.unshift();
+          parts[0] = "-" + parts[0];
+        }
+        return parts;
+      }
+    }
+  });
+
+  // src/traces/bar/arrays_to_calcdata.js
+  var require_arrays_to_calcdata2 = __commonJS({
+    "src/traces/bar/arrays_to_calcdata.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function arraysToCalcdata(cd, trace) {
+        for (var i = 0; i < cd.length; i++) cd[i].i = i;
+        Lib.mergeArray(trace.text, cd, "tx");
+        Lib.mergeArray(trace.hovertext, cd, "htx");
+        var marker = trace.marker;
+        if (marker) {
+          Lib.mergeArray(marker.opacity, cd, "mo", true);
+          Lib.mergeArray(marker.color, cd, "mc");
+          var markerLine = marker.line;
+          if (markerLine) {
+            Lib.mergeArray(markerLine.color, cd, "mlc");
+            Lib.mergeArrayCastPositive(markerLine.width, cd, "mlw");
+          }
+        }
+      };
+    }
+  });
+
+  // src/traces/histogram/calc.js
+  var require_calc6 = __commonJS({
+    "src/traces/histogram/calc.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Registry = require_registry();
+      var Axes = require_axes();
+      var arraysToCalcdata = require_arrays_to_calcdata2();
+      var binFunctions = require_bin_functions();
+      var normFunctions = require_norm_functions();
+      var doAvg = require_average();
+      var getBinSpanLabelRound = require_bin_label_vals();
+      function calc(gd, trace) {
+        var pos = [];
+        var size = [];
+        var isHorizontal = trace.orientation === "h";
+        var pa = Axes.getFromId(gd, isHorizontal ? trace.yaxis : trace.xaxis);
+        var mainData = isHorizontal ? "y" : "x";
+        var counterData = { x: "y", y: "x" }[mainData];
+        var calendar = trace[mainData + "calendar"];
+        var cumulativeSpec = trace.cumulative;
+        var i;
+        var binsAndPos = calcAllAutoBins(gd, trace, pa, mainData);
+        var binSpec = binsAndPos[0];
+        var pos0 = binsAndPos[1];
+        var nonuniformBins = typeof binSpec.size === "string";
+        var binEdges = [];
+        var bins = nonuniformBins ? binEdges : binSpec;
+        var inc = [];
+        var counts = [];
+        var inputPoints = [];
+        var total = 0;
+        var norm = trace.histnorm;
+        var func = trace.histfunc;
+        var densityNorm = norm.indexOf("density") !== -1;
+        var i2, binEnd, n;
+        if (cumulativeSpec.enabled && densityNorm) {
+          norm = norm.replace(/ ?density$/, "");
+          densityNorm = false;
+        }
+        var extremeFunc = func === "max" || func === "min";
+        var sizeInit = extremeFunc ? null : 0;
+        var binFunc = binFunctions.count;
+        var normFunc = normFunctions[norm];
+        var isAvg = false;
+        var pr2c = function(v) {
+          return pa.r2c(v, 0, calendar);
+        };
+        var rawCounterData;
+        if (Lib.isArrayOrTypedArray(trace[counterData]) && func !== "count") {
+          rawCounterData = trace[counterData];
+          isAvg = func === "avg";
+          binFunc = binFunctions[func];
+        }
+        i = pr2c(binSpec.start);
+        binEnd = pr2c(binSpec.end) + (i - Axes.tickIncrement(i, binSpec.size, false, calendar)) / 1e6;
+        while (i < binEnd && pos.length < 1e6) {
+          i2 = Axes.tickIncrement(i, binSpec.size, false, calendar);
+          pos.push((i + i2) / 2);
+          size.push(sizeInit);
+          inputPoints.push([]);
+          binEdges.push(i);
+          if (densityNorm) inc.push(1 / (i2 - i));
+          if (isAvg) counts.push(0);
+          if (i2 <= i) break;
+          i = i2;
+        }
+        binEdges.push(i);
+        if (!nonuniformBins && pa.type === "date") {
+          bins = {
+            start: pr2c(bins.start),
+            end: pr2c(bins.end),
+            size: bins.size
+          };
+        }
+        if (!gd._fullLayout._roundFnOpts) gd._fullLayout._roundFnOpts = {};
+        var groupName = trace["_" + mainData + "bingroup"];
+        var roundFnOpts = { leftGap: Infinity, rightGap: Infinity };
+        if (groupName) {
+          if (!gd._fullLayout._roundFnOpts[groupName]) gd._fullLayout._roundFnOpts[groupName] = roundFnOpts;
+          roundFnOpts = gd._fullLayout._roundFnOpts[groupName];
+        }
+        var nMax = size.length;
+        var uniqueValsPerBin = true;
+        var leftGap = roundFnOpts.leftGap;
+        var rightGap = roundFnOpts.rightGap;
+        var ptNumber2cdIndex = {};
+        for (i = 0; i < pos0.length; i++) {
+          var posi = pos0[i];
+          n = Lib.findBin(posi, bins);
+          if (n >= 0 && n < nMax) {
+            total += binFunc(n, i, size, rawCounterData, counts);
+            if (uniqueValsPerBin && inputPoints[n].length && posi !== pos0[inputPoints[n][0]]) {
+              uniqueValsPerBin = false;
+            }
+            inputPoints[n].push(i);
+            ptNumber2cdIndex[i] = n;
+            leftGap = Math.min(leftGap, posi - binEdges[n]);
+            rightGap = Math.min(rightGap, binEdges[n + 1] - posi);
+          }
+        }
+        roundFnOpts.leftGap = leftGap;
+        roundFnOpts.rightGap = rightGap;
+        var roundFn;
+        if (!uniqueValsPerBin) {
+          roundFn = function(v, isRightEdge) {
+            return function() {
+              var roundFnOpts2 = gd._fullLayout._roundFnOpts[groupName];
+              return getBinSpanLabelRound(
+                roundFnOpts2.leftGap,
+                roundFnOpts2.rightGap,
+                binEdges,
+                pa,
+                calendar
+              )(v, isRightEdge);
+            };
+          };
+        }
+        if (isAvg) total = doAvg(size, counts);
+        if (normFunc) normFunc(size, total, inc);
+        if (cumulativeSpec.enabled) cdf(size, cumulativeSpec.direction, cumulativeSpec.currentbin);
+        var seriesLen = Math.min(pos.length, size.length);
+        var cd = [];
+        var firstNonzero = 0;
+        var lastNonzero = seriesLen - 1;
+        for (i = 0; i < seriesLen; i++) {
+          if (size[i]) {
+            firstNonzero = i;
+            break;
+          }
+        }
+        for (i = seriesLen - 1; i >= firstNonzero; i--) {
+          if (size[i]) {
+            lastNonzero = i;
+            break;
+          }
+        }
+        for (i = firstNonzero; i <= lastNonzero; i++) {
+          if (isNumeric(pos[i]) && isNumeric(size[i])) {
+            var cdi = {
+              p: pos[i],
+              s: size[i],
+              b: 0
+            };
+            if (!cumulativeSpec.enabled) {
+              cdi.pts = inputPoints[i];
+              if (uniqueValsPerBin) {
+                cdi.ph0 = cdi.ph1 = inputPoints[i].length ? pos0[inputPoints[i][0]] : pos[i];
+              } else {
+                trace._computePh = true;
+                cdi.ph0 = roundFn(binEdges[i]);
+                cdi.ph1 = roundFn(binEdges[i + 1], true);
+              }
+            }
+            cd.push(cdi);
+          }
+        }
+        if (cd.length === 1) {
+          cd[0].width1 = Axes.tickIncrement(cd[0].p, binSpec.size, false, calendar) - cd[0].p;
+        }
+        arraysToCalcdata(cd, trace);
+        if (Lib.isArrayOrTypedArray(trace.selectedpoints)) {
+          Lib.tagSelected(cd, trace, ptNumber2cdIndex);
+        }
+        return cd;
+      }
+      function calcAllAutoBins(gd, trace, pa, mainData, _overlayEdgeCase) {
+        var binAttr = mainData + "bins";
+        var fullLayout = gd._fullLayout;
+        var groupName = trace["_" + mainData + "bingroup"];
+        var binOpts = fullLayout._histogramBinOpts[groupName];
+        var isOverlay = fullLayout.barmode === "overlay";
+        var i, traces, tracei, calendar, pos0, autoVals, cumulativeSpec;
+        var r2c = function(v) {
+          return pa.r2c(v, 0, calendar);
+        };
+        var c2r = function(v) {
+          return pa.c2r(v, 0, calendar);
+        };
+        var cleanBound = pa.type === "date" ? function(v) {
+          return v || v === 0 ? Lib.cleanDate(v, null, calendar) : null;
+        } : function(v) {
+          return isNumeric(v) ? Number(v) : null;
+        };
+        function setBound(attr, bins, newBins) {
+          if (bins[attr + "Found"]) {
+            bins[attr] = cleanBound(bins[attr]);
+            if (bins[attr] === null) bins[attr] = newBins[attr];
+          } else {
+            autoVals[attr] = bins[attr] = newBins[attr];
+            Lib.nestedProperty(traces[0], binAttr + "." + attr).set(newBins[attr]);
+          }
+        }
+        if (trace["_" + mainData + "autoBinFinished"]) {
+          delete trace["_" + mainData + "autoBinFinished"];
+        } else {
+          traces = binOpts.traces;
+          var allPos = [];
+          var isFirstVisible = true;
+          var has2dMap = false;
+          var hasHist2dContour = false;
+          for (i = 0; i < traces.length; i++) {
+            tracei = traces[i];
+            if (tracei.visible) {
+              var mainDatai = binOpts.dirs[i];
+              pos0 = tracei["_" + mainDatai + "pos0"] = pa.makeCalcdata(tracei, mainDatai);
+              allPos = Lib.concat(allPos, pos0);
+              delete tracei["_" + mainData + "autoBinFinished"];
+              if (trace.visible === true) {
+                if (isFirstVisible) {
+                  isFirstVisible = false;
+                } else {
+                  delete tracei._autoBin;
+                  tracei["_" + mainData + "autoBinFinished"] = 1;
+                }
+                if (Registry.traceIs(tracei, "2dMap")) {
+                  has2dMap = true;
+                }
+                if (tracei.type === "histogram2dcontour") {
+                  hasHist2dContour = true;
+                }
+              }
+            }
+          }
+          calendar = traces[0][mainData + "calendar"];
+          var newBinSpec = Axes.autoBin(allPos, pa, binOpts.nbins, has2dMap, calendar, binOpts.sizeFound && binOpts.size);
+          var autoBin = traces[0]._autoBin = {};
+          autoVals = autoBin[binOpts.dirs[0]] = {};
+          if (hasHist2dContour) {
+            if (!binOpts.size) {
+              newBinSpec.start = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.start),
+                newBinSpec.size,
+                true,
+                calendar
+              ));
+            }
+            if (binOpts.end === void 0) {
+              newBinSpec.end = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.end),
+                newBinSpec.size,
+                false,
+                calendar
+              ));
+            }
+          }
+          if (isOverlay && !Registry.traceIs(trace, "2dMap") && newBinSpec._dataSpan === 0 && pa.type !== "category" && pa.type !== "multicategory" && trace.bingroup === "" && typeof trace.xbins === "undefined") {
+            if (_overlayEdgeCase) return [newBinSpec, pos0, true];
+            newBinSpec = handleSingleValueOverlays(gd, trace, pa, mainData, binAttr);
+          }
+          cumulativeSpec = tracei.cumulative || {};
+          if (cumulativeSpec.enabled && cumulativeSpec.currentbin !== "include") {
+            if (cumulativeSpec.direction === "decreasing") {
+              newBinSpec.start = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.start),
+                newBinSpec.size,
+                true,
+                calendar
+              ));
+            } else {
+              newBinSpec.end = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.end),
+                newBinSpec.size,
+                false,
+                calendar
+              ));
+            }
+          }
+          binOpts.size = newBinSpec.size;
+          if (!binOpts.sizeFound) {
+            autoVals.size = newBinSpec.size;
+            Lib.nestedProperty(traces[0], binAttr + ".size").set(newBinSpec.size);
+          }
+          setBound("start", binOpts, newBinSpec);
+          setBound("end", binOpts, newBinSpec);
+        }
+        pos0 = trace["_" + mainData + "pos0"];
+        delete trace["_" + mainData + "pos0"];
+        var traceInputBins = trace._input[binAttr] || {};
+        var traceBinOptsCalc = Lib.extendFlat({}, binOpts);
+        var mainStart = binOpts.start;
+        var startIn = pa.r2l(traceInputBins.start);
+        var hasStart = startIn !== void 0;
+        if ((binOpts.startFound || hasStart) && startIn !== pa.r2l(mainStart)) {
+          var traceStart = hasStart ? startIn : Lib.aggNums(Math.min, null, pos0);
+          var dummyAx = {
+            type: pa.type === "category" || pa.type === "multicategory" ? "linear" : pa.type,
+            r2l: pa.r2l,
+            dtick: binOpts.size,
+            tick0: mainStart,
+            calendar,
+            range: [traceStart, Axes.tickIncrement(traceStart, binOpts.size, false, calendar)].map(pa.l2r)
+          };
+          var newStart = Axes.tickFirst(dummyAx);
+          if (newStart > pa.r2l(traceStart)) {
+            newStart = Axes.tickIncrement(newStart, binOpts.size, true, calendar);
+          }
+          traceBinOptsCalc.start = pa.l2r(newStart);
+          if (!hasStart) Lib.nestedProperty(trace, binAttr + ".start").set(traceBinOptsCalc.start);
+        }
+        var mainEnd = binOpts.end;
+        var endIn = pa.r2l(traceInputBins.end);
+        var hasEnd = endIn !== void 0;
+        if ((binOpts.endFound || hasEnd) && endIn !== pa.r2l(mainEnd)) {
+          var traceEnd = hasEnd ? endIn : Lib.aggNums(Math.max, null, pos0);
+          traceBinOptsCalc.end = pa.l2r(traceEnd);
+          if (!hasEnd) Lib.nestedProperty(trace, binAttr + ".start").set(traceBinOptsCalc.end);
+        }
+        var autoBinAttr = "autobin" + mainData;
+        if (trace._input[autoBinAttr] === false) {
+          trace._input[binAttr] = Lib.extendFlat({}, trace[binAttr] || {});
+          delete trace._input[autoBinAttr];
+          delete trace[autoBinAttr];
+        }
+        return [traceBinOptsCalc, pos0];
+      }
+      function handleSingleValueOverlays(gd, trace, pa, mainData, binAttr) {
+        var fullLayout = gd._fullLayout;
+        var overlaidTraceGroup = getConnectedHistograms(gd, trace);
+        var pastThisTrace = false;
+        var minSize = Infinity;
+        var singleValuedTraces = [trace];
+        var i, tracei, binOpts;
+        for (i = 0; i < overlaidTraceGroup.length; i++) {
+          tracei = overlaidTraceGroup[i];
+          if (tracei === trace) {
+            pastThisTrace = true;
+          } else if (!pastThisTrace) {
+            binOpts = fullLayout._histogramBinOpts[tracei["_" + mainData + "bingroup"]];
+            minSize = Math.min(minSize, binOpts.size || tracei[binAttr].size);
+          } else {
+            var resulti = calcAllAutoBins(gd, tracei, pa, mainData, true);
+            var binSpeci = resulti[0];
+            var isSingleValued = resulti[2];
+            tracei["_" + mainData + "autoBinFinished"] = 1;
+            tracei["_" + mainData + "pos0"] = resulti[1];
+            if (isSingleValued) {
+              singleValuedTraces.push(tracei);
+            } else {
+              minSize = Math.min(minSize, binSpeci.size);
+            }
+          }
+        }
+        var dataVals = new Array(singleValuedTraces.length);
+        for (i = 0; i < singleValuedTraces.length; i++) {
+          var pos0 = singleValuedTraces[i]["_" + mainData + "pos0"];
+          for (var j = 0; j < pos0.length; j++) {
+            if (pos0[j] !== void 0) {
+              dataVals[i] = pos0[j];
+              break;
+            }
+          }
+        }
+        if (!isFinite(minSize)) {
+          minSize = Lib.distinctVals(dataVals).minDiff;
+        }
+        for (i = 0; i < singleValuedTraces.length; i++) {
+          tracei = singleValuedTraces[i];
+          var calendar = tracei[mainData + "calendar"];
+          var newBins = {
+            start: pa.c2r(dataVals[i] - minSize / 2, 0, calendar),
+            end: pa.c2r(dataVals[i] + minSize / 2, 0, calendar),
+            size: minSize
+          };
+          tracei._input[binAttr] = tracei[binAttr] = newBins;
+          binOpts = fullLayout._histogramBinOpts[tracei["_" + mainData + "bingroup"]];
+          if (binOpts) Lib.extendFlat(binOpts, newBins);
+        }
+        return trace[binAttr];
+      }
+      function getConnectedHistograms(gd, trace) {
+        var xid = trace.xaxis;
+        var yid = trace.yaxis;
+        var orientation = trace.orientation;
+        var out = [];
+        var fullData = gd._fullData;
+        for (var i = 0; i < fullData.length; i++) {
+          var tracei = fullData[i];
+          if (tracei.type === "histogram" && tracei.visible === true && tracei.orientation === orientation && tracei.xaxis === xid && tracei.yaxis === yid) {
+            out.push(tracei);
+          }
+        }
+        return out;
+      }
+      function cdf(size, direction, currentBin) {
+        var i, vi, prevSum;
+        function firstHalfPoint(i2) {
+          prevSum = size[i2];
+          size[i2] /= 2;
+        }
+        function nextHalfPoint(i2) {
+          vi = size[i2];
+          size[i2] = prevSum + vi / 2;
+          prevSum += vi;
+        }
+        if (currentBin === "half") {
+          if (direction === "increasing") {
+            firstHalfPoint(0);
+            for (i = 1; i < size.length; i++) {
+              nextHalfPoint(i);
+            }
+          } else {
+            firstHalfPoint(size.length - 1);
+            for (i = size.length - 2; i >= 0; i--) {
+              nextHalfPoint(i);
+            }
+          }
+        } else if (direction === "increasing") {
+          for (i = 1; i < size.length; i++) {
+            size[i] += size[i - 1];
+          }
+          if (currentBin === "exclude") {
+            size.unshift(0);
+            size.pop();
+          }
+        } else {
+          for (i = size.length - 2; i >= 0; i--) {
+            size[i] += size[i + 1];
+          }
+          if (currentBin === "exclude") {
+            size.push(0);
+            size.shift();
+          }
+        }
+      }
+      module.exports = {
+        calc,
+        calcAllAutoBins
+      };
+    }
+  });
+
+  // src/traces/histogram2d/calc.js
+  var require_calc7 = __commonJS({
+    "src/traces/histogram2d/calc.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var Axes = require_axes();
+      var binFunctions = require_bin_functions();
+      var normFunctions = require_norm_functions();
+      var doAvg = require_average();
+      var getBinSpanLabelRound = require_bin_label_vals();
+      var calcAllAutoBins = require_calc6().calcAllAutoBins;
+      module.exports = function calc(gd, trace) {
+        var xa = Axes.getFromId(gd, trace.xaxis);
+        var ya = Axes.getFromId(gd, trace.yaxis);
+        var xcalendar = trace.xcalendar;
+        var ycalendar = trace.ycalendar;
+        var xr2c = function(v) {
+          return xa.r2c(v, 0, xcalendar);
+        };
+        var yr2c = function(v) {
+          return ya.r2c(v, 0, ycalendar);
+        };
+        var xc2r = function(v) {
+          return xa.c2r(v, 0, xcalendar);
+        };
+        var yc2r = function(v) {
+          return ya.c2r(v, 0, ycalendar);
+        };
+        var i, j, n, m;
+        var xBinsAndPos = calcAllAutoBins(gd, trace, xa, "x");
+        var xBinSpec = xBinsAndPos[0];
+        var xPos0 = xBinsAndPos[1];
+        var yBinsAndPos = calcAllAutoBins(gd, trace, ya, "y");
+        var yBinSpec = yBinsAndPos[0];
+        var yPos0 = yBinsAndPos[1];
+        var serieslen = trace._length;
+        if (xPos0.length > serieslen) xPos0.splice(serieslen, xPos0.length - serieslen);
+        if (yPos0.length > serieslen) yPos0.splice(serieslen, yPos0.length - serieslen);
+        var z = [];
+        var onecol = [];
+        var zerocol = [];
+        var nonuniformBinsX = typeof xBinSpec.size === "string";
+        var nonuniformBinsY = typeof yBinSpec.size === "string";
+        var xEdges = [];
+        var yEdges = [];
+        var xbins = nonuniformBinsX ? xEdges : xBinSpec;
+        var ybins = nonuniformBinsY ? yEdges : yBinSpec;
+        var total = 0;
+        var counts = [];
+        var inputPoints = [];
+        var norm = trace.histnorm;
+        var func = trace.histfunc;
+        var densitynorm = norm.indexOf("density") !== -1;
+        var extremefunc = func === "max" || func === "min";
+        var sizeinit = extremefunc ? null : 0;
+        var binfunc = binFunctions.count;
+        var normfunc = normFunctions[norm];
+        var doavg = false;
+        var xinc = [];
+        var yinc = [];
+        var rawCounterData = "z" in trace ? trace.z : "marker" in trace && Array.isArray(trace.marker.color) ? trace.marker.color : "";
+        if (rawCounterData && func !== "count") {
+          doavg = func === "avg";
+          binfunc = binFunctions[func];
+        }
+        var xBinSize = xBinSpec.size;
+        var xBinStart = xr2c(xBinSpec.start);
+        var xBinEnd = xr2c(xBinSpec.end) + (xBinStart - Axes.tickIncrement(xBinStart, xBinSize, false, xcalendar)) / 1e6;
+        for (i = xBinStart; i < xBinEnd; i = Axes.tickIncrement(i, xBinSize, false, xcalendar)) {
+          onecol.push(sizeinit);
+          xEdges.push(i);
+          if (doavg) zerocol.push(0);
+        }
+        xEdges.push(i);
+        var nx = onecol.length;
+        var dx = (i - xBinStart) / nx;
+        var x0 = xc2r(xBinStart + dx / 2);
+        var yBinSize = yBinSpec.size;
+        var yBinStart = yr2c(yBinSpec.start);
+        var yBinEnd = yr2c(yBinSpec.end) + (yBinStart - Axes.tickIncrement(yBinStart, yBinSize, false, ycalendar)) / 1e6;
+        for (i = yBinStart; i < yBinEnd; i = Axes.tickIncrement(i, yBinSize, false, ycalendar)) {
+          z.push(onecol.slice());
+          yEdges.push(i);
+          var ipCol = new Array(nx);
+          for (j = 0; j < nx; j++) ipCol[j] = [];
+          inputPoints.push(ipCol);
+          if (doavg) counts.push(zerocol.slice());
+        }
+        yEdges.push(i);
+        var ny = z.length;
+        var dy = (i - yBinStart) / ny;
+        var y0 = yc2r(yBinStart + dy / 2);
+        if (densitynorm) {
+          xinc = makeIncrements(onecol.length, xbins, dx, nonuniformBinsX);
+          yinc = makeIncrements(z.length, ybins, dy, nonuniformBinsY);
+        }
+        if (!nonuniformBinsX && xa.type === "date") xbins = binsToCalc(xr2c, xbins);
+        if (!nonuniformBinsY && ya.type === "date") ybins = binsToCalc(yr2c, ybins);
+        var uniqueValsPerX = true;
+        var uniqueValsPerY = true;
+        var xVals = new Array(nx);
+        var yVals = new Array(ny);
+        var xGapLow = Infinity;
+        var xGapHigh = Infinity;
+        var yGapLow = Infinity;
+        var yGapHigh = Infinity;
+        for (i = 0; i < serieslen; i++) {
+          var xi = xPos0[i];
+          var yi = yPos0[i];
+          n = Lib.findBin(xi, xbins);
+          m = Lib.findBin(yi, ybins);
+          if (n >= 0 && n < nx && m >= 0 && m < ny) {
+            total += binfunc(n, i, z[m], rawCounterData, counts[m]);
+            inputPoints[m][n].push(i);
+            if (uniqueValsPerX) {
+              if (xVals[n] === void 0) xVals[n] = xi;
+              else if (xVals[n] !== xi) uniqueValsPerX = false;
+            }
+            if (uniqueValsPerY) {
+              if (yVals[m] === void 0) yVals[m] = yi;
+              else if (yVals[m] !== yi) uniqueValsPerY = false;
+            }
+            xGapLow = Math.min(xGapLow, xi - xEdges[n]);
+            xGapHigh = Math.min(xGapHigh, xEdges[n + 1] - xi);
+            yGapLow = Math.min(yGapLow, yi - yEdges[m]);
+            yGapHigh = Math.min(yGapHigh, yEdges[m + 1] - yi);
+          }
+        }
+        if (doavg) {
+          for (m = 0; m < ny; m++) total += doAvg(z[m], counts[m]);
+        }
+        if (normfunc) {
+          for (m = 0; m < ny; m++) normfunc(z[m], total, xinc, yinc[m]);
+        }
+        return {
+          x: xPos0,
+          xRanges: getRanges(xEdges, uniqueValsPerX && xVals, xGapLow, xGapHigh, xa, xcalendar),
+          x0,
+          dx,
+          y: yPos0,
+          yRanges: getRanges(yEdges, uniqueValsPerY && yVals, yGapLow, yGapHigh, ya, ycalendar),
+          y0,
+          dy,
+          z,
+          pts: inputPoints
+        };
+      };
+      function makeIncrements(len, bins, dv, nonuniform) {
+        var out = new Array(len);
+        var i;
+        if (nonuniform) {
+          for (i = 0; i < len; i++) out[i] = 1 / (bins[i + 1] - bins[i]);
+        } else {
+          var inc = 1 / dv;
+          for (i = 0; i < len; i++) out[i] = inc;
+        }
+        return out;
+      }
+      function binsToCalc(r2c, bins) {
+        return {
+          start: r2c(bins.start),
+          end: r2c(bins.end),
+          size: bins.size
+        };
+      }
+      function getRanges(edges, uniqueVals, gapLow, gapHigh, ax, calendar) {
+        var i;
+        var len = edges.length - 1;
+        var out = new Array(len);
+        var roundFn = getBinSpanLabelRound(gapLow, gapHigh, edges, ax, calendar);
+        for (i = 0; i < len; i++) {
+          var v = (uniqueVals || [])[i];
+          out[i] = v === void 0 ? [roundFn(edges[i]), roundFn(edges[i + 1], true)] : [v, v];
+        }
+        return out;
+      }
+    }
+  });
+
+  // src/traces/heatmap/convert_column_xyz.js
+  var require_convert_column_xyz = __commonJS({
+    "src/traces/heatmap/convert_column_xyz.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var BADNUM = require_numerical().BADNUM;
+      var alignPeriod = require_align_period();
+      module.exports = function convertColumnData(trace, ax1, ax2, var1Name, var2Name, arrayVarNames) {
+        var colLen = trace._length;
+        var col1 = ax1.makeCalcdata(trace, var1Name);
+        var col2 = ax2.makeCalcdata(trace, var2Name);
+        col1 = alignPeriod(trace, ax1, var1Name, col1).vals;
+        col2 = alignPeriod(trace, ax2, var2Name, col2).vals;
+        var textCol = trace.text;
+        var hasColumnText = textCol !== void 0 && Lib.isArray1D(textCol);
+        var hoverTextCol = trace.hovertext;
+        var hasColumnHoverText = hoverTextCol !== void 0 && Lib.isArray1D(hoverTextCol);
+        var i, j;
+        var col1dv = Lib.distinctVals(col1);
+        var col1vals = col1dv.vals;
+        var col2dv = Lib.distinctVals(col2);
+        var col2vals = col2dv.vals;
+        var newArrays = [];
+        var text;
+        var hovertext;
+        var nI = col2vals.length;
+        var nJ = col1vals.length;
+        for (i = 0; i < arrayVarNames.length; i++) {
+          newArrays[i] = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnText) {
+          text = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnHoverText) {
+          hovertext = Lib.init2dArray(nI, nJ);
+        }
+        var after2before = Lib.init2dArray(nI, nJ);
+        for (i = 0; i < colLen; i++) {
+          if (col1[i] !== BADNUM && col2[i] !== BADNUM) {
+            var i1 = Lib.findBin(col1[i] + col1dv.minDiff / 2, col1vals);
+            var i2 = Lib.findBin(col2[i] + col2dv.minDiff / 2, col2vals);
+            for (j = 0; j < arrayVarNames.length; j++) {
+              var arrayVarName = arrayVarNames[j];
+              var arrayVar = trace[arrayVarName];
+              var newArray = newArrays[j];
+              newArray[i2][i1] = arrayVar[i];
+              after2before[i2][i1] = i;
+            }
+            if (hasColumnText) text[i2][i1] = textCol[i];
+            if (hasColumnHoverText) hovertext[i2][i1] = hoverTextCol[i];
+          }
+        }
+        trace["_" + var1Name] = col1vals;
+        trace["_" + var2Name] = col2vals;
+        for (j = 0; j < arrayVarNames.length; j++) {
+          trace["_" + arrayVarNames[j]] = newArrays[j];
+        }
+        if (hasColumnText) trace._text = text;
+        if (hasColumnHoverText) trace._hovertext = hovertext;
+        if (ax1 && ax1.type === "category") {
+          trace["_" + var1Name + "CategoryMap"] = col1vals.map(function(v) {
+            return ax1._categories[v];
+          });
+        }
+        if (ax2 && ax2.type === "category") {
+          trace["_" + var2Name + "CategoryMap"] = col2vals.map(function(v) {
+            return ax2._categories[v];
+          });
+        }
+        trace._after2before = after2before;
+      };
+    }
+  });
+
+  // src/traces/heatmap/clean_2d_array.js
+  var require_clean_2d_array = __commonJS({
+    "src/traces/heatmap/clean_2d_array.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function clean2dArray(zOld, trace, xa, ya) {
+        var rowlen, collen, getCollen, old2new, i, j;
+        function cleanZvalue(v) {
+          if (!isNumeric(v)) return void 0;
+          return +v;
+        }
+        if (trace && trace.transpose) {
+          rowlen = 0;
+          for (i = 0; i < zOld.length; i++) rowlen = Math.max(rowlen, zOld[i].length);
+          if (rowlen === 0) return false;
+          getCollen = function(zOld2) {
+            return zOld2.length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[j2] || [])[i2];
+          };
+        } else {
+          rowlen = zOld.length;
+          getCollen = function(zOld2, i2) {
+            return zOld2[i2].length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[i2] || [])[j2];
+          };
+        }
+        var padOld2new = function(zOld2, i2, j2) {
+          if (i2 === BADNUM || j2 === BADNUM) return BADNUM;
+          return old2new(zOld2, i2, j2);
+        };
+        function axisMapping(ax) {
+          if (trace && trace.type !== "carpet" && trace.type !== "contourcarpet" && ax && ax.type === "category" && trace["_" + ax._id.charAt(0)].length) {
+            var axLetter = ax._id.charAt(0);
+            var axMapping = {};
+            var traceCategories = trace["_" + axLetter + "CategoryMap"] || trace[axLetter];
+            for (i = 0; i < traceCategories.length; i++) {
+              axMapping[traceCategories[i]] = i;
+            }
+            return function(i2) {
+              var ind = axMapping[ax._categories[i2]];
+              return ind + 1 ? ind : BADNUM;
+            };
+          } else {
+            return Lib.identity;
+          }
+        }
+        var xMap = axisMapping(xa);
+        var yMap = axisMapping(ya);
+        if (ya && ya.type === "category") rowlen = ya._categories.length;
+        var zNew = new Array(rowlen);
+        for (i = 0; i < rowlen; i++) {
+          if (xa && xa.type === "category") {
+            collen = xa._categories.length;
+          } else {
+            collen = getCollen(zOld, i);
+          }
+          zNew[i] = new Array(collen);
+          for (j = 0; j < collen; j++) zNew[i][j] = cleanZvalue(padOld2new(zOld, yMap(i), xMap(j)));
+        }
+        return zNew;
+      };
+    }
+  });
+
+  // src/traces/heatmap/interp2d.js
+  var require_interp2d = __commonJS({
+    "src/traces/heatmap/interp2d.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var INTERPTHRESHOLD = 0.01;
+      var NEIGHBORSHIFTS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      function correctionOvershoot(maxFractionalChange) {
+        return 0.5 - 0.25 * Math.min(1, maxFractionalChange * 0.5);
+      }
+      module.exports = function interp2d(z, emptyPoints) {
+        var maxFractionalChange = 1;
+        var i;
+        iterateInterp2d(z, emptyPoints);
+        for (i = 0; i < emptyPoints.length; i++) {
+          if (emptyPoints[i][2] < 4) break;
+        }
+        emptyPoints = emptyPoints.slice(i);
+        for (i = 0; i < 100 && maxFractionalChange > INTERPTHRESHOLD; i++) {
+          maxFractionalChange = iterateInterp2d(
+            z,
+            emptyPoints,
+            correctionOvershoot(maxFractionalChange)
+          );
+        }
+        if (maxFractionalChange > INTERPTHRESHOLD) {
+          Lib.log("interp2d didn't converge quickly", maxFractionalChange);
+        }
+        return z;
+      };
+      function iterateInterp2d(z, emptyPoints, overshoot) {
+        var maxFractionalChange = 0;
+        var thisPt;
+        var i;
+        var j;
+        var p;
+        var q;
+        var neighborShift;
+        var neighborRow;
+        var neighborVal;
+        var neighborCount;
+        var neighborSum;
+        var initialVal;
+        var minNeighbor;
+        var maxNeighbor;
+        for (p = 0; p < emptyPoints.length; p++) {
+          thisPt = emptyPoints[p];
+          i = thisPt[0];
+          j = thisPt[1];
+          initialVal = z[i][j];
+          neighborSum = 0;
+          neighborCount = 0;
+          for (q = 0; q < 4; q++) {
+            neighborShift = NEIGHBORSHIFTS[q];
+            neighborRow = z[i + neighborShift[0]];
+            if (!neighborRow) continue;
+            neighborVal = neighborRow[j + neighborShift[1]];
+            if (neighborVal !== void 0) {
+              if (neighborSum === 0) {
+                minNeighbor = maxNeighbor = neighborVal;
+              } else {
+                minNeighbor = Math.min(minNeighbor, neighborVal);
+                maxNeighbor = Math.max(maxNeighbor, neighborVal);
+              }
+              neighborCount++;
+              neighborSum += neighborVal;
+            }
+          }
+          if (neighborCount === 0) {
+            throw "iterateInterp2d order is wrong: no defined neighbors";
+          }
+          z[i][j] = neighborSum / neighborCount;
+          if (initialVal === void 0) {
+            if (neighborCount < 4) maxFractionalChange = 1;
+          } else {
+            z[i][j] = (1 + overshoot) * z[i][j] - overshoot * initialVal;
+            if (maxNeighbor > minNeighbor) {
+              maxFractionalChange = Math.max(
+                maxFractionalChange,
+                Math.abs(z[i][j] - initialVal) / (maxNeighbor - minNeighbor)
+              );
+            }
+          }
+        }
+        return maxFractionalChange;
+      }
+    }
+  });
+
+  // src/traces/heatmap/find_empties.js
+  var require_find_empties = __commonJS({
+    "src/traces/heatmap/find_empties.js"(exports, module) {
+      "use strict";
+      var maxRowLength = require_lib().maxRowLength;
+      module.exports = function findEmpties(z) {
+        var empties = [];
+        var neighborHash = {};
+        var noNeighborList = [];
+        var nextRow = z[0];
+        var row = [];
+        var blank = [0, 0, 0];
+        var rowLength = maxRowLength(z);
+        var prevRow;
+        var i;
+        var j;
+        var thisPt;
+        var p;
+        var neighborCount;
+        var newNeighborHash;
+        var foundNewNeighbors;
+        for (i = 0; i < z.length; i++) {
+          prevRow = row;
+          row = nextRow;
+          nextRow = z[i + 1] || [];
+          for (j = 0; j < rowLength; j++) {
+            if (row[j] === void 0) {
+              neighborCount = (row[j - 1] !== void 0 ? 1 : 0) + (row[j + 1] !== void 0 ? 1 : 0) + (prevRow[j] !== void 0 ? 1 : 0) + (nextRow[j] !== void 0 ? 1 : 0);
+              if (neighborCount) {
+                if (i === 0) neighborCount++;
+                if (j === 0) neighborCount++;
+                if (i === z.length - 1) neighborCount++;
+                if (j === row.length - 1) neighborCount++;
+                if (neighborCount < 4) {
+                  neighborHash[[i, j]] = [i, j, neighborCount];
+                }
+                empties.push([i, j, neighborCount]);
+              } else noNeighborList.push([i, j]);
+            }
+          }
+        }
+        while (noNeighborList.length) {
+          newNeighborHash = {};
+          foundNewNeighbors = false;
+          for (p = noNeighborList.length - 1; p >= 0; p--) {
+            thisPt = noNeighborList[p];
+            i = thisPt[0];
+            j = thisPt[1];
+            neighborCount = ((neighborHash[[i - 1, j]] || blank)[2] + (neighborHash[[i + 1, j]] || blank)[2] + (neighborHash[[i, j - 1]] || blank)[2] + (neighborHash[[i, j + 1]] || blank)[2]) / 20;
+            if (neighborCount) {
+              newNeighborHash[thisPt] = [i, j, neighborCount];
+              noNeighborList.splice(p, 1);
+              foundNewNeighbors = true;
+            }
+          }
+          if (!foundNewNeighbors) {
+            throw "findEmpties iterated with no new neighbors";
+          }
+          for (thisPt in newNeighborHash) {
+            neighborHash[thisPt] = newNeighborHash[thisPt];
+            empties.push(newNeighborHash[thisPt]);
+          }
+        }
+        return empties.sort(function(a, b) {
+          return b[2] - a[2];
+        });
+      };
+    }
+  });
+
+  // src/traces/heatmap/make_bound_array.js
+  var require_make_bound_array = __commonJS({
+    "src/traces/heatmap/make_bound_array.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
+      module.exports = function makeBoundArray(trace, arrayIn, v0In, dvIn, numbricks, ax) {
+        var arrayOut = [];
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var v0;
+        var dv;
+        var i;
+        var isArrayOfTwoItemsOrMore = isArrayOrTypedArray(arrayIn) && arrayIn.length > 1;
+        if (isArrayOfTwoItemsOrMore && !isHist && ax.type !== "category") {
+          var len = arrayIn.length;
+          if (len <= numbricks) {
+            if (isContour) arrayOut = Array.from(arrayIn).slice(0, numbricks);
+            else if (numbricks === 1) {
+              if (ax.type === "log") {
+                arrayOut = [0.5 * arrayIn[0], 2 * arrayIn[0]];
+              } else {
+                arrayOut = [arrayIn[0] - 0.5, arrayIn[0] + 0.5];
+              }
+            } else if (ax.type === "log") {
+              arrayOut = [Math.pow(arrayIn[0], 1.5) / Math.pow(arrayIn[1], 0.5)];
+              for (i = 1; i < len; i++) {
+                arrayOut.push(Math.sqrt(arrayIn[i - 1] * arrayIn[i]));
+              }
+              arrayOut.push(Math.pow(arrayIn[len - 1], 1.5) / Math.pow(arrayIn[len - 2], 0.5));
+            } else {
+              arrayOut = [1.5 * arrayIn[0] - 0.5 * arrayIn[1]];
+              for (i = 1; i < len; i++) {
+                arrayOut.push((arrayIn[i - 1] + arrayIn[i]) * 0.5);
+              }
+              arrayOut.push(1.5 * arrayIn[len - 1] - 0.5 * arrayIn[len - 2]);
+            }
+            if (len < numbricks) {
+              var lastPt = arrayOut[arrayOut.length - 1];
+              var delta;
+              if (ax.type === "log") {
+                delta = lastPt / arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt *= delta;
+                  arrayOut.push(lastPt);
+                }
+              } else {
+                delta = lastPt - arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt += delta;
+                  arrayOut.push(lastPt);
+                }
+              }
+            }
+          } else {
+            return isContour ? arrayIn.slice(0, numbricks) : (
+              // we must be strict for contours
+              arrayIn.slice(0, numbricks + 1)
+            );
+          }
+        } else {
+          var calendar = trace[ax._id.charAt(0) + "calendar"];
+          if (isHist) {
+            v0 = ax.r2c(v0In, 0, calendar);
+          } else {
+            if (isArrayOrTypedArray(arrayIn) && arrayIn.length === 1) {
+              v0 = arrayIn[0];
+            } else if (v0In === void 0) {
+              v0 = 0;
+            } else {
+              var fn = ax.type === "log" ? ax.d2c : ax.r2c;
+              v0 = fn(v0In, 0, calendar);
+            }
+          }
+          dv = dvIn || 1;
+          for (i = isContour ? 0 : -0.5; i < numbricks; i++) {
+            arrayOut.push(v0 + dv * i);
+          }
+        }
+        return arrayOut;
+      };
+    }
+  });
+
+  // src/traces/heatmap/calc.js
+  var require_calc8 = __commonJS({
+    "src/traces/heatmap/calc.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      var Axes = require_axes();
+      var alignPeriod = require_align_period();
+      var histogram2dCalc = require_calc7();
+      var colorscaleCalc = require_calc();
+      var convertColumnData = require_convert_column_xyz();
+      var clean2dArray = require_clean_2d_array();
+      var interp2d = require_interp2d();
+      var findEmpties = require_find_empties();
+      var makeBoundArray = require_make_bound_array();
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function calc(gd, trace) {
+        var xa = Axes.getFromId(gd, trace.xaxis || "x");
+        var ya = Axes.getFromId(gd, trace.yaxis || "y");
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var zsmooth = isContour ? "best" : trace.zsmooth;
+        var x, x0, dx, origX;
+        var y, y0, dy, origY;
+        var z, i, binned;
+        xa._minDtick = 0;
+        ya._minDtick = 0;
+        if (isHist) {
+          binned = histogram2dCalc(gd, trace);
+          origX = binned.orig_x;
+          x = binned.x;
+          x0 = binned.x0;
+          dx = binned.dx;
+          origY = binned.orig_y;
+          y = binned.y;
+          y0 = binned.y0;
+          dy = binned.dy;
+          z = binned.z;
+        } else {
+          var zIn = trace.z;
+          if (Lib.isArray1D(zIn)) {
+            convertColumnData(trace, xa, ya, "x", "y", ["z"]);
+            x = trace._x;
+            y = trace._y;
+            zIn = trace._z;
+          } else {
+            origX = trace.x ? xa.makeCalcdata(trace, "x") : [];
+            origY = trace.y ? ya.makeCalcdata(trace, "y") : [];
+            x = alignPeriod(trace, xa, "x", origX).vals;
+            y = alignPeriod(trace, ya, "y", origY).vals;
+            trace._x = x;
+            trace._y = y;
+          }
+          x0 = trace.x0;
+          dx = trace.dx;
+          y0 = trace.y0;
+          dy = trace.dy;
+          z = clean2dArray(zIn, trace, xa, ya);
+        }
+        if (xa.rangebreaks || ya.rangebreaks) {
+          z = dropZonBreaks(x, y, z);
+          if (!isHist) {
+            x = skipBreaks(x);
+            y = skipBreaks(y);
+            trace._x = x;
+            trace._y = y;
+          }
+        }
+        if (!isHist && (isContour || trace.connectgaps)) {
+          trace._emptypoints = findEmpties(z);
+          interp2d(z, trace._emptypoints);
+        }
+        function noZsmooth(msg) {
+          zsmooth = trace._input.zsmooth = trace.zsmooth = false;
+          Lib.warn('cannot use zsmooth: "fast": ' + msg);
+        }
+        function scaleIsLinear(s) {
+          if (s.length > 1) {
+            var avgdx = (s[s.length - 1] - s[0]) / (s.length - 1);
+            var maxErrX = Math.abs(avgdx / 100);
+            for (i = 0; i < s.length - 1; i++) {
+              if (Math.abs(s[i + 1] - s[i] - avgdx) > maxErrX) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+        trace._islinear = false;
+        if (xa.type === "log" || ya.type === "log") {
+          if (zsmooth === "fast") {
+            noZsmooth("log axis found");
+          }
+        } else if (!scaleIsLinear(x)) {
+          if (zsmooth === "fast") noZsmooth("x scale is not linear");
+        } else if (!scaleIsLinear(y)) {
+          if (zsmooth === "fast") noZsmooth("y scale is not linear");
+        } else {
+          trace._islinear = true;
+        }
+        var xlen = Lib.maxRowLength(z);
+        var xIn = trace.xtype === "scaled" ? "" : x;
+        var xArray = makeBoundArray(trace, xIn, x0, dx, xlen, xa);
+        var yIn = trace.ytype === "scaled" ? "" : y;
+        var yArray = makeBoundArray(trace, yIn, y0, dy, z.length, ya);
+        trace._extremes[xa._id] = Axes.findExtremes(xa, xArray);
+        trace._extremes[ya._id] = Axes.findExtremes(ya, yArray);
+        var cd0 = {
+          x: xArray,
+          y: yArray,
+          z,
+          text: trace._text || trace.text,
+          hovertext: trace._hovertext || trace.hovertext
+        };
+        if (trace.xperiodalignment && origX) {
+          cd0.orig_x = origX;
+        }
+        if (trace.yperiodalignment && origY) {
+          cd0.orig_y = origY;
+        }
+        if (xIn && xIn.length === xArray.length - 1) cd0.xCenter = xIn;
+        if (yIn && yIn.length === yArray.length - 1) cd0.yCenter = yIn;
+        if (isHist) {
+          cd0.xRanges = binned.xRanges;
+          cd0.yRanges = binned.yRanges;
+          cd0.pts = binned.pts;
+        }
+        if (!isContour) {
+          colorscaleCalc(gd, trace, { vals: z, cLetter: "z" });
+        }
+        if (isContour && trace.contours && trace.contours.coloring === "heatmap") {
+          var dummyTrace = {
+            type: trace.type === "contour" ? "heatmap" : "histogram2d",
+            xcalendar: trace.xcalendar,
+            ycalendar: trace.ycalendar
+          };
+          cd0.xfill = makeBoundArray(dummyTrace, xIn, x0, dx, xlen, xa);
+          cd0.yfill = makeBoundArray(dummyTrace, yIn, y0, dy, z.length, ya);
+        }
+        return [cd0];
+      };
+      function skipBreaks(a) {
+        var b = [];
+        var len = a.length;
+        for (var i = 0; i < len; i++) {
+          var v = a[i];
+          if (v !== BADNUM) b.push(v);
+        }
+        return b;
+      }
+      function dropZonBreaks(x, y, z) {
+        var newZ = [];
+        var k = -1;
+        for (var i = 0; i < z.length; i++) {
+          if (y[i] === BADNUM) continue;
+          k++;
+          newZ[k] = [];
+          for (var j = 0; j < z[i].length; j++) {
+            if (x[j] === BADNUM) continue;
+            newZ[k].push(z[i][j]);
+          }
+        }
+        return newZ;
+      }
+    }
+  });
+
+  // src/traces/contour/set_contours.js
+  var require_set_contours = __commonJS({
+    "src/traces/contour/set_contours.js"(exports, module) {
+      "use strict";
+      var Axes = require_axes();
+      var Lib = require_lib();
+      module.exports = function setContours(trace, vals) {
+        var contours = trace.contours;
+        if (contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+          var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+          });
+          thresholds = thresholds.filter(function(val) {
+            return typeof val === "number" && !isNaN(val) && isFinite(val);
+          });
+          if (thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null;
+            contours._levels = thresholds;
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Processing (including restyle) ===");
+              console.log("Using custom thresholds:", thresholds);
+              console.log("Data range:", dataMin, "to", dataMax);
+              console.log("Input start/end:", contours.start, "/", contours.end);
+              console.log("Trace zmin/zmax:", trace.zmin, "/", trace.zmax);
+              console.log("Thresholds within data range:", thresholds.filter(function(t) {
+                return t >= dataMin && t <= dataMax;
+              }));
+              console.log("Thresholds outside data range:", thresholds.filter(function(t) {
+                return t < dataMin || t > dataMax;
+              }));
+              console.log("=== End Custom Thresholds Processing ===");
+            }
+            if (!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            return;
+          }
+        }
+        if (trace.autocontour) {
+          var zmin = trace.zmin;
+          var zmax = trace.zmax;
+          if (trace.zauto || zmin === void 0) {
+            zmin = Lib.aggNums(Math.min, null, vals);
+          }
+          if (trace.zauto || zmax === void 0) {
+            zmax = Lib.aggNums(Math.max, null, vals);
+          }
+          var dummyAx = autoContours(zmin, zmax, trace.ncontours);
+          contours.size = dummyAx.dtick;
+          contours.start = Axes.tickFirst(dummyAx);
+          dummyAx.range.reverse();
+          contours.end = Axes.tickFirst(dummyAx);
+          if (contours.start === zmin) contours.start += contours.size;
+          if (contours.end === zmax) contours.end -= contours.size;
+          if (contours.start > contours.end) {
+            contours.start = contours.end = (contours.start + contours.end) / 2;
+          }
+          if (!trace._input.contours) trace._input.contours = {};
+          Lib.extendFlat(trace._input.contours, {
+            start: contours.start,
+            end: contours.end,
+            size: contours.size
+          });
+          trace._input.autocontour = true;
+        } else if (contours.type !== "constraint") {
+          var start = contours.start;
+          var end = contours.end;
+          var inputContours = trace._input.contours;
+          if (start > end) {
+            contours.start = inputContours.start = end;
+            end = contours.end = inputContours.end = start;
+            start = contours.start;
+          }
+          if (!(contours.size > 0)) {
+            var sizeOut;
+            if (start === end) sizeOut = 1;
+            else sizeOut = autoContours(start, end, trace.ncontours).dtick;
+            inputContours.size = contours.size = sizeOut;
+          }
+        }
+      };
+      function autoContours(start, end, ncontours) {
+        var dummyAx = {
+          type: "linear",
+          range: [start, end]
+        };
+        Axes.autoTicks(
+          dummyAx,
+          (end - start) / (ncontours || 15)
+        );
+        return dummyAx;
+      }
+    }
+  });
+
+  // src/traces/contour/end_plus.js
+  var require_end_plus = __commonJS({
+    "src/traces/contour/end_plus.js"(exports, module) {
+      "use strict";
+      module.exports = function endPlus(contours) {
+        return contours.end + contours.size / 1e6;
+      };
+    }
+  });
+
+  // src/traces/contour/calc.js
+  var require_calc9 = __commonJS({
+    "src/traces/contour/calc.js"(exports, module) {
+      "use strict";
+      var Colorscale = require_colorscale();
+      var heatmapCalc = require_calc8();
+      var setContours = require_set_contours();
+      var endPlus = require_end_plus();
+      module.exports = function calc(gd, trace) {
+        var cd = heatmapCalc(gd, trace);
+        var zOut = cd[0].z;
+        setContours(trace, zOut);
+        var contours = trace.contours;
+        var cOpts = Colorscale.extractOpts(trace);
+        var cVals;
+        if (contours.coloring === "heatmap" && cOpts.auto && trace.autocontour === false) {
+          var start = contours.start;
+          var end = endPlus(contours);
+          var cs = contours.size || 1;
+          var nc = Math.floor((end - start) / cs) + 1;
+          if (contours._levels && contours._levels.length > 0) {
+            var levels = contours._levels;
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+          } else {
+            if (!isFinite(cs)) {
+              cs = 1;
+              nc = 1;
+            }
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
+          }
+        } else {
+          cVals = zOut;
+        }
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== Colorscale.calc in contour/calc.js ===");
+          console.log("Has custom thresholds:", !!(contours._levels && contours._levels.length > 0));
+          console.log("cVals type:", Array.isArray(cVals) ? "array[" + cVals.length + "]" : typeof cVals);
+          console.log("Using cVals:", Array.isArray(cVals) && cVals.length <= 10 ? cVals : "large array");
+        }
+        Colorscale.calc(gd, trace, { vals: cVals, cLetter: "z" });
+        return cd;
+      };
+    }
+  });
+
+  // src/constants/pixelated_image.js
+  var require_pixelated_image = __commonJS({
+    "src/constants/pixelated_image.js"(exports) {
+      "use strict";
+      exports.CSS_DECLARATIONS = [
+        ["image-rendering", "optimizeSpeed"],
+        ["image-rendering", "-moz-crisp-edges"],
+        ["image-rendering", "-o-crisp-edges"],
+        ["image-rendering", "-webkit-optimize-contrast"],
+        ["image-rendering", "optimize-contrast"],
+        ["image-rendering", "crisp-edges"],
+        ["image-rendering", "pixelated"]
+      ];
+      exports.STYLE = exports.CSS_DECLARATIONS.map(function(d) {
+        return d.join(": ") + "; ";
+      }).join("");
+    }
+  });
+
+  // src/lib/supports_pixelated_image.js
+  var require_supports_pixelated_image = __commonJS({
+    "src/lib/supports_pixelated_image.js"(exports, module) {
+      "use strict";
+      var constants = require_pixelated_image();
+      var Drawing = require_drawing();
+      var Lib = require_lib();
+      var _supportsPixelated = null;
+      function supportsPixelatedImage() {
+        if (_supportsPixelated !== null) {
+          return _supportsPixelated;
+        }
+        _supportsPixelated = false;
+        var unsupportedBrowser = Lib.isSafari() || Lib.isIOS();
+        if (window.navigator.userAgent && !unsupportedBrowser) {
+          var declarations = Array.from(constants.CSS_DECLARATIONS).reverse();
+          var supports = window.CSS && window.CSS.supports || window.supportsCSS;
+          if (typeof supports === "function") {
+            _supportsPixelated = declarations.some(function(d) {
+              return supports.apply(null, d);
+            });
+          } else {
+            var image3 = Drawing.tester.append("image").attr("style", constants.STYLE);
+            var cStyles = window.getComputedStyle(image3.node());
+            var imageRendering = cStyles.imageRendering;
+            _supportsPixelated = declarations.some(function(d) {
+              var value = d[1];
+              return imageRendering === value || imageRendering === value.toLowerCase();
+            });
+            image3.remove();
+          }
+        }
+        return _supportsPixelated;
+      }
+      module.exports = supportsPixelatedImage;
+    }
+  });
+
+  // src/traces/heatmap/plot.js
+  var require_plot4 = __commonJS({
+    "src/traces/heatmap/plot.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var tinycolor = require_tinycolor();
+      var Registry = require_registry();
+      var Drawing = require_drawing();
+      var Axes = require_axes();
+      var Lib = require_lib();
+      var svgTextUtils = require_svg_text_utils();
+      var formatLabels = require_format_labels();
+      var Color = require_color();
+      var extractOpts = require_colorscale().extractOpts;
+      var makeColorScaleFuncFromTrace = require_colorscale().makeColorScaleFuncFromTrace;
+      var xmlnsNamespaces = require_xmlns_namespaces();
+      var alignmentConstants = require_alignment();
+      var LINE_SPACING = alignmentConstants.LINE_SPACING;
+      var supportsPixelatedImage = require_supports_pixelated_image();
+      var PIXELATED_IMAGE_STYLE = require_pixelated_image().STYLE;
+      var labelClass = "heatmap-label";
+      function selectLabels(plotGroup) {
+        return plotGroup.selectAll("g." + labelClass);
+      }
+      function removeLabels(plotGroup) {
+        selectLabels(plotGroup).remove();
+      }
+      module.exports = function(gd, plotinfo, cdheatmaps, heatmapLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(heatmapLayer, cdheatmaps, "hm").each(function(cd) {
+          var plotGroup = d3.select(this);
+          var cd0 = cd[0];
+          var trace = cd0.trace;
+          var xGap = trace.xgap || 0;
+          var yGap = trace.ygap || 0;
+          var z = cd0.z;
+          var x = cd0.x;
+          var y = cd0.y;
+          var xc = cd0.xCenter;
+          var yc = cd0.yCenter;
+          var isContour = Registry.traceIs(trace, "contour");
+          var zsmooth = isContour ? "best" : trace.zsmooth;
+          var m = z.length;
+          var n = Lib.maxRowLength(z);
+          var xrev = false;
+          var yrev = false;
+          var left, right, temp, top, bottom, i, j, k;
+          i = 0;
+          while (left === void 0 && i < x.length - 1) {
+            left = xa.c2p(x[i]);
+            i++;
+          }
+          i = x.length - 1;
+          while (right === void 0 && i > 0) {
+            right = xa.c2p(x[i]);
+            i--;
+          }
+          if (right < left) {
+            temp = right;
+            right = left;
+            left = temp;
+            xrev = true;
+          }
+          i = 0;
+          while (top === void 0 && i < y.length - 1) {
+            top = ya.c2p(y[i]);
+            i++;
+          }
+          i = y.length - 1;
+          while (bottom === void 0 && i > 0) {
+            bottom = ya.c2p(y[i]);
+            i--;
+          }
+          if (bottom < top) {
+            temp = top;
+            top = bottom;
+            bottom = temp;
+            yrev = true;
+          }
+          if (isContour) {
+            xc = x;
+            yc = y;
+            x = cd0.xfill;
+            y = cd0.yfill;
+          }
+          var drawingMethod = "default";
+          if (zsmooth) {
+            drawingMethod = zsmooth === "best" ? "smooth" : "fast";
+          } else if (trace._islinear && xGap === 0 && yGap === 0 && supportsPixelatedImage()) {
+            drawingMethod = "fast";
+          }
+          if (drawingMethod !== "fast") {
+            var extra = zsmooth === "best" ? 0 : 0.5;
+            left = Math.max(-extra * xa._length, left);
+            right = Math.min((1 + extra) * xa._length, right);
+            top = Math.max(-extra * ya._length, top);
+            bottom = Math.min((1 + extra) * ya._length, bottom);
+          }
+          var imageWidth = Math.round(right - left);
+          var imageHeight = Math.round(bottom - top);
+          var isOffScreen = left >= xa._length || right <= 0 || top >= ya._length || bottom <= 0;
+          if (isOffScreen) {
+            var noImage = plotGroup.selectAll("image").data([]);
+            noImage.exit().remove();
+            removeLabels(plotGroup);
+            return;
+          }
+          var canvasW, canvasH;
+          if (drawingMethod === "fast") {
+            canvasW = n;
+            canvasH = m;
+          } else {
+            canvasW = imageWidth;
+            canvasH = imageHeight;
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = canvasW;
+          canvas.height = canvasH;
+          var context = canvas.getContext("2d", { willReadFrequently: true });
+          var sclFunc = makeColorScaleFuncFromTrace(trace, { noNumericCheck: true, returnArray: true });
+          var xpx, ypx;
+          if (drawingMethod === "fast") {
+            xpx = xrev ? function(index) {
+              return n - 1 - index;
+            } : Lib.identity;
+            ypx = yrev ? function(index) {
+              return m - 1 - index;
+            } : Lib.identity;
+          } else {
+            xpx = function(index) {
+              return Lib.constrain(
+                Math.round(xa.c2p(x[index]) - left),
+                0,
+                imageWidth
+              );
+            };
+            ypx = function(index) {
+              return Lib.constrain(
+                Math.round(ya.c2p(y[index]) - top),
+                0,
+                imageHeight
+              );
+            };
+          }
+          var yi = ypx(0);
+          var yb = [yi, yi];
+          var xbi = xrev ? 0 : 1;
+          var ybi = yrev ? 0 : 1;
+          var pixcount = 0;
+          var rcount = 0;
+          var gcount = 0;
+          var bcount = 0;
+          var xb, xi, v, row, c;
+          function setColor(v2, pixsize) {
+            if (v2 !== void 0) {
+              var c2 = sclFunc(v2);
+              c2[0] = Math.round(c2[0]);
+              c2[1] = Math.round(c2[1]);
+              c2[2] = Math.round(c2[2]);
+              pixcount += pixsize;
+              rcount += c2[0] * pixsize;
+              gcount += c2[1] * pixsize;
+              bcount += c2[2] * pixsize;
+              return c2;
+            }
+            return [0, 0, 0, 0];
+          }
+          function interpColor(r02, r12, xinterp, yinterp2) {
+            var z00 = r02[xinterp.bin0];
+            if (z00 === void 0) return setColor(void 0, 1);
+            var z01 = r02[xinterp.bin1];
+            var z10 = r12[xinterp.bin0];
+            var z11 = r12[xinterp.bin1];
+            var dx2 = z01 - z00 || 0;
+            var dy2 = z10 - z00 || 0;
+            var dxy;
+            if (z01 === void 0) {
+              if (z11 === void 0) dxy = 0;
+              else if (z10 === void 0) dxy = 2 * (z11 - z00);
+              else dxy = (2 * z11 - z10 - z00) * 2 / 3;
+            } else if (z11 === void 0) {
+              if (z10 === void 0) dxy = 0;
+              else dxy = (2 * z00 - z01 - z10) * 2 / 3;
+            } else if (z10 === void 0) dxy = (2 * z11 - z01 - z00) * 2 / 3;
+            else dxy = z11 + z00 - z01 - z10;
+            return setColor(z00 + xinterp.frac * dx2 + yinterp2.frac * (dy2 + xinterp.frac * dxy));
+          }
+          if (drawingMethod !== "default") {
+            var pxIndex = 0;
+            var pixels;
+            try {
+              pixels = new Uint8Array(canvasW * canvasH * 4);
+            } catch (e) {
+              pixels = new Array(canvasW * canvasH * 4);
+            }
+            if (drawingMethod === "smooth") {
+              var xForPx = xc || x;
+              var yForPx = yc || y;
+              var xPixArray = new Array(xForPx.length);
+              var yPixArray = new Array(yForPx.length);
+              var xinterpArray = new Array(imageWidth);
+              var findInterpX = xc ? findInterpFromCenters : findInterp;
+              var findInterpY = yc ? findInterpFromCenters : findInterp;
+              var yinterp, r0, r1;
+              for (i = 0; i < xForPx.length; i++) xPixArray[i] = Math.round(xa.c2p(xForPx[i]) - left);
+              for (i = 0; i < yForPx.length; i++) yPixArray[i] = Math.round(ya.c2p(yForPx[i]) - top);
+              for (i = 0; i < imageWidth; i++) xinterpArray[i] = findInterpX(i, xPixArray);
+              for (j = 0; j < imageHeight; j++) {
+                yinterp = findInterpY(j, yPixArray);
+                r0 = z[yinterp.bin0];
+                r1 = z[yinterp.bin1];
+                for (i = 0; i < imageWidth; i++, pxIndex += 4) {
+                  c = interpColor(r0, r1, xinterpArray[i], yinterp);
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            } else {
+              for (j = 0; j < m; j++) {
+                row = z[j];
+                yb = ypx(j);
+                for (i = 0; i < n; i++) {
+                  c = setColor(row[i], 1);
+                  pxIndex = (yb * n + xpx(i)) * 4;
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            }
+            var imageData = context.createImageData(canvasW, canvasH);
+            try {
+              imageData.data.set(pixels);
+            } catch (e) {
+              var pxArray = imageData.data;
+              var dlen = pxArray.length;
+              for (j = 0; j < dlen; j++) {
+                pxArray[j] = pixels[j];
+              }
+            }
+            context.putImageData(imageData, 0, 0);
+          } else {
+            var xGapLeft = Math.floor(xGap / 2);
+            var yGapTop = Math.floor(yGap / 2);
+            for (j = 0; j < m; j++) {
+              row = z[j];
+              yb.reverse();
+              yb[ybi] = ypx(j + 1);
+              if (yb[0] === yb[1] || yb[0] === void 0 || yb[1] === void 0) {
+                continue;
+              }
+              xi = xpx(0);
+              xb = [xi, xi];
+              for (i = 0; i < n; i++) {
+                xb.reverse();
+                xb[xbi] = xpx(i + 1);
+                if (xb[0] === xb[1] || xb[0] === void 0 || xb[1] === void 0) {
+                  continue;
+                }
+                v = row[i];
+                c = setColor(v, (xb[1] - xb[0]) * (yb[1] - yb[0]));
+                context.fillStyle = "rgba(" + c.join(",") + ")";
+                context.fillRect(
+                  xb[0] + xGapLeft,
+                  yb[0] + yGapTop,
+                  xb[1] - xb[0] - xGap,
+                  yb[1] - yb[0] - yGap
+                );
+              }
+            }
+          }
+          rcount = Math.round(rcount / pixcount);
+          gcount = Math.round(gcount / pixcount);
+          bcount = Math.round(bcount / pixcount);
+          var avgColor = tinycolor("rgb(" + rcount + "," + gcount + "," + bcount + ")");
+          gd._hmpixcount = (gd._hmpixcount || 0) + pixcount;
+          gd._hmlumcount = (gd._hmlumcount || 0) + pixcount * avgColor.getLuminance();
+          var image3 = plotGroup.selectAll("image").data(cd);
+          image3.enter().append("svg:image").attr({
+            xmlns: xmlnsNamespaces.svg,
+            preserveAspectRatio: "none"
+          });
+          image3.attr({
+            height: imageHeight,
+            width: imageWidth,
+            x: left,
+            y: top,
+            "xlink:href": canvas.toDataURL("image/png")
+          });
+          if (drawingMethod === "fast" && !zsmooth) {
+            image3.attr("style", PIXELATED_IMAGE_STYLE);
+          }
+          removeLabels(plotGroup);
+          var texttemplate = trace.texttemplate;
+          if (texttemplate) {
+            var cOpts = extractOpts(trace);
+            var dummyAx = {
+              type: "linear",
+              range: [cOpts.min, cOpts.max],
+              _separators: xa._separators,
+              _numFormat: xa._numFormat
+            };
+            var aHistogram2dContour = trace.type === "histogram2dcontour";
+            var aContour = trace.type === "contour";
+            var iStart = aContour ? 1 : 0;
+            var iStop = aContour ? m - 1 : m;
+            var jStart = aContour ? 1 : 0;
+            var jStop = aContour ? n - 1 : n;
+            var textData = [];
+            for (i = iStart; i < iStop; i++) {
+              var yVal;
+              if (aContour) {
+                yVal = cd0.y[i];
+              } else if (aHistogram2dContour) {
+                if (i === 0 || i === m - 1) continue;
+                yVal = cd0.y[i];
+              } else if (cd0.yCenter) {
+                yVal = cd0.yCenter[i];
+              } else {
+                if (i + 1 === m && cd0.y[i + 1] === void 0) continue;
+                yVal = (cd0.y[i] + cd0.y[i + 1]) / 2;
+              }
+              var _y = Math.round(ya.c2p(yVal));
+              if (0 > _y || _y > ya._length) continue;
+              for (j = jStart; j < jStop; j++) {
+                var xVal;
+                if (aContour) {
+                  xVal = cd0.x[j];
+                } else if (aHistogram2dContour) {
+                  if (j === 0 || j === n - 1) continue;
+                  xVal = cd0.x[j];
+                } else if (cd0.xCenter) {
+                  xVal = cd0.xCenter[j];
+                } else {
+                  if (j + 1 === n && cd0.x[j + 1] === void 0) continue;
+                  xVal = (cd0.x[j] + cd0.x[j + 1]) / 2;
+                }
+                var _x = Math.round(xa.c2p(xVal));
+                if (0 > _x || _x > xa._length) continue;
+                var obj = formatLabels({
+                  x: xVal,
+                  y: yVal
+                }, trace, gd._fullLayout);
+                obj.x = xVal;
+                obj.y = yVal;
+                var zVal = cd0.z[i][j];
+                if (zVal === void 0) {
+                  obj.z = "";
+                  obj.zLabel = "";
+                } else {
+                  obj.z = zVal;
+                  obj.zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+                }
+                var theText = cd0.text && cd0.text[i] && cd0.text[i][j];
+                if (theText === void 0 || theText === false) theText = "";
+                obj.text = theText;
+                var _t = Lib.texttemplateString(texttemplate, obj, gd._fullLayout._d3locale, obj, trace._meta || {});
+                if (!_t) continue;
+                var lines = _t.split("<br>");
+                var nL = lines.length;
+                var nC = 0;
+                for (k = 0; k < nL; k++) {
+                  nC = Math.max(nC, lines[k].length);
+                }
+                textData.push({
+                  l: nL,
+                  // number of lines
+                  c: nC,
+                  // maximum number of chars in a line
+                  t: _t,
+                  // text
+                  x: _x,
+                  y: _y,
+                  z: zVal
+                });
+              }
+            }
+            var font = trace.textfont;
+            var fontSize = font.size;
+            var globalFontSize = gd._fullLayout.font.size;
+            if (!fontSize || fontSize === "auto") {
+              var minW = Infinity;
+              var minH = Infinity;
+              var maxL = 0;
+              var maxC = 0;
+              for (k = 0; k < textData.length; k++) {
+                var d = textData[k];
+                maxL = Math.max(maxL, d.l);
+                maxC = Math.max(maxC, d.c);
+                if (k < textData.length - 1) {
+                  var nextD = textData[k + 1];
+                  var dx = Math.abs(nextD.x - d.x);
+                  var dy = Math.abs(nextD.y - d.y);
+                  if (dx) minW = Math.min(minW, dx);
+                  if (dy) minH = Math.min(minH, dy);
+                }
+              }
+              if (!isFinite(minW) || !isFinite(minH)) {
+                fontSize = globalFontSize;
+              } else {
+                minW -= xGap;
+                minH -= yGap;
+                minW /= maxC;
+                minH /= maxL;
+                minW /= LINE_SPACING / 2;
+                minH /= LINE_SPACING;
+                fontSize = Math.min(
+                  Math.floor(minW),
+                  Math.floor(minH),
+                  globalFontSize
+                );
+              }
+            }
+            if (fontSize <= 0 || !isFinite(fontSize)) return;
+            var xFn = function(d2) {
+              return d2.x;
+            };
+            var yFn = function(d2) {
+              return d2.y - fontSize * (d2.l * LINE_SPACING / 2 - 1);
+            };
+            var labels = selectLabels(plotGroup).data(textData);
+            labels.enter().append("g").classed(labelClass, 1).append("text").attr("text-anchor", "middle").each(function(d2) {
+              var thisLabel = d3.select(this);
+              var fontColor = font.color;
+              if (!fontColor || fontColor === "auto") {
+                fontColor = Color.contrast(
+                  d2.z === void 0 ? gd._fullLayout.plot_bgcolor : "rgba(" + sclFunc(d2.z).join() + ")"
+                );
+              }
+              thisLabel.attr("data-notex", 1).call(svgTextUtils.positionText, xFn(d2), yFn(d2)).call(Drawing.font, {
+                family: font.family,
+                size: fontSize,
+                color: fontColor,
+                weight: font.weight,
+                style: font.style,
+                variant: font.variant,
+                textcase: font.textcase,
+                lineposition: font.lineposition,
+                shadow: font.shadow
+              }).text(d2.t).call(svgTextUtils.convertToTspans, gd);
+            });
+          }
+        });
+      };
+      function findInterp(pixel, pixArray) {
+        var maxBin = pixArray.length - 2;
+        var bin = Lib.constrain(Lib.findBin(pixel, pixArray), 0, maxBin);
+        var pix0 = pixArray[bin];
+        var pix1 = pixArray[bin + 1];
+        var interp = Lib.constrain(bin + (pixel - pix0) / (pix1 - pix0) - 0.5, 0, maxBin);
+        var bin0 = Math.round(interp);
+        var frac = Math.abs(interp - bin0);
+        if (!interp || interp === maxBin || !frac) {
+          return {
+            bin0,
+            bin1: bin0,
+            frac: 0
+          };
+        }
+        return {
+          bin0,
+          frac,
+          bin1: Math.round(bin0 + frac / (interp - bin0))
+        };
+      }
+      function findInterpFromCenters(pixel, centerPixArray) {
+        var maxBin = centerPixArray.length - 1;
+        var bin = Lib.constrain(Lib.findBin(pixel, centerPixArray), 0, maxBin);
+        var pix0 = centerPixArray[bin];
+        var pix1 = centerPixArray[bin + 1];
+        var frac = (pixel - pix0) / (pix1 - pix0) || 0;
+        if (frac <= 0) {
+          return {
+            bin0: bin,
+            bin1: bin,
+            frac: 0
+          };
+        }
+        if (frac < 0.5) {
+          return {
+            bin0: bin,
+            bin1: bin + 1,
+            frac
+          };
+        }
+        return {
+          bin0: bin + 1,
+          bin1: bin,
+          frac: 1 - frac
+        };
+      }
+      function putColor(pixels, pxIndex, c) {
+        pixels[pxIndex] = c[0];
+        pixels[pxIndex + 1] = c[1];
+        pixels[pxIndex + 2] = c[2];
+        pixels[pxIndex + 3] = Math.round(c[3] * 255);
+      }
+    }
+  });
+
+  // src/traces/contour/constants.js
+  var require_constants17 = __commonJS({
+    "src/traces/contour/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // some constants to help with marching squares algorithm
+        // where does the path start for each index?
+        BOTTOMSTART: [1, 9, 13, 104, 713],
+        TOPSTART: [4, 6, 7, 104, 713],
+        LEFTSTART: [8, 12, 14, 208, 1114],
+        RIGHTSTART: [2, 3, 11, 208, 1114],
+        // which way [dx,dy] do we leave a given index?
+        // saddles are already disambiguated
+        NEWDELTA: [
+          null,
+          [-1, 0],
+          [0, -1],
+          [-1, 0],
+          [1, 0],
+          null,
+          [0, -1],
+          [-1, 0],
+          [0, 1],
+          [0, 1],
+          null,
+          [0, 1],
+          [1, 0],
+          [1, 0],
+          [0, -1]
+        ],
+        // for each saddle, the first index here is used
+        // for dx||dy<0, the second for dx||dy>0
+        CHOOSESADDLE: {
+          104: [4, 1],
+          208: [2, 8],
+          713: [7, 13],
+          1114: [11, 14]
+        },
+        // after one index has been used for a saddle, which do we
+        // substitute to be used up later?
+        SADDLEREMAINDER: { 1: 4, 2: 8, 4: 1, 7: 13, 8: 2, 11: 14, 13: 7, 14: 11 },
+        // length of a contour, as a multiple of the plot area diagonal, per label
+        LABELDISTANCE: 2,
+        // number of contour levels after which we start increasing the number of
+        // labels we draw. Many contours means they will generally be close
+        // together, so it will be harder to follow a long way to find a label
+        LABELINCREASE: 10,
+        // minimum length of a contour line, as a multiple of the label length,
+        // at which we draw *any* labels
+        LABELMIN: 3,
+        // max number of labels to draw on a single contour path, no matter how long
+        LABELMAX: 10,
+        // constants for the label position cost function
+        LABELOPTIMIZER: {
+          // weight given to edge proximity
+          EDGECOST: 1,
+          // weight given to the angle off horizontal
+          ANGLECOST: 1,
+          // weight given to distance from already-placed labels
+          NEIGHBORCOST: 5,
+          // cost multiplier for labels on the same level
+          SAMELEVELFACTOR: 10,
+          // minimum distance (as a multiple of the label length)
+          // for labels on the same level
+          SAMELEVELDISTANCE: 5,
+          // maximum cost before we won't even place the label
+          MAXCOST: 100,
+          // number of evenly spaced points to look at in the first
+          // iteration of the search
+          INITIALSEARCHPOINTS: 10,
+          // number of binary search iterations after the initial wide search
+          ITERATIONS: 5
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/make_crossings.js
+  var require_make_crossings = __commonJS({
+    "src/traces/contour/make_crossings.js"(exports, module) {
+      "use strict";
+      var constants = require_constants17();
+      module.exports = function makeCrossings(pathinfo) {
+        var z = pathinfo[0].z;
+        var m = z.length;
+        var n = z[0].length;
+        var twoWide = m === 2 || n === 2;
+        var xi;
+        var yi;
+        var startIndices;
+        var ystartIndices;
+        var label;
+        var corners;
+        var mi;
+        var pi;
+        var i;
+        for (yi = 0; yi < m - 1; yi++) {
+          ystartIndices = [];
+          if (yi === 0) ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
+          if (yi === m - 2) ystartIndices = ystartIndices.concat(constants.TOPSTART);
+          for (xi = 0; xi < n - 1; xi++) {
+            startIndices = ystartIndices.slice();
+            if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
+            if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
+            label = xi + "," + yi;
+            corners = [
+              [z[yi][xi], z[yi][xi + 1]],
+              [z[yi + 1][xi], z[yi + 1][xi + 1]]
+            ];
+            for (i = 0; i < pathinfo.length; i++) {
+              pi = pathinfo[i];
+              mi = getMarchingIndex(pi.level, corners);
+              if (!mi) continue;
+              pi.crossings[label] = mi;
+              if (startIndices.indexOf(mi) !== -1) {
+                pi.starts.push([xi, yi]);
+                if (twoWide && startIndices.indexOf(
+                  mi,
+                  startIndices.indexOf(mi) + 1
+                ) !== -1) {
+                  pi.starts.push([xi, yi]);
+                }
+              }
+            }
+          }
+        }
+      };
+      function getMarchingIndex(val, corners) {
+        var mi = (corners[0][0] > val ? 0 : 1) + (corners[0][1] > val ? 0 : 2) + (corners[1][1] > val ? 0 : 4) + (corners[1][0] > val ? 0 : 8);
+        if (mi === 5 || mi === 10) {
+          var avg = (corners[0][0] + corners[0][1] + corners[1][0] + corners[1][1]) / 4;
+          if (val > avg) return mi === 5 ? 713 : 1114;
+          return mi === 5 ? 104 : 208;
+        }
+        return mi === 15 ? 0 : mi;
+      }
+    }
+  });
+
+  // src/traces/contour/find_all_paths.js
+  var require_find_all_paths = __commonJS({
+    "src/traces/contour/find_all_paths.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constants = require_constants17();
+      module.exports = function findAllPaths(pathinfo, xtol, ytol) {
+        var cnt, startLoc, i, pi, j;
+        xtol = xtol || 0.01;
+        ytol = ytol || 0.01;
+        for (i = 0; i < pathinfo.length; i++) {
+          pi = pathinfo[i];
+          for (j = 0; j < pi.starts.length; j++) {
+            startLoc = pi.starts[j];
+            makePath(pi, startLoc, "edge", xtol, ytol);
+          }
+          cnt = 0;
+          while (Object.keys(pi.crossings).length && cnt < 1e4) {
+            cnt++;
+            startLoc = Object.keys(pi.crossings)[0].split(",").map(Number);
+            makePath(pi, startLoc, void 0, xtol, ytol);
+          }
+          if (cnt === 1e4) Lib.log("Infinite loop in contour?");
+        }
+      };
+      function equalPts(pt1, pt2, xtol, ytol) {
+        return Math.abs(pt1[0] - pt2[0]) < xtol && Math.abs(pt1[1] - pt2[1]) < ytol;
+      }
+      function ptDist(pt1, pt2) {
+        var dx = pt1[2] - pt2[2];
+        var dy = pt1[3] - pt2[3];
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      function makePath(pi, loc, edgeflag, xtol, ytol) {
+        var locStr = loc.join(",");
+        var mi = pi.crossings[locStr];
+        var marchStep = getStartStep(mi, edgeflag, loc);
+        var pts = [getInterpPx(pi, loc, [-marchStep[0], -marchStep[1]])];
+        var m = pi.z.length;
+        var n = pi.z[0].length;
+        var startLoc = loc.slice();
+        var startStep = marchStep.slice();
+        var cnt;
+        for (cnt = 0; cnt < 1e4; cnt++) {
+          if (mi > 20) {
+            mi = constants.CHOOSESADDLE[mi][(marchStep[0] || marchStep[1]) < 0 ? 0 : 1];
+            pi.crossings[locStr] = constants.SADDLEREMAINDER[mi];
+          } else {
+            delete pi.crossings[locStr];
+          }
+          marchStep = constants.NEWDELTA[mi];
+          if (!marchStep) {
+            Lib.log("Found bad marching index:", mi, loc, pi.level);
+            break;
+          }
+          pts.push(getInterpPx(pi, loc, marchStep));
+          loc[0] += marchStep[0];
+          loc[1] += marchStep[1];
+          locStr = loc.join(",");
+          if (equalPts(pts[pts.length - 1], pts[pts.length - 2], xtol, ytol)) pts.pop();
+          var atEdge = marchStep[0] && (loc[0] < 0 || loc[0] > n - 2) || marchStep[1] && (loc[1] < 0 || loc[1] > m - 2);
+          var closedLoop = loc[0] === startLoc[0] && loc[1] === startLoc[1] && marchStep[0] === startStep[0] && marchStep[1] === startStep[1];
+          if (closedLoop || edgeflag && atEdge) break;
+          mi = pi.crossings[locStr];
+        }
+        if (cnt === 1e4) {
+          Lib.log("Infinite loop in contour?");
+        }
+        var closedpath = equalPts(pts[0], pts[pts.length - 1], xtol, ytol);
+        var totaldist = 0;
+        var distThresholdFactor = 0.2 * pi.smoothing;
+        var alldists = [];
+        var cropstart = 0;
+        var distgroup, cnt2, cnt3, newpt, ptcnt, ptavg, thisdist, i, j, edgepathi, edgepathj;
+        for (cnt = 1; cnt < pts.length; cnt++) {
+          thisdist = ptDist(pts[cnt], pts[cnt - 1]);
+          totaldist += thisdist;
+          alldists.push(thisdist);
+        }
+        var distThreshold = totaldist / alldists.length * distThresholdFactor;
+        function getpt(i2) {
+          return pts[i2 % pts.length];
+        }
+        for (cnt = pts.length - 2; cnt >= cropstart; cnt--) {
+          distgroup = alldists[cnt];
+          if (distgroup < distThreshold) {
+            cnt3 = 0;
+            for (cnt2 = cnt - 1; cnt2 >= cropstart; cnt2--) {
+              if (distgroup + alldists[cnt2] < distThreshold) {
+                distgroup += alldists[cnt2];
+              } else break;
+            }
+            if (closedpath && cnt === pts.length - 2) {
+              for (cnt3 = 0; cnt3 < cnt2; cnt3++) {
+                if (distgroup + alldists[cnt3] < distThreshold) {
+                  distgroup += alldists[cnt3];
+                } else break;
+              }
+            }
+            ptcnt = cnt - cnt2 + cnt3 + 1;
+            ptavg = Math.floor((cnt + cnt2 + cnt3 + 2) / 2);
+            if (!closedpath && cnt === pts.length - 2) newpt = pts[pts.length - 1];
+            else if (!closedpath && cnt2 === -1) newpt = pts[0];
+            else if (ptcnt % 2) newpt = getpt(ptavg);
+            else {
+              newpt = [
+                (getpt(ptavg)[0] + getpt(ptavg + 1)[0]) / 2,
+                (getpt(ptavg)[1] + getpt(ptavg + 1)[1]) / 2
+              ];
+            }
+            pts.splice(cnt2 + 1, cnt - cnt2 + 1, newpt);
+            cnt = cnt2 + 1;
+            if (cnt3) cropstart = cnt3;
+            if (closedpath) {
+              if (cnt === pts.length - 2) pts[cnt3] = pts[pts.length - 1];
+              else if (cnt === 0) pts[pts.length - 1] = pts[0];
+            }
+          }
+        }
+        pts.splice(0, cropstart);
+        for (cnt = 0; cnt < pts.length; cnt++) pts[cnt].length = 2;
+        if (pts.length < 2) return;
+        else if (closedpath) {
+          pts.pop();
+          pi.paths.push(pts);
+        } else {
+          if (!edgeflag) {
+            Lib.log(
+              "Unclosed interior contour?",
+              pi.level,
+              startLoc.join(","),
+              pts.join("L")
+            );
+          }
+          var merged = false;
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            edgepathi = pi.edgepaths[i];
+            if (!merged && equalPts(edgepathi[0], pts[pts.length - 1], xtol, ytol)) {
+              pts.pop();
+              merged = true;
+              var doublemerged = false;
+              for (j = 0; j < pi.edgepaths.length; j++) {
+                edgepathj = pi.edgepaths[j];
+                if (equalPts(edgepathj[edgepathj.length - 1], pts[0], xtol, ytol)) {
+                  doublemerged = true;
+                  pts.shift();
+                  pi.edgepaths.splice(i, 1);
+                  if (j === i) {
+                    pi.paths.push(pts.concat(edgepathj));
+                  } else {
+                    if (j > i) j--;
+                    pi.edgepaths[j] = edgepathj.concat(pts, edgepathi);
+                  }
+                  break;
+                }
+              }
+              if (!doublemerged) {
+                pi.edgepaths[i] = pts.concat(edgepathi);
+              }
+            }
+          }
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            if (merged) break;
+            edgepathi = pi.edgepaths[i];
+            if (equalPts(edgepathi[edgepathi.length - 1], pts[0], xtol, ytol)) {
+              pts.shift();
+              pi.edgepaths[i] = edgepathi.concat(pts);
+              merged = true;
+            }
+          }
+          if (!merged) pi.edgepaths.push(pts);
+        }
+      }
+      function getStartStep(mi, edgeflag, loc) {
+        var dx = 0;
+        var dy = 0;
+        if (mi > 20 && edgeflag) {
+          if (mi === 208 || mi === 1114) {
+            dx = loc[0] === 0 ? 1 : -1;
+          } else {
+            dy = loc[1] === 0 ? 1 : -1;
+          }
+        } else if (constants.BOTTOMSTART.indexOf(mi) !== -1) dy = 1;
+        else if (constants.LEFTSTART.indexOf(mi) !== -1) dx = 1;
+        else if (constants.TOPSTART.indexOf(mi) !== -1) dy = -1;
+        else dx = -1;
+        return [dx, dy];
+      }
+      function getInterpPx(pi, loc, step) {
+        var locx = loc[0] + Math.max(step[0], 0);
+        var locy = loc[1] + Math.max(step[1], 0);
+        var zxy = pi.z[locy][locx];
+        var xa = pi.xaxis;
+        var ya = pi.yaxis;
+        if (step[1]) {
+          var dx = (pi.level - zxy) / (pi.z[locy][locx + 1] - zxy);
+          var dxl = (dx !== 1 ? (1 - dx) * xa.c2l(pi.x[locx]) : 0) + (dx !== 0 ? dx * xa.c2l(pi.x[locx + 1]) : 0);
+          return [
+            xa.c2p(xa.l2c(dxl), true),
+            ya.c2p(pi.y[locy], true),
+            locx + dx,
+            locy
+          ];
+        } else {
+          var dy = (pi.level - zxy) / (pi.z[locy + 1][locx] - zxy);
+          var dyl = (dy !== 1 ? (1 - dy) * ya.c2l(pi.y[locy]) : 0) + (dy !== 0 ? dy * ya.c2l(pi.y[locy + 1]) : 0);
+          return [
+            xa.c2p(pi.x[locx], true),
+            ya.c2p(ya.l2c(dyl), true),
+            locx,
+            locy + dy
+          ];
+        }
+      }
+    }
+  });
+
+  // src/traces/contour/constraint_mapping.js
+  var require_constraint_mapping = __commonJS({
+    "src/traces/contour/constraint_mapping.js"(exports, module) {
+      "use strict";
+      var filterOps = require_filter_ops();
+      var isNumeric = require_fast_isnumeric();
+      module.exports = {
+        "[]": makeRangeSettings("[]"),
+        "][": makeRangeSettings("]["),
+        ">": makeInequalitySettings(">"),
+        "<": makeInequalitySettings("<"),
+        "=": makeInequalitySettings("=")
+      };
+      function coerceValue(operation, value) {
+        var hasArrayValue = Array.isArray(value);
+        var coercedValue;
+        function coerce(value2) {
+          return isNumeric(value2) ? +value2 : null;
+        }
+        if (filterOps.COMPARISON_OPS2.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? coerce(value[0]) : coerce(value);
+        } else if (filterOps.INTERVAL_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? [coerce(value[0]), coerce(value[1])] : [coerce(value), coerce(value)];
+        } else if (filterOps.SET_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? value.map(coerce) : [coerce(value)];
+        }
+        return coercedValue;
+      }
+      function makeRangeSettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          var min = Math.min(value[0], value[1]);
+          var max = Math.max(value[0], value[1]);
+          return {
+            start: min,
+            end: max,
+            size: max - min
+          };
+        };
+      }
+      function makeInequalitySettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          return {
+            start: value,
+            end: Infinity,
+            size: Infinity
+          };
+        };
+      }
+    }
+  });
+
+  // src/traces/contour/empty_pathinfo.js
+  var require_empty_pathinfo = __commonJS({
+    "src/traces/contour/empty_pathinfo.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constraintMapping = require_constraint_mapping();
+      var endPlus = require_end_plus();
+      module.exports = function emptyPathinfo(contours, plotinfo, cd0) {
+        var contoursFinal = contours.type === "constraint" ? constraintMapping[contours._operation](contours.value) : contours;
+        var cs = contoursFinal.size;
+        var pathinfo = [];
+        var end = endPlus(contoursFinal);
+        var carpet = cd0.trace._carpetTrace;
+        var basePathinfo = carpet ? {
+          // store axes so we can convert to px
+          xaxis: carpet.aaxis,
+          yaxis: carpet.baxis,
+          // full data arrays to use for interpolation
+          x: cd0.a,
+          y: cd0.b
+        } : {
+          xaxis: plotinfo.xaxis,
+          yaxis: plotinfo.yaxis,
+          x: cd0.x,
+          y: cd0.y
+        };
+        if (contoursFinal._levels && contoursFinal._levels.length > 0) {
+          var levels = contoursFinal._levels;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Processing custom levels in pathinfo:", levels);
+          }
+          for (var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+              level: levels[i],
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        } else {
+          for (var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+              level: ci,
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        }
+        return pathinfo;
+      };
+    }
+  });
+
+  // src/traces/contour/convert_to_constraints.js
+  var require_convert_to_constraints = __commonJS({
+    "src/traces/contour/convert_to_constraints.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function(pathinfo, operation) {
+        var i, pi0, pi1;
+        var op0 = function(arr) {
+          return arr.reverse();
+        };
+        var op1 = function(arr) {
+          return arr;
+        };
+        switch (operation) {
+          case "=":
+          case "<":
+            return pathinfo;
+          case ">":
+            if (pathinfo.length !== 1) {
+              Lib.warn("Contour data invalid for the specified inequality operation.");
+            }
+            pi0 = pathinfo[0];
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            return pathinfo;
+          case "][":
+            var tmp = op0;
+            op0 = op1;
+            op1 = tmp;
+          // It's a nice rule, except this definitely *is* what's intended here.
+          /* eslint-disable: no-fallthrough */
+          case "[]":
+            if (pathinfo.length !== 2) {
+              Lib.warn("Contour data invalid for the specified inequality range operation.");
+            }
+            pi0 = copyPathinfo(pathinfo[0]);
+            pi1 = copyPathinfo(pathinfo[1]);
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            while (pi1.edgepaths.length) {
+              pi0.edgepaths.push(op1(pi1.edgepaths.shift()));
+            }
+            while (pi1.paths.length) {
+              pi0.paths.push(op1(pi1.paths.shift()));
+            }
+            while (pi1.starts.length) {
+              pi0.starts.push(op1(pi1.starts.shift()));
+            }
+            return [pi0];
+        }
+      };
+      function copyPathinfo(pi) {
+        return Lib.extendFlat({}, pi, {
+          edgepaths: Lib.extendDeep([], pi.edgepaths),
+          paths: Lib.extendDeep([], pi.paths),
+          starts: Lib.extendDeep([], pi.starts)
+        });
+      }
+    }
+  });
+
+  // src/traces/contour/close_boundaries.js
+  var require_close_boundaries = __commonJS({
+    "src/traces/contour/close_boundaries.js"(exports, module) {
+      "use strict";
+      module.exports = function(pathinfo, contours) {
+        var pi0 = pathinfo[0];
+        var z = pi0.z;
+        var i;
+        switch (contours.type) {
+          case "levels":
+            var edgeVal2 = Math.min(z[0][0], z[0][1]);
+            for (i = 0; i < pathinfo.length; i++) {
+              var pi = pathinfo[i];
+              pi.prefixBoundary = !pi.edgepaths.length && (edgeVal2 > pi.level || pi.starts.length && edgeVal2 === pi.level);
+            }
+            break;
+          case "constraint":
+            pi0.prefixBoundary = false;
+            if (pi0.edgepaths.length) return;
+            var na = pi0.x.length;
+            var nb = pi0.y.length;
+            var boundaryMax = -Infinity;
+            var boundaryMin = Infinity;
+            for (i = 0; i < nb; i++) {
+              boundaryMin = Math.min(boundaryMin, z[i][0]);
+              boundaryMin = Math.min(boundaryMin, z[i][na - 1]);
+              boundaryMax = Math.max(boundaryMax, z[i][0]);
+              boundaryMax = Math.max(boundaryMax, z[i][na - 1]);
+            }
+            for (i = 1; i < na - 1; i++) {
+              boundaryMin = Math.min(boundaryMin, z[0][i]);
+              boundaryMin = Math.min(boundaryMin, z[nb - 1][i]);
+              boundaryMax = Math.max(boundaryMax, z[0][i]);
+              boundaryMax = Math.max(boundaryMax, z[nb - 1][i]);
+            }
+            var contoursValue = contours.value;
+            var v1, v2;
+            switch (contours._operation) {
+              case ">":
+                if (contoursValue > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "<":
+                if (contoursValue < boundaryMin || pi0.starts.length && contoursValue === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "[]":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v2 < boundaryMin || v1 > boundaryMax || pi0.starts.length && v2 === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "][":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v1 < boundaryMin && v2 > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+            }
+            break;
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/plot.js
+  var require_plot5 = __commonJS({
+    "src/traces/contour/plot.js"(exports) {
+      "use strict";
+      var d3 = require_d3();
+      var Lib = require_lib();
+      var Drawing = require_drawing();
+      var Colorscale = require_colorscale();
+      var svgTextUtils = require_svg_text_utils();
+      var Axes = require_axes();
+      var setConvert = require_set_convert();
+      var heatmapPlot = require_plot4();
+      var makeCrossings = require_make_crossings();
+      var findAllPaths = require_find_all_paths();
+      var emptyPathinfo = require_empty_pathinfo();
+      var convertToConstraints = require_convert_to_constraints();
+      var closeBoundaries = require_close_boundaries();
+      var constants = require_constants17();
+      var costConstants = constants.LABELOPTIMIZER;
+      exports.plot = function plot(gd, plotinfo, cdcontours, contourLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(contourLayer, cdcontours, "contour").each(function(cd) {
+          var plotGroup = d3.select(this);
+          var cd0 = cd[0];
+          var trace = cd0.trace;
+          var x = cd0.x;
+          var y = cd0.y;
+          var contours = trace.contours;
+          var pathinfo = emptyPathinfo(contours, plotinfo, cd0);
+          var heatmapColoringLayer = Lib.ensureSingle(plotGroup, "g", "heatmapcoloring");
+          var cdheatmaps = [];
+          if (contours.coloring === "heatmap") {
+            cdheatmaps = [cd];
+          }
+          heatmapPlot(gd, plotinfo, cdheatmaps, heatmapColoringLayer);
+          makeCrossings(pathinfo);
+          findAllPaths(pathinfo);
+          var leftedge = xa.c2p(x[0], true);
+          var rightedge = xa.c2p(x[x.length - 1], true);
+          var bottomedge = ya.c2p(y[0], true);
+          var topedge = ya.c2p(y[y.length - 1], true);
+          var perimeter = [
+            [leftedge, topedge],
+            [rightedge, topedge],
+            [rightedge, bottomedge],
+            [leftedge, bottomedge]
+          ];
+          var fillPathinfo = pathinfo;
+          if (contours.type === "constraint") {
+            fillPathinfo = convertToConstraints(pathinfo, contours._operation);
+          }
+          makeBackground(plotGroup, perimeter, contours);
+          makeFills(plotGroup, fillPathinfo, perimeter, contours);
+          makeLinesAndLabels(plotGroup, pathinfo, gd, cd0, contours);
+          clipGaps(plotGroup, plotinfo, gd, cd0, perimeter);
+        });
+      };
+      function makeBackground(plotgroup, perimeter, contours) {
+        var bggroup = Lib.ensureSingle(plotgroup, "g", "contourbg");
+        var bgfill = bggroup.selectAll("path").data(contours.coloring === "fill" ? [0] : []);
+        bgfill.enter().append("path");
+        bgfill.exit().remove();
+        bgfill.attr("d", "M" + perimeter.join("L") + "Z").style("stroke", "none");
+      }
+      function makeFills(plotgroup, pathinfo, perimeter, contours) {
+        var hasFills = contours.coloring === "fill" || contours.type === "constraint" && contours._operation !== "=";
+        var boundaryPath = "M" + perimeter.join("L") + "Z";
+        if (hasFills) {
+          closeBoundaries(pathinfo, contours);
+        }
+        var fillgroup = Lib.ensureSingle(plotgroup, "g", "contourfill");
+        var fillitems = fillgroup.selectAll("path").data(hasFills ? pathinfo : []);
+        fillitems.enter().append("path");
+        fillitems.exit().remove();
+        fillitems.each(function(pi) {
+          var fullpath = (pi.prefixBoundary ? boundaryPath : "") + joinAllPaths(pi, perimeter);
+          if (!fullpath) {
+            d3.select(this).remove();
+          } else {
+            d3.select(this).attr("d", fullpath).style("stroke", "none");
+          }
+        });
+      }
+      function joinAllPaths(pi, perimeter) {
+        var fullpath = "";
+        var i = 0;
+        var startsleft = pi.edgepaths.map(function(v, i2) {
+          return i2;
+        });
+        var newloop = true;
+        var endpt;
+        var newendpt;
+        var cnt;
+        var nexti;
+        var possiblei;
+        var addpath;
+        function istop(pt) {
+          return Math.abs(pt[1] - perimeter[0][1]) < 0.01;
+        }
+        function isbottom(pt) {
+          return Math.abs(pt[1] - perimeter[2][1]) < 0.01;
+        }
+        function isleft(pt) {
+          return Math.abs(pt[0] - perimeter[0][0]) < 0.01;
+        }
+        function isright(pt) {
+          return Math.abs(pt[0] - perimeter[2][0]) < 0.01;
+        }
+        while (startsleft.length) {
+          addpath = Drawing.smoothopen(pi.edgepaths[i], pi.smoothing);
+          fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+          startsleft.splice(startsleft.indexOf(i), 1);
+          endpt = pi.edgepaths[i][pi.edgepaths[i].length - 1];
+          nexti = -1;
+          for (cnt = 0; cnt < 4; cnt++) {
+            if (!endpt) {
+              Lib.log("Missing end?", i, pi);
+              break;
+            }
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+            else if (isleft(endpt)) newendpt = perimeter[0];
+            else if (isbottom(endpt)) newendpt = perimeter[3];
+            else if (isright(endpt)) newendpt = perimeter[2];
+            for (possiblei = 0; possiblei < pi.edgepaths.length; possiblei++) {
+              var ptNew = pi.edgepaths[possiblei][0];
+              if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
+                if (Math.abs(endpt[0] - ptNew[0]) < 0.01 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
+                if (Math.abs(endpt[1] - ptNew[1]) < 0.01 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else {
+                Lib.log(
+                  "endpt to newendpt is not vert. or horz.",
+                  endpt,
+                  newendpt,
+                  ptNew
+                );
+              }
+            }
+            endpt = newendpt;
+            if (nexti >= 0) break;
+            fullpath += "L" + newendpt;
+          }
+          if (nexti === pi.edgepaths.length) {
+            Lib.log("unclosed perimeter path");
+            break;
+          }
+          i = nexti;
+          newloop = startsleft.indexOf(i) === -1;
+          if (newloop) {
+            i = startsleft[0];
+            fullpath += "Z";
+          }
+        }
+        for (i = 0; i < pi.paths.length; i++) {
+          fullpath += Drawing.smoothclosed(pi.paths[i], pi.smoothing);
+        }
+        return fullpath;
+      }
+      function makeLinesAndLabels(plotgroup, pathinfo, gd, cd0, contours) {
+        var isStatic = gd._context.staticPlot;
+        var lineContainer = Lib.ensureSingle(plotgroup, "g", "contourlines");
+        var showLines = contours.showlines !== false;
+        var showLabels = contours.showlabels;
+        var clipLinesForLabels = showLines && showLabels;
+        var linegroup = exports.createLines(lineContainer, showLines || showLabels, pathinfo, isStatic);
+        var lineClip = exports.createLineClip(lineContainer, clipLinesForLabels, gd, cd0.trace.uid);
+        var labelGroup = plotgroup.selectAll("g.contourlabels").data(showLabels ? [0] : []);
+        labelGroup.exit().remove();
+        labelGroup.enter().append("g").classed("contourlabels", true);
+        if (showLabels) {
+          var labelClipPathData = [];
+          var labelData = [];
+          Lib.clearLocationCache();
+          var contourFormat = exports.labelFormatter(gd, cd0);
+          var dummyText = Drawing.tester.append("text").attr("data-notex", 1).call(Drawing.font, contours.labelfont);
+          var xa = pathinfo[0].xaxis;
+          var ya = pathinfo[0].yaxis;
+          var xLen = xa._length;
+          var yLen = ya._length;
+          var xRng = xa.range;
+          var yRng = ya.range;
+          var xMin = Lib.aggNums(Math.min, null, cd0.x);
+          var xMax = Lib.aggNums(Math.max, null, cd0.x);
+          var yMin = Lib.aggNums(Math.min, null, cd0.y);
+          var yMax = Lib.aggNums(Math.max, null, cd0.y);
+          var x0 = Math.max(xa.c2p(xMin, true), 0);
+          var x1 = Math.min(xa.c2p(xMax, true), xLen);
+          var y0 = Math.max(ya.c2p(yMax, true), 0);
+          var y1 = Math.min(ya.c2p(yMin, true), yLen);
+          var bounds = {};
+          if (xRng[0] < xRng[1]) {
+            bounds.left = x0;
+            bounds.right = x1;
+          } else {
+            bounds.left = x1;
+            bounds.right = x0;
+          }
+          if (yRng[0] < yRng[1]) {
+            bounds.top = y0;
+            bounds.bottom = y1;
+          } else {
+            bounds.top = y1;
+            bounds.bottom = y0;
+          }
+          bounds.middle = (bounds.top + bounds.bottom) / 2;
+          bounds.center = (bounds.left + bounds.right) / 2;
+          labelClipPathData.push([
+            [bounds.left, bounds.top],
+            [bounds.right, bounds.top],
+            [bounds.right, bounds.bottom],
+            [bounds.left, bounds.bottom]
+          ]);
+          var plotDiagonal = Math.sqrt(xLen * xLen + yLen * yLen);
+          var normLength = constants.LABELDISTANCE * plotDiagonal / Math.max(1, pathinfo.length / constants.LABELINCREASE);
+          linegroup.each(function(d) {
+            var textOpts = exports.calcTextOpts(d.level, contourFormat, dummyText, gd);
+            d3.select(this).selectAll("path").each(function() {
+              var path = this;
+              var pathBounds = Lib.getVisibleSegment(path, bounds, textOpts.height / 2);
+              if (!pathBounds) return;
+              if (pathBounds.len < (textOpts.width + textOpts.height) * constants.LABELMIN) return;
+              var maxLabels = Math.min(
+                Math.ceil(pathBounds.len / normLength),
+                constants.LABELMAX
+              );
+              for (var i = 0; i < maxLabels; i++) {
+                var loc = exports.findBestTextLocation(
+                  path,
+                  pathBounds,
+                  textOpts,
+                  labelData,
+                  bounds
+                );
+                if (!loc) break;
+                exports.addLabelData(loc, textOpts, labelData, labelClipPathData);
+              }
+            });
+          });
+          dummyText.remove();
+          exports.drawLabels(
+            labelGroup,
+            labelData,
+            gd,
+            lineClip,
+            clipLinesForLabels ? labelClipPathData : null
+          );
+        }
+        if (showLabels && !showLines) linegroup.remove();
+      }
+      exports.createLines = function(lineContainer, makeLines, pathinfo, isStatic) {
+        var smoothing = pathinfo[0].smoothing;
+        var linegroup = lineContainer.selectAll("g.contourlevel").data(makeLines ? pathinfo : []);
+        linegroup.exit().remove();
+        linegroup.enter().append("g").classed("contourlevel", true);
+        if (makeLines) {
+          var opencontourlines = linegroup.selectAll("path.openline").data(function(d) {
+            return d.pedgepaths || d.edgepaths;
+          });
+          opencontourlines.exit().remove();
+          opencontourlines.enter().append("path").classed("openline", true);
+          opencontourlines.attr("d", function(d) {
+            return Drawing.smoothopen(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
+          var closedcontourlines = linegroup.selectAll("path.closedline").data(function(d) {
+            return d.ppaths || d.paths;
+          });
+          closedcontourlines.exit().remove();
+          closedcontourlines.enter().append("path").classed("closedline", true);
+          closedcontourlines.attr("d", function(d) {
+            return Drawing.smoothclosed(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
+        }
+        return linegroup;
+      };
+      exports.createLineClip = function(lineContainer, clipLinesForLabels, gd, uid) {
+        var clips = gd._fullLayout._clips;
+        var clipId = clipLinesForLabels ? "clipline" + uid : null;
+        var lineClip = clips.selectAll("#" + clipId).data(clipLinesForLabels ? [0] : []);
+        lineClip.exit().remove();
+        lineClip.enter().append("clipPath").classed("contourlineclip", true).attr("id", clipId);
+        Drawing.setClipUrl(lineContainer, clipId, gd);
+        return lineClip;
+      };
+      exports.labelFormatter = function(gd, cd0) {
+        var fullLayout = gd._fullLayout;
+        var trace = cd0.trace;
+        var contours = trace.contours;
+        var formatAxis = {
+          type: "linear",
+          _id: "ycontour",
+          showexponent: "all",
+          exponentformat: "B"
+        };
+        if (contours.labelformat) {
+          formatAxis.tickformat = contours.labelformat;
+          setConvert(formatAxis, fullLayout);
+        } else {
+          var cOpts = Colorscale.extractOpts(trace);
+          if (cOpts && cOpts.colorbar && cOpts.colorbar._axis) {
+            formatAxis = cOpts.colorbar._axis;
+          } else {
+            if (contours.type === "constraint") {
+              var value = contours.value;
+              if (Lib.isArrayOrTypedArray(value)) {
+                formatAxis.range = [value[0], value[value.length - 1]];
+              } else formatAxis.range = [value, value];
+            } else {
+              formatAxis.range = [contours.start, contours.end];
+              formatAxis.nticks = (contours.end - contours.start) / contours.size;
+            }
+            if (formatAxis.range[0] === formatAxis.range[1]) {
+              formatAxis.range[1] += formatAxis.range[0] || 1;
+            }
+            if (!formatAxis.nticks) formatAxis.nticks = 1e3;
+            setConvert(formatAxis, fullLayout);
+            Axes.prepTicks(formatAxis);
+            formatAxis._tmin = null;
+            formatAxis._tmax = null;
+          }
+        }
+        return function(v) {
+          return Axes.tickText(formatAxis, v).text;
+        };
+      };
+      exports.calcTextOpts = function(level, contourFormat, dummyText, gd) {
+        var text = contourFormat(level);
+        dummyText.text(text).call(svgTextUtils.convertToTspans, gd);
+        var el = dummyText.node();
+        var bBox = Drawing.bBox(el, true);
+        return {
+          text,
+          width: bBox.width,
+          height: bBox.height,
+          fontSize: +el.style["font-size"].replace("px", ""),
+          level,
+          dy: (bBox.top + bBox.bottom) / 2
+        };
+      };
+      exports.findBestTextLocation = function(path, pathBounds, textOpts, labelData, plotBounds) {
+        var textWidth = textOpts.width;
+        var p0, dp, pMax, pMin, loc;
+        if (pathBounds.isClosed) {
+          dp = pathBounds.len / costConstants.INITIALSEARCHPOINTS;
+          p0 = pathBounds.min + dp / 2;
+          pMax = pathBounds.max;
+        } else {
+          dp = (pathBounds.len - textWidth) / (costConstants.INITIALSEARCHPOINTS + 1);
+          p0 = pathBounds.min + dp + textWidth / 2;
+          pMax = pathBounds.max - (dp + textWidth) / 2;
+        }
+        var cost = Infinity;
+        for (var j = 0; j < costConstants.ITERATIONS; j++) {
+          for (var p = p0; p < pMax; p += dp) {
+            var newLocation = Lib.getTextLocation(path, pathBounds.total, p, textWidth);
+            var newCost = locationCost(newLocation, textOpts, labelData, plotBounds);
+            if (newCost < cost) {
+              cost = newCost;
+              loc = newLocation;
+              pMin = p;
+            }
+          }
+          if (cost > costConstants.MAXCOST * 2) break;
+          if (j) dp /= 2;
+          p0 = pMin - dp / 2;
+          pMax = p0 + dp * 1.5;
+        }
+        if (cost <= costConstants.MAXCOST) return loc;
+      };
+      function locationCost(loc, textOpts, labelData, bounds) {
+        var halfWidth = textOpts.width / 2;
+        var halfHeight = textOpts.height / 2;
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var dx = Math.cos(theta) * halfWidth;
+        var dy = Math.sin(theta) * halfWidth;
+        var normX = (x > bounds.center ? bounds.right - x : x - bounds.left) / (dx + Math.abs(Math.sin(theta) * halfHeight));
+        var normY = (y > bounds.middle ? bounds.bottom - y : y - bounds.top) / (Math.abs(dy) + Math.cos(theta) * halfHeight);
+        if (normX < 1 || normY < 1) return Infinity;
+        var cost = costConstants.EDGECOST * (1 / (normX - 1) + 1 / (normY - 1));
+        cost += costConstants.ANGLECOST * theta * theta;
+        var x1 = x - dx;
+        var y1 = y - dy;
+        var x2 = x + dx;
+        var y2 = y + dy;
+        for (var i = 0; i < labelData.length; i++) {
+          var labeli = labelData[i];
+          var dxd = Math.cos(labeli.theta) * labeli.width / 2;
+          var dyd = Math.sin(labeli.theta) * labeli.width / 2;
+          var dist = Lib.segmentDistance(
+            x1,
+            y1,
+            x2,
+            y2,
+            labeli.x - dxd,
+            labeli.y - dyd,
+            labeli.x + dxd,
+            labeli.y + dyd
+          ) * 2 / (textOpts.height + labeli.height);
+          var sameLevel = labeli.level === textOpts.level;
+          var distOffset = sameLevel ? costConstants.SAMELEVELDISTANCE : 1;
+          if (dist <= distOffset) return Infinity;
+          var distFactor = costConstants.NEIGHBORCOST * (sameLevel ? costConstants.SAMELEVELFACTOR : 1);
+          cost += distFactor / (dist - distOffset);
+        }
+        return cost;
+      }
+      exports.addLabelData = function(loc, textOpts, labelData, labelClipPathData) {
+        var fontSize = textOpts.fontSize;
+        var w = textOpts.width + fontSize / 3;
+        var h = Math.max(0, textOpts.height - fontSize / 3);
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var sin = Math.sin(theta);
+        var cos = Math.cos(theta);
+        var rotateXY = function(dx, dy) {
+          return [
+            x + dx * cos - dy * sin,
+            y + dx * sin + dy * cos
+          ];
+        };
+        var bBoxPts = [
+          rotateXY(-w / 2, -h / 2),
+          rotateXY(-w / 2, h / 2),
+          rotateXY(w / 2, h / 2),
+          rotateXY(w / 2, -h / 2)
+        ];
+        labelData.push({
+          text: textOpts.text,
+          x,
+          y,
+          dy: textOpts.dy,
+          theta,
+          level: textOpts.level,
+          width: w,
+          height: h
+        });
+        labelClipPathData.push(bBoxPts);
+      };
+      exports.drawLabels = function(labelGroup, labelData, gd, lineClip, labelClipPathData) {
+        var labels = labelGroup.selectAll("text").data(labelData, function(d) {
+          return d.text + "," + d.x + "," + d.y + "," + d.theta;
+        });
+        labels.exit().remove();
+        labels.enter().append("text").attr({
+          "data-notex": 1,
+          "text-anchor": "middle"
+        }).each(function(d) {
+          var x = d.x + Math.sin(d.theta) * d.dy;
+          var y = d.y - Math.cos(d.theta) * d.dy;
+          d3.select(this).text(d.text).attr({
+            x,
+            y,
+            transform: "rotate(" + 180 * d.theta / Math.PI + " " + x + " " + y + ")"
+          }).call(svgTextUtils.convertToTspans, gd);
+        });
+        if (labelClipPathData) {
+          var clipPath = "";
+          for (var i = 0; i < labelClipPathData.length; i++) {
+            clipPath += "M" + labelClipPathData[i].join("L") + "Z";
+          }
+          var lineClipPath = Lib.ensureSingle(lineClip, "path", "");
+          lineClipPath.attr("d", clipPath);
+        }
+      };
+      function clipGaps(plotGroup, plotinfo, gd, cd0, perimeter) {
+        var trace = cd0.trace;
+        var clips = gd._fullLayout._clips;
+        var clipId = "clip" + trace.uid;
+        var clipPath = clips.selectAll("#" + clipId).data(trace.connectgaps ? [] : [0]);
+        clipPath.enter().append("clipPath").classed("contourclip", true).attr("id", clipId);
+        clipPath.exit().remove();
+        if (trace.connectgaps === false) {
+          var clipPathInfo = {
+            // fraction of the way from missing to present point
+            // to draw the boundary.
+            // if you make this 1 (or 1-epsilon) then a point in
+            // a sea of missing data will disappear entirely.
+            level: 0.9,
+            crossings: {},
+            starts: [],
+            edgepaths: [],
+            paths: [],
+            xaxis: plotinfo.xaxis,
+            yaxis: plotinfo.yaxis,
+            x: cd0.x,
+            y: cd0.y,
+            // 0 = no data, 1 = data
+            z: makeClipMask(cd0),
+            smoothing: 0
+          };
+          makeCrossings([clipPathInfo]);
+          findAllPaths([clipPathInfo]);
+          closeBoundaries([clipPathInfo], { type: "levels" });
+          var path = Lib.ensureSingle(clipPath, "path", "");
+          path.attr(
+            "d",
+            (clipPathInfo.prefixBoundary ? "M" + perimeter.join("L") + "Z" : "") + joinAllPaths(clipPathInfo, perimeter)
+          );
+        } else clipId = null;
+        Drawing.setClipUrl(plotGroup, clipId, gd);
+      }
+      function makeClipMask(cd0) {
+        var empties = cd0.trace._emptypoints;
+        var z = [];
+        var m = cd0.z.length;
+        var n = cd0.z[0].length;
+        var i;
+        var row = [];
+        var emptyPoint;
+        for (i = 0; i < n; i++) row.push(1);
+        for (i = 0; i < m; i++) z.push(row.slice());
+        for (i = 0; i < empties.length; i++) {
+          emptyPoint = empties[i];
+          z[emptyPoint[0]][emptyPoint[1]] = 0;
+        }
+        cd0.zmask = z;
+        return z;
+      }
+    }
+  });
+
+  // src/traces/heatmap/style.js
+  var require_style4 = __commonJS({
+    "src/traces/heatmap/style.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      module.exports = function style(gd) {
+        d3.select(gd).selectAll(".hm image").style("opacity", function(d) {
+          return d.trace.opacity;
+        });
+      };
+    }
+  });
+
+  // src/traces/contour/make_color_map.js
+  var require_make_color_map = __commonJS({
+    "src/traces/contour/make_color_map.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var Colorscale = require_colorscale();
+      var endPlus = require_end_plus();
+      module.exports = function makeColorMap(trace) {
+        var contours = trace.contours;
+        var start = contours.start;
+        var end = endPlus(contours);
+        var cs = contours.size || 1;
+        var nc = Math.floor((end - start) / cs) + 1;
+        var extra = contours.coloring === "lines" ? 0 : 1;
+        var cOpts = Colorscale.extractOpts(trace);
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== makeColorMap called ===");
+          console.log("Has custom levels:", !!(contours._levels && contours._levels.length > 0));
+          console.log("Contours._levels:", contours._levels);
+          console.log("Contours coloring:", contours.coloring);
+          console.log("Contours start/end/size:", contours.start, contours.end, contours.size);
+          console.log("Trace zmin/zmax:", trace.zmin, trace.zmax);
+          console.log("Trace input thresholds:", trace._input && trace._input.contours && trace._input.contours.thresholds);
+        }
+        if (!isFinite(cs)) {
+          cs = 1;
+          nc = 1;
+        }
+        var scl = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+        var len = scl.length;
+        var domain = new Array(len);
+        var range = new Array(len);
+        var si, i;
+        var zmin0 = cOpts.min;
+        var zmax0 = cOpts.max;
+        if (contours.coloring === "heatmap") {
+          for (i = 0; i < len; i++) {
+            si = scl[i];
+            domain[i] = si[0] * (zmax0 - zmin0) + zmin0;
+            range[i] = si[1];
+          }
+          var zRange = d3.extent([
+            zmin0,
+            zmax0,
+            contours.start,
+            contours.start + cs * (nc - 1)
+          ]);
+          var zmin = zRange[zmin0 < zmax0 ? 0 : 1];
+          var zmax = zRange[zmin0 < zmax0 ? 1 : 0];
+          if (zmin !== zmin0) {
+            domain.splice(0, 0, zmin);
+            range.splice(0, 0, range[0]);
+          }
+          if (zmax !== zmax0) {
+            domain.push(zmax);
+            range.push(range[range.length - 1]);
+          }
+        } else {
+          var zRangeInput = trace._input && (typeof trace._input.zmin === "number" && typeof trace._input.zmax === "number");
+          var customLevels = contours._levels;
+          var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+          if (!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) {
+              return a - b;
+            });
+            console.log("makeColorMap: Using fallback to input thresholds:", customLevels);
+          }
+          if (customLevels && customLevels.length > 0) {
+            var levels = customLevels;
+            var nLevels = levels.length;
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            var effectiveMin = zmin0 !== void 0 && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== void 0 && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+              range[i] = si[1];
+            }
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Color Mapping (including restyle) ===");
+              console.log("- Levels:", levels);
+              console.log("- zmin/zmax from colorscale:", zmin0, zmax0);
+              console.log("- Effective range:", effectiveMin, "to", effectiveMax);
+              console.log("- Colorscale length:", len);
+              console.log("- Domain values:", domain);
+              console.log("- Color mapping details:");
+              for (var j = 0; j < len; j++) {
+                console.log("  Position " + scl[j][0].toFixed(4) + " -> Value " + domain[j].toFixed(2) + " -> Color " + range[j]);
+              }
+              console.log("=== End Color Mapping ===");
+            }
+          } else {
+            if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
+              if (start <= zmin0) start = zmin0;
+              if (end >= zmax0) end = zmax0;
+              nc = Math.floor((end - start) / cs) + 1;
+              extra = 0;
+            }
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
+              range[i] = si[1];
+            }
+          }
+          if (!contours._levels && (zRangeInput || trace.autocontour)) {
+            if (domain[0] > zmin0) {
+              domain.unshift(zmin0);
+              range.unshift(range[0]);
+            }
+            if (domain[domain.length - 1] < zmax0) {
+              domain.push(zmax0);
+              range.push(range[range.length - 1]);
+            }
+          }
+        }
+        return Colorscale.makeColorScaleFunc(
+          { domain, range },
+          { noNumericCheck: true }
+        );
+      };
+    }
+  });
+
+  // src/traces/contour/style.js
+  var require_style5 = __commonJS({
+    "src/traces/contour/style.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var Drawing = require_drawing();
+      var heatmapStyle = require_style4();
+      var makeColorMap = require_make_color_map();
+      module.exports = function style(gd) {
+        var contours = d3.select(gd).selectAll("g.contour");
+        contours.style("opacity", function(d) {
+          return d[0].trace.opacity;
+        });
+        contours.each(function(d) {
+          var c = d3.select(this);
+          var trace = d[0].trace;
+          var contours2 = trace.contours;
+          var line = trace.line;
+          var cs = contours2.size || 1;
+          var start = contours2.start;
+          var hasCustomLevels = !!(contours2._levels && contours2._levels.length > 0);
+          var isConstraintType = contours2.type === "constraint";
+          var colorLines = !isConstraintType && contours2.coloring === "lines";
+          var colorFills = !isConstraintType && contours2.coloring === "fill";
+          var colorMap = colorLines || colorFills ? makeColorMap(trace) : null;
+          if (typeof console !== "undefined" && console.log && colorMap) {
+            console.log("=== Contour styling ===");
+            console.log("Has custom levels:", hasCustomLevels);
+            console.log("cs (contour size):", cs);
+            console.log("Custom levels:", contours2._levels);
+          }
+          c.selectAll("g.contourlevel").each(function(d2) {
+            d3.select(this).selectAll("path").call(
+              Drawing.lineGroupStyle,
+              line.width,
+              colorLines ? colorMap(d2.level) : line.color,
+              line.dash
+            );
+          });
+          var labelFont = contours2.labelfont;
+          c.selectAll("g.contourlabels text").each(function(d2) {
+            Drawing.font(d3.select(this), {
+              weight: labelFont.weight,
+              style: labelFont.style,
+              variant: labelFont.variant,
+              textcase: labelFont.textcase,
+              lineposition: labelFont.lineposition,
+              shadow: labelFont.shadow,
+              family: labelFont.family,
+              size: labelFont.size,
+              color: labelFont.color || (colorLines ? colorMap(d2.level) : line.color)
+            });
+          });
+          if (isConstraintType) {
+            c.selectAll("g.contourfill path").style("fill", trace.fillcolor);
+          } else if (colorFills) {
+            var firstFill;
+            c.selectAll("g.contourfill path").style("fill", function(d2) {
+              if (firstFill === void 0) firstFill = d2.level;
+              if (hasCustomLevels) {
+                return colorMap(d2.level);
+              } else {
+                return colorMap(d2.level + 0.5 * cs);
+              }
+            });
+            if (firstFill === void 0) firstFill = start;
+            c.selectAll("g.contourbg path").style("fill", function() {
+              if (hasCustomLevels && contours2._levels && contours2._levels.length > 0) {
+                return colorMap(contours2._levels[0]);
+              } else {
+                return colorMap(firstFill - 0.5 * cs);
+              }
+            });
+          }
+        });
+        heatmapStyle(gd);
+      };
+    }
+  });
+
+  // src/traces/contour/colorbar.js
+  var require_colorbar2 = __commonJS({
+    "src/traces/contour/colorbar.js"(exports, module) {
+      "use strict";
+      var Colorscale = require_colorscale();
+      var makeColorMap = require_make_color_map();
+      var endPlus = require_end_plus();
+      function calc(gd, trace, opts) {
+        var contours = trace.contours;
+        var line = trace.line;
+        var cs = contours.size || 1;
+        var coloring = contours.coloring;
+        var colorMap = makeColorMap(trace, { isColorbar: true });
+        if (coloring === "heatmap") {
+          var cOpts = Colorscale.extractOpts(trace);
+          opts._fillgradient = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+          opts._zrange = [cOpts.min, cOpts.max];
+        } else if (coloring === "fill") {
+          opts._fillcolor = colorMap;
+        }
+        opts._line = {
+          color: coloring === "lines" ? colorMap : line.color,
+          width: contours.showlines !== false ? line.width : 0,
+          dash: line.dash
+        };
+        opts._levels = {
+          start: contours.start,
+          end: endPlus(contours),
+          size: cs
+        };
+      }
+      module.exports = {
+        min: "zmin",
+        max: "zmax",
+        calc
+      };
+    }
+  });
+
+  // src/traces/heatmap/hover.js
+  var require_hover4 = __commonJS({
+    "src/traces/heatmap/hover.js"(exports, module) {
+      "use strict";
+      var Fx = require_fx();
+      var Lib = require_lib();
+      var isArrayOrTypedArray = Lib.isArrayOrTypedArray;
+      var Axes = require_axes();
+      var extractOpts = require_colorscale().extractOpts;
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        var isContour = opts.isContour;
+        var cd0 = pointData.cd[0];
+        var trace = cd0.trace;
+        var xa = pointData.xa;
+        var ya = pointData.ya;
+        var x = cd0.x;
+        var y = cd0.y;
+        var z = cd0.z;
+        var xc = cd0.xCenter;
+        var yc = cd0.yCenter;
+        var zmask = cd0.zmask;
+        var zhoverformat = trace.zhoverformat;
+        var x2 = x;
+        var y2 = y;
+        var xl, yl, nx, ny;
+        if (pointData.index !== false) {
+          try {
+            nx = Math.round(pointData.index[1]);
+            ny = Math.round(pointData.index[0]);
+          } catch (e) {
+            Lib.error("Error hovering on heatmap, pointNumber must be [row,col], found:", pointData.index);
+            return;
+          }
+          if (nx < 0 || nx >= z[0].length || ny < 0 || ny > z.length) {
+            return;
+          }
+        } else if (Fx.inbox(xval - x[0], xval - x[x.length - 1], 0) > 0 || Fx.inbox(yval - y[0], yval - y[y.length - 1], 0) > 0) {
+          return;
+        } else {
+          if (isContour) {
+            var i2;
+            x2 = [2 * x[0] - x[1]];
+            for (i2 = 1; i2 < x.length; i2++) {
+              x2.push((x[i2] + x[i2 - 1]) / 2);
+            }
+            x2.push([2 * x[x.length - 1] - x[x.length - 2]]);
+            y2 = [2 * y[0] - y[1]];
+            for (i2 = 1; i2 < y.length; i2++) {
+              y2.push((y[i2] + y[i2 - 1]) / 2);
+            }
+            y2.push([2 * y[y.length - 1] - y[y.length - 2]]);
+          }
+          nx = Math.max(0, Math.min(x2.length - 2, Lib.findBin(xval, x2)));
+          ny = Math.max(0, Math.min(y2.length - 2, Lib.findBin(yval, y2)));
+        }
+        var x0 = xa.c2p(x[nx]);
+        var x1 = xa.c2p(x[nx + 1]);
+        var y0 = ya.c2p(y[ny]);
+        var y1 = ya.c2p(y[ny + 1]);
+        var _x, _y;
+        if (isContour) {
+          _x = cd0.orig_x || x;
+          _y = cd0.orig_y || y;
+          x1 = x0;
+          xl = _x[nx];
+          y1 = y0;
+          yl = _y[ny];
+        } else {
+          _x = cd0.orig_x || xc || x;
+          _y = cd0.orig_y || yc || y;
+          xl = xc ? _x[nx] : (_x[nx] + _x[nx + 1]) / 2;
+          yl = yc ? _y[ny] : (_y[ny] + _y[ny + 1]) / 2;
+          if (xa && xa.type === "category") xl = x[nx];
+          if (ya && ya.type === "category") yl = y[ny];
+          if (trace.zsmooth) {
+            x0 = x1 = xa.c2p(xl);
+            y0 = y1 = ya.c2p(yl);
+          }
+        }
+        var zVal = z[ny][nx];
+        if (zmask && !zmask[ny][nx]) zVal = void 0;
+        if (zVal === void 0 && !trace.hoverongaps) return;
+        var text;
+        if (isArrayOrTypedArray(cd0.hovertext) && isArrayOrTypedArray(cd0.hovertext[ny])) {
+          text = cd0.hovertext[ny][nx];
+        } else if (isArrayOrTypedArray(cd0.text) && isArrayOrTypedArray(cd0.text[ny])) {
+          text = cd0.text[ny][nx];
+        }
+        var cOpts = extractOpts(trace);
+        var dummyAx = {
+          type: "linear",
+          range: [cOpts.min, cOpts.max],
+          hoverformat: zhoverformat,
+          _separators: xa._separators,
+          _numFormat: xa._numFormat
+        };
+        var zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+        return [Lib.extendFlat(pointData, {
+          index: trace._after2before ? trace._after2before[ny][nx] : [ny, nx],
+          // never let a 2D override 1D type as closest point
+          distance: pointData.maxHoverDistance,
+          spikeDistance: pointData.maxSpikeDistance,
+          x0,
+          x1,
+          y0,
+          y1,
+          xLabelVal: xl,
+          yLabelVal: yl,
+          zLabelVal: zVal,
+          zLabel,
+          text
+        })];
+      };
+    }
+  });
+
+  // src/traces/contour/hover.js
+  var require_hover5 = __commonJS({
+    "src/traces/contour/hover.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var heatmapHoverPoints = require_hover4();
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        opts.isContour = true;
+        var hoverData = heatmapHoverPoints(pointData, xval, yval, hovermode, opts);
+        if (hoverData) {
+          hoverData.forEach(function(hoverPt) {
+            var trace = hoverPt.trace;
+            if (trace.contours.type === "constraint") {
+              if (trace.fillcolor && Color.opacity(trace.fillcolor)) {
+                hoverPt.color = Color.addOpacity(trace.fillcolor, 1);
+              } else if (trace.contours.showlines && Color.opacity(trace.line.color)) {
+                hoverPt.color = Color.addOpacity(trace.line.color, 1);
+              }
+            }
+          });
+        }
+        return hoverData;
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/index.js
+  var require_histogram2dcontour = __commonJS({
+    "src/traces/histogram2dcontour/index.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        attributes: require_attributes29(),
+        supplyDefaults: require_defaults20(),
+        crossTraceDefaults: require_cross_trace_defaults3(),
+        calc: require_calc9(),
+        plot: require_plot5().plot,
+        layerName: "contourlayer",
+        style: require_style5(),
+        colorbar: require_colorbar2(),
+        hoverPoints: require_hover5(),
+        moduleType: "trace",
+        name: "histogram2dcontour",
+        basePlotModule: require_cartesian(),
+        categories: ["cartesian", "svg", "2dMap", "contour", "histogram", "showLegend"],
+        meta: {}
+      };
+    }
+  });
+
+  // lib/histogram2dcontour.js
+  var require_histogram2dcontour2 = __commonJS({
+    "lib/histogram2dcontour.js"(exports, module) {
+      "use strict";
+      module.exports = require_histogram2dcontour();
     }
   });
 
@@ -95223,12 +97103,60 @@ void main() {
     "lib/index-gl2d.js"(exports, module) {
       var Plotly = require_core2();
       Plotly.register([
-        // traces
+        require_scatter2(),
         require_scattergl2(),
-        require_splom2(),
-        require_parcoords3(),
-        // components
-        require_calendars3()
+        require_histogram2dcontour2()
+        // traces
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        // require('./scattergl'),
+        // require('./splom'),
+        // require('./parcoords'),
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        // // components
+        // require('./calendars'),
       ]);
       module.exports = Plotly;
     }

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Minimal Contour Demo - Gold Standard</title>
+    <script src="dist/plotly.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chart-container { margin: 20px 0; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+        .test-info { background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Minimal Contour Demo - Gold Standard</h1>
+    <p>This demo tests the core contour functionality with various configurations.</p>
+
+    <!-- Test 1: Basic contour with line coloring -->
+    <div class="test-info">
+        <strong>Test 1:</strong> Basic lines contour - Tests smoothing, boundaries, and basic rendering
+    </div>
+    <div id="test1" class="chart-container" style="width:600px;height:400px;"></div>
+
+    <!-- Test 2: Filled contours -->
+    <div class="test-info">
+        <strong>Test 2:</strong> Fill coloring - Tests filled regions and color scale
+    </div>
+    <div id="test2" class="chart-container" style="width:600px;height:400px;"></div>
+
+    <!-- Test 3: Heatmap coloring -->
+    <div class="test-info">
+        <strong>Test 3:</strong> Heatmap coloring - Tests heatmap-style coloring with contour lines
+    </div>
+    <div id="test3" class="chart-container" style="width:600px;height:400px;"></div>
+
+    <!-- Test 4: Custom thresholds -->
+    <div class="test-info">
+        <strong>Test 4:</strong> Custom thresholds - Tests custom contour levels
+    </div>
+    <div id="test4" class="chart-container" style="width:600px;height:400px;"></div>
+
+    <!-- Test 5: With labels -->
+    <div class="test-info">
+        <strong>Test 5:</strong> With labels - Tests label placement and formatting
+    </div>
+    <div id="test5" class="chart-container" style="width:600px;height:400px;"></div>
+
+    <script>
+        // Create test data - a simple 2D Gaussian
+        function createGaussianData(size, centerX, centerY, sigma) {
+            var x = [], y = [], z = [];
+            for (var i = 0; i < size; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            for (var i = 0; i < size; i++) {
+                var row = [];
+                for (var j = 0; j < size; j++) {
+                    var dx = j - centerX;
+                    var dy = i - centerY;
+                    var val = Math.exp(-(dx*dx + dy*dy) / (2*sigma*sigma));
+                    row.push(val * 100);
+                }
+                z.push(row);
+            }
+            return {x: x, y: y, z: z};
+        }
+
+        // Create more complex test data - multiple peaks
+        function createMultiPeakData(size) {
+            var x = [], y = [], z = [];
+            for (var i = 0; i < size; i++) {
+                x.push(i);
+                y.push(i);
+            }
+            for (var i = 0; i < size; i++) {
+                var row = [];
+                for (var j = 0; j < size; j++) {
+                    // Multiple Gaussian peaks
+                    var val1 = 80 * Math.exp(-((j-10)*(j-10) + (i-10)*(i-10)) / 50);
+                    var val2 = 60 * Math.exp(-((j-25)*(j-25) + (i-20)*(i-20)) / 80);
+                    var val3 = 40 * Math.exp(-((j-15)*(j-15) + (i-30)*(i-30)) / 60);
+                    row.push(val1 + val2 + val3);
+                }
+                z.push(row);
+            }
+            return {x: x, y: y, z: z};
+        }
+
+        var data1 = createGaussianData(30, 15, 15, 5);
+        var data2 = createMultiPeakData(40);
+
+        // Test 1: Basic lines contour
+        Plotly.newPlot('test1', [{
+            type: 'contour',
+            x: data1.x,
+            y: data1.y,
+            z: data1.z,
+            contours: {
+                coloring: 'lines',
+                showlabels: false
+            },
+            line: { width: 2 }
+        }], {
+            title: 'Test 1: Basic Lines Contour',
+            xaxis: { visible: true },
+            yaxis: { visible: true }
+        }, { staticPlot: true });
+
+        // Test 2: Fill coloring
+        Plotly.newPlot('test2', [{
+            type: 'contour',
+            x: data1.x,
+            y: data1.y,
+            z: data1.z,
+            contours: {
+                coloring: 'fill',
+                showlines: true
+            },
+            colorscale: 'Viridis'
+        }], {
+            title: 'Test 2: Fill Coloring',
+            xaxis: { visible: true },
+            yaxis: { visible: true }
+        }, { staticPlot: true });
+
+        // Test 3: Heatmap coloring
+        Plotly.newPlot('test3', [{
+            type: 'contour',
+            x: data2.x,
+            y: data2.y,
+            z: data2.z,
+            contours: {
+                coloring: 'heatmap',
+                showlines: true
+            },
+            colorscale: 'Hot'
+        }], {
+            title: 'Test 3: Heatmap Coloring (Multi-Peak)',
+            xaxis: { visible: true },
+            yaxis: { visible: true }
+        }, { staticPlot: true });
+
+        // Test 4: Custom thresholds
+        Plotly.newPlot('test4', [{
+            type: 'contour',
+            x: data1.x,
+            y: data1.y,
+            z: data1.z,
+            contours: {
+                coloring: 'fill',
+                showlines: true,
+                showlabels: true,
+                thresholds: [10, 20, 30, 40, 50, 60, 70, 80, 90]
+            },
+            colorscale: 'RdBu'
+        }], {
+            title: 'Test 4: Custom Thresholds',
+            xaxis: { visible: true },
+            yaxis: { visible: true }
+        }, { staticPlot: true });
+
+        // Test 5: With labels
+        Plotly.newPlot('test5', [{
+            type: 'contour',
+            x: data2.x,
+            y: data2.y,
+            z: data2.z,
+            contours: {
+                coloring: 'lines',
+                showlines: true,
+                showlabels: true,
+                labelfont: {
+                    size: 12,
+                    color: 'black'
+                }
+            },
+            line: { width: 2, color: 'black' }
+        }], {
+            title: 'Test 5: Lines with Labels',
+            xaxis: { visible: true },
+            yaxis: { visible: true }
+        }, { staticPlot: true });
+
+        console.log('All tests rendered successfully!');
+        console.log('This is the gold standard for comparison.');
+    </script>
+</body>
+</html>

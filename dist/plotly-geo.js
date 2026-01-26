@@ -1,6 +1,6 @@
 /**
 * plotly.js (geo) v3.0.1
-* Copyright 2012-2025, Plotly, Inc.
+* Copyright 2012-2026, Plotly, Inc.
 * All rights reserved.
 * Licensed under the MIT license
 */
@@ -11213,8 +11213,14 @@ var Plotly = (() => {
       };
       exports.coercePattern = function(coerce, attr, markerColor, hasMarkerColorscale) {
         var shape = coerce(attr + ".shape");
-        if (shape) {
-          coerce(attr + ".solidity");
+        var path;
+        if (!shape) {
+          path = coerce(attr + ".path");
+        }
+        if (shape || path) {
+          if (shape) {
+            coerce(attr + ".solidity");
+          }
           coerce(attr + ".size");
           var fillmode = coerce(attr + ".fillmode");
           var isOverlay = fillmode === "overlay";
@@ -13078,6 +13084,11 @@ var Plotly = (() => {
           arrayOk: true,
           editType: "style"
         },
+        path: {
+          valType: "string",
+          arrayOk: true,
+          editType: "style"
+        },
         fillmode: {
           valType: "enumerated",
           values: ["replace", "overlay"],
@@ -13731,16 +13742,16 @@ var Plotly = (() => {
     }
   });
 
-  // temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css
+  // temp_stylePlugin:node_modules\maplibre-gl\dist\maplibre-gl.css
   var init_maplibre_gl = __esm({
-    "temp_stylePlugin:node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "temp_stylePlugin:node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
     }
   });
 
-  // stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css
+  // stylePlugin:D:\study\code\webgl\plotly.js\node_modules\maplibre-gl\dist\maplibre-gl.css
   var maplibre_gl_exports = {};
   var init_maplibre_gl2 = __esm({
-    "stylePlugin:/Users/ekl/code/plotly.js/node_modules/maplibre-gl/dist/maplibre-gl.css"() {
+    "stylePlugin:D:\\study\\code\\webgl\\plotly.js\\node_modules\\maplibre-gl\\dist\\maplibre-gl.css"() {
       init_maplibre_gl();
     }
   });
@@ -21471,6 +21482,12 @@ var Plotly = (() => {
           dflt: colorAttrs.defaultLine,
           editType: "ticks"
         },
+        zerolinelayer: {
+          valType: "enumerated",
+          values: ["above traces", "below traces"],
+          dflt: "below traces",
+          editType: "plot"
+        },
         zerolinewidth: {
           valType: "number",
           dflt: 1,
@@ -23700,13 +23717,14 @@ var Plotly = (() => {
       function setFillStyle(sel, trace, gd, forLegend) {
         var markerPattern = trace.fillpattern;
         var fillgradient = trace.fillgradient;
-        var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, 0, "");
+        var pAttr = drawing.getPatternAttr;
+        var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
         if (patternShape) {
-          var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-          var patternFGColor = drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+          var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+          var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
           var patternFGOpacity = markerPattern.fgopacity;
-          var patternSize = drawing.getPatternAttr(markerPattern.size, 0, 8);
-          var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, 0, 0.3);
+          var patternSize = pAttr(markerPattern.size, 0, 8);
+          var patternSolidity = pAttr(markerPattern.solidity, 0, 0.3);
           var patternID = trace.uid;
           drawing.pattern(
             sel,
@@ -24056,6 +24074,16 @@ var Plotly = (() => {
               fill: fgRGB
             };
             break;
+          default:
+            width = size;
+            height = size;
+            patternTag = "path";
+            patternAttrs = {
+              d: shape,
+              opacity,
+              fill: fgRGB
+            };
+            break;
         }
         var str = [
           shape || "noSh",
@@ -24188,7 +24216,8 @@ var Plotly = (() => {
             if (!gradientInfo[gradientType]) gradientType = 0;
           }
           var markerPattern = marker.pattern;
-          var patternShape = markerPattern && drawing.getPatternAttr(markerPattern.shape, d.i, "");
+          var pAttr = drawing.getPatternAttr;
+          var patternShape = markerPattern && (pAttr(markerPattern.shape, d.i, "") || pAttr(markerPattern.path, d.i, ""));
           if (gradientType && gradientType !== "none") {
             var gradientColor = d.mgc;
             if (gradientColor) perPointGradient = true;
@@ -24210,12 +24239,12 @@ var Plotly = (() => {
               fgcolor = pt.color;
               perPointPattern = true;
             }
-            var patternFGColor = drawing.getPatternAttr(fgcolor, d.i, pt && pt.color || null);
-            var patternBGColor = drawing.getPatternAttr(markerPattern.bgcolor, d.i, null);
+            var patternFGColor = pAttr(fgcolor, d.i, pt && pt.color || null);
+            var patternBGColor = pAttr(markerPattern.bgcolor, d.i, null);
             var patternFGOpacity = markerPattern.fgopacity;
-            var patternSize = drawing.getPatternAttr(markerPattern.size, d.i, 8);
-            var patternSolidity = drawing.getPatternAttr(markerPattern.solidity, d.i, 0.3);
-            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
+            var patternSize = pAttr(markerPattern.size, d.i, 8);
+            var patternSolidity = pAttr(markerPattern.solidity, d.i, 0.3);
+            perPointPattern = perPointPattern || d.mcc || Lib.isArrayOrTypedArray(markerPattern.shape) || Lib.isArrayOrTypedArray(markerPattern.path) || Lib.isArrayOrTypedArray(markerPattern.bgcolor) || Lib.isArrayOrTypedArray(markerPattern.fgcolor) || Lib.isArrayOrTypedArray(markerPattern.size) || Lib.isArrayOrTypedArray(markerPattern.solidity);
             var patternID = trace.uid;
             if (perPointPattern) patternID += "-" + d.i;
             drawing.pattern(
@@ -24960,7 +24989,7 @@ var Plotly = (() => {
         var editAttr;
         if (prop === "title.text") editAttr = "titleText";
         else if (prop.indexOf("axis") !== -1) editAttr = "axisTitleText";
-        else if (prop.indexOf("colorbar" !== -1)) editAttr = "colorbarTitleText";
+        else if (prop.indexOf(true)) editAttr = "colorbarTitleText";
         var editable = gd._context.edits[editAttr];
         function matchesPlaceholder(text, placeholder2) {
           if (text === void 0 || placeholder2 === void 0) return false;
@@ -28029,6 +28058,7 @@ var Plotly = (() => {
               if (plotinfo.minorGridlayer) plotinfo.minorGridlayer.selectAll("path").remove();
               if (plotinfo.gridlayer) plotinfo.gridlayer.selectAll("path").remove();
               if (plotinfo.zerolinelayer) plotinfo.zerolinelayer.selectAll("path").remove();
+              if (plotinfo.zerolinelayerAbove) plotinfo.zerolinelayerAbove.selectAll("path").remove();
               fullLayout._infolayer.select(".g-" + xa._id + "title").remove();
               fullLayout._infolayer.select(".g-" + ya._id + "title").remove();
             }
@@ -28081,6 +28111,7 @@ var Plotly = (() => {
         var axLetter = axId.charAt(0);
         var counterLetter = axes.counterLetter(axId);
         var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         if (!mainPlotinfo) return;
         ax._shiftPusher = ax.autoshift || overlayingShiftedAx.indexOf(ax._id) !== -1 || overlayingShiftedAx.indexOf(ax.overlaying) !== -1;
         if (ax._shiftPusher & ax.anchor === "free") {
@@ -28149,7 +28180,7 @@ var Plotly = (() => {
             });
             axes.drawZeroLine(gd, ax, {
               counterAxis,
-              layer: plotinfo.zerolinelayer,
+              layer: zerolineIsAbove ? plotinfo.zerolinelayerAbove : plotinfo.zerolinelayer,
               path: gridPath,
               transFn: transTickFn
             });
@@ -28536,6 +28567,7 @@ var Plotly = (() => {
       }
       function getTickLabelUV(ax) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28544,7 +28576,7 @@ var Plotly = (() => {
         var isRight = has("right");
         var isBottom = has("bottom");
         var isInside = has("inside");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         if (!isAligned && !isInside) return [0, 0];
         var side = ax.side;
         var u = isAligned ? (ax.tickwidth || 0) / 2 : 0;
@@ -28579,6 +28611,7 @@ var Plotly = (() => {
       };
       axes.makeLabelFns = function(ax, shift, angle) {
         var ticklabelposition = ax.ticklabelposition || "";
+        var tickson = ax.tickson || "";
         var has = function(str) {
           return ticklabelposition.indexOf(str) !== -1;
         };
@@ -28586,9 +28619,9 @@ var Plotly = (() => {
         var isLeft = has("left");
         var isRight = has("right");
         var isBottom = has("bottom");
-        var isAligned = isBottom || isLeft || isTop || isRight;
+        var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
         var insideTickLabels = has("inside");
-        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && ax.tickson !== "boundaries";
+        var labelsOverTicks = ticklabelposition === "inside" && ax.ticks === "inside" || !insideTickLabels && ax.ticks === "outside" && tickson !== "boundaries";
         var labelStandoff = 0;
         var labelShift = 0;
         var tickLen = labelsOverTicks ? ax.ticklen : 0;
@@ -28805,6 +28838,7 @@ var Plotly = (() => {
         opts = opts || {};
         var fullLayout = gd._fullLayout;
         var axId = ax._id;
+        var zerolineIsAbove = ax.zerolinelayer === "above traces";
         var cls = opts.cls || axId + "tick";
         var vals = opts.vals.filter(function(d) {
           return d.text;
@@ -28950,8 +28984,10 @@ var Plotly = (() => {
                 var isPeriodLabel = e.K === "tick" && e.L === "text" && ax.ticklabelmode === "period";
                 var mainPlotinfo = fullLayout._plots[ax._mainSubplot];
                 var sel;
-                if (e.K === ZERO_PATH.K) sel = mainPlotinfo.zerolinelayer.selectAll("." + ax._id + "zl");
-                else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
+                if (e.K === ZERO_PATH.K) {
+                  var zerolineLayer = zerolineIsAbove ? mainPlotinfo.zerolinelayerAbove : mainPlotinfo.zerolinelayer;
+                  sel = zerolineLayer.selectAll("." + ax._id + "zl");
+                } else if (e.K === MINORGRID_PATH.K) sel = mainPlotinfo.minorGridlayer.selectAll("." + ax._id);
                 else if (e.K === GRID_PATH.K) sel = mainPlotinfo.gridlayer.selectAll("." + ax._id);
                 else sel = mainPlotinfo[ax._id.charAt(0) + "axislayer"];
                 sel.each(function() {
@@ -29042,6 +29078,7 @@ var Plotly = (() => {
               }
             } else {
               var ticklabelposition = ax.ticklabelposition || "";
+              var tickson = ax.tickson || "";
               var has = function(str) {
                 return ticklabelposition.indexOf(str) !== -1;
               };
@@ -29049,7 +29086,7 @@ var Plotly = (() => {
               var isLeft = has("left");
               var isRight = has("right");
               var isBottom = has("bottom");
-              var isAligned = isBottom || isLeft || isTop || isRight;
+              var isAligned = tickson !== "boundaries" && (isBottom || isLeft || isTop || isRight);
               var pad = !isAligned ? 0 : (ax.tickwidth || 0) + 2 * TEXTPAD;
               for (i = 0; i < lbbArray.length - 1; i++) {
                 if (Lib.bBoxIntersect(lbbArray[i], lbbArray[i + 1], pad)) {
@@ -29969,6 +30006,11 @@ var Plotly = (() => {
           dflt: colorAttrs.defaultLine,
           editType: "legend"
         },
+        maxheight: {
+          valType: "number",
+          min: 0,
+          editType: "legend"
+        },
         borderwidth: {
           valType: "number",
           min: 0,
@@ -30265,6 +30307,7 @@ var Plotly = (() => {
         coerce("groupclick");
         coerce("xanchor", defaultXAnchor);
         coerce("yanchor", defaultYAnchor);
+        coerce("maxheight", isHorizontal ? 0.5 : 1);
         coerce("valign");
         Lib.noneOrAll(containerIn, containerOut, ["x", "y"]);
         var titleText = coerce("title.text");
@@ -31015,10 +31058,11 @@ var Plotly = (() => {
             }
             var fillColor = mcc || d0.mc || marker.color;
             var markerPattern = marker.pattern;
-            var patternShape = markerPattern && Drawing.getPatternAttr(markerPattern.shape, 0, "");
+            var pAttr = Drawing.getPatternAttr;
+            var patternShape = markerPattern && (pAttr(markerPattern.shape, 0, "") || pAttr(markerPattern.path, 0, ""));
             if (patternShape) {
-              var patternBGColor = Drawing.getPatternAttr(markerPattern.bgcolor, 0, null);
-              var patternFGColor = Drawing.getPatternAttr(markerPattern.fgcolor, 0, null);
+              var patternBGColor = pAttr(markerPattern.bgcolor, 0, null);
+              var patternFGColor = pAttr(markerPattern.fgcolor, 0, null);
               var patternFGOpacity = markerPattern.fgopacity;
               var patternSize = dimAttr(markerPattern.size, 8, 10);
               var patternSolidity = dimAttr(markerPattern.solidity, 0.5, 1);
@@ -31884,10 +31928,9 @@ var Plotly = (() => {
         var isAbovePlotArea = legendObj.y > 1 || legendObj.y === 1 && yanchor === "bottom";
         var traceGroupGap = legendObj.tracegroupgap;
         var legendGroupWidths = {};
-        legendObj._maxHeight = Math.max(
-          isBelowPlotArea || isAbovePlotArea ? fullLayout.height / 2 : gs.h,
-          30
-        );
+        var { maxheight, orientation, yref } = legendObj;
+        var heightToBeScaled = orientation === "v" && yref === "paper" ? gs.h : fullLayout.height;
+        legendObj._maxHeight = Math.max(maxheight > 1 ? maxheight : maxheight * heightToBeScaled, 30);
         var toggleRectWidth = 0;
         legendObj._width = 0;
         legendObj._height = 0;
@@ -36288,7 +36331,7 @@ var Plotly = (() => {
         title: function(gd) {
           var opts = gd._context.toImageButtonOptions || {};
           var format = opts.format || "png";
-          return format === "png" ? _(gd, "Download plot as a png") : (
+          return format === "png" ? _(gd, "Download plot as a PNG") : (
             // legacy text
             _(gd, "Download plot")
           );
@@ -47030,7 +47073,7 @@ var Plotly = (() => {
             list.push(format("unused", base, p, valIn));
           } else if (!Lib.validate(valIn, nestedSchema)) {
             list.push(format("value", base, p, valIn));
-          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || valIn !== valOut)) {
+          } else if (nestedSchema.valType === "enumerated" && (nestedSchema.coerceNumber && valIn !== +valOut || !isArrayOrTypedArray(valIn) && valIn !== valOut || String(valIn) !== String(valOut))) {
             list.push(format("dynamic", base, p, valIn, valOut));
           }
         }
@@ -50730,10 +50773,12 @@ var Plotly = (() => {
           }
         }
         if (!opts.noZeroLine) {
+          var zeroLineLayer = coerce2("zerolinelayer");
           var zeroLineColor = coerce2("zerolinecolor", dfltColor);
           var zeroLineWidth = coerce2("zerolinewidth");
           var showZeroLine = coerce("zeroline", opts.showGrid || !!zeroLineColor || !!zeroLineWidth);
           if (!showZeroLine) {
+            delete containerOut.zerolinelayer;
             delete containerOut.zerolinecolor;
             delete containerOut.zerolinewidth;
           }
@@ -50851,11 +50896,11 @@ var Plotly = (() => {
         if (containerOut.showline || containerOut.ticks) coerce("mirror");
         var isMultiCategory = axType === "multicategory";
         if (!options.noTickson && (axType === "category" || isMultiCategory) && (containerOut.ticks || containerOut.showgrid)) {
-          var ticksonDflt;
-          if (isMultiCategory) ticksonDflt = "boundaries";
-          var tickson = coerce("tickson", ticksonDflt);
-          if (tickson === "boundaries") {
+          if (isMultiCategory) {
+            coerce("tickson", "boundaries");
             delete containerOut.ticklabelposition;
+          } else {
+            coerce("tickson");
           }
         }
         if (isMultiCategory) {
@@ -51926,6 +51971,11 @@ var Plotly = (() => {
             }
             plotinfo.overplot = ensureSingle(plotgroup, "g", "overplot");
             plotinfo.plot = ensureSingle(plotinfo.overplot, "g", id);
+            if (mainplotinfo && hasMultipleZ) {
+              plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
+            } else {
+              plotinfo.zerolinelayerAbove = ensureSingle(plotgroup, "g", "zerolinelayer-above");
+            }
             if (!hasZ) {
               plotinfo.xlines = ensureSingle(plotgroup, "path", "xlines-above");
               plotinfo.ylines = ensureSingle(plotgroup, "path", "ylines-above");
@@ -51946,6 +51996,7 @@ var Plotly = (() => {
           plotinfo.minorGridlayer = mainplotinfo.minorGridlayer;
           plotinfo.gridlayer = mainplotinfo.gridlayer;
           plotinfo.zerolinelayer = mainplotinfo.zerolinelayer;
+          plotinfo.zerolinelayerAbove = mainplotinfo.zerolinelayerAbove;
           ensureSingle(mainplotinfo.overlinesBelow, "path", xId);
           ensureSingle(mainplotinfo.overlinesBelow, "path", yId);
           ensureSingle(mainplotinfo.overaxesBelow, "g", xId);
@@ -59031,10596 +59082,741 @@ var Plotly = (() => {
     }
   });
 
-  // src/traces/scattergeo/attributes.js
-  var require_attributes23 = __commonJS({
-    "src/traces/scattergeo/attributes.js"(exports, module) {
+  // lib/scatter.js
+  var require_scatter2 = __commonJS({
+    "lib/scatter.js"(exports, module) {
       "use strict";
+      module.exports = require_scatter();
+    }
+  });
+
+  // src/traces/bar/constants.js
+  var require_constants14 = __commonJS({
+    "src/traces/bar/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // padding in pixels around text
+        TEXTPAD: 3,
+        // 'value' and 'label' are not really necessary for bar traces,
+        // but they were made available to `texttemplate` (maybe by accident)
+        // via tokens `%{value}` and `%{label}` starting in 1.50.0,
+        // so let's include them in the event data also.
+        eventDataKeys: ["value", "label"]
+      };
+    }
+  });
+
+  // src/traces/bar/attributes.js
+  var require_attributes23 = __commonJS({
+    "src/traces/bar/attributes.js"(exports, module) {
+      "use strict";
+      var scatterAttrs = require_attributes12();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
       var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
       var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
-      var makeFillcolorAttr = require_fillcolor_attribute();
-      var scatterAttrs = require_attributes12();
-      var baseAttrs = require_attributes2();
-      var colorAttributes = require_attributes8();
-      var dash = require_attributes4().dash;
+      var colorScaleAttrs = require_attributes8();
+      var fontAttrs = require_font_attributes();
+      var constants = require_constants14();
+      var pattern = require_attributes4().pattern;
       var extendFlat = require_extend().extendFlat;
-      var overrideAll = require_edit_types().overrideAll;
+      var textFontAttrs = fontAttrs({
+        editType: "calc",
+        arrayOk: true,
+        colorEditType: "style"
+      });
       var scatterMarkerAttrs = scatterAttrs.marker;
-      var scatterLineAttrs = scatterAttrs.line;
       var scatterMarkerLineAttrs = scatterMarkerAttrs.line;
-      module.exports = overrideAll({
-        lon: {
-          valType: "data_array"
+      var markerLineWidth = extendFlat(
+        {},
+        scatterMarkerLineAttrs.width,
+        { dflt: 0 }
+      );
+      var markerLine = extendFlat({
+        width: markerLineWidth,
+        editType: "calc"
+      }, colorScaleAttrs("marker.line"));
+      var marker = extendFlat({
+        line: markerLine,
+        editType: "calc"
+      }, colorScaleAttrs("marker"), {
+        opacity: {
+          valType: "number",
+          arrayOk: true,
+          dflt: 1,
+          min: 0,
+          max: 1,
+          editType: "style"
         },
-        lat: {
-          valType: "data_array"
-        },
-        locations: {
-          valType: "data_array"
-        },
-        locationmode: {
-          valType: "enumerated",
-          values: ["ISO-3", "USA-states", "country names", "geojson-id"],
-          dflt: "ISO-3"
-        },
-        geojson: {
+        pattern,
+        cornerradius: {
           valType: "any",
           editType: "calc"
-        },
-        featureidkey: {
-          valType: "string",
-          editType: "calc",
-          dflt: "id"
-        },
-        mode: extendFlat({}, scatterAttrs.mode, { dflt: "markers" }),
-        text: extendFlat({}, scatterAttrs.text, {}),
+        }
+      });
+      module.exports = {
+        x: scatterAttrs.x,
+        x0: scatterAttrs.x0,
+        dx: scatterAttrs.dx,
+        y: scatterAttrs.y,
+        y0: scatterAttrs.y0,
+        dy: scatterAttrs.dy,
+        xperiod: scatterAttrs.xperiod,
+        yperiod: scatterAttrs.yperiod,
+        xperiod0: scatterAttrs.xperiod0,
+        yperiod0: scatterAttrs.yperiod0,
+        xperiodalignment: scatterAttrs.xperiodalignment,
+        yperiodalignment: scatterAttrs.yperiodalignment,
+        xhoverformat: axisHoverFormat("x"),
+        yhoverformat: axisHoverFormat("y"),
+        text: scatterAttrs.text,
         texttemplate: texttemplateAttrs({ editType: "plot" }, {
-          keys: ["lat", "lon", "location", "text"]
+          keys: constants.eventDataKeys
         }),
-        hovertext: extendFlat({}, scatterAttrs.hovertext, {}),
-        textfont: scatterAttrs.textfont,
-        textposition: scatterAttrs.textposition,
-        line: {
-          color: scatterLineAttrs.color,
-          width: scatterLineAttrs.width,
-          dash
-        },
-        connectgaps: scatterAttrs.connectgaps,
-        marker: extendFlat(
-          {
-            symbol: scatterMarkerAttrs.symbol,
-            opacity: scatterMarkerAttrs.opacity,
-            angle: scatterMarkerAttrs.angle,
-            angleref: extendFlat({}, scatterMarkerAttrs.angleref, {
-              values: ["previous", "up", "north"]
-            }),
-            standoff: scatterMarkerAttrs.standoff,
-            size: scatterMarkerAttrs.size,
-            sizeref: scatterMarkerAttrs.sizeref,
-            sizemin: scatterMarkerAttrs.sizemin,
-            sizemode: scatterMarkerAttrs.sizemode,
-            colorbar: scatterMarkerAttrs.colorbar,
-            line: extendFlat(
-              {
-                width: scatterMarkerLineAttrs.width
-              },
-              colorAttributes("marker.line")
-            ),
-            gradient: scatterMarkerAttrs.gradient
-          },
-          colorAttributes("marker")
-        ),
-        fill: {
-          valType: "enumerated",
-          values: ["none", "toself"],
-          dflt: "none"
-        },
-        fillcolor: makeFillcolorAttr(),
-        selected: scatterAttrs.selected,
-        unselected: scatterAttrs.unselected,
-        hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-          flags: ["lon", "lat", "location", "text", "name"]
+        hovertext: scatterAttrs.hovertext,
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
         }),
-        hovertemplate: hovertemplateAttrs()
-      }, "calc", "nested");
-    }
-  });
-
-  // src/traces/scattergeo/defaults.js
-  var require_defaults19 = __commonJS({
-    "src/traces/scattergeo/defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var subTypes = require_subtypes();
-      var handleMarkerDefaults = require_marker_defaults();
-      var handleLineDefaults = require_line_defaults();
-      var handleTextDefaults = require_text_defaults();
-      var handleFillColorDefaults = require_fillcolor_defaults();
-      var attributes = require_attributes23();
-      module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
-        function coerce(attr, dflt) {
-          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
-        }
-        var locations = coerce("locations");
-        var len;
-        if (locations && locations.length) {
-          var geojson = coerce("geojson");
-          var locationmodeDflt;
-          if (typeof geojson === "string" && geojson !== "" || Lib.isPlainObject(geojson)) {
-            locationmodeDflt = "geojson-id";
-          }
-          var locationMode = coerce("locationmode", locationmodeDflt);
-          if (locationMode === "geojson-id") {
-            coerce("featureidkey");
-          }
-          len = locations.length;
-        } else {
-          var lon = coerce("lon") || [];
-          var lat = coerce("lat") || [];
-          len = Math.min(lon.length, lat.length);
-        }
-        if (!len) {
-          traceOut.visible = false;
-          return;
-        }
-        traceOut._length = len;
-        coerce("text");
-        coerce("hovertext");
-        coerce("hovertemplate");
-        coerce("mode");
-        if (subTypes.hasMarkers(traceOut)) {
-          handleMarkerDefaults(traceIn, traceOut, defaultColor, layout, coerce, { gradient: true });
-        }
-        if (subTypes.hasLines(traceOut)) {
-          handleLineDefaults(traceIn, traceOut, defaultColor, layout, coerce);
-          coerce("connectgaps");
-        }
-        if (subTypes.hasText(traceOut)) {
-          coerce("texttemplate");
-          handleTextDefaults(traceIn, traceOut, layout, coerce);
-        }
-        coerce("fill");
-        if (traceOut.fill !== "none") {
-          handleFillColorDefaults(traceIn, traceOut, defaultColor, coerce);
-        }
-        Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
-      };
-    }
-  });
-
-  // src/traces/scattergeo/format_labels.js
-  var require_format_labels2 = __commonJS({
-    "src/traces/scattergeo/format_labels.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      module.exports = function formatLabels(cdi, trace, fullLayout) {
-        var labels = {};
-        var geo = fullLayout[trace.geo]._subplot;
-        var ax = geo.mockAxis;
-        var lonlat = cdi.lonlat;
-        labels.lonLabel = Axes.tickText(ax, ax.c2l(lonlat[0]), true).text;
-        labels.latLabel = Axes.tickText(ax, ax.c2l(lonlat[1]), true).text;
-        return labels;
-      };
-    }
-  });
-
-  // src/traces/scattergeo/calc.js
-  var require_calc5 = __commonJS({
-    "src/traces/scattergeo/calc.js"(exports, module) {
-      "use strict";
-      var isNumeric = require_fast_isnumeric();
-      var BADNUM = require_numerical().BADNUM;
-      var calcMarkerColorscale = require_colorscale_calc();
-      var arraysToCalcdata = require_arrays_to_calcdata();
-      var calcSelection = require_calc_selection();
-      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
-      var _ = require_lib()._;
-      function isNonBlankString(v) {
-        return v && typeof v === "string";
-      }
-      module.exports = function calc(gd, trace) {
-        var hasLocationData = isArrayOrTypedArray(trace.locations);
-        var len = hasLocationData ? trace.locations.length : trace._length;
-        var calcTrace = new Array(len);
-        var isValidLoc;
-        if (trace.geojson) {
-          isValidLoc = function(v) {
-            return isNonBlankString(v) || isNumeric(v);
-          };
-        } else {
-          isValidLoc = isNonBlankString;
-        }
-        for (var i = 0; i < len; i++) {
-          var calcPt = calcTrace[i] = {};
-          if (hasLocationData) {
-            var loc = trace.locations[i];
-            calcPt.loc = isValidLoc(loc) ? loc : null;
-          } else {
-            var lon = trace.lon[i];
-            var lat = trace.lat[i];
-            if (isNumeric(lon) && isNumeric(lat)) calcPt.lonlat = [+lon, +lat];
-            else calcPt.lonlat = [BADNUM, BADNUM];
-          }
-        }
-        arraysToCalcdata(calcTrace, trace);
-        calcMarkerColorscale(gd, trace);
-        calcSelection(calcTrace, trace);
-        if (len) {
-          calcTrace[0].t = {
-            labels: {
-              lat: _(gd, "lat:") + " ",
-              lon: _(gd, "lon:") + " "
-            }
-          };
-        }
-        return calcTrace;
-      };
-    }
-  });
-
-  // src/plots/geo/constants.js
-  var require_constants14 = __commonJS({
-    "src/plots/geo/constants.js"(exports) {
-      "use strict";
-      exports.projNames = {
-        airy: "airy",
-        aitoff: "aitoff",
-        "albers usa": "albersUsa",
-        albers: "albers",
-        // 'armadillo': 'armadillo',
-        august: "august",
-        "azimuthal equal area": "azimuthalEqualArea",
-        "azimuthal equidistant": "azimuthalEquidistant",
-        baker: "baker",
-        // 'berghaus': 'berghaus',
-        bertin1953: "bertin1953",
-        boggs: "boggs",
-        bonne: "bonne",
-        bottomley: "bottomley",
-        bromley: "bromley",
-        // 'chamberlin africa': 'chamberlinAfrica',
-        // 'chamberlin': 'chamberlin',
-        collignon: "collignon",
-        "conic conformal": "conicConformal",
-        "conic equal area": "conicEqualArea",
-        "conic equidistant": "conicEquidistant",
-        craig: "craig",
-        craster: "craster",
-        "cylindrical equal area": "cylindricalEqualArea",
-        "cylindrical stereographic": "cylindricalStereographic",
-        eckert1: "eckert1",
-        eckert2: "eckert2",
-        eckert3: "eckert3",
-        eckert4: "eckert4",
-        eckert5: "eckert5",
-        eckert6: "eckert6",
-        eisenlohr: "eisenlohr",
-        "equal earth": "equalEarth",
-        equirectangular: "equirectangular",
-        fahey: "fahey",
-        "foucaut sinusoidal": "foucautSinusoidal",
-        foucaut: "foucaut",
-        // 'gilbert': 'gilbert',
-        // 'gingery': 'gingery',
-        ginzburg4: "ginzburg4",
-        ginzburg5: "ginzburg5",
-        ginzburg6: "ginzburg6",
-        ginzburg8: "ginzburg8",
-        ginzburg9: "ginzburg9",
-        gnomonic: "gnomonic",
-        "gringorten quincuncial": "gringortenQuincuncial",
-        gringorten: "gringorten",
-        guyou: "guyou",
-        // 'hammer retroazimuthal': 'hammerRetroazimuthal',
-        hammer: "hammer",
-        // 'healpix': 'healpix',
-        hill: "hill",
-        homolosine: "homolosine",
-        hufnagel: "hufnagel",
-        hyperelliptical: "hyperelliptical",
-        // 'interrupted boggs': 'interruptedBoggs',
-        // 'interrupted homolosine': 'interruptedHomolosine',
-        // 'interrupted mollweide hemispheres': 'interruptedMollweideHemispheres',
-        // 'interrupted mollweide': 'interruptedMollweide',
-        // 'interrupted quartic authalic': 'interruptedQuarticAuthalic',
-        // 'interrupted sinu mollweide': 'interruptedSinuMollweide',
-        // 'interrupted sinusoidal': 'interruptedSinusoidal',
-        kavrayskiy7: "kavrayskiy7",
-        lagrange: "lagrange",
-        larrivee: "larrivee",
-        laskowski: "laskowski",
-        // 'littrow': 'littrow',
-        loximuthal: "loximuthal",
-        mercator: "mercator",
-        miller: "miller",
-        // 'modified stereographic alaska': 'modifiedStereographicAlaska',
-        // 'modified stereographic gs48': 'modifiedStereographicGs48',
-        // 'modified stereographic gs50': 'modifiedStereographicGs50',
-        // 'modified stereographic lee': 'modifiedStereographicLee',
-        // 'modified stereographic miller': 'modifiedStereographicMiller',
-        // 'modified stereographic': 'modifiedStereographic',
-        mollweide: "mollweide",
-        "mt flat polar parabolic": "mtFlatPolarParabolic",
-        "mt flat polar quartic": "mtFlatPolarQuartic",
-        "mt flat polar sinusoidal": "mtFlatPolarSinusoidal",
-        "natural earth": "naturalEarth",
-        "natural earth1": "naturalEarth1",
-        "natural earth2": "naturalEarth2",
-        "nell hammer": "nellHammer",
-        nicolosi: "nicolosi",
-        orthographic: "orthographic",
-        patterson: "patterson",
-        "peirce quincuncial": "peirceQuincuncial",
-        polyconic: "polyconic",
-        // 'polyhedral butterfly': 'polyhedralButterfly',
-        // 'polyhedral collignon': 'polyhedralCollignon',
-        // 'polyhedral waterman': 'polyhedralWaterman',
-        "rectangular polyconic": "rectangularPolyconic",
-        robinson: "robinson",
-        satellite: "satellite",
-        "sinu mollweide": "sinuMollweide",
-        sinusoidal: "sinusoidal",
-        stereographic: "stereographic",
-        times: "times",
-        "transverse mercator": "transverseMercator",
-        // 'two point azimuthalUsa': 'twoPointAzimuthalUsa',
-        // 'two point azimuthal': 'twoPointAzimuthal',
-        // 'two point equidistantUsa': 'twoPointEquidistantUsa',
-        // 'two point equidistant': 'twoPointEquidistant',
-        "van der grinten": "vanDerGrinten",
-        "van der grinten2": "vanDerGrinten2",
-        "van der grinten3": "vanDerGrinten3",
-        "van der grinten4": "vanDerGrinten4",
-        wagner4: "wagner4",
-        wagner6: "wagner6",
-        // 'wagner7': 'wagner7',
-        // 'wagner': 'wagner',
-        wiechel: "wiechel",
-        "winkel tripel": "winkel3",
-        winkel3: "winkel3"
-      };
-      exports.axesNames = ["lonaxis", "lataxis"];
-      exports.lonaxisSpan = {
-        orthographic: 180,
-        "azimuthal equal area": 360,
-        "azimuthal equidistant": 360,
-        "conic conformal": 180,
-        gnomonic: 160,
-        stereographic: 180,
-        "transverse mercator": 180,
-        "*": 360
-      };
-      exports.lataxisSpan = {
-        "conic conformal": 150,
-        stereographic: 179.5,
-        "*": 180
-      };
-      exports.scopeDefaults = {
-        world: {
-          lonaxisRange: [-180, 180],
-          lataxisRange: [-90, 90],
-          projType: "equirectangular",
-          projRotate: [0, 0, 0]
-        },
-        usa: {
-          lonaxisRange: [-180, -50],
-          lataxisRange: [15, 80],
-          projType: "albers usa"
-        },
-        europe: {
-          lonaxisRange: [-30, 60],
-          lataxisRange: [30, 85],
-          projType: "conic conformal",
-          projRotate: [15, 0, 0],
-          projParallels: [0, 60]
-        },
-        asia: {
-          lonaxisRange: [22, 160],
-          lataxisRange: [-15, 55],
-          projType: "mercator",
-          projRotate: [0, 0, 0]
-        },
-        africa: {
-          lonaxisRange: [-30, 60],
-          lataxisRange: [-40, 40],
-          projType: "mercator",
-          projRotate: [0, 0, 0]
-        },
-        "north america": {
-          lonaxisRange: [-180, -45],
-          lataxisRange: [5, 85],
-          projType: "conic conformal",
-          projRotate: [-100, 0, 0],
-          projParallels: [29.5, 45.5]
-        },
-        "south america": {
-          lonaxisRange: [-100, -30],
-          lataxisRange: [-60, 15],
-          projType: "mercator",
-          projRotate: [0, 0, 0]
-        }
-      };
-      exports.clipPad = 1e-3;
-      exports.precision = 0.1;
-      exports.landColor = "#F0DC82";
-      exports.waterColor = "#3399FF";
-      exports.locationmodeToLayer = {
-        "ISO-3": "countries",
-        "USA-states": "subunits",
-        "country names": "countries"
-      };
-      exports.sphereSVG = { type: "Sphere" };
-      exports.fillLayers = {
-        ocean: 1,
-        land: 1,
-        lakes: 1
-      };
-      exports.lineLayers = {
-        subunits: 1,
-        countries: 1,
-        coastlines: 1,
-        rivers: 1,
-        frame: 1
-      };
-      exports.layers = [
-        "bg",
-        "ocean",
-        "land",
-        "lakes",
-        "subunits",
-        "countries",
-        "coastlines",
-        "rivers",
-        "lataxis",
-        "lonaxis",
-        "frame",
-        "backplot",
-        "frontplot"
-      ];
-      exports.layersForChoropleth = [
-        "bg",
-        "ocean",
-        "land",
-        "subunits",
-        "countries",
-        "coastlines",
-        "lataxis",
-        "lonaxis",
-        "frame",
-        "backplot",
-        "rivers",
-        "lakes",
-        "frontplot"
-      ];
-      exports.layerNameToAdjective = {
-        ocean: "ocean",
-        land: "land",
-        lakes: "lake",
-        subunits: "subunit",
-        countries: "country",
-        coastlines: "coastline",
-        rivers: "river",
-        frame: "frame"
-      };
-    }
-  });
-
-  // node_modules/topojson-client/dist/topojson-client.js
-  var require_topojson_client = __commonJS({
-    "node_modules/topojson-client/dist/topojson-client.js"(exports, module) {
-      (function(global2, factory) {
-        typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && false ? define(["exports"], factory) : (global2 = global2 || self, factory(global2.topojson = global2.topojson || {}));
-      })(exports, function(exports2) {
-        "use strict";
-        function identity(x) {
-          return x;
-        }
-        function transform(transform2) {
-          if (transform2 == null) return identity;
-          var x0, y0, kx = transform2.scale[0], ky = transform2.scale[1], dx = transform2.translate[0], dy = transform2.translate[1];
-          return function(input, i) {
-            if (!i) x0 = y0 = 0;
-            var j = 2, n = input.length, output = new Array(n);
-            output[0] = (x0 += input[0]) * kx + dx;
-            output[1] = (y0 += input[1]) * ky + dy;
-            while (j < n) output[j] = input[j], ++j;
-            return output;
-          };
-        }
-        function bbox(topology) {
-          var t = transform(topology.transform), key, x0 = Infinity, y0 = x0, x1 = -x0, y1 = -x0;
-          function bboxPoint(p) {
-            p = t(p);
-            if (p[0] < x0) x0 = p[0];
-            if (p[0] > x1) x1 = p[0];
-            if (p[1] < y0) y0 = p[1];
-            if (p[1] > y1) y1 = p[1];
-          }
-          function bboxGeometry(o) {
-            switch (o.type) {
-              case "GeometryCollection":
-                o.geometries.forEach(bboxGeometry);
-                break;
-              case "Point":
-                bboxPoint(o.coordinates);
-                break;
-              case "MultiPoint":
-                o.coordinates.forEach(bboxPoint);
-                break;
-            }
-          }
-          topology.arcs.forEach(function(arc) {
-            var i = -1, n = arc.length, p;
-            while (++i < n) {
-              p = t(arc[i], i);
-              if (p[0] < x0) x0 = p[0];
-              if (p[0] > x1) x1 = p[0];
-              if (p[1] < y0) y0 = p[1];
-              if (p[1] > y1) y1 = p[1];
-            }
-          });
-          for (key in topology.objects) {
-            bboxGeometry(topology.objects[key]);
-          }
-          return [x0, y0, x1, y1];
-        }
-        function reverse(array, n) {
-          var t, j = array.length, i = j - n;
-          while (i < --j) t = array[i], array[i++] = array[j], array[j] = t;
-        }
-        function feature(topology, o) {
-          if (typeof o === "string") o = topology.objects[o];
-          return o.type === "GeometryCollection" ? { type: "FeatureCollection", features: o.geometries.map(function(o2) {
-            return feature$1(topology, o2);
-          }) } : feature$1(topology, o);
-        }
-        function feature$1(topology, o) {
-          var id = o.id, bbox2 = o.bbox, properties = o.properties == null ? {} : o.properties, geometry = object(topology, o);
-          return id == null && bbox2 == null ? { type: "Feature", properties, geometry } : bbox2 == null ? { type: "Feature", id, properties, geometry } : { type: "Feature", id, bbox: bbox2, properties, geometry };
-        }
-        function object(topology, o) {
-          var transformPoint = transform(topology.transform), arcs = topology.arcs;
-          function arc(i, points) {
-            if (points.length) points.pop();
-            for (var a = arcs[i < 0 ? ~i : i], k = 0, n = a.length; k < n; ++k) {
-              points.push(transformPoint(a[k], k));
-            }
-            if (i < 0) reverse(points, n);
-          }
-          function point(p) {
-            return transformPoint(p);
-          }
-          function line(arcs2) {
-            var points = [];
-            for (var i = 0, n = arcs2.length; i < n; ++i) arc(arcs2[i], points);
-            if (points.length < 2) points.push(points[0]);
-            return points;
-          }
-          function ring(arcs2) {
-            var points = line(arcs2);
-            while (points.length < 4) points.push(points[0]);
-            return points;
-          }
-          function polygon(arcs2) {
-            return arcs2.map(ring);
-          }
-          function geometry(o2) {
-            var type = o2.type, coordinates;
-            switch (type) {
-              case "GeometryCollection":
-                return { type, geometries: o2.geometries.map(geometry) };
-              case "Point":
-                coordinates = point(o2.coordinates);
-                break;
-              case "MultiPoint":
-                coordinates = o2.coordinates.map(point);
-                break;
-              case "LineString":
-                coordinates = line(o2.arcs);
-                break;
-              case "MultiLineString":
-                coordinates = o2.arcs.map(line);
-                break;
-              case "Polygon":
-                coordinates = polygon(o2.arcs);
-                break;
-              case "MultiPolygon":
-                coordinates = o2.arcs.map(polygon);
-                break;
-              default:
-                return null;
-            }
-            return { type, coordinates };
-          }
-          return geometry(o);
-        }
-        function stitch(topology, arcs) {
-          var stitchedArcs = {}, fragmentByStart = {}, fragmentByEnd = {}, fragments = [], emptyIndex = -1;
-          arcs.forEach(function(i, j) {
-            var arc = topology.arcs[i < 0 ? ~i : i], t;
-            if (arc.length < 3 && !arc[1][0] && !arc[1][1]) {
-              t = arcs[++emptyIndex], arcs[emptyIndex] = i, arcs[j] = t;
-            }
-          });
-          arcs.forEach(function(i) {
-            var e = ends(i), start = e[0], end = e[1], f, g;
-            if (f = fragmentByEnd[start]) {
-              delete fragmentByEnd[f.end];
-              f.push(i);
-              f.end = end;
-              if (g = fragmentByStart[end]) {
-                delete fragmentByStart[g.start];
-                var fg = g === f ? f : f.concat(g);
-                fragmentByStart[fg.start = f.start] = fragmentByEnd[fg.end = g.end] = fg;
-              } else {
-                fragmentByStart[f.start] = fragmentByEnd[f.end] = f;
-              }
-            } else if (f = fragmentByStart[end]) {
-              delete fragmentByStart[f.start];
-              f.unshift(i);
-              f.start = start;
-              if (g = fragmentByEnd[start]) {
-                delete fragmentByEnd[g.end];
-                var gf = g === f ? f : g.concat(f);
-                fragmentByStart[gf.start = g.start] = fragmentByEnd[gf.end = f.end] = gf;
-              } else {
-                fragmentByStart[f.start] = fragmentByEnd[f.end] = f;
-              }
-            } else {
-              f = [i];
-              fragmentByStart[f.start = start] = fragmentByEnd[f.end = end] = f;
-            }
-          });
-          function ends(i) {
-            var arc = topology.arcs[i < 0 ? ~i : i], p0 = arc[0], p1;
-            if (topology.transform) p1 = [0, 0], arc.forEach(function(dp) {
-              p1[0] += dp[0], p1[1] += dp[1];
-            });
-            else p1 = arc[arc.length - 1];
-            return i < 0 ? [p1, p0] : [p0, p1];
-          }
-          function flush(fragmentByEnd2, fragmentByStart2) {
-            for (var k in fragmentByEnd2) {
-              var f = fragmentByEnd2[k];
-              delete fragmentByStart2[f.start];
-              delete f.start;
-              delete f.end;
-              f.forEach(function(i) {
-                stitchedArcs[i < 0 ? ~i : i] = 1;
-              });
-              fragments.push(f);
-            }
-          }
-          flush(fragmentByEnd, fragmentByStart);
-          flush(fragmentByStart, fragmentByEnd);
-          arcs.forEach(function(i) {
-            if (!stitchedArcs[i < 0 ? ~i : i]) fragments.push([i]);
-          });
-          return fragments;
-        }
-        function mesh(topology) {
-          return object(topology, meshArcs.apply(this, arguments));
-        }
-        function meshArcs(topology, object2, filter) {
-          var arcs, i, n;
-          if (arguments.length > 1) arcs = extractArcs(topology, object2, filter);
-          else for (i = 0, arcs = new Array(n = topology.arcs.length); i < n; ++i) arcs[i] = i;
-          return { type: "MultiLineString", arcs: stitch(topology, arcs) };
-        }
-        function extractArcs(topology, object2, filter) {
-          var arcs = [], geomsByArc = [], geom;
-          function extract0(i) {
-            var j = i < 0 ? ~i : i;
-            (geomsByArc[j] || (geomsByArc[j] = [])).push({ i, g: geom });
-          }
-          function extract1(arcs2) {
-            arcs2.forEach(extract0);
-          }
-          function extract2(arcs2) {
-            arcs2.forEach(extract1);
-          }
-          function extract3(arcs2) {
-            arcs2.forEach(extract2);
-          }
-          function geometry(o) {
-            switch (geom = o, o.type) {
-              case "GeometryCollection":
-                o.geometries.forEach(geometry);
-                break;
-              case "LineString":
-                extract1(o.arcs);
-                break;
-              case "MultiLineString":
-              case "Polygon":
-                extract2(o.arcs);
-                break;
-              case "MultiPolygon":
-                extract3(o.arcs);
-                break;
-            }
-          }
-          geometry(object2);
-          geomsByArc.forEach(filter == null ? function(geoms) {
-            arcs.push(geoms[0].i);
-          } : function(geoms) {
-            if (filter(geoms[0].g, geoms[geoms.length - 1].g)) arcs.push(geoms[0].i);
-          });
-          return arcs;
-        }
-        function planarRingArea(ring) {
-          var i = -1, n = ring.length, a, b = ring[n - 1], area = 0;
-          while (++i < n) a = b, b = ring[i], area += a[0] * b[1] - a[1] * b[0];
-          return Math.abs(area);
-        }
-        function merge(topology) {
-          return object(topology, mergeArcs.apply(this, arguments));
-        }
-        function mergeArcs(topology, objects) {
-          var polygonsByArc = {}, polygons = [], groups = [];
-          objects.forEach(geometry);
-          function geometry(o) {
-            switch (o.type) {
-              case "GeometryCollection":
-                o.geometries.forEach(geometry);
-                break;
-              case "Polygon":
-                extract(o.arcs);
-                break;
-              case "MultiPolygon":
-                o.arcs.forEach(extract);
-                break;
-            }
-          }
-          function extract(polygon) {
-            polygon.forEach(function(ring) {
-              ring.forEach(function(arc) {
-                (polygonsByArc[arc = arc < 0 ? ~arc : arc] || (polygonsByArc[arc] = [])).push(polygon);
-              });
-            });
-            polygons.push(polygon);
-          }
-          function area(ring) {
-            return planarRingArea(object(topology, { type: "Polygon", arcs: [ring] }).coordinates[0]);
-          }
-          polygons.forEach(function(polygon) {
-            if (!polygon._) {
-              var group = [], neighbors2 = [polygon];
-              polygon._ = 1;
-              groups.push(group);
-              while (polygon = neighbors2.pop()) {
-                group.push(polygon);
-                polygon.forEach(function(ring) {
-                  ring.forEach(function(arc) {
-                    polygonsByArc[arc < 0 ? ~arc : arc].forEach(function(polygon2) {
-                      if (!polygon2._) {
-                        polygon2._ = 1;
-                        neighbors2.push(polygon2);
-                      }
-                    });
-                  });
-                });
-              }
-            }
-          });
-          polygons.forEach(function(polygon) {
-            delete polygon._;
-          });
-          return {
-            type: "MultiPolygon",
-            arcs: groups.map(function(polygons2) {
-              var arcs = [], n;
-              polygons2.forEach(function(polygon) {
-                polygon.forEach(function(ring) {
-                  ring.forEach(function(arc) {
-                    if (polygonsByArc[arc < 0 ? ~arc : arc].length < 2) {
-                      arcs.push(arc);
-                    }
-                  });
-                });
-              });
-              arcs = stitch(topology, arcs);
-              if ((n = arcs.length) > 1) {
-                for (var i = 1, k = area(arcs[0]), ki, t; i < n; ++i) {
-                  if ((ki = area(arcs[i])) > k) {
-                    t = arcs[0], arcs[0] = arcs[i], arcs[i] = t, k = ki;
-                  }
-                }
-              }
-              return arcs;
-            }).filter(function(arcs) {
-              return arcs.length > 0;
-            })
-          };
-        }
-        function bisect(a, x) {
-          var lo = 0, hi = a.length;
-          while (lo < hi) {
-            var mid = lo + hi >>> 1;
-            if (a[mid] < x) lo = mid + 1;
-            else hi = mid;
-          }
-          return lo;
-        }
-        function neighbors(objects) {
-          var indexesByArc = {}, neighbors2 = objects.map(function() {
-            return [];
-          });
-          function line(arcs, i2) {
-            arcs.forEach(function(a) {
-              if (a < 0) a = ~a;
-              var o = indexesByArc[a];
-              if (o) o.push(i2);
-              else indexesByArc[a] = [i2];
-            });
-          }
-          function polygon(arcs, i2) {
-            arcs.forEach(function(arc) {
-              line(arc, i2);
-            });
-          }
-          function geometry(o, i2) {
-            if (o.type === "GeometryCollection") o.geometries.forEach(function(o2) {
-              geometry(o2, i2);
-            });
-            else if (o.type in geometryType) geometryType[o.type](o.arcs, i2);
-          }
-          var geometryType = {
-            LineString: line,
-            MultiLineString: polygon,
-            Polygon: polygon,
-            MultiPolygon: function(arcs, i2) {
-              arcs.forEach(function(arc) {
-                polygon(arc, i2);
-              });
-            }
-          };
-          objects.forEach(geometry);
-          for (var i in indexesByArc) {
-            for (var indexes = indexesByArc[i], m = indexes.length, j = 0; j < m; ++j) {
-              for (var k = j + 1; k < m; ++k) {
-                var ij = indexes[j], ik = indexes[k], n;
-                if ((n = neighbors2[ij])[i = bisect(n, ik)] !== ik) n.splice(i, 0, ik);
-                if ((n = neighbors2[ik])[i = bisect(n, ij)] !== ij) n.splice(i, 0, ij);
-              }
-            }
-          }
-          return neighbors2;
-        }
-        function untransform(transform2) {
-          if (transform2 == null) return identity;
-          var x0, y0, kx = transform2.scale[0], ky = transform2.scale[1], dx = transform2.translate[0], dy = transform2.translate[1];
-          return function(input, i) {
-            if (!i) x0 = y0 = 0;
-            var j = 2, n = input.length, output = new Array(n), x1 = Math.round((input[0] - dx) / kx), y1 = Math.round((input[1] - dy) / ky);
-            output[0] = x1 - x0, x0 = x1;
-            output[1] = y1 - y0, y0 = y1;
-            while (j < n) output[j] = input[j], ++j;
-            return output;
-          };
-        }
-        function quantize(topology, transform2) {
-          if (topology.transform) throw new Error("already quantized");
-          if (!transform2 || !transform2.scale) {
-            if (!((n = Math.floor(transform2)) >= 2)) throw new Error("n must be \u22652");
-            box = topology.bbox || bbox(topology);
-            var x0 = box[0], y0 = box[1], x1 = box[2], y1 = box[3], n;
-            transform2 = { scale: [x1 - x0 ? (x1 - x0) / (n - 1) : 1, y1 - y0 ? (y1 - y0) / (n - 1) : 1], translate: [x0, y0] };
-          } else {
-            box = topology.bbox;
-          }
-          var t = untransform(transform2), box, key, inputs = topology.objects, outputs = {};
-          function quantizePoint(point) {
-            return t(point);
-          }
-          function quantizeGeometry(input) {
-            var output;
-            switch (input.type) {
-              case "GeometryCollection":
-                output = { type: "GeometryCollection", geometries: input.geometries.map(quantizeGeometry) };
-                break;
-              case "Point":
-                output = { type: "Point", coordinates: quantizePoint(input.coordinates) };
-                break;
-              case "MultiPoint":
-                output = { type: "MultiPoint", coordinates: input.coordinates.map(quantizePoint) };
-                break;
-              default:
-                return input;
-            }
-            if (input.id != null) output.id = input.id;
-            if (input.bbox != null) output.bbox = input.bbox;
-            if (input.properties != null) output.properties = input.properties;
-            return output;
-          }
-          function quantizeArc(input) {
-            var i = 0, j = 1, n2 = input.length, p, output = new Array(n2);
-            output[0] = t(input[0], 0);
-            while (++i < n2) if ((p = t(input[i], i))[0] || p[1]) output[j++] = p;
-            if (j === 1) output[j++] = [0, 0];
-            output.length = j;
-            return output;
-          }
-          for (key in inputs) outputs[key] = quantizeGeometry(inputs[key]);
-          return {
-            type: "Topology",
-            bbox: box,
-            transform: transform2,
-            objects: outputs,
-            arcs: topology.arcs.map(quantizeArc)
-          };
-        }
-        exports2.bbox = bbox;
-        exports2.feature = feature;
-        exports2.merge = merge;
-        exports2.mergeArcs = mergeArcs;
-        exports2.mesh = mesh;
-        exports2.meshArcs = meshArcs;
-        exports2.neighbors = neighbors;
-        exports2.quantize = quantize;
-        exports2.transform = transform;
-        exports2.untransform = untransform;
-        Object.defineProperty(exports2, "__esModule", { value: true });
-      });
-    }
-  });
-
-  // src/lib/topojson_utils.js
-  var require_topojson_utils = __commonJS({
-    "src/lib/topojson_utils.js"(exports, module) {
-      "use strict";
-      var topojsonUtils = module.exports = {};
-      var locationmodeToLayer = require_constants14().locationmodeToLayer;
-      var topojsonFeature = require_topojson_client().feature;
-      topojsonUtils.getTopojsonName = function(geoLayout) {
-        return [
-          geoLayout.scope.replace(/ /g, "-"),
-          "_",
-          geoLayout.resolution.toString(),
-          "m"
-        ].join("");
-      };
-      topojsonUtils.getTopojsonPath = function(topojsonURL, topojsonName) {
-        return topojsonURL + topojsonName + ".json";
-      };
-      topojsonUtils.getTopojsonFeatures = function(trace, topojson) {
-        var layer = locationmodeToLayer[trace.locationmode];
-        var obj = topojson.objects[layer];
-        return topojsonFeature(topojson, obj).features;
-      };
-    }
-  });
-
-  // src/lib/geojson_utils.js
-  var require_geojson_utils = __commonJS({
-    "src/lib/geojson_utils.js"(exports) {
-      "use strict";
-      var BADNUM = require_numerical().BADNUM;
-      exports.calcTraceToLineCoords = function(calcTrace) {
-        var trace = calcTrace[0].trace;
-        var connectgaps = trace.connectgaps;
-        var coords = [];
-        var lineString = [];
-        for (var i = 0; i < calcTrace.length; i++) {
-          var calcPt = calcTrace[i];
-          var lonlat = calcPt.lonlat;
-          if (lonlat[0] !== BADNUM) {
-            lineString.push(lonlat);
-          } else if (!connectgaps && lineString.length > 0) {
-            coords.push(lineString);
-            lineString = [];
-          }
-        }
-        if (lineString.length > 0) {
-          coords.push(lineString);
-        }
-        return coords;
-      };
-      exports.makeLine = function(coords) {
-        if (coords.length === 1) {
-          return {
-            type: "LineString",
-            coordinates: coords[0]
-          };
-        } else {
-          return {
-            type: "MultiLineString",
-            coordinates: coords
-          };
-        }
-      };
-      exports.makePolygon = function(coords) {
-        if (coords.length === 1) {
-          return {
-            type: "Polygon",
-            coordinates: coords
-          };
-        } else {
-          var _coords = new Array(coords.length);
-          for (var i = 0; i < coords.length; i++) {
-            _coords[i] = [coords[i]];
-          }
-          return {
-            type: "MultiPolygon",
-            coordinates: _coords
-          };
-        }
-      };
-      exports.makeBlank = function() {
-        return {
-          type: "Point",
-          coordinates: []
-        };
-      };
-    }
-  });
-
-  // node_modules/country-regex/index.js
-  var require_country_regex = __commonJS({
-    "node_modules/country-regex/index.js"(exports, module) {
-      module.exports = {
-        AFG: "afghan",
-        ALA: "\\b\\wland",
-        ALB: "albania",
-        DZA: "algeria",
-        ASM: "^(?=.*americ).*samoa",
-        AND: "andorra",
-        AGO: "angola",
-        AIA: "anguill?a",
-        ATA: "antarctica",
-        ATG: "antigua",
-        ARG: "argentin",
-        ARM: "armenia",
-        ABW: "^(?!.*bonaire).*\\baruba",
-        AUS: "australia",
-        AUT: "^(?!.*hungary).*austria|\\baustri.*\\bemp",
-        AZE: "azerbaijan",
-        BHS: "bahamas",
-        BHR: "bahrain",
-        BGD: "bangladesh|^(?=.*east).*paki?stan",
-        BRB: "barbados",
-        BLR: "belarus|byelo",
-        BEL: "^(?!.*luxem).*belgium",
-        BLZ: "belize|^(?=.*british).*honduras",
-        BEN: "benin|dahome",
-        BMU: "bermuda",
-        BTN: "bhutan",
-        BOL: "bolivia",
-        BES: "^(?=.*bonaire).*eustatius|^(?=.*carib).*netherlands|\\bbes.?islands",
-        BIH: "herzegovina|bosnia",
-        BWA: "botswana|bechuana",
-        BVT: "bouvet",
-        BRA: "brazil",
-        IOT: "british.?indian.?ocean",
-        BRN: "brunei",
-        BGR: "bulgaria",
-        BFA: "burkina|\\bfaso|upper.?volta",
-        BDI: "burundi",
-        CPV: "verde",
-        KHM: "cambodia|kampuchea|khmer",
-        CMR: "cameroon",
-        CAN: "canada",
-        CYM: "cayman",
-        CAF: "\\bcentral.african.republic",
-        TCD: "\\bchad",
-        CHL: "\\bchile",
-        CHN: "^(?!.*\\bmac)(?!.*\\bhong)(?!.*\\btai)(?!.*\\brep).*china|^(?=.*peo)(?=.*rep).*china",
-        CXR: "christmas",
-        CCK: "\\bcocos|keeling",
-        COL: "colombia",
-        COM: "comoro",
-        COG: "^(?!.*\\bdem)(?!.*\\bd[\\.]?r)(?!.*kinshasa)(?!.*zaire)(?!.*belg)(?!.*l.opoldville)(?!.*free).*\\bcongo",
-        COK: "\\bcook",
-        CRI: "costa.?rica",
-        CIV: "ivoire|ivory",
-        HRV: "croatia",
-        CUB: "\\bcuba",
-        CUW: "^(?!.*bonaire).*\\bcura(c|\xE7)ao",
-        CYP: "cyprus",
-        CSK: "czechoslovakia",
-        CZE: "^(?=.*rep).*czech|czechia|bohemia",
-        COD: "\\bdem.*congo|congo.*\\bdem|congo.*\\bd[\\.]?r|\\bd[\\.]?r.*congo|belgian.?congo|congo.?free.?state|kinshasa|zaire|l.opoldville|drc|droc|rdc",
-        DNK: "denmark",
-        DJI: "djibouti",
-        DMA: "dominica(?!n)",
-        DOM: "dominican.rep",
-        ECU: "ecuador",
-        EGY: "egypt",
-        SLV: "el.?salvador",
-        GNQ: "guine.*eq|eq.*guine|^(?=.*span).*guinea",
-        ERI: "eritrea",
-        EST: "estonia",
-        ETH: "ethiopia|abyssinia",
-        FLK: "falkland|malvinas",
-        FRO: "faroe|faeroe",
-        FJI: "fiji",
-        FIN: "finland",
-        FRA: "^(?!.*\\bdep)(?!.*martinique).*france|french.?republic|\\bgaul",
-        GUF: "^(?=.*french).*guiana",
-        PYF: "french.?polynesia|tahiti",
-        ATF: "french.?southern",
-        GAB: "gabon",
-        GMB: "gambia",
-        GEO: "^(?!.*south).*georgia",
-        DDR: "german.?democratic.?republic|democratic.?republic.*germany|east.germany",
-        DEU: "^(?!.*east).*germany|^(?=.*\\bfed.*\\brep).*german",
-        GHA: "ghana|gold.?coast",
-        GIB: "gibraltar",
-        GRC: "greece|hellenic|hellas",
-        GRL: "greenland",
-        GRD: "grenada",
-        GLP: "guadeloupe",
-        GUM: "\\bguam",
-        GTM: "guatemala",
-        GGY: "guernsey",
-        GIN: "^(?!.*eq)(?!.*span)(?!.*bissau)(?!.*portu)(?!.*new).*guinea",
-        GNB: "bissau|^(?=.*portu).*guinea",
-        GUY: "guyana|british.?guiana",
-        HTI: "haiti",
-        HMD: "heard.*mcdonald",
-        VAT: "holy.?see|vatican|papal.?st",
-        HND: "^(?!.*brit).*honduras",
-        HKG: "hong.?kong",
-        HUN: "^(?!.*austr).*hungary",
-        ISL: "iceland",
-        IND: "india(?!.*ocea)",
-        IDN: "indonesia",
-        IRN: "\\biran|persia",
-        IRQ: "\\biraq|mesopotamia",
-        IRL: "(^ireland)|(^republic.*ireland)",
-        IMN: "^(?=.*isle).*\\bman",
-        ISR: "israel",
-        ITA: "italy",
-        JAM: "jamaica",
-        JPN: "japan",
-        JEY: "jersey",
-        JOR: "jordan",
-        KAZ: "kazak",
-        KEN: "kenya|british.?east.?africa|east.?africa.?prot",
-        KIR: "kiribati",
-        PRK: "^(?=.*democrat|people|north|d.*p.*.r).*\\bkorea|dprk|korea.*(d.*p.*r)",
-        KWT: "kuwait",
-        KGZ: "kyrgyz|kirghiz",
-        LAO: "\\blaos?\\b",
-        LVA: "latvia",
-        LBN: "lebanon",
-        LSO: "lesotho|basuto",
-        LBR: "liberia",
-        LBY: "libya",
-        LIE: "liechtenstein",
-        LTU: "lithuania",
-        LUX: "^(?!.*belg).*luxem",
-        MAC: "maca(o|u)",
-        MDG: "madagascar|malagasy",
-        MWI: "malawi|nyasa",
-        MYS: "malaysia",
-        MDV: "maldive",
-        MLI: "\\bmali\\b",
-        MLT: "\\bmalta",
-        MHL: "marshall",
-        MTQ: "martinique",
-        MRT: "mauritania",
-        MUS: "mauritius",
-        MYT: "\\bmayotte",
-        MEX: "\\bmexic",
-        FSM: "fed.*micronesia|micronesia.*fed",
-        MCO: "monaco",
-        MNG: "mongolia",
-        MNE: "^(?!.*serbia).*montenegro",
-        MSR: "montserrat",
-        MAR: "morocco|\\bmaroc",
-        MOZ: "mozambique",
-        MMR: "myanmar|burma",
-        NAM: "namibia",
-        NRU: "nauru",
-        NPL: "nepal",
-        NLD: "^(?!.*\\bant)(?!.*\\bcarib).*netherlands",
-        ANT: "^(?=.*\\bant).*(nether|dutch)",
-        NCL: "new.?caledonia",
-        NZL: "new.?zealand",
-        NIC: "nicaragua",
-        NER: "\\bniger(?!ia)",
-        NGA: "nigeria",
-        NIU: "niue",
-        NFK: "norfolk",
-        MNP: "mariana",
-        NOR: "norway",
-        OMN: "\\boman|trucial",
-        PAK: "^(?!.*east).*paki?stan",
-        PLW: "palau",
-        PSE: "palestin|\\bgaza|west.?bank",
-        PAN: "panama",
-        PNG: "papua|new.?guinea",
-        PRY: "paraguay",
-        PER: "peru",
-        PHL: "philippines",
-        PCN: "pitcairn",
-        POL: "poland",
-        PRT: "portugal",
-        PRI: "puerto.?rico",
-        QAT: "qatar",
-        KOR: "^(?!.*d.*p.*r)(?!.*democrat)(?!.*people)(?!.*north).*\\bkorea(?!.*d.*p.*r)",
-        MDA: "moldov|b(a|e)ssarabia",
-        REU: "r(e|\xE9)union",
-        ROU: "r(o|u|ou)mania",
-        RUS: "\\brussia|soviet.?union|u\\.?s\\.?s\\.?r|socialist.?republics",
-        RWA: "rwanda",
-        BLM: "barth(e|\xE9)lemy",
-        SHN: "helena",
-        KNA: "kitts|\\bnevis",
-        LCA: "\\blucia",
-        MAF: "^(?=.*collectivity).*martin|^(?=.*france).*martin(?!ique)|^(?=.*french).*martin(?!ique)",
-        SPM: "miquelon",
-        VCT: "vincent",
-        WSM: "^(?!.*amer).*samoa",
-        SMR: "san.?marino",
-        STP: "\\bs(a|\xE3)o.?tom(e|\xE9)",
-        SAU: "\\bsa\\w*.?arabia",
-        SEN: "senegal",
-        SRB: "^(?!.*monte).*serbia",
-        SYC: "seychell",
-        SLE: "sierra",
-        SGP: "singapore",
-        SXM: "^(?!.*martin)(?!.*saba).*maarten",
-        SVK: "^(?!.*cze).*slovak",
-        SVN: "slovenia",
-        SLB: "solomon",
-        SOM: "somali",
-        ZAF: "south.africa|s\\\\..?africa",
-        SGS: "south.?georgia|sandwich",
-        SSD: "\\bs\\w*.?sudan",
-        ESP: "spain",
-        LKA: "sri.?lanka|ceylon",
-        SDN: "^(?!.*\\bs(?!u)).*sudan",
-        SUR: "surinam|dutch.?guiana",
-        SJM: "svalbard",
-        SWZ: "swaziland",
-        SWE: "sweden",
-        CHE: "switz|swiss",
-        SYR: "syria",
-        TWN: "taiwan|taipei|formosa|^(?!.*peo)(?=.*rep).*china",
-        TJK: "tajik",
-        THA: "thailand|\\bsiam",
-        MKD: "macedonia|fyrom",
-        TLS: "^(?=.*leste).*timor|^(?=.*east).*timor",
-        TGO: "togo",
-        TKL: "tokelau",
-        TON: "tonga",
-        TTO: "trinidad|tobago",
-        TUN: "tunisia",
-        TUR: "turkey",
-        TKM: "turkmen",
-        TCA: "turks",
-        TUV: "tuvalu",
-        UGA: "uganda",
-        UKR: "ukrain",
-        ARE: "emirates|^u\\.?a\\.?e\\.?$|united.?arab.?em",
-        GBR: "united.?kingdom|britain|^u\\.?k\\.?$",
-        TZA: "tanzania",
-        USA: "united.?states\\b(?!.*islands)|\\bu\\.?s\\.?a\\.?\\b|^\\s*u\\.?s\\.?\\b(?!.*islands)",
-        UMI: "minor.?outlying.?is",
-        URY: "uruguay",
-        UZB: "uzbek",
-        VUT: "vanuatu|new.?hebrides",
-        VEN: "venezuela",
-        VNM: "^(?!.*republic).*viet.?nam|^(?=.*socialist).*viet.?nam",
-        VGB: "^(?=.*\\bu\\.?\\s?k).*virgin|^(?=.*brit).*virgin|^(?=.*kingdom).*virgin",
-        VIR: "^(?=.*\\bu\\.?\\s?s).*virgin|^(?=.*states).*virgin",
-        WLF: "futuna|wallis",
-        ESH: "western.sahara",
-        YEM: "^(?!.*arab)(?!.*north)(?!.*sana)(?!.*peo)(?!.*dem)(?!.*south)(?!.*aden)(?!.*\\bp\\.?d\\.?r).*yemen",
-        YMD: "^(?=.*peo).*yemen|^(?!.*rep)(?=.*dem).*yemen|^(?=.*south).*yemen|^(?=.*aden).*yemen|^(?=.*\\bp\\.?d\\.?r).*yemen",
-        YUG: "yugoslavia",
-        ZMB: "zambia|northern.?rhodesia",
-        EAZ: "zanzibar",
-        ZWE: "zimbabwe|^(?!.*northern).*rhodesia"
-      };
-    }
-  });
-
-  // node_modules/@turf/helpers/dist/cjs/index.cjs
-  var require_cjs = __commonJS({
-    "node_modules/@turf/helpers/dist/cjs/index.cjs"(exports) {
-      "use strict";
-      Object.defineProperty(exports, "__esModule", { value: true });
-      var earthRadius = 63710088e-1;
-      var factors = {
-        centimeters: earthRadius * 100,
-        centimetres: earthRadius * 100,
-        degrees: 360 / (2 * Math.PI),
-        feet: earthRadius * 3.28084,
-        inches: earthRadius * 39.37,
-        kilometers: earthRadius / 1e3,
-        kilometres: earthRadius / 1e3,
-        meters: earthRadius,
-        metres: earthRadius,
-        miles: earthRadius / 1609.344,
-        millimeters: earthRadius * 1e3,
-        millimetres: earthRadius * 1e3,
-        nauticalmiles: earthRadius / 1852,
-        radians: 1,
-        yards: earthRadius * 1.0936
-      };
-      var areaFactors = {
-        acres: 247105e-9,
-        centimeters: 1e4,
-        centimetres: 1e4,
-        feet: 10.763910417,
-        hectares: 1e-4,
-        inches: 1550.003100006,
-        kilometers: 1e-6,
-        kilometres: 1e-6,
-        meters: 1,
-        metres: 1,
-        miles: 386e-9,
-        nauticalmiles: 29155334959812285e-23,
-        millimeters: 1e6,
-        millimetres: 1e6,
-        yards: 1.195990046
-      };
-      function feature(geom, properties, options = {}) {
-        const feat = { type: "Feature" };
-        if (options.id === 0 || options.id) {
-          feat.id = options.id;
-        }
-        if (options.bbox) {
-          feat.bbox = options.bbox;
-        }
-        feat.properties = properties || {};
-        feat.geometry = geom;
-        return feat;
-      }
-      function geometry(type, coordinates, _options = {}) {
-        switch (type) {
-          case "Point":
-            return point(coordinates).geometry;
-          case "LineString":
-            return lineString(coordinates).geometry;
-          case "Polygon":
-            return polygon(coordinates).geometry;
-          case "MultiPoint":
-            return multiPoint(coordinates).geometry;
-          case "MultiLineString":
-            return multiLineString(coordinates).geometry;
-          case "MultiPolygon":
-            return multiPolygon(coordinates).geometry;
-          default:
-            throw new Error(type + " is invalid");
-        }
-      }
-      function point(coordinates, properties, options = {}) {
-        if (!coordinates) {
-          throw new Error("coordinates is required");
-        }
-        if (!Array.isArray(coordinates)) {
-          throw new Error("coordinates must be an Array");
-        }
-        if (coordinates.length < 2) {
-          throw new Error("coordinates must be at least 2 numbers long");
-        }
-        if (!isNumber(coordinates[0]) || !isNumber(coordinates[1])) {
-          throw new Error("coordinates must contain numbers");
-        }
-        const geom = {
-          type: "Point",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function points(coordinates, properties, options = {}) {
-        return featureCollection(
-          coordinates.map((coords) => {
-            return point(coords, properties);
-          }),
-          options
-        );
-      }
-      function polygon(coordinates, properties, options = {}) {
-        for (const ring of coordinates) {
-          if (ring.length < 4) {
-            throw new Error(
-              "Each LinearRing of a Polygon must have 4 or more Positions."
-            );
-          }
-          if (ring[ring.length - 1].length !== ring[0].length) {
-            throw new Error("First and last Position are not equivalent.");
-          }
-          for (let j = 0; j < ring[ring.length - 1].length; j++) {
-            if (ring[ring.length - 1][j] !== ring[0][j]) {
-              throw new Error("First and last Position are not equivalent.");
-            }
-          }
-        }
-        const geom = {
-          type: "Polygon",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function polygons(coordinates, properties, options = {}) {
-        return featureCollection(
-          coordinates.map((coords) => {
-            return polygon(coords, properties);
-          }),
-          options
-        );
-      }
-      function lineString(coordinates, properties, options = {}) {
-        if (coordinates.length < 2) {
-          throw new Error("coordinates must be an array of two or more positions");
-        }
-        const geom = {
-          type: "LineString",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function lineStrings(coordinates, properties, options = {}) {
-        return featureCollection(
-          coordinates.map((coords) => {
-            return lineString(coords, properties);
-          }),
-          options
-        );
-      }
-      function featureCollection(features, options = {}) {
-        const fc = { type: "FeatureCollection" };
-        if (options.id) {
-          fc.id = options.id;
-        }
-        if (options.bbox) {
-          fc.bbox = options.bbox;
-        }
-        fc.features = features;
-        return fc;
-      }
-      function multiLineString(coordinates, properties, options = {}) {
-        const geom = {
-          type: "MultiLineString",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function multiPoint(coordinates, properties, options = {}) {
-        const geom = {
-          type: "MultiPoint",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function multiPolygon(coordinates, properties, options = {}) {
-        const geom = {
-          type: "MultiPolygon",
-          coordinates
-        };
-        return feature(geom, properties, options);
-      }
-      function geometryCollection(geometries, properties, options = {}) {
-        const geom = {
-          type: "GeometryCollection",
-          geometries
-        };
-        return feature(geom, properties, options);
-      }
-      function round(num, precision = 0) {
-        if (precision && !(precision >= 0)) {
-          throw new Error("precision must be a positive number");
-        }
-        const multiplier = Math.pow(10, precision || 0);
-        return Math.round(num * multiplier) / multiplier;
-      }
-      function radiansToLength(radians, units = "kilometers") {
-        const factor = factors[units];
-        if (!factor) {
-          throw new Error(units + " units is invalid");
-        }
-        return radians * factor;
-      }
-      function lengthToRadians(distance, units = "kilometers") {
-        const factor = factors[units];
-        if (!factor) {
-          throw new Error(units + " units is invalid");
-        }
-        return distance / factor;
-      }
-      function lengthToDegrees(distance, units) {
-        return radiansToDegrees(lengthToRadians(distance, units));
-      }
-      function bearingToAzimuth(bearing) {
-        let angle = bearing % 360;
-        if (angle < 0) {
-          angle += 360;
-        }
-        return angle;
-      }
-      function azimuthToBearing(angle) {
-        angle = angle % 360;
-        if (angle > 0)
-          return angle > 180 ? angle - 360 : angle;
-        return angle < -180 ? angle + 360 : angle;
-      }
-      function radiansToDegrees(radians) {
-        const degrees = radians % (2 * Math.PI);
-        return degrees * 180 / Math.PI;
-      }
-      function degreesToRadians(degrees) {
-        const radians = degrees % 360;
-        return radians * Math.PI / 180;
-      }
-      function convertLength(length, originalUnit = "kilometers", finalUnit = "kilometers") {
-        if (!(length >= 0)) {
-          throw new Error("length must be a positive number");
-        }
-        return radiansToLength(lengthToRadians(length, originalUnit), finalUnit);
-      }
-      function convertArea(area, originalUnit = "meters", finalUnit = "kilometers") {
-        if (!(area >= 0)) {
-          throw new Error("area must be a positive number");
-        }
-        const startFactor = areaFactors[originalUnit];
-        if (!startFactor) {
-          throw new Error("invalid original units");
-        }
-        const finalFactor = areaFactors[finalUnit];
-        if (!finalFactor) {
-          throw new Error("invalid final units");
-        }
-        return area / startFactor * finalFactor;
-      }
-      function isNumber(num) {
-        return !isNaN(num) && num !== null && !Array.isArray(num);
-      }
-      function isObject(input) {
-        return input !== null && typeof input === "object" && !Array.isArray(input);
-      }
-      function validateBBox(bbox) {
-        if (!bbox) {
-          throw new Error("bbox is required");
-        }
-        if (!Array.isArray(bbox)) {
-          throw new Error("bbox must be an Array");
-        }
-        if (bbox.length !== 4 && bbox.length !== 6) {
-          throw new Error("bbox must be an Array of 4 or 6 numbers");
-        }
-        bbox.forEach((num) => {
-          if (!isNumber(num)) {
-            throw new Error("bbox must only contain numbers");
-          }
-        });
-      }
-      function validateId(id) {
-        if (!id) {
-          throw new Error("id is required");
-        }
-        if (["string", "number"].indexOf(typeof id) === -1) {
-          throw new Error("id must be a number or a string");
-        }
-      }
-      exports.areaFactors = areaFactors;
-      exports.azimuthToBearing = azimuthToBearing;
-      exports.bearingToAzimuth = bearingToAzimuth;
-      exports.convertArea = convertArea;
-      exports.convertLength = convertLength;
-      exports.degreesToRadians = degreesToRadians;
-      exports.earthRadius = earthRadius;
-      exports.factors = factors;
-      exports.feature = feature;
-      exports.featureCollection = featureCollection;
-      exports.geometry = geometry;
-      exports.geometryCollection = geometryCollection;
-      exports.isNumber = isNumber;
-      exports.isObject = isObject;
-      exports.lengthToDegrees = lengthToDegrees;
-      exports.lengthToRadians = lengthToRadians;
-      exports.lineString = lineString;
-      exports.lineStrings = lineStrings;
-      exports.multiLineString = multiLineString;
-      exports.multiPoint = multiPoint;
-      exports.multiPolygon = multiPolygon;
-      exports.point = point;
-      exports.points = points;
-      exports.polygon = polygon;
-      exports.polygons = polygons;
-      exports.radiansToDegrees = radiansToDegrees;
-      exports.radiansToLength = radiansToLength;
-      exports.round = round;
-      exports.validateBBox = validateBBox;
-      exports.validateId = validateId;
-    }
-  });
-
-  // node_modules/@turf/meta/dist/cjs/index.cjs
-  var require_cjs2 = __commonJS({
-    "node_modules/@turf/meta/dist/cjs/index.cjs"(exports) {
-      "use strict";
-      Object.defineProperty(exports, "__esModule", { value: true });
-      var _helpers = require_cjs();
-      function coordEach(geojson, callback, excludeWrapCoord) {
-        if (geojson === null)
-          return;
-        var j, k, l, geometry, stopG, coords, geometryMaybeCollection, wrapShrink = 0, coordIndex = 0, isGeometryCollection, type = geojson.type, isFeatureCollection = type === "FeatureCollection", isFeature = type === "Feature", stop = isFeatureCollection ? geojson.features.length : 1;
-        for (var featureIndex = 0; featureIndex < stop; featureIndex++) {
-          geometryMaybeCollection = isFeatureCollection ? geojson.features[featureIndex].geometry : isFeature ? geojson.geometry : geojson;
-          isGeometryCollection = geometryMaybeCollection ? geometryMaybeCollection.type === "GeometryCollection" : false;
-          stopG = isGeometryCollection ? geometryMaybeCollection.geometries.length : 1;
-          for (var geomIndex = 0; geomIndex < stopG; geomIndex++) {
-            var multiFeatureIndex = 0;
-            var geometryIndex = 0;
-            geometry = isGeometryCollection ? geometryMaybeCollection.geometries[geomIndex] : geometryMaybeCollection;
-            if (geometry === null)
-              continue;
-            coords = geometry.coordinates;
-            var geomType = geometry.type;
-            wrapShrink = excludeWrapCoord && (geomType === "Polygon" || geomType === "MultiPolygon") ? 1 : 0;
-            switch (geomType) {
-              case null:
-                break;
-              case "Point":
-                if (callback(
-                  coords,
-                  coordIndex,
-                  featureIndex,
-                  multiFeatureIndex,
-                  geometryIndex
-                ) === false)
-                  return false;
-                coordIndex++;
-                multiFeatureIndex++;
-                break;
-              case "LineString":
-              case "MultiPoint":
-                for (j = 0; j < coords.length; j++) {
-                  if (callback(
-                    coords[j],
-                    coordIndex,
-                    featureIndex,
-                    multiFeatureIndex,
-                    geometryIndex
-                  ) === false)
-                    return false;
-                  coordIndex++;
-                  if (geomType === "MultiPoint")
-                    multiFeatureIndex++;
-                }
-                if (geomType === "LineString")
-                  multiFeatureIndex++;
-                break;
-              case "Polygon":
-              case "MultiLineString":
-                for (j = 0; j < coords.length; j++) {
-                  for (k = 0; k < coords[j].length - wrapShrink; k++) {
-                    if (callback(
-                      coords[j][k],
-                      coordIndex,
-                      featureIndex,
-                      multiFeatureIndex,
-                      geometryIndex
-                    ) === false)
-                      return false;
-                    coordIndex++;
-                  }
-                  if (geomType === "MultiLineString")
-                    multiFeatureIndex++;
-                  if (geomType === "Polygon")
-                    geometryIndex++;
-                }
-                if (geomType === "Polygon")
-                  multiFeatureIndex++;
-                break;
-              case "MultiPolygon":
-                for (j = 0; j < coords.length; j++) {
-                  geometryIndex = 0;
-                  for (k = 0; k < coords[j].length; k++) {
-                    for (l = 0; l < coords[j][k].length - wrapShrink; l++) {
-                      if (callback(
-                        coords[j][k][l],
-                        coordIndex,
-                        featureIndex,
-                        multiFeatureIndex,
-                        geometryIndex
-                      ) === false)
-                        return false;
-                      coordIndex++;
-                    }
-                    geometryIndex++;
-                  }
-                  multiFeatureIndex++;
-                }
-                break;
-              case "GeometryCollection":
-                for (j = 0; j < geometry.geometries.length; j++)
-                  if (coordEach(geometry.geometries[j], callback, excludeWrapCoord) === false)
-                    return false;
-                break;
-              default:
-                throw new Error("Unknown Geometry Type");
-            }
-          }
-        }
-      }
-      function coordReduce(geojson, callback, initialValue, excludeWrapCoord) {
-        var previousValue = initialValue;
-        coordEach(
-          geojson,
-          function(currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
-            if (coordIndex === 0 && initialValue === void 0)
-              previousValue = currentCoord;
-            else
-              previousValue = callback(
-                previousValue,
-                currentCoord,
-                coordIndex,
-                featureIndex,
-                multiFeatureIndex,
-                geometryIndex
-              );
-          },
-          excludeWrapCoord
-        );
-        return previousValue;
-      }
-      function propEach(geojson, callback) {
-        var i;
-        switch (geojson.type) {
-          case "FeatureCollection":
-            for (i = 0; i < geojson.features.length; i++) {
-              if (callback(geojson.features[i].properties, i) === false)
-                break;
-            }
-            break;
-          case "Feature":
-            callback(geojson.properties, 0);
-            break;
-        }
-      }
-      function propReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        propEach(geojson, function(currentProperties, featureIndex) {
-          if (featureIndex === 0 && initialValue === void 0)
-            previousValue = currentProperties;
-          else
-            previousValue = callback(previousValue, currentProperties, featureIndex);
-        });
-        return previousValue;
-      }
-      function featureEach(geojson, callback) {
-        if (geojson.type === "Feature") {
-          callback(geojson, 0);
-        } else if (geojson.type === "FeatureCollection") {
-          for (var i = 0; i < geojson.features.length; i++) {
-            if (callback(geojson.features[i], i) === false)
-              break;
-          }
-        }
-      }
-      function featureReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        featureEach(geojson, function(currentFeature, featureIndex) {
-          if (featureIndex === 0 && initialValue === void 0)
-            previousValue = currentFeature;
-          else
-            previousValue = callback(previousValue, currentFeature, featureIndex);
-        });
-        return previousValue;
-      }
-      function coordAll(geojson) {
-        var coords = [];
-        coordEach(geojson, function(coord) {
-          coords.push(coord);
-        });
-        return coords;
-      }
-      function geomEach(geojson, callback) {
-        var i, j, g, geometry, stopG, geometryMaybeCollection, isGeometryCollection, featureProperties, featureBBox, featureId, featureIndex = 0, isFeatureCollection = geojson.type === "FeatureCollection", isFeature = geojson.type === "Feature", stop = isFeatureCollection ? geojson.features.length : 1;
-        for (i = 0; i < stop; i++) {
-          geometryMaybeCollection = isFeatureCollection ? geojson.features[i].geometry : isFeature ? geojson.geometry : geojson;
-          featureProperties = isFeatureCollection ? geojson.features[i].properties : isFeature ? geojson.properties : {};
-          featureBBox = isFeatureCollection ? geojson.features[i].bbox : isFeature ? geojson.bbox : void 0;
-          featureId = isFeatureCollection ? geojson.features[i].id : isFeature ? geojson.id : void 0;
-          isGeometryCollection = geometryMaybeCollection ? geometryMaybeCollection.type === "GeometryCollection" : false;
-          stopG = isGeometryCollection ? geometryMaybeCollection.geometries.length : 1;
-          for (g = 0; g < stopG; g++) {
-            geometry = isGeometryCollection ? geometryMaybeCollection.geometries[g] : geometryMaybeCollection;
-            if (geometry === null) {
-              if (callback(
-                null,
-                featureIndex,
-                featureProperties,
-                featureBBox,
-                featureId
-              ) === false)
-                return false;
-              continue;
-            }
-            switch (geometry.type) {
-              case "Point":
-              case "LineString":
-              case "MultiPoint":
-              case "Polygon":
-              case "MultiLineString":
-              case "MultiPolygon": {
-                if (callback(
-                  geometry,
-                  featureIndex,
-                  featureProperties,
-                  featureBBox,
-                  featureId
-                ) === false)
-                  return false;
-                break;
-              }
-              case "GeometryCollection": {
-                for (j = 0; j < geometry.geometries.length; j++) {
-                  if (callback(
-                    geometry.geometries[j],
-                    featureIndex,
-                    featureProperties,
-                    featureBBox,
-                    featureId
-                  ) === false)
-                    return false;
-                }
-                break;
-              }
-              default:
-                throw new Error("Unknown Geometry Type");
-            }
-          }
-          featureIndex++;
-        }
-      }
-      function geomReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        geomEach(
-          geojson,
-          function(currentGeometry, featureIndex, featureProperties, featureBBox, featureId) {
-            if (featureIndex === 0 && initialValue === void 0)
-              previousValue = currentGeometry;
-            else
-              previousValue = callback(
-                previousValue,
-                currentGeometry,
-                featureIndex,
-                featureProperties,
-                featureBBox,
-                featureId
-              );
-          }
-        );
-        return previousValue;
-      }
-      function flattenEach(geojson, callback) {
-        geomEach(geojson, function(geometry, featureIndex, properties, bbox, id) {
-          var type = geometry === null ? null : geometry.type;
-          switch (type) {
-            case null:
-            case "Point":
-            case "LineString":
-            case "Polygon":
-              if (callback(
-                _helpers.feature.call(void 0, geometry, properties, { bbox, id }),
-                featureIndex,
-                0
-              ) === false)
-                return false;
-              return;
-          }
-          var geomType;
-          switch (type) {
-            case "MultiPoint":
-              geomType = "Point";
-              break;
-            case "MultiLineString":
-              geomType = "LineString";
-              break;
-            case "MultiPolygon":
-              geomType = "Polygon";
-              break;
-          }
-          for (var multiFeatureIndex = 0; multiFeatureIndex < geometry.coordinates.length; multiFeatureIndex++) {
-            var coordinate = geometry.coordinates[multiFeatureIndex];
-            var geom = {
-              type: geomType,
-              coordinates: coordinate
-            };
-            if (callback(_helpers.feature.call(void 0, geom, properties), featureIndex, multiFeatureIndex) === false)
-              return false;
-          }
-        });
-      }
-      function flattenReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        flattenEach(
-          geojson,
-          function(currentFeature, featureIndex, multiFeatureIndex) {
-            if (featureIndex === 0 && multiFeatureIndex === 0 && initialValue === void 0)
-              previousValue = currentFeature;
-            else
-              previousValue = callback(
-                previousValue,
-                currentFeature,
-                featureIndex,
-                multiFeatureIndex
-              );
-          }
-        );
-        return previousValue;
-      }
-      function segmentEach(geojson, callback) {
-        flattenEach(geojson, function(feature2, featureIndex, multiFeatureIndex) {
-          var segmentIndex = 0;
-          if (!feature2.geometry)
-            return;
-          var type = feature2.geometry.type;
-          if (type === "Point" || type === "MultiPoint")
-            return;
-          var previousCoords;
-          var previousFeatureIndex = 0;
-          var previousMultiIndex = 0;
-          var prevGeomIndex = 0;
-          if (coordEach(
-            feature2,
-            function(currentCoord, coordIndex, featureIndexCoord, multiPartIndexCoord, geometryIndex) {
-              if (previousCoords === void 0 || featureIndex > previousFeatureIndex || multiPartIndexCoord > previousMultiIndex || geometryIndex > prevGeomIndex) {
-                previousCoords = currentCoord;
-                previousFeatureIndex = featureIndex;
-                previousMultiIndex = multiPartIndexCoord;
-                prevGeomIndex = geometryIndex;
-                segmentIndex = 0;
-                return;
-              }
-              var currentSegment = _helpers.lineString.call(
-                void 0,
-                [previousCoords, currentCoord],
-                feature2.properties
-              );
-              if (callback(
-                currentSegment,
-                featureIndex,
-                multiFeatureIndex,
-                geometryIndex,
-                segmentIndex
-              ) === false)
-                return false;
-              segmentIndex++;
-              previousCoords = currentCoord;
-            }
-          ) === false)
-            return false;
-        });
-      }
-      function segmentReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        var started = false;
-        segmentEach(
-          geojson,
-          function(currentSegment, featureIndex, multiFeatureIndex, geometryIndex, segmentIndex) {
-            if (started === false && initialValue === void 0)
-              previousValue = currentSegment;
-            else
-              previousValue = callback(
-                previousValue,
-                currentSegment,
-                featureIndex,
-                multiFeatureIndex,
-                geometryIndex,
-                segmentIndex
-              );
-            started = true;
-          }
-        );
-        return previousValue;
-      }
-      function lineEach(geojson, callback) {
-        if (!geojson)
-          throw new Error("geojson is required");
-        flattenEach(geojson, function(feature2, featureIndex, multiFeatureIndex) {
-          if (feature2.geometry === null)
-            return;
-          var type = feature2.geometry.type;
-          var coords = feature2.geometry.coordinates;
-          switch (type) {
-            case "LineString":
-              if (callback(feature2, featureIndex, multiFeatureIndex, 0, 0) === false)
-                return false;
-              break;
-            case "Polygon":
-              for (var geometryIndex = 0; geometryIndex < coords.length; geometryIndex++) {
-                if (callback(
-                  _helpers.lineString.call(void 0, coords[geometryIndex], feature2.properties),
-                  featureIndex,
-                  multiFeatureIndex,
-                  geometryIndex
-                ) === false)
-                  return false;
-              }
-              break;
-          }
-        });
-      }
-      function lineReduce(geojson, callback, initialValue) {
-        var previousValue = initialValue;
-        lineEach(
-          geojson,
-          function(currentLine, featureIndex, multiFeatureIndex, geometryIndex) {
-            if (featureIndex === 0 && initialValue === void 0)
-              previousValue = currentLine;
-            else
-              previousValue = callback(
-                previousValue,
-                currentLine,
-                featureIndex,
-                multiFeatureIndex,
-                geometryIndex
-              );
-          }
-        );
-        return previousValue;
-      }
-      function findSegment(geojson, options) {
-        options = options || {};
-        if (!_helpers.isObject.call(void 0, options))
-          throw new Error("options is invalid");
-        var featureIndex = options.featureIndex || 0;
-        var multiFeatureIndex = options.multiFeatureIndex || 0;
-        var geometryIndex = options.geometryIndex || 0;
-        var segmentIndex = options.segmentIndex || 0;
-        var properties = options.properties;
-        var geometry;
-        switch (geojson.type) {
-          case "FeatureCollection":
-            if (featureIndex < 0)
-              featureIndex = geojson.features.length + featureIndex;
-            properties = properties || geojson.features[featureIndex].properties;
-            geometry = geojson.features[featureIndex].geometry;
-            break;
-          case "Feature":
-            properties = properties || geojson.properties;
-            geometry = geojson.geometry;
-            break;
-          case "Point":
-          case "MultiPoint":
-            return null;
-          case "LineString":
-          case "Polygon":
-          case "MultiLineString":
-          case "MultiPolygon":
-            geometry = geojson;
-            break;
-          default:
-            throw new Error("geojson is invalid");
-        }
-        if (geometry === null)
-          return null;
-        var coords = geometry.coordinates;
-        switch (geometry.type) {
-          case "Point":
-          case "MultiPoint":
-            return null;
-          case "LineString":
-            if (segmentIndex < 0)
-              segmentIndex = coords.length + segmentIndex - 1;
-            return _helpers.lineString.call(
-              void 0,
-              [coords[segmentIndex], coords[segmentIndex + 1]],
-              properties,
-              options
-            );
-          case "Polygon":
-            if (geometryIndex < 0)
-              geometryIndex = coords.length + geometryIndex;
-            if (segmentIndex < 0)
-              segmentIndex = coords[geometryIndex].length + segmentIndex - 1;
-            return _helpers.lineString.call(
-              void 0,
-              [
-                coords[geometryIndex][segmentIndex],
-                coords[geometryIndex][segmentIndex + 1]
-              ],
-              properties,
-              options
-            );
-          case "MultiLineString":
-            if (multiFeatureIndex < 0)
-              multiFeatureIndex = coords.length + multiFeatureIndex;
-            if (segmentIndex < 0)
-              segmentIndex = coords[multiFeatureIndex].length + segmentIndex - 1;
-            return _helpers.lineString.call(
-              void 0,
-              [
-                coords[multiFeatureIndex][segmentIndex],
-                coords[multiFeatureIndex][segmentIndex + 1]
-              ],
-              properties,
-              options
-            );
-          case "MultiPolygon":
-            if (multiFeatureIndex < 0)
-              multiFeatureIndex = coords.length + multiFeatureIndex;
-            if (geometryIndex < 0)
-              geometryIndex = coords[multiFeatureIndex].length + geometryIndex;
-            if (segmentIndex < 0)
-              segmentIndex = coords[multiFeatureIndex][geometryIndex].length - segmentIndex - 1;
-            return _helpers.lineString.call(
-              void 0,
-              [
-                coords[multiFeatureIndex][geometryIndex][segmentIndex],
-                coords[multiFeatureIndex][geometryIndex][segmentIndex + 1]
-              ],
-              properties,
-              options
-            );
-        }
-        throw new Error("geojson is invalid");
-      }
-      function findPoint(geojson, options) {
-        options = options || {};
-        if (!_helpers.isObject.call(void 0, options))
-          throw new Error("options is invalid");
-        var featureIndex = options.featureIndex || 0;
-        var multiFeatureIndex = options.multiFeatureIndex || 0;
-        var geometryIndex = options.geometryIndex || 0;
-        var coordIndex = options.coordIndex || 0;
-        var properties = options.properties;
-        var geometry;
-        switch (geojson.type) {
-          case "FeatureCollection":
-            if (featureIndex < 0)
-              featureIndex = geojson.features.length + featureIndex;
-            properties = properties || geojson.features[featureIndex].properties;
-            geometry = geojson.features[featureIndex].geometry;
-            break;
-          case "Feature":
-            properties = properties || geojson.properties;
-            geometry = geojson.geometry;
-            break;
-          case "Point":
-          case "MultiPoint":
-            return null;
-          case "LineString":
-          case "Polygon":
-          case "MultiLineString":
-          case "MultiPolygon":
-            geometry = geojson;
-            break;
-          default:
-            throw new Error("geojson is invalid");
-        }
-        if (geometry === null)
-          return null;
-        var coords = geometry.coordinates;
-        switch (geometry.type) {
-          case "Point":
-            return _helpers.point.call(void 0, coords, properties, options);
-          case "MultiPoint":
-            if (multiFeatureIndex < 0)
-              multiFeatureIndex = coords.length + multiFeatureIndex;
-            return _helpers.point.call(void 0, coords[multiFeatureIndex], properties, options);
-          case "LineString":
-            if (coordIndex < 0)
-              coordIndex = coords.length + coordIndex;
-            return _helpers.point.call(void 0, coords[coordIndex], properties, options);
-          case "Polygon":
-            if (geometryIndex < 0)
-              geometryIndex = coords.length + geometryIndex;
-            if (coordIndex < 0)
-              coordIndex = coords[geometryIndex].length + coordIndex;
-            return _helpers.point.call(void 0, coords[geometryIndex][coordIndex], properties, options);
-          case "MultiLineString":
-            if (multiFeatureIndex < 0)
-              multiFeatureIndex = coords.length + multiFeatureIndex;
-            if (coordIndex < 0)
-              coordIndex = coords[multiFeatureIndex].length + coordIndex;
-            return _helpers.point.call(void 0, coords[multiFeatureIndex][coordIndex], properties, options);
-          case "MultiPolygon":
-            if (multiFeatureIndex < 0)
-              multiFeatureIndex = coords.length + multiFeatureIndex;
-            if (geometryIndex < 0)
-              geometryIndex = coords[multiFeatureIndex].length + geometryIndex;
-            if (coordIndex < 0)
-              coordIndex = coords[multiFeatureIndex][geometryIndex].length - coordIndex;
-            return _helpers.point.call(
-              void 0,
-              coords[multiFeatureIndex][geometryIndex][coordIndex],
-              properties,
-              options
-            );
-        }
-        throw new Error("geojson is invalid");
-      }
-      exports.coordAll = coordAll;
-      exports.coordEach = coordEach;
-      exports.coordReduce = coordReduce;
-      exports.featureEach = featureEach;
-      exports.featureReduce = featureReduce;
-      exports.findPoint = findPoint;
-      exports.findSegment = findSegment;
-      exports.flattenEach = flattenEach;
-      exports.flattenReduce = flattenReduce;
-      exports.geomEach = geomEach;
-      exports.geomReduce = geomReduce;
-      exports.lineEach = lineEach;
-      exports.lineReduce = lineReduce;
-      exports.propEach = propEach;
-      exports.propReduce = propReduce;
-      exports.segmentEach = segmentEach;
-      exports.segmentReduce = segmentReduce;
-    }
-  });
-
-  // node_modules/@turf/area/dist/cjs/index.cjs
-  var require_cjs3 = __commonJS({
-    "node_modules/@turf/area/dist/cjs/index.cjs"(exports) {
-      "use strict";
-      Object.defineProperty(exports, "__esModule", { value: true });
-      var _helpers = require_cjs();
-      var _meta = require_cjs2();
-      function area(geojson) {
-        return _meta.geomReduce.call(
-          void 0,
-          geojson,
-          (value, geom) => {
-            return value + calculateArea(geom);
-          },
-          0
-        );
-      }
-      function calculateArea(geom) {
-        let total = 0;
-        let i;
-        switch (geom.type) {
-          case "Polygon":
-            return polygonArea(geom.coordinates);
-          case "MultiPolygon":
-            for (i = 0; i < geom.coordinates.length; i++) {
-              total += polygonArea(geom.coordinates[i]);
-            }
-            return total;
-          case "Point":
-          case "MultiPoint":
-          case "LineString":
-          case "MultiLineString":
-            return 0;
-        }
-        return 0;
-      }
-      function polygonArea(coords) {
-        let total = 0;
-        if (coords && coords.length > 0) {
-          total += Math.abs(ringArea(coords[0]));
-          for (let i = 1; i < coords.length; i++) {
-            total -= Math.abs(ringArea(coords[i]));
-          }
-        }
-        return total;
-      }
-      var FACTOR = _helpers.earthRadius * _helpers.earthRadius / 2;
-      var PI_OVER_180 = Math.PI / 180;
-      function ringArea(coords) {
-        const coordsLength = coords.length - 1;
-        if (coordsLength <= 2)
-          return 0;
-        let total = 0;
-        let i = 0;
-        while (i < coordsLength) {
-          const lower = coords[i];
-          const middle = coords[i + 1 === coordsLength ? 0 : i + 1];
-          const upper = coords[i + 2 >= coordsLength ? (i + 2) % coordsLength : i + 2];
-          const lowerX = lower[0] * PI_OVER_180;
-          const middleY = middle[1] * PI_OVER_180;
-          const upperX = upper[0] * PI_OVER_180;
-          total += (upperX - lowerX) * Math.sin(middleY);
-          i++;
-        }
-        return total * FACTOR;
-      }
-      var turf_area_default = area;
-      exports.area = area;
-      exports.default = turf_area_default;
-    }
-  });
-
-  // node_modules/@turf/centroid/dist/cjs/index.cjs
-  var require_cjs4 = __commonJS({
-    "node_modules/@turf/centroid/dist/cjs/index.cjs"(exports) {
-      "use strict";
-      Object.defineProperty(exports, "__esModule", { value: true });
-      var _helpers = require_cjs();
-      var _meta = require_cjs2();
-      function centroid(geojson, options = {}) {
-        let xSum = 0;
-        let ySum = 0;
-        let len = 0;
-        _meta.coordEach.call(
-          void 0,
-          geojson,
-          function(coord) {
-            xSum += coord[0];
-            ySum += coord[1];
-            len++;
-          },
-          true
-        );
-        return _helpers.point.call(void 0, [xSum / len, ySum / len], options.properties);
-      }
-      var turf_centroid_default = centroid;
-      exports.centroid = centroid;
-      exports.default = turf_centroid_default;
-    }
-  });
-
-  // node_modules/@turf/bbox/dist/cjs/index.cjs
-  var require_cjs5 = __commonJS({
-    "node_modules/@turf/bbox/dist/cjs/index.cjs"(exports) {
-      "use strict";
-      Object.defineProperty(exports, "__esModule", { value: true });
-      var _meta = require_cjs2();
-      function bbox(geojson, options = {}) {
-        if (geojson.bbox != null && true !== options.recompute) {
-          return geojson.bbox;
-        }
-        const result = [Infinity, Infinity, -Infinity, -Infinity];
-        _meta.coordEach.call(void 0, geojson, (coord) => {
-          if (result[0] > coord[0]) {
-            result[0] = coord[0];
-          }
-          if (result[1] > coord[1]) {
-            result[1] = coord[1];
-          }
-          if (result[2] < coord[0]) {
-            result[2] = coord[0];
-          }
-          if (result[3] < coord[1]) {
-            result[3] = coord[1];
-          }
-        });
-        return result;
-      }
-      var turf_bbox_default = bbox;
-      exports.bbox = bbox;
-      exports.default = turf_bbox_default;
-    }
-  });
-
-  // src/lib/geo_location_utils.js
-  var require_geo_location_utils = __commonJS({
-    "src/lib/geo_location_utils.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var countryRegex = require_country_regex();
-      var { area: turfArea } = require_cjs3();
-      var { centroid: turfCentroid } = require_cjs4();
-      var { bbox: turfBbox } = require_cjs5();
-      var identity = require_identity2();
-      var loggers = require_loggers();
-      var isPlainObject = require_is_plain_object();
-      var nestedProperty = require_nested_property();
-      var polygon = require_polygon();
-      var countryIds = Object.keys(countryRegex);
-      var locationmodeToIdFinder = {
-        "ISO-3": identity,
-        "USA-states": identity,
-        "country names": countryNameToISO3
-      };
-      function countryNameToISO3(countryName) {
-        for (var i = 0; i < countryIds.length; i++) {
-          var iso3 = countryIds[i];
-          var regex = new RegExp(countryRegex[iso3]);
-          if (regex.test(countryName.trim().toLowerCase())) return iso3;
-        }
-        loggers.log("Unrecognized country name: " + countryName + ".");
-        return false;
-      }
-      function locationToFeature(locationmode, location, features) {
-        if (!location || typeof location !== "string") return false;
-        var locationId = locationmodeToIdFinder[locationmode](location);
-        var filteredFeatures;
-        var f, i;
-        if (locationId) {
-          if (locationmode === "USA-states") {
-            filteredFeatures = [];
-            for (i = 0; i < features.length; i++) {
-              f = features[i];
-              if (f.properties && f.properties.gu && f.properties.gu === "USA") {
-                filteredFeatures.push(f);
-              }
-            }
-          } else {
-            filteredFeatures = features;
-          }
-          for (i = 0; i < filteredFeatures.length; i++) {
-            f = filteredFeatures[i];
-            if (f.id === locationId) return f;
-          }
-          loggers.log([
-            "Location with id",
-            locationId,
-            "does not have a matching topojson feature at this resolution."
-          ].join(" "));
-        }
-        return false;
-      }
-      function feature2polygons(feature) {
-        var geometry = feature.geometry;
-        var coords = geometry.coordinates;
-        var loc = feature.id;
-        var polygons = [];
-        var appendPolygon, j, k, m;
-        function doesCrossAntiMerdian(pts) {
-          for (var l = 0; l < pts.length - 1; l++) {
-            if (pts[l][0] > 0 && pts[l + 1][0] < 0) return l;
-          }
-          return null;
-        }
-        if (loc === "RUS" || loc === "FJI") {
-          appendPolygon = function(_pts) {
-            var pts;
-            if (doesCrossAntiMerdian(_pts) === null) {
-              pts = _pts;
-            } else {
-              pts = new Array(_pts.length);
-              for (m = 0; m < _pts.length; m++) {
-                pts[m] = [
-                  _pts[m][0] < 0 ? _pts[m][0] + 360 : _pts[m][0],
-                  _pts[m][1]
-                ];
-              }
-            }
-            polygons.push(polygon.tester(pts));
-          };
-        } else if (loc === "ATA") {
-          appendPolygon = function(pts) {
-            var crossAntiMeridianIndex = doesCrossAntiMerdian(pts);
-            if (crossAntiMeridianIndex === null) {
-              return polygons.push(polygon.tester(pts));
-            }
-            var stitch = new Array(pts.length + 1);
-            var si = 0;
-            for (m = 0; m < pts.length; m++) {
-              if (m > crossAntiMeridianIndex) {
-                stitch[si++] = [pts[m][0] + 360, pts[m][1]];
-              } else if (m === crossAntiMeridianIndex) {
-                stitch[si++] = pts[m];
-                stitch[si++] = [pts[m][0], -90];
-              } else {
-                stitch[si++] = pts[m];
-              }
-            }
-            var tester = polygon.tester(stitch);
-            tester.pts.pop();
-            polygons.push(tester);
-          };
-        } else {
-          appendPolygon = function(pts) {
-            polygons.push(polygon.tester(pts));
-          };
-        }
-        switch (geometry.type) {
-          case "MultiPolygon":
-            for (j = 0; j < coords.length; j++) {
-              for (k = 0; k < coords[j].length; k++) {
-                appendPolygon(coords[j][k]);
-              }
-            }
-            break;
-          case "Polygon":
-            for (j = 0; j < coords.length; j++) {
-              appendPolygon(coords[j]);
-            }
-            break;
-        }
-        return polygons;
-      }
-      function getTraceGeojson(trace) {
-        var g = trace.geojson;
-        var PlotlyGeoAssets2 = window.PlotlyGeoAssets || {};
-        var geojsonIn = typeof g === "string" ? PlotlyGeoAssets2[g] : g;
-        if (!isPlainObject(geojsonIn)) {
-          loggers.error("Oops ... something went wrong when fetching " + g);
-          return false;
-        }
-        return geojsonIn;
-      }
-      function extractTraceFeature(calcTrace) {
-        var trace = calcTrace[0].trace;
-        var geojsonIn = getTraceGeojson(trace);
-        if (!geojsonIn) return false;
-        var lookup = {};
-        var featuresOut = [];
-        var i;
-        for (i = 0; i < trace._length; i++) {
-          var cdi = calcTrace[i];
-          if (cdi.loc || cdi.loc === 0) {
-            lookup[cdi.loc] = cdi;
-          }
-        }
-        function appendFeature(fIn) {
-          var id = nestedProperty(fIn, trace.featureidkey || "id").get();
-          var cdi2 = lookup[id];
-          if (cdi2) {
-            var geometry = fIn.geometry;
-            if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-              var fOut = {
-                type: "Feature",
-                id,
-                geometry,
-                properties: {}
-              };
-              if (fOut.geometry.coordinates.length > 0) {
-                fOut.properties.ct = findCentroid(fOut);
-              } else {
-                fOut.properties.ct = [NaN, NaN];
-              }
-              cdi2.fIn = fIn;
-              cdi2.fOut = fOut;
-              featuresOut.push(fOut);
-            } else {
-              loggers.log([
-                "Location",
-                cdi2.loc,
-                "does not have a valid GeoJSON geometry.",
-                "Traces with locationmode *geojson-id* only support",
-                "*Polygon* and *MultiPolygon* geometries."
-              ].join(" "));
-            }
-          }
-          delete lookup[id];
-        }
-        switch (geojsonIn.type) {
-          case "FeatureCollection":
-            var featuresIn = geojsonIn.features;
-            for (i = 0; i < featuresIn.length; i++) {
-              appendFeature(featuresIn[i]);
-            }
-            break;
-          case "Feature":
-            appendFeature(geojsonIn);
-            break;
-          default:
-            loggers.warn([
-              "Invalid GeoJSON type",
-              (geojsonIn.type || "none") + ".",
-              "Traces with locationmode *geojson-id* only support",
-              "*FeatureCollection* and *Feature* types."
-            ].join(" "));
-            return false;
-        }
-        for (var loc in lookup) {
-          loggers.log([
-            "Location *" + loc + "*",
-            "does not have a matching feature with id-key",
-            "*" + trace.featureidkey + "*."
-          ].join(" "));
-        }
-        return featuresOut;
-      }
-      function findCentroid(feature) {
-        var geometry = feature.geometry;
-        var poly;
-        if (geometry.type === "MultiPolygon") {
-          var coords = geometry.coordinates;
-          var maxArea = 0;
-          for (var i = 0; i < coords.length; i++) {
-            var polyi = { type: "Polygon", coordinates: coords[i] };
-            var area = turfArea(polyi);
-            if (area > maxArea) {
-              maxArea = area;
-              poly = polyi;
-            }
-          }
-        } else {
-          poly = geometry;
-        }
-        return turfCentroid(poly).geometry.coordinates;
-      }
-      function fetchTraceGeoData(calcData) {
-        var PlotlyGeoAssets2 = window.PlotlyGeoAssets || {};
-        var promises = [];
-        function fetch(url2) {
-          return new Promise(function(resolve, reject) {
-            d3.json(url2, function(err, d) {
-              if (err) {
-                delete PlotlyGeoAssets2[url2];
-                var msg = err.status === 404 ? 'GeoJSON at URL "' + url2 + '" does not exist.' : "Unexpected error while fetching from " + url2;
-                return reject(new Error(msg));
-              }
-              PlotlyGeoAssets2[url2] = d;
-              return resolve(d);
-            });
-          });
-        }
-        function wait(url2) {
-          return new Promise(function(resolve, reject) {
-            var cnt = 0;
-            var interval = setInterval(function() {
-              if (PlotlyGeoAssets2[url2] && PlotlyGeoAssets2[url2] !== "pending") {
-                clearInterval(interval);
-                return resolve(PlotlyGeoAssets2[url2]);
-              }
-              if (cnt > 100) {
-                clearInterval(interval);
-                return reject("Unexpected error while fetching from " + url2);
-              }
-              cnt++;
-            }, 50);
-          });
-        }
-        for (var i = 0; i < calcData.length; i++) {
-          var trace = calcData[i][0].trace;
-          var url = trace.geojson;
-          if (typeof url === "string") {
-            if (!PlotlyGeoAssets2[url]) {
-              PlotlyGeoAssets2[url] = "pending";
-              promises.push(fetch(url));
-            } else if (PlotlyGeoAssets2[url] === "pending") {
-              promises.push(wait(url));
-            }
-          }
-        }
-        return promises;
-      }
-      function computeBbox(d) {
-        return turfBbox(d);
-      }
-      module.exports = {
-        locationToFeature,
-        feature2polygons,
-        getTraceGeojson,
-        extractTraceFeature,
-        fetchTraceGeoData,
-        computeBbox
-      };
-    }
-  });
-
-  // src/traces/scattergeo/style.js
-  var require_style4 = __commonJS({
-    "src/traces/scattergeo/style.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Drawing = require_drawing();
-      var Color = require_color();
-      var scatterStyle = require_style2();
-      var stylePoints = scatterStyle.stylePoints;
-      var styleText = scatterStyle.styleText;
-      module.exports = function style(gd, calcTrace) {
-        if (calcTrace) styleTrace(gd, calcTrace);
-      };
-      function styleTrace(gd, calcTrace) {
-        var trace = calcTrace[0].trace;
-        var s = calcTrace[0].node3;
-        s.style("opacity", calcTrace[0].trace.opacity);
-        stylePoints(s, trace, gd);
-        styleText(s, trace, gd);
-        s.selectAll("path.js-line").style("fill", "none").each(function(d) {
-          var path = d3.select(this);
-          var trace2 = d.trace;
-          var line = trace2.line || {};
-          path.call(Color.stroke, line.color).call(Drawing.dashLine, line.dash || "", line.width || 0);
-          if (trace2.fill !== "none") {
-            path.call(Color.fill, trace2.fillcolor);
-          }
-        });
-      }
-    }
-  });
-
-  // src/traces/scattergeo/plot.js
-  var require_plot3 = __commonJS({
-    "src/traces/scattergeo/plot.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var getTopojsonFeatures = require_topojson_utils().getTopojsonFeatures;
-      var geoJsonUtils = require_geojson_utils();
-      var geoUtils = require_geo_location_utils();
-      var findExtremes = require_autorange().findExtremes;
-      var BADNUM = require_numerical().BADNUM;
-      var calcMarkerSize = require_calc3().calcMarkerSize;
-      var subTypes = require_subtypes();
-      var style = require_style4();
-      function plot(gd, geo, calcData) {
-        var scatterLayer = geo.layers.frontplot.select(".scatterlayer");
-        var gTraces = Lib.makeTraceGroups(scatterLayer, calcData, "trace scattergeo");
-        function removeBADNUM(d, node) {
-          if (d.lonlat[0] === BADNUM) {
-            d3.select(node).remove();
-          }
-        }
-        gTraces.selectAll("*").remove();
-        gTraces.each(function(calcTrace) {
-          var s = d3.select(this);
-          var trace = calcTrace[0].trace;
-          if (subTypes.hasLines(trace) || trace.fill !== "none") {
-            var lineCoords = geoJsonUtils.calcTraceToLineCoords(calcTrace);
-            var lineData = trace.fill !== "none" ? geoJsonUtils.makePolygon(lineCoords) : geoJsonUtils.makeLine(lineCoords);
-            s.selectAll("path.js-line").data([{ geojson: lineData, trace }]).enter().append("path").classed("js-line", true).style("stroke-miterlimit", 2);
-          }
-          if (subTypes.hasMarkers(trace)) {
-            s.selectAll("path.point").data(Lib.identity).enter().append("path").classed("point", true).each(function(calcPt) {
-              removeBADNUM(calcPt, this);
-            });
-          }
-          if (subTypes.hasText(trace)) {
-            s.selectAll("g").data(Lib.identity).enter().append("g").append("text").each(function(calcPt) {
-              removeBADNUM(calcPt, this);
-            });
-          }
-          style(gd, calcTrace);
-        });
-      }
-      function calcGeoJSON(calcTrace, fullLayout) {
-        var trace = calcTrace[0].trace;
-        var geoLayout = fullLayout[trace.geo];
-        var geo = geoLayout._subplot;
-        var len = trace._length;
-        var i, calcPt;
-        if (Lib.isArrayOrTypedArray(trace.locations)) {
-          var locationmode = trace.locationmode;
-          var features = locationmode === "geojson-id" ? geoUtils.extractTraceFeature(calcTrace) : getTopojsonFeatures(trace, geo.topojson);
-          for (i = 0; i < len; i++) {
-            calcPt = calcTrace[i];
-            var feature = locationmode === "geojson-id" ? calcPt.fOut : geoUtils.locationToFeature(locationmode, calcPt.loc, features);
-            calcPt.lonlat = feature ? feature.properties.ct : [BADNUM, BADNUM];
-          }
-        }
-        var opts = { padded: true };
-        var lonArray;
-        var latArray;
-        if (geoLayout.fitbounds === "geojson" && trace.locationmode === "geojson-id") {
-          var bboxGeojson = geoUtils.computeBbox(geoUtils.getTraceGeojson(trace));
-          lonArray = [bboxGeojson[0], bboxGeojson[2]];
-          latArray = [bboxGeojson[1], bboxGeojson[3]];
-        } else {
-          lonArray = new Array(len);
-          latArray = new Array(len);
-          for (i = 0; i < len; i++) {
-            calcPt = calcTrace[i];
-            lonArray[i] = calcPt.lonlat[0];
-            latArray[i] = calcPt.lonlat[1];
-          }
-          opts.ppad = calcMarkerSize(trace, len);
-        }
-        trace._extremes.lon = findExtremes(geoLayout.lonaxis._ax, lonArray, opts);
-        trace._extremes.lat = findExtremes(geoLayout.lataxis._ax, latArray, opts);
-      }
-      module.exports = {
-        calcGeoJSON,
-        plot
-      };
-    }
-  });
-
-  // src/traces/scattergeo/hover.js
-  var require_hover3 = __commonJS({
-    "src/traces/scattergeo/hover.js"(exports, module) {
-      "use strict";
-      var Fx = require_fx();
-      var BADNUM = require_numerical().BADNUM;
-      var getTraceColor = require_get_trace_color();
-      var fillText = require_lib().fillText;
-      var attributes = require_attributes23();
-      module.exports = function hoverPoints(pointData, xval, yval) {
-        var cd = pointData.cd;
-        var trace = cd[0].trace;
-        var xa = pointData.xa;
-        var ya = pointData.ya;
-        var geo = pointData.subplot;
-        var isLonLatOverEdges = geo.projection.isLonLatOverEdges;
-        var project = geo.project;
-        function distFn(d) {
-          var lonlat2 = d.lonlat;
-          if (lonlat2[0] === BADNUM) return Infinity;
-          if (isLonLatOverEdges(lonlat2)) return Infinity;
-          var pt = project(lonlat2);
-          var px = project([xval, yval]);
-          var dx = Math.abs(pt[0] - px[0]);
-          var dy = Math.abs(pt[1] - px[1]);
-          var rad2 = Math.max(3, d.mrc || 0);
-          return Math.max(Math.sqrt(dx * dx + dy * dy) - rad2, 1 - 3 / rad2);
-        }
-        Fx.getClosest(cd, distFn, pointData);
-        if (pointData.index === false) return;
-        var di = cd[pointData.index];
-        var lonlat = di.lonlat;
-        var pos = [xa.c2p(lonlat), ya.c2p(lonlat)];
-        var rad = di.mrc || 1;
-        pointData.x0 = pos[0] - rad;
-        pointData.x1 = pos[0] + rad;
-        pointData.y0 = pos[1] - rad;
-        pointData.y1 = pos[1] + rad;
-        pointData.loc = di.loc;
-        pointData.lon = lonlat[0];
-        pointData.lat = lonlat[1];
-        var fullLayout = {};
-        fullLayout[trace.geo] = { _subplot: geo };
-        var labels = trace._module.formatLabels(di, trace, fullLayout);
-        pointData.lonLabel = labels.lonLabel;
-        pointData.latLabel = labels.latLabel;
-        pointData.color = getTraceColor(trace, di);
-        pointData.extraText = getExtraText(trace, di, pointData, cd[0].t.labels);
-        pointData.hovertemplate = trace.hovertemplate;
-        return [pointData];
-      };
-      function getExtraText(trace, pt, pointData, labels) {
-        if (trace.hovertemplate) return;
-        var hoverinfo = pt.hi || trace.hoverinfo;
-        var parts = hoverinfo === "all" ? attributes.hoverinfo.flags : hoverinfo.split("+");
-        var hasLocation = parts.indexOf("location") !== -1 && Array.isArray(trace.locations);
-        var hasLon = parts.indexOf("lon") !== -1;
-        var hasLat = parts.indexOf("lat") !== -1;
-        var hasText = parts.indexOf("text") !== -1;
-        var text = [];
-        function format(val) {
-          return val + "\xB0";
-        }
-        if (hasLocation) {
-          text.push(pt.loc);
-        } else if (hasLon && hasLat) {
-          text.push("(" + format(pointData.latLabel) + ", " + format(pointData.lonLabel) + ")");
-        } else if (hasLon) {
-          text.push(labels.lon + format(pointData.lonLabel));
-        } else if (hasLat) {
-          text.push(labels.lat + format(pointData.latLabel));
-        }
-        if (hasText) {
-          fillText(pt, trace, text);
-        }
-        return text.join("<br>");
-      }
-    }
-  });
-
-  // src/traces/scattergeo/event_data.js
-  var require_event_data = __commonJS({
-    "src/traces/scattergeo/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt, trace, cd, pointNumber) {
-        out.lon = pt.lon;
-        out.lat = pt.lat;
-        out.location = pt.loc ? pt.loc : null;
-        var cdi = cd[pointNumber];
-        if (cdi.fIn && cdi.fIn.properties) {
-          out.properties = cdi.fIn.properties;
-        }
-        return out;
-      };
-    }
-  });
-
-  // src/traces/scattergeo/select.js
-  var require_select3 = __commonJS({
-    "src/traces/scattergeo/select.js"(exports, module) {
-      "use strict";
-      var subtypes = require_subtypes();
-      var BADNUM = require_numerical().BADNUM;
-      module.exports = function selectPoints(searchInfo, selectionTester) {
-        var cd = searchInfo.cd;
-        var xa = searchInfo.xaxis;
-        var ya = searchInfo.yaxis;
-        var selection = [];
-        var trace = cd[0].trace;
-        var di, lonlat, x, y, i;
-        var hasOnlyLines = !subtypes.hasMarkers(trace) && !subtypes.hasText(trace);
-        if (hasOnlyLines) return [];
-        if (selectionTester === false) {
-          for (i = 0; i < cd.length; i++) {
-            cd[i].selected = 0;
-          }
-        } else {
-          for (i = 0; i < cd.length; i++) {
-            di = cd[i];
-            lonlat = di.lonlat;
-            if (lonlat[0] === BADNUM) continue;
-            x = xa.c2p(lonlat);
-            y = ya.c2p(lonlat);
-            if (selectionTester.contains([x, y], null, i, searchInfo)) {
-              selection.push({
-                pointNumber: i,
-                lon: lonlat[0],
-                lat: lonlat[1]
-              });
-              di.selected = 1;
-            } else {
-              di.selected = 0;
-            }
-          }
-        }
-        return selection;
-      };
-    }
-  });
-
-  // node_modules/d3-array/dist/d3-array.js
-  var require_d3_array = __commonJS({
-    "node_modules/d3-array/dist/d3-array.js"(exports, module) {
-      (function(global2, factory) {
-        typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && false ? define(["exports"], factory) : factory(global2.d3 = global2.d3 || {});
-      })(exports, function(exports2) {
-        "use strict";
-        function ascending(a, b) {
-          return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
-        }
-        function bisector(compare) {
-          if (compare.length === 1) compare = ascendingComparator(compare);
-          return {
-            left: function(a, x, lo, hi) {
-              if (lo == null) lo = 0;
-              if (hi == null) hi = a.length;
-              while (lo < hi) {
-                var mid = lo + hi >>> 1;
-                if (compare(a[mid], x) < 0) lo = mid + 1;
-                else hi = mid;
-              }
-              return lo;
-            },
-            right: function(a, x, lo, hi) {
-              if (lo == null) lo = 0;
-              if (hi == null) hi = a.length;
-              while (lo < hi) {
-                var mid = lo + hi >>> 1;
-                if (compare(a[mid], x) > 0) hi = mid;
-                else lo = mid + 1;
-              }
-              return lo;
-            }
-          };
-        }
-        function ascendingComparator(f) {
-          return function(d, x) {
-            return ascending(f(d), x);
-          };
-        }
-        var ascendingBisect = bisector(ascending);
-        var bisectRight = ascendingBisect.right;
-        var bisectLeft = ascendingBisect.left;
-        function pairs(array2, f) {
-          if (f == null) f = pair;
-          var i = 0, n = array2.length - 1, p = array2[0], pairs2 = new Array(n < 0 ? 0 : n);
-          while (i < n) pairs2[i] = f(p, p = array2[++i]);
-          return pairs2;
-        }
-        function pair(a, b) {
-          return [a, b];
-        }
-        function cross(values0, values1, reduce) {
-          var n0 = values0.length, n1 = values1.length, values = new Array(n0 * n1), i0, i1, i, value0;
-          if (reduce == null) reduce = pair;
-          for (i0 = i = 0; i0 < n0; ++i0) {
-            for (value0 = values0[i0], i1 = 0; i1 < n1; ++i1, ++i) {
-              values[i] = reduce(value0, values1[i1]);
-            }
-          }
-          return values;
-        }
-        function descending(a, b) {
-          return b < a ? -1 : b > a ? 1 : b >= a ? 0 : NaN;
-        }
-        function number(x) {
-          return x === null ? NaN : +x;
-        }
-        function variance(values, valueof) {
-          var n = values.length, m = 0, i = -1, mean2 = 0, value, delta, sum2 = 0;
-          if (valueof == null) {
-            while (++i < n) {
-              if (!isNaN(value = number(values[i]))) {
-                delta = value - mean2;
-                mean2 += delta / ++m;
-                sum2 += delta * (value - mean2);
-              }
-            }
-          } else {
-            while (++i < n) {
-              if (!isNaN(value = number(valueof(values[i], i, values)))) {
-                delta = value - mean2;
-                mean2 += delta / ++m;
-                sum2 += delta * (value - mean2);
-              }
-            }
-          }
-          if (m > 1) return sum2 / (m - 1);
-        }
-        function deviation(array2, f) {
-          var v = variance(array2, f);
-          return v ? Math.sqrt(v) : v;
-        }
-        function extent(values, valueof) {
-          var n = values.length, i = -1, value, min2, max2;
-          if (valueof == null) {
-            while (++i < n) {
-              if ((value = values[i]) != null && value >= value) {
-                min2 = max2 = value;
-                while (++i < n) {
-                  if ((value = values[i]) != null) {
-                    if (min2 > value) min2 = value;
-                    if (max2 < value) max2 = value;
-                  }
-                }
-              }
-            }
-          } else {
-            while (++i < n) {
-              if ((value = valueof(values[i], i, values)) != null && value >= value) {
-                min2 = max2 = value;
-                while (++i < n) {
-                  if ((value = valueof(values[i], i, values)) != null) {
-                    if (min2 > value) min2 = value;
-                    if (max2 < value) max2 = value;
-                  }
-                }
-              }
-            }
-          }
-          return [min2, max2];
-        }
-        var array = Array.prototype;
-        var slice = array.slice;
-        var map = array.map;
-        function constant(x) {
-          return function() {
-            return x;
-          };
-        }
-        function identity(x) {
-          return x;
-        }
-        function range(start, stop, step) {
-          start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
-          var i = -1, n = Math.max(0, Math.ceil((stop - start) / step)) | 0, range2 = new Array(n);
-          while (++i < n) {
-            range2[i] = start + i * step;
-          }
-          return range2;
-        }
-        var e10 = Math.sqrt(50), e5 = Math.sqrt(10), e2 = Math.sqrt(2);
-        function ticks(start, stop, count) {
-          var reverse, i = -1, n, ticks2, step;
-          stop = +stop, start = +start, count = +count;
-          if (start === stop && count > 0) return [start];
-          if (reverse = stop < start) n = start, start = stop, stop = n;
-          if ((step = tickIncrement(start, stop, count)) === 0 || !isFinite(step)) return [];
-          if (step > 0) {
-            start = Math.ceil(start / step);
-            stop = Math.floor(stop / step);
-            ticks2 = new Array(n = Math.ceil(stop - start + 1));
-            while (++i < n) ticks2[i] = (start + i) * step;
-          } else {
-            start = Math.floor(start * step);
-            stop = Math.ceil(stop * step);
-            ticks2 = new Array(n = Math.ceil(start - stop + 1));
-            while (++i < n) ticks2[i] = (start - i) / step;
-          }
-          if (reverse) ticks2.reverse();
-          return ticks2;
-        }
-        function tickIncrement(start, stop, count) {
-          var step = (stop - start) / Math.max(0, count), power = Math.floor(Math.log(step) / Math.LN10), error = step / Math.pow(10, power);
-          return power >= 0 ? (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1) * Math.pow(10, power) : -Math.pow(10, -power) / (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1);
-        }
-        function tickStep(start, stop, count) {
-          var step0 = Math.abs(stop - start) / Math.max(0, count), step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)), error = step0 / step1;
-          if (error >= e10) step1 *= 10;
-          else if (error >= e5) step1 *= 5;
-          else if (error >= e2) step1 *= 2;
-          return stop < start ? -step1 : step1;
-        }
-        function sturges(values) {
-          return Math.ceil(Math.log(values.length) / Math.LN2) + 1;
-        }
-        function histogram() {
-          var value = identity, domain = extent, threshold = sturges;
-          function histogram2(data) {
-            var i, n = data.length, x, values = new Array(n);
-            for (i = 0; i < n; ++i) {
-              values[i] = value(data[i], i, data);
-            }
-            var xz = domain(values), x0 = xz[0], x1 = xz[1], tz = threshold(values, x0, x1);
-            if (!Array.isArray(tz)) {
-              tz = tickStep(x0, x1, tz);
-              tz = range(Math.ceil(x0 / tz) * tz, x1, tz);
-            }
-            var m = tz.length;
-            while (tz[0] <= x0) tz.shift(), --m;
-            while (tz[m - 1] > x1) tz.pop(), --m;
-            var bins = new Array(m + 1), bin;
-            for (i = 0; i <= m; ++i) {
-              bin = bins[i] = [];
-              bin.x0 = i > 0 ? tz[i - 1] : x0;
-              bin.x1 = i < m ? tz[i] : x1;
-            }
-            for (i = 0; i < n; ++i) {
-              x = values[i];
-              if (x0 <= x && x <= x1) {
-                bins[bisectRight(tz, x, 0, m)].push(data[i]);
-              }
-            }
-            return bins;
-          }
-          histogram2.value = function(_) {
-            return arguments.length ? (value = typeof _ === "function" ? _ : constant(_), histogram2) : value;
-          };
-          histogram2.domain = function(_) {
-            return arguments.length ? (domain = typeof _ === "function" ? _ : constant([_[0], _[1]]), histogram2) : domain;
-          };
-          histogram2.thresholds = function(_) {
-            return arguments.length ? (threshold = typeof _ === "function" ? _ : Array.isArray(_) ? constant(slice.call(_)) : constant(_), histogram2) : threshold;
-          };
-          return histogram2;
-        }
-        function quantile(values, p, valueof) {
-          if (valueof == null) valueof = number;
-          if (!(n = values.length)) return;
-          if ((p = +p) <= 0 || n < 2) return +valueof(values[0], 0, values);
-          if (p >= 1) return +valueof(values[n - 1], n - 1, values);
-          var n, i = (n - 1) * p, i0 = Math.floor(i), value0 = +valueof(values[i0], i0, values), value1 = +valueof(values[i0 + 1], i0 + 1, values);
-          return value0 + (value1 - value0) * (i - i0);
-        }
-        function freedmanDiaconis(values, min2, max2) {
-          values = map.call(values, number).sort(ascending);
-          return Math.ceil((max2 - min2) / (2 * (quantile(values, 0.75) - quantile(values, 0.25)) * Math.pow(values.length, -1 / 3)));
-        }
-        function scott(values, min2, max2) {
-          return Math.ceil((max2 - min2) / (3.5 * deviation(values) * Math.pow(values.length, -1 / 3)));
-        }
-        function max(values, valueof) {
-          var n = values.length, i = -1, value, max2;
-          if (valueof == null) {
-            while (++i < n) {
-              if ((value = values[i]) != null && value >= value) {
-                max2 = value;
-                while (++i < n) {
-                  if ((value = values[i]) != null && value > max2) {
-                    max2 = value;
-                  }
-                }
-              }
-            }
-          } else {
-            while (++i < n) {
-              if ((value = valueof(values[i], i, values)) != null && value >= value) {
-                max2 = value;
-                while (++i < n) {
-                  if ((value = valueof(values[i], i, values)) != null && value > max2) {
-                    max2 = value;
-                  }
-                }
-              }
-            }
-          }
-          return max2;
-        }
-        function mean(values, valueof) {
-          var n = values.length, m = n, i = -1, value, sum2 = 0;
-          if (valueof == null) {
-            while (++i < n) {
-              if (!isNaN(value = number(values[i]))) sum2 += value;
-              else --m;
-            }
-          } else {
-            while (++i < n) {
-              if (!isNaN(value = number(valueof(values[i], i, values)))) sum2 += value;
-              else --m;
-            }
-          }
-          if (m) return sum2 / m;
-        }
-        function median(values, valueof) {
-          var n = values.length, i = -1, value, numbers = [];
-          if (valueof == null) {
-            while (++i < n) {
-              if (!isNaN(value = number(values[i]))) {
-                numbers.push(value);
-              }
-            }
-          } else {
-            while (++i < n) {
-              if (!isNaN(value = number(valueof(values[i], i, values)))) {
-                numbers.push(value);
-              }
-            }
-          }
-          return quantile(numbers.sort(ascending), 0.5);
-        }
-        function merge(arrays) {
-          var n = arrays.length, m, i = -1, j = 0, merged, array2;
-          while (++i < n) j += arrays[i].length;
-          merged = new Array(j);
-          while (--n >= 0) {
-            array2 = arrays[n];
-            m = array2.length;
-            while (--m >= 0) {
-              merged[--j] = array2[m];
-            }
-          }
-          return merged;
-        }
-        function min(values, valueof) {
-          var n = values.length, i = -1, value, min2;
-          if (valueof == null) {
-            while (++i < n) {
-              if ((value = values[i]) != null && value >= value) {
-                min2 = value;
-                while (++i < n) {
-                  if ((value = values[i]) != null && min2 > value) {
-                    min2 = value;
-                  }
-                }
-              }
-            }
-          } else {
-            while (++i < n) {
-              if ((value = valueof(values[i], i, values)) != null && value >= value) {
-                min2 = value;
-                while (++i < n) {
-                  if ((value = valueof(values[i], i, values)) != null && min2 > value) {
-                    min2 = value;
-                  }
-                }
-              }
-            }
-          }
-          return min2;
-        }
-        function permute(array2, indexes) {
-          var i = indexes.length, permutes = new Array(i);
-          while (i--) permutes[i] = array2[indexes[i]];
-          return permutes;
-        }
-        function scan(values, compare) {
-          if (!(n = values.length)) return;
-          var n, i = 0, j = 0, xi, xj = values[j];
-          if (compare == null) compare = ascending;
-          while (++i < n) {
-            if (compare(xi = values[i], xj) < 0 || compare(xj, xj) !== 0) {
-              xj = xi, j = i;
-            }
-          }
-          if (compare(xj, xj) === 0) return j;
-        }
-        function shuffle(array2, i0, i1) {
-          var m = (i1 == null ? array2.length : i1) - (i0 = i0 == null ? 0 : +i0), t, i;
-          while (m) {
-            i = Math.random() * m-- | 0;
-            t = array2[m + i0];
-            array2[m + i0] = array2[i + i0];
-            array2[i + i0] = t;
-          }
-          return array2;
-        }
-        function sum(values, valueof) {
-          var n = values.length, i = -1, value, sum2 = 0;
-          if (valueof == null) {
-            while (++i < n) {
-              if (value = +values[i]) sum2 += value;
-            }
-          } else {
-            while (++i < n) {
-              if (value = +valueof(values[i], i, values)) sum2 += value;
-            }
-          }
-          return sum2;
-        }
-        function transpose(matrix) {
-          if (!(n = matrix.length)) return [];
-          for (var i = -1, m = min(matrix, length), transpose2 = new Array(m); ++i < m; ) {
-            for (var j = -1, n, row = transpose2[i] = new Array(n); ++j < n; ) {
-              row[j] = matrix[j][i];
-            }
-          }
-          return transpose2;
-        }
-        function length(d) {
-          return d.length;
-        }
-        function zip() {
-          return transpose(arguments);
-        }
-        exports2.bisect = bisectRight;
-        exports2.bisectRight = bisectRight;
-        exports2.bisectLeft = bisectLeft;
-        exports2.ascending = ascending;
-        exports2.bisector = bisector;
-        exports2.cross = cross;
-        exports2.descending = descending;
-        exports2.deviation = deviation;
-        exports2.extent = extent;
-        exports2.histogram = histogram;
-        exports2.thresholdFreedmanDiaconis = freedmanDiaconis;
-        exports2.thresholdScott = scott;
-        exports2.thresholdSturges = sturges;
-        exports2.max = max;
-        exports2.mean = mean;
-        exports2.median = median;
-        exports2.merge = merge;
-        exports2.min = min;
-        exports2.pairs = pairs;
-        exports2.permute = permute;
-        exports2.quantile = quantile;
-        exports2.range = range;
-        exports2.scan = scan;
-        exports2.shuffle = shuffle;
-        exports2.sum = sum;
-        exports2.ticks = ticks;
-        exports2.tickIncrement = tickIncrement;
-        exports2.tickStep = tickStep;
-        exports2.transpose = transpose;
-        exports2.variance = variance;
-        exports2.zip = zip;
-        Object.defineProperty(exports2, "__esModule", { value: true });
-      });
-    }
-  });
-
-  // node_modules/d3-geo/dist/d3-geo.js
-  var require_d3_geo = __commonJS({
-    "node_modules/d3-geo/dist/d3-geo.js"(exports, module) {
-      (function(global2, factory) {
-        typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require_d3_array()) : typeof define === "function" && false ? define(["exports", "d3-array"], factory) : (global2 = global2 || self, factory(global2.d3 = global2.d3 || {}, global2.d3));
-      })(exports, function(exports2, d3Array) {
-        "use strict";
-        function adder() {
-          return new Adder();
-        }
-        function Adder() {
-          this.reset();
-        }
-        Adder.prototype = {
-          constructor: Adder,
-          reset: function() {
-            this.s = // rounded value
-            this.t = 0;
-          },
-          add: function(y) {
-            add(temp, y, this.t);
-            add(this, temp.s, this.s);
-            if (this.s) this.t += temp.t;
-            else this.s = temp.t;
-          },
-          valueOf: function() {
-            return this.s;
-          }
-        };
-        var temp = new Adder();
-        function add(adder2, a, b) {
-          var x = adder2.s = a + b, bv = x - a, av = x - bv;
-          adder2.t = a - av + (b - bv);
-        }
-        var epsilon = 1e-6;
-        var epsilon2 = 1e-12;
-        var pi = Math.PI;
-        var halfPi = pi / 2;
-        var quarterPi = pi / 4;
-        var tau = pi * 2;
-        var degrees = 180 / pi;
-        var radians = pi / 180;
-        var abs = Math.abs;
-        var atan = Math.atan;
-        var atan2 = Math.atan2;
-        var cos = Math.cos;
-        var ceil = Math.ceil;
-        var exp = Math.exp;
-        var log = Math.log;
-        var pow = Math.pow;
-        var sin = Math.sin;
-        var sign = Math.sign || function(x) {
-          return x > 0 ? 1 : x < 0 ? -1 : 0;
-        };
-        var sqrt = Math.sqrt;
-        var tan = Math.tan;
-        function acos(x) {
-          return x > 1 ? 0 : x < -1 ? pi : Math.acos(x);
-        }
-        function asin(x) {
-          return x > 1 ? halfPi : x < -1 ? -halfPi : Math.asin(x);
-        }
-        function haversin(x) {
-          return (x = sin(x / 2)) * x;
-        }
-        function noop() {
-        }
-        function streamGeometry(geometry, stream) {
-          if (geometry && streamGeometryType.hasOwnProperty(geometry.type)) {
-            streamGeometryType[geometry.type](geometry, stream);
-          }
-        }
-        var streamObjectType = {
-          Feature: function(object2, stream) {
-            streamGeometry(object2.geometry, stream);
-          },
-          FeatureCollection: function(object2, stream) {
-            var features = object2.features, i = -1, n = features.length;
-            while (++i < n) streamGeometry(features[i].geometry, stream);
-          }
-        };
-        var streamGeometryType = {
-          Sphere: function(object2, stream) {
-            stream.sphere();
-          },
-          Point: function(object2, stream) {
-            object2 = object2.coordinates;
-            stream.point(object2[0], object2[1], object2[2]);
-          },
-          MultiPoint: function(object2, stream) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) object2 = coordinates2[i], stream.point(object2[0], object2[1], object2[2]);
-          },
-          LineString: function(object2, stream) {
-            streamLine(object2.coordinates, stream, 0);
-          },
-          MultiLineString: function(object2, stream) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) streamLine(coordinates2[i], stream, 0);
-          },
-          Polygon: function(object2, stream) {
-            streamPolygon(object2.coordinates, stream);
-          },
-          MultiPolygon: function(object2, stream) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) streamPolygon(coordinates2[i], stream);
-          },
-          GeometryCollection: function(object2, stream) {
-            var geometries = object2.geometries, i = -1, n = geometries.length;
-            while (++i < n) streamGeometry(geometries[i], stream);
-          }
-        };
-        function streamLine(coordinates2, stream, closed) {
-          var i = -1, n = coordinates2.length - closed, coordinate;
-          stream.lineStart();
-          while (++i < n) coordinate = coordinates2[i], stream.point(coordinate[0], coordinate[1], coordinate[2]);
-          stream.lineEnd();
-        }
-        function streamPolygon(coordinates2, stream) {
-          var i = -1, n = coordinates2.length;
-          stream.polygonStart();
-          while (++i < n) streamLine(coordinates2[i], stream, 1);
-          stream.polygonEnd();
-        }
-        function geoStream(object2, stream) {
-          if (object2 && streamObjectType.hasOwnProperty(object2.type)) {
-            streamObjectType[object2.type](object2, stream);
-          } else {
-            streamGeometry(object2, stream);
-          }
-        }
-        var areaRingSum = adder();
-        var areaSum = adder(), lambda00, phi00, lambda0, cosPhi0, sinPhi0;
-        var areaStream = {
-          point: noop,
-          lineStart: noop,
-          lineEnd: noop,
-          polygonStart: function() {
-            areaRingSum.reset();
-            areaStream.lineStart = areaRingStart;
-            areaStream.lineEnd = areaRingEnd;
-          },
-          polygonEnd: function() {
-            var areaRing = +areaRingSum;
-            areaSum.add(areaRing < 0 ? tau + areaRing : areaRing);
-            this.lineStart = this.lineEnd = this.point = noop;
-          },
-          sphere: function() {
-            areaSum.add(tau);
-          }
-        };
-        function areaRingStart() {
-          areaStream.point = areaPointFirst;
-        }
-        function areaRingEnd() {
-          areaPoint(lambda00, phi00);
-        }
-        function areaPointFirst(lambda, phi) {
-          areaStream.point = areaPoint;
-          lambda00 = lambda, phi00 = phi;
-          lambda *= radians, phi *= radians;
-          lambda0 = lambda, cosPhi0 = cos(phi = phi / 2 + quarterPi), sinPhi0 = sin(phi);
-        }
-        function areaPoint(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          phi = phi / 2 + quarterPi;
-          var dLambda = lambda - lambda0, sdLambda = dLambda >= 0 ? 1 : -1, adLambda = sdLambda * dLambda, cosPhi = cos(phi), sinPhi = sin(phi), k = sinPhi0 * sinPhi, u = cosPhi0 * cosPhi + k * cos(adLambda), v = k * sdLambda * sin(adLambda);
-          areaRingSum.add(atan2(v, u));
-          lambda0 = lambda, cosPhi0 = cosPhi, sinPhi0 = sinPhi;
-        }
-        function area(object2) {
-          areaSum.reset();
-          geoStream(object2, areaStream);
-          return areaSum * 2;
-        }
-        function spherical(cartesian2) {
-          return [atan2(cartesian2[1], cartesian2[0]), asin(cartesian2[2])];
-        }
-        function cartesian(spherical2) {
-          var lambda = spherical2[0], phi = spherical2[1], cosPhi = cos(phi);
-          return [cosPhi * cos(lambda), cosPhi * sin(lambda), sin(phi)];
-        }
-        function cartesianDot(a, b) {
-          return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-        }
-        function cartesianCross(a, b) {
-          return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-        }
-        function cartesianAddInPlace(a, b) {
-          a[0] += b[0], a[1] += b[1], a[2] += b[2];
-        }
-        function cartesianScale(vector, k) {
-          return [vector[0] * k, vector[1] * k, vector[2] * k];
-        }
-        function cartesianNormalizeInPlace(d) {
-          var l = sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-          d[0] /= l, d[1] /= l, d[2] /= l;
-        }
-        var lambda0$1, phi0, lambda1, phi1, lambda2, lambda00$1, phi00$1, p0, deltaSum = adder(), ranges, range;
-        var boundsStream = {
-          point: boundsPoint,
-          lineStart: boundsLineStart,
-          lineEnd: boundsLineEnd,
-          polygonStart: function() {
-            boundsStream.point = boundsRingPoint;
-            boundsStream.lineStart = boundsRingStart;
-            boundsStream.lineEnd = boundsRingEnd;
-            deltaSum.reset();
-            areaStream.polygonStart();
-          },
-          polygonEnd: function() {
-            areaStream.polygonEnd();
-            boundsStream.point = boundsPoint;
-            boundsStream.lineStart = boundsLineStart;
-            boundsStream.lineEnd = boundsLineEnd;
-            if (areaRingSum < 0) lambda0$1 = -(lambda1 = 180), phi0 = -(phi1 = 90);
-            else if (deltaSum > epsilon) phi1 = 90;
-            else if (deltaSum < -epsilon) phi0 = -90;
-            range[0] = lambda0$1, range[1] = lambda1;
-          },
-          sphere: function() {
-            lambda0$1 = -(lambda1 = 180), phi0 = -(phi1 = 90);
-          }
-        };
-        function boundsPoint(lambda, phi) {
-          ranges.push(range = [lambda0$1 = lambda, lambda1 = lambda]);
-          if (phi < phi0) phi0 = phi;
-          if (phi > phi1) phi1 = phi;
-        }
-        function linePoint(lambda, phi) {
-          var p = cartesian([lambda * radians, phi * radians]);
-          if (p0) {
-            var normal = cartesianCross(p0, p), equatorial = [normal[1], -normal[0], 0], inflection = cartesianCross(equatorial, normal);
-            cartesianNormalizeInPlace(inflection);
-            inflection = spherical(inflection);
-            var delta = lambda - lambda2, sign2 = delta > 0 ? 1 : -1, lambdai = inflection[0] * degrees * sign2, phii, antimeridian = abs(delta) > 180;
-            if (antimeridian ^ (sign2 * lambda2 < lambdai && lambdai < sign2 * lambda)) {
-              phii = inflection[1] * degrees;
-              if (phii > phi1) phi1 = phii;
-            } else if (lambdai = (lambdai + 360) % 360 - 180, antimeridian ^ (sign2 * lambda2 < lambdai && lambdai < sign2 * lambda)) {
-              phii = -inflection[1] * degrees;
-              if (phii < phi0) phi0 = phii;
-            } else {
-              if (phi < phi0) phi0 = phi;
-              if (phi > phi1) phi1 = phi;
-            }
-            if (antimeridian) {
-              if (lambda < lambda2) {
-                if (angle(lambda0$1, lambda) > angle(lambda0$1, lambda1)) lambda1 = lambda;
-              } else {
-                if (angle(lambda, lambda1) > angle(lambda0$1, lambda1)) lambda0$1 = lambda;
-              }
-            } else {
-              if (lambda1 >= lambda0$1) {
-                if (lambda < lambda0$1) lambda0$1 = lambda;
-                if (lambda > lambda1) lambda1 = lambda;
-              } else {
-                if (lambda > lambda2) {
-                  if (angle(lambda0$1, lambda) > angle(lambda0$1, lambda1)) lambda1 = lambda;
-                } else {
-                  if (angle(lambda, lambda1) > angle(lambda0$1, lambda1)) lambda0$1 = lambda;
-                }
-              }
-            }
-          } else {
-            ranges.push(range = [lambda0$1 = lambda, lambda1 = lambda]);
-          }
-          if (phi < phi0) phi0 = phi;
-          if (phi > phi1) phi1 = phi;
-          p0 = p, lambda2 = lambda;
-        }
-        function boundsLineStart() {
-          boundsStream.point = linePoint;
-        }
-        function boundsLineEnd() {
-          range[0] = lambda0$1, range[1] = lambda1;
-          boundsStream.point = boundsPoint;
-          p0 = null;
-        }
-        function boundsRingPoint(lambda, phi) {
-          if (p0) {
-            var delta = lambda - lambda2;
-            deltaSum.add(abs(delta) > 180 ? delta + (delta > 0 ? 360 : -360) : delta);
-          } else {
-            lambda00$1 = lambda, phi00$1 = phi;
-          }
-          areaStream.point(lambda, phi);
-          linePoint(lambda, phi);
-        }
-        function boundsRingStart() {
-          areaStream.lineStart();
-        }
-        function boundsRingEnd() {
-          boundsRingPoint(lambda00$1, phi00$1);
-          areaStream.lineEnd();
-          if (abs(deltaSum) > epsilon) lambda0$1 = -(lambda1 = 180);
-          range[0] = lambda0$1, range[1] = lambda1;
-          p0 = null;
-        }
-        function angle(lambda02, lambda12) {
-          return (lambda12 -= lambda02) < 0 ? lambda12 + 360 : lambda12;
-        }
-        function rangeCompare(a, b) {
-          return a[0] - b[0];
-        }
-        function rangeContains(range2, x) {
-          return range2[0] <= range2[1] ? range2[0] <= x && x <= range2[1] : x < range2[0] || range2[1] < x;
-        }
-        function bounds(feature) {
-          var i, n, a, b, merged, deltaMax, delta;
-          phi1 = lambda1 = -(lambda0$1 = phi0 = Infinity);
-          ranges = [];
-          geoStream(feature, boundsStream);
-          if (n = ranges.length) {
-            ranges.sort(rangeCompare);
-            for (i = 1, a = ranges[0], merged = [a]; i < n; ++i) {
-              b = ranges[i];
-              if (rangeContains(a, b[0]) || rangeContains(a, b[1])) {
-                if (angle(a[0], b[1]) > angle(a[0], a[1])) a[1] = b[1];
-                if (angle(b[0], a[1]) > angle(a[0], a[1])) a[0] = b[0];
-              } else {
-                merged.push(a = b);
-              }
-            }
-            for (deltaMax = -Infinity, n = merged.length - 1, i = 0, a = merged[n]; i <= n; a = b, ++i) {
-              b = merged[i];
-              if ((delta = angle(a[1], b[0])) > deltaMax) deltaMax = delta, lambda0$1 = b[0], lambda1 = a[1];
-            }
-          }
-          ranges = range = null;
-          return lambda0$1 === Infinity || phi0 === Infinity ? [[NaN, NaN], [NaN, NaN]] : [[lambda0$1, phi0], [lambda1, phi1]];
-        }
-        var W0, W1, X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2, lambda00$2, phi00$2, x0, y0, z0;
-        var centroidStream = {
-          sphere: noop,
-          point: centroidPoint,
-          lineStart: centroidLineStart,
-          lineEnd: centroidLineEnd,
-          polygonStart: function() {
-            centroidStream.lineStart = centroidRingStart;
-            centroidStream.lineEnd = centroidRingEnd;
-          },
-          polygonEnd: function() {
-            centroidStream.lineStart = centroidLineStart;
-            centroidStream.lineEnd = centroidLineEnd;
-          }
-        };
-        function centroidPoint(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          var cosPhi = cos(phi);
-          centroidPointCartesian(cosPhi * cos(lambda), cosPhi * sin(lambda), sin(phi));
-        }
-        function centroidPointCartesian(x, y, z) {
-          ++W0;
-          X0 += (x - X0) / W0;
-          Y0 += (y - Y0) / W0;
-          Z0 += (z - Z0) / W0;
-        }
-        function centroidLineStart() {
-          centroidStream.point = centroidLinePointFirst;
-        }
-        function centroidLinePointFirst(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          var cosPhi = cos(phi);
-          x0 = cosPhi * cos(lambda);
-          y0 = cosPhi * sin(lambda);
-          z0 = sin(phi);
-          centroidStream.point = centroidLinePoint;
-          centroidPointCartesian(x0, y0, z0);
-        }
-        function centroidLinePoint(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          var cosPhi = cos(phi), x = cosPhi * cos(lambda), y = cosPhi * sin(lambda), z = sin(phi), w = atan2(sqrt((w = y0 * z - z0 * y) * w + (w = z0 * x - x0 * z) * w + (w = x0 * y - y0 * x) * w), x0 * x + y0 * y + z0 * z);
-          W1 += w;
-          X1 += w * (x0 + (x0 = x));
-          Y1 += w * (y0 + (y0 = y));
-          Z1 += w * (z0 + (z0 = z));
-          centroidPointCartesian(x0, y0, z0);
-        }
-        function centroidLineEnd() {
-          centroidStream.point = centroidPoint;
-        }
-        function centroidRingStart() {
-          centroidStream.point = centroidRingPointFirst;
-        }
-        function centroidRingEnd() {
-          centroidRingPoint(lambda00$2, phi00$2);
-          centroidStream.point = centroidPoint;
-        }
-        function centroidRingPointFirst(lambda, phi) {
-          lambda00$2 = lambda, phi00$2 = phi;
-          lambda *= radians, phi *= radians;
-          centroidStream.point = centroidRingPoint;
-          var cosPhi = cos(phi);
-          x0 = cosPhi * cos(lambda);
-          y0 = cosPhi * sin(lambda);
-          z0 = sin(phi);
-          centroidPointCartesian(x0, y0, z0);
-        }
-        function centroidRingPoint(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          var cosPhi = cos(phi), x = cosPhi * cos(lambda), y = cosPhi * sin(lambda), z = sin(phi), cx = y0 * z - z0 * y, cy = z0 * x - x0 * z, cz = x0 * y - y0 * x, m = sqrt(cx * cx + cy * cy + cz * cz), w = asin(m), v = m && -w / m;
-          X2 += v * cx;
-          Y2 += v * cy;
-          Z2 += v * cz;
-          W1 += w;
-          X1 += w * (x0 + (x0 = x));
-          Y1 += w * (y0 + (y0 = y));
-          Z1 += w * (z0 + (z0 = z));
-          centroidPointCartesian(x0, y0, z0);
-        }
-        function centroid(object2) {
-          W0 = W1 = X0 = Y0 = Z0 = X1 = Y1 = Z1 = X2 = Y2 = Z2 = 0;
-          geoStream(object2, centroidStream);
-          var x = X2, y = Y2, z = Z2, m = x * x + y * y + z * z;
-          if (m < epsilon2) {
-            x = X1, y = Y1, z = Z1;
-            if (W1 < epsilon) x = X0, y = Y0, z = Z0;
-            m = x * x + y * y + z * z;
-            if (m < epsilon2) return [NaN, NaN];
-          }
-          return [atan2(y, x) * degrees, asin(z / sqrt(m)) * degrees];
-        }
-        function constant(x) {
-          return function() {
-            return x;
-          };
-        }
-        function compose(a, b) {
-          function compose2(x, y) {
-            return x = a(x, y), b(x[0], x[1]);
-          }
-          if (a.invert && b.invert) compose2.invert = function(x, y) {
-            return x = b.invert(x, y), x && a.invert(x[0], x[1]);
-          };
-          return compose2;
-        }
-        function rotationIdentity(lambda, phi) {
-          return [abs(lambda) > pi ? lambda + Math.round(-lambda / tau) * tau : lambda, phi];
-        }
-        rotationIdentity.invert = rotationIdentity;
-        function rotateRadians(deltaLambda, deltaPhi, deltaGamma) {
-          return (deltaLambda %= tau) ? deltaPhi || deltaGamma ? compose(rotationLambda(deltaLambda), rotationPhiGamma(deltaPhi, deltaGamma)) : rotationLambda(deltaLambda) : deltaPhi || deltaGamma ? rotationPhiGamma(deltaPhi, deltaGamma) : rotationIdentity;
-        }
-        function forwardRotationLambda(deltaLambda) {
-          return function(lambda, phi) {
-            return lambda += deltaLambda, [lambda > pi ? lambda - tau : lambda < -pi ? lambda + tau : lambda, phi];
-          };
-        }
-        function rotationLambda(deltaLambda) {
-          var rotation2 = forwardRotationLambda(deltaLambda);
-          rotation2.invert = forwardRotationLambda(-deltaLambda);
-          return rotation2;
-        }
-        function rotationPhiGamma(deltaPhi, deltaGamma) {
-          var cosDeltaPhi = cos(deltaPhi), sinDeltaPhi = sin(deltaPhi), cosDeltaGamma = cos(deltaGamma), sinDeltaGamma = sin(deltaGamma);
-          function rotation2(lambda, phi) {
-            var cosPhi = cos(phi), x = cos(lambda) * cosPhi, y = sin(lambda) * cosPhi, z = sin(phi), k = z * cosDeltaPhi + x * sinDeltaPhi;
-            return [
-              atan2(y * cosDeltaGamma - k * sinDeltaGamma, x * cosDeltaPhi - z * sinDeltaPhi),
-              asin(k * cosDeltaGamma + y * sinDeltaGamma)
-            ];
-          }
-          rotation2.invert = function(lambda, phi) {
-            var cosPhi = cos(phi), x = cos(lambda) * cosPhi, y = sin(lambda) * cosPhi, z = sin(phi), k = z * cosDeltaGamma - y * sinDeltaGamma;
-            return [
-              atan2(y * cosDeltaGamma + z * sinDeltaGamma, x * cosDeltaPhi + k * sinDeltaPhi),
-              asin(k * cosDeltaPhi - x * sinDeltaPhi)
-            ];
-          };
-          return rotation2;
-        }
-        function rotation(rotate) {
-          rotate = rotateRadians(rotate[0] * radians, rotate[1] * radians, rotate.length > 2 ? rotate[2] * radians : 0);
-          function forward(coordinates2) {
-            coordinates2 = rotate(coordinates2[0] * radians, coordinates2[1] * radians);
-            return coordinates2[0] *= degrees, coordinates2[1] *= degrees, coordinates2;
-          }
-          forward.invert = function(coordinates2) {
-            coordinates2 = rotate.invert(coordinates2[0] * radians, coordinates2[1] * radians);
-            return coordinates2[0] *= degrees, coordinates2[1] *= degrees, coordinates2;
-          };
-          return forward;
-        }
-        function circleStream(stream, radius, delta, direction, t0, t1) {
-          if (!delta) return;
-          var cosRadius = cos(radius), sinRadius = sin(radius), step = direction * delta;
-          if (t0 == null) {
-            t0 = radius + direction * tau;
-            t1 = radius - step / 2;
-          } else {
-            t0 = circleRadius(cosRadius, t0);
-            t1 = circleRadius(cosRadius, t1);
-            if (direction > 0 ? t0 < t1 : t0 > t1) t0 += direction * tau;
-          }
-          for (var point, t = t0; direction > 0 ? t > t1 : t < t1; t -= step) {
-            point = spherical([cosRadius, -sinRadius * cos(t), -sinRadius * sin(t)]);
-            stream.point(point[0], point[1]);
-          }
-        }
-        function circleRadius(cosRadius, point) {
-          point = cartesian(point), point[0] -= cosRadius;
-          cartesianNormalizeInPlace(point);
-          var radius = acos(-point[1]);
-          return ((-point[2] < 0 ? -radius : radius) + tau - epsilon) % tau;
-        }
-        function circle() {
-          var center = constant([0, 0]), radius = constant(90), precision = constant(6), ring, rotate, stream = { point };
-          function point(x, y) {
-            ring.push(x = rotate(x, y));
-            x[0] *= degrees, x[1] *= degrees;
-          }
-          function circle2() {
-            var c = center.apply(this, arguments), r = radius.apply(this, arguments) * radians, p = precision.apply(this, arguments) * radians;
-            ring = [];
-            rotate = rotateRadians(-c[0] * radians, -c[1] * radians, 0).invert;
-            circleStream(stream, r, p, 1);
-            c = { type: "Polygon", coordinates: [ring] };
-            ring = rotate = null;
-            return c;
-          }
-          circle2.center = function(_) {
-            return arguments.length ? (center = typeof _ === "function" ? _ : constant([+_[0], +_[1]]), circle2) : center;
-          };
-          circle2.radius = function(_) {
-            return arguments.length ? (radius = typeof _ === "function" ? _ : constant(+_), circle2) : radius;
-          };
-          circle2.precision = function(_) {
-            return arguments.length ? (precision = typeof _ === "function" ? _ : constant(+_), circle2) : precision;
-          };
-          return circle2;
-        }
-        function clipBuffer() {
-          var lines = [], line;
-          return {
-            point: function(x, y, m) {
-              line.push([x, y, m]);
-            },
-            lineStart: function() {
-              lines.push(line = []);
-            },
-            lineEnd: noop,
-            rejoin: function() {
-              if (lines.length > 1) lines.push(lines.pop().concat(lines.shift()));
-            },
-            result: function() {
-              var result = lines;
-              lines = [];
-              line = null;
-              return result;
-            }
-          };
-        }
-        function pointEqual(a, b) {
-          return abs(a[0] - b[0]) < epsilon && abs(a[1] - b[1]) < epsilon;
-        }
-        function Intersection(point, points, other, entry) {
-          this.x = point;
-          this.z = points;
-          this.o = other;
-          this.e = entry;
-          this.v = false;
-          this.n = this.p = null;
-        }
-        function clipRejoin(segments, compareIntersection2, startInside, interpolate2, stream) {
-          var subject = [], clip2 = [], i, n;
-          segments.forEach(function(segment) {
-            if ((n2 = segment.length - 1) <= 0) return;
-            var n2, p02 = segment[0], p1 = segment[n2], x;
-            if (pointEqual(p02, p1)) {
-              if (!p02[2] && !p1[2]) {
-                stream.lineStart();
-                for (i = 0; i < n2; ++i) stream.point((p02 = segment[i])[0], p02[1]);
-                stream.lineEnd();
-                return;
-              }
-              p1[0] += 2 * epsilon;
-            }
-            subject.push(x = new Intersection(p02, segment, null, true));
-            clip2.push(x.o = new Intersection(p02, null, x, false));
-            subject.push(x = new Intersection(p1, segment, null, false));
-            clip2.push(x.o = new Intersection(p1, null, x, true));
-          });
-          if (!subject.length) return;
-          clip2.sort(compareIntersection2);
-          link(subject);
-          link(clip2);
-          for (i = 0, n = clip2.length; i < n; ++i) {
-            clip2[i].e = startInside = !startInside;
-          }
-          var start = subject[0], points, point;
-          while (1) {
-            var current = start, isSubject = true;
-            while (current.v) if ((current = current.n) === start) return;
-            points = current.z;
-            stream.lineStart();
-            do {
-              current.v = current.o.v = true;
-              if (current.e) {
-                if (isSubject) {
-                  for (i = 0, n = points.length; i < n; ++i) stream.point((point = points[i])[0], point[1]);
-                } else {
-                  interpolate2(current.x, current.n.x, 1, stream);
-                }
-                current = current.n;
-              } else {
-                if (isSubject) {
-                  points = current.p.z;
-                  for (i = points.length - 1; i >= 0; --i) stream.point((point = points[i])[0], point[1]);
-                } else {
-                  interpolate2(current.x, current.p.x, -1, stream);
-                }
-                current = current.p;
-              }
-              current = current.o;
-              points = current.z;
-              isSubject = !isSubject;
-            } while (!current.v);
-            stream.lineEnd();
-          }
-        }
-        function link(array) {
-          if (!(n = array.length)) return;
-          var n, i = 0, a = array[0], b;
-          while (++i < n) {
-            a.n = b = array[i];
-            b.p = a;
-            a = b;
-          }
-          a.n = b = array[0];
-          b.p = a;
-        }
-        var sum = adder();
-        function longitude(point) {
-          if (abs(point[0]) <= pi)
-            return point[0];
-          else
-            return sign(point[0]) * ((abs(point[0]) + pi) % tau - pi);
-        }
-        function polygonContains(polygon, point) {
-          var lambda = longitude(point), phi = point[1], sinPhi = sin(phi), normal = [sin(lambda), -cos(lambda), 0], angle2 = 0, winding = 0;
-          sum.reset();
-          if (sinPhi === 1) phi = halfPi + epsilon;
-          else if (sinPhi === -1) phi = -halfPi - epsilon;
-          for (var i = 0, n = polygon.length; i < n; ++i) {
-            if (!(m = (ring = polygon[i]).length)) continue;
-            var ring, m, point0 = ring[m - 1], lambda02 = longitude(point0), phi02 = point0[1] / 2 + quarterPi, sinPhi02 = sin(phi02), cosPhi02 = cos(phi02);
-            for (var j = 0; j < m; ++j, lambda02 = lambda12, sinPhi02 = sinPhi1, cosPhi02 = cosPhi1, point0 = point1) {
-              var point1 = ring[j], lambda12 = longitude(point1), phi12 = point1[1] / 2 + quarterPi, sinPhi1 = sin(phi12), cosPhi1 = cos(phi12), delta = lambda12 - lambda02, sign2 = delta >= 0 ? 1 : -1, absDelta = sign2 * delta, antimeridian = absDelta > pi, k = sinPhi02 * sinPhi1;
-              sum.add(atan2(k * sign2 * sin(absDelta), cosPhi02 * cosPhi1 + k * cos(absDelta)));
-              angle2 += antimeridian ? delta + sign2 * tau : delta;
-              if (antimeridian ^ lambda02 >= lambda ^ lambda12 >= lambda) {
-                var arc = cartesianCross(cartesian(point0), cartesian(point1));
-                cartesianNormalizeInPlace(arc);
-                var intersection = cartesianCross(normal, arc);
-                cartesianNormalizeInPlace(intersection);
-                var phiArc = (antimeridian ^ delta >= 0 ? -1 : 1) * asin(intersection[2]);
-                if (phi > phiArc || phi === phiArc && (arc[0] || arc[1])) {
-                  winding += antimeridian ^ delta >= 0 ? 1 : -1;
-                }
-              }
-            }
-          }
-          return (angle2 < -epsilon || angle2 < epsilon && sum < -epsilon) ^ winding & 1;
-        }
-        function clip(pointVisible, clipLine2, interpolate2, start) {
-          return function(sink) {
-            var line = clipLine2(sink), ringBuffer = clipBuffer(), ringSink = clipLine2(ringBuffer), polygonStarted = false, polygon, segments, ring;
-            var clip2 = {
-              point,
-              lineStart,
-              lineEnd,
-              polygonStart: function() {
-                clip2.point = pointRing;
-                clip2.lineStart = ringStart;
-                clip2.lineEnd = ringEnd;
-                segments = [];
-                polygon = [];
-              },
-              polygonEnd: function() {
-                clip2.point = point;
-                clip2.lineStart = lineStart;
-                clip2.lineEnd = lineEnd;
-                segments = d3Array.merge(segments);
-                var startInside = polygonContains(polygon, start);
-                if (segments.length) {
-                  if (!polygonStarted) sink.polygonStart(), polygonStarted = true;
-                  clipRejoin(segments, compareIntersection, startInside, interpolate2, sink);
-                } else if (startInside) {
-                  if (!polygonStarted) sink.polygonStart(), polygonStarted = true;
-                  sink.lineStart();
-                  interpolate2(null, null, 1, sink);
-                  sink.lineEnd();
-                }
-                if (polygonStarted) sink.polygonEnd(), polygonStarted = false;
-                segments = polygon = null;
-              },
-              sphere: function() {
-                sink.polygonStart();
-                sink.lineStart();
-                interpolate2(null, null, 1, sink);
-                sink.lineEnd();
-                sink.polygonEnd();
-              }
-            };
-            function point(lambda, phi) {
-              if (pointVisible(lambda, phi)) sink.point(lambda, phi);
-            }
-            function pointLine(lambda, phi) {
-              line.point(lambda, phi);
-            }
-            function lineStart() {
-              clip2.point = pointLine;
-              line.lineStart();
-            }
-            function lineEnd() {
-              clip2.point = point;
-              line.lineEnd();
-            }
-            function pointRing(lambda, phi) {
-              ring.push([lambda, phi]);
-              ringSink.point(lambda, phi);
-            }
-            function ringStart() {
-              ringSink.lineStart();
-              ring = [];
-            }
-            function ringEnd() {
-              pointRing(ring[0][0], ring[0][1]);
-              ringSink.lineEnd();
-              var clean = ringSink.clean(), ringSegments = ringBuffer.result(), i, n = ringSegments.length, m, segment, point2;
-              ring.pop();
-              polygon.push(ring);
-              ring = null;
-              if (!n) return;
-              if (clean & 1) {
-                segment = ringSegments[0];
-                if ((m = segment.length - 1) > 0) {
-                  if (!polygonStarted) sink.polygonStart(), polygonStarted = true;
-                  sink.lineStart();
-                  for (i = 0; i < m; ++i) sink.point((point2 = segment[i])[0], point2[1]);
-                  sink.lineEnd();
-                }
-                return;
-              }
-              if (n > 1 && clean & 2) ringSegments.push(ringSegments.pop().concat(ringSegments.shift()));
-              segments.push(ringSegments.filter(validSegment));
-            }
-            return clip2;
-          };
-        }
-        function validSegment(segment) {
-          return segment.length > 1;
-        }
-        function compareIntersection(a, b) {
-          return ((a = a.x)[0] < 0 ? a[1] - halfPi - epsilon : halfPi - a[1]) - ((b = b.x)[0] < 0 ? b[1] - halfPi - epsilon : halfPi - b[1]);
-        }
-        var clipAntimeridian = clip(
-          function() {
-            return true;
-          },
-          clipAntimeridianLine,
-          clipAntimeridianInterpolate,
-          [-pi, -halfPi]
-        );
-        function clipAntimeridianLine(stream) {
-          var lambda02 = NaN, phi02 = NaN, sign0 = NaN, clean;
-          return {
-            lineStart: function() {
-              stream.lineStart();
-              clean = 1;
-            },
-            point: function(lambda12, phi12) {
-              var sign1 = lambda12 > 0 ? pi : -pi, delta = abs(lambda12 - lambda02);
-              if (abs(delta - pi) < epsilon) {
-                stream.point(lambda02, phi02 = (phi02 + phi12) / 2 > 0 ? halfPi : -halfPi);
-                stream.point(sign0, phi02);
-                stream.lineEnd();
-                stream.lineStart();
-                stream.point(sign1, phi02);
-                stream.point(lambda12, phi02);
-                clean = 0;
-              } else if (sign0 !== sign1 && delta >= pi) {
-                if (abs(lambda02 - sign0) < epsilon) lambda02 -= sign0 * epsilon;
-                if (abs(lambda12 - sign1) < epsilon) lambda12 -= sign1 * epsilon;
-                phi02 = clipAntimeridianIntersect(lambda02, phi02, lambda12, phi12);
-                stream.point(sign0, phi02);
-                stream.lineEnd();
-                stream.lineStart();
-                stream.point(sign1, phi02);
-                clean = 0;
-              }
-              stream.point(lambda02 = lambda12, phi02 = phi12);
-              sign0 = sign1;
-            },
-            lineEnd: function() {
-              stream.lineEnd();
-              lambda02 = phi02 = NaN;
-            },
-            clean: function() {
-              return 2 - clean;
-            }
-          };
-        }
-        function clipAntimeridianIntersect(lambda02, phi02, lambda12, phi12) {
-          var cosPhi02, cosPhi1, sinLambda0Lambda1 = sin(lambda02 - lambda12);
-          return abs(sinLambda0Lambda1) > epsilon ? atan((sin(phi02) * (cosPhi1 = cos(phi12)) * sin(lambda12) - sin(phi12) * (cosPhi02 = cos(phi02)) * sin(lambda02)) / (cosPhi02 * cosPhi1 * sinLambda0Lambda1)) : (phi02 + phi12) / 2;
-        }
-        function clipAntimeridianInterpolate(from, to, direction, stream) {
-          var phi;
-          if (from == null) {
-            phi = direction * halfPi;
-            stream.point(-pi, phi);
-            stream.point(0, phi);
-            stream.point(pi, phi);
-            stream.point(pi, 0);
-            stream.point(pi, -phi);
-            stream.point(0, -phi);
-            stream.point(-pi, -phi);
-            stream.point(-pi, 0);
-            stream.point(-pi, phi);
-          } else if (abs(from[0] - to[0]) > epsilon) {
-            var lambda = from[0] < to[0] ? pi : -pi;
-            phi = direction * lambda / 2;
-            stream.point(-lambda, phi);
-            stream.point(0, phi);
-            stream.point(lambda, phi);
-          } else {
-            stream.point(to[0], to[1]);
-          }
-        }
-        function clipCircle(radius) {
-          var cr = cos(radius), delta = 6 * radians, smallRadius = cr > 0, notHemisphere = abs(cr) > epsilon;
-          function interpolate2(from, to, direction, stream) {
-            circleStream(stream, radius, delta, direction, from, to);
-          }
-          function visible(lambda, phi) {
-            return cos(lambda) * cos(phi) > cr;
-          }
-          function clipLine2(stream) {
-            var point0, c0, v0, v00, clean;
-            return {
-              lineStart: function() {
-                v00 = v0 = false;
-                clean = 1;
-              },
-              point: function(lambda, phi) {
-                var point1 = [lambda, phi], point2, v = visible(lambda, phi), c = smallRadius ? v ? 0 : code(lambda, phi) : v ? code(lambda + (lambda < 0 ? pi : -pi), phi) : 0;
-                if (!point0 && (v00 = v0 = v)) stream.lineStart();
-                if (v !== v0) {
-                  point2 = intersect(point0, point1);
-                  if (!point2 || pointEqual(point0, point2) || pointEqual(point1, point2))
-                    point1[2] = 1;
-                }
-                if (v !== v0) {
-                  clean = 0;
-                  if (v) {
-                    stream.lineStart();
-                    point2 = intersect(point1, point0);
-                    stream.point(point2[0], point2[1]);
-                  } else {
-                    point2 = intersect(point0, point1);
-                    stream.point(point2[0], point2[1], 2);
-                    stream.lineEnd();
-                  }
-                  point0 = point2;
-                } else if (notHemisphere && point0 && smallRadius ^ v) {
-                  var t;
-                  if (!(c & c0) && (t = intersect(point1, point0, true))) {
-                    clean = 0;
-                    if (smallRadius) {
-                      stream.lineStart();
-                      stream.point(t[0][0], t[0][1]);
-                      stream.point(t[1][0], t[1][1]);
-                      stream.lineEnd();
-                    } else {
-                      stream.point(t[1][0], t[1][1]);
-                      stream.lineEnd();
-                      stream.lineStart();
-                      stream.point(t[0][0], t[0][1], 3);
-                    }
-                  }
-                }
-                if (v && (!point0 || !pointEqual(point0, point1))) {
-                  stream.point(point1[0], point1[1]);
-                }
-                point0 = point1, v0 = v, c0 = c;
-              },
-              lineEnd: function() {
-                if (v0) stream.lineEnd();
-                point0 = null;
-              },
-              // Rejoin first and last segments if there were intersections and the first
-              // and last points were visible.
-              clean: function() {
-                return clean | (v00 && v0) << 1;
-              }
-            };
-          }
-          function intersect(a, b, two) {
-            var pa = cartesian(a), pb = cartesian(b);
-            var n1 = [1, 0, 0], n2 = cartesianCross(pa, pb), n2n2 = cartesianDot(n2, n2), n1n2 = n2[0], determinant = n2n2 - n1n2 * n1n2;
-            if (!determinant) return !two && a;
-            var c1 = cr * n2n2 / determinant, c2 = -cr * n1n2 / determinant, n1xn2 = cartesianCross(n1, n2), A = cartesianScale(n1, c1), B = cartesianScale(n2, c2);
-            cartesianAddInPlace(A, B);
-            var u = n1xn2, w = cartesianDot(A, u), uu = cartesianDot(u, u), t2 = w * w - uu * (cartesianDot(A, A) - 1);
-            if (t2 < 0) return;
-            var t = sqrt(t2), q = cartesianScale(u, (-w - t) / uu);
-            cartesianAddInPlace(q, A);
-            q = spherical(q);
-            if (!two) return q;
-            var lambda02 = a[0], lambda12 = b[0], phi02 = a[1], phi12 = b[1], z;
-            if (lambda12 < lambda02) z = lambda02, lambda02 = lambda12, lambda12 = z;
-            var delta2 = lambda12 - lambda02, polar = abs(delta2 - pi) < epsilon, meridian = polar || delta2 < epsilon;
-            if (!polar && phi12 < phi02) z = phi02, phi02 = phi12, phi12 = z;
-            if (meridian ? polar ? phi02 + phi12 > 0 ^ q[1] < (abs(q[0] - lambda02) < epsilon ? phi02 : phi12) : phi02 <= q[1] && q[1] <= phi12 : delta2 > pi ^ (lambda02 <= q[0] && q[0] <= lambda12)) {
-              var q1 = cartesianScale(u, (-w + t) / uu);
-              cartesianAddInPlace(q1, A);
-              return [q, spherical(q1)];
-            }
-          }
-          function code(lambda, phi) {
-            var r = smallRadius ? radius : pi - radius, code2 = 0;
-            if (lambda < -r) code2 |= 1;
-            else if (lambda > r) code2 |= 2;
-            if (phi < -r) code2 |= 4;
-            else if (phi > r) code2 |= 8;
-            return code2;
-          }
-          return clip(visible, clipLine2, interpolate2, smallRadius ? [0, -radius] : [-pi, radius - pi]);
-        }
-        function clipLine(a, b, x02, y02, x12, y12) {
-          var ax = a[0], ay = a[1], bx = b[0], by = b[1], t0 = 0, t1 = 1, dx = bx - ax, dy = by - ay, r;
-          r = x02 - ax;
-          if (!dx && r > 0) return;
-          r /= dx;
-          if (dx < 0) {
-            if (r < t0) return;
-            if (r < t1) t1 = r;
-          } else if (dx > 0) {
-            if (r > t1) return;
-            if (r > t0) t0 = r;
-          }
-          r = x12 - ax;
-          if (!dx && r < 0) return;
-          r /= dx;
-          if (dx < 0) {
-            if (r > t1) return;
-            if (r > t0) t0 = r;
-          } else if (dx > 0) {
-            if (r < t0) return;
-            if (r < t1) t1 = r;
-          }
-          r = y02 - ay;
-          if (!dy && r > 0) return;
-          r /= dy;
-          if (dy < 0) {
-            if (r < t0) return;
-            if (r < t1) t1 = r;
-          } else if (dy > 0) {
-            if (r > t1) return;
-            if (r > t0) t0 = r;
-          }
-          r = y12 - ay;
-          if (!dy && r < 0) return;
-          r /= dy;
-          if (dy < 0) {
-            if (r > t1) return;
-            if (r > t0) t0 = r;
-          } else if (dy > 0) {
-            if (r < t0) return;
-            if (r < t1) t1 = r;
-          }
-          if (t0 > 0) a[0] = ax + t0 * dx, a[1] = ay + t0 * dy;
-          if (t1 < 1) b[0] = ax + t1 * dx, b[1] = ay + t1 * dy;
-          return true;
-        }
-        var clipMax = 1e9, clipMin = -clipMax;
-        function clipRectangle(x02, y02, x12, y12) {
-          function visible(x, y) {
-            return x02 <= x && x <= x12 && y02 <= y && y <= y12;
-          }
-          function interpolate2(from, to, direction, stream) {
-            var a = 0, a1 = 0;
-            if (from == null || (a = corner(from, direction)) !== (a1 = corner(to, direction)) || comparePoint(from, to) < 0 ^ direction > 0) {
-              do
-                stream.point(a === 0 || a === 3 ? x02 : x12, a > 1 ? y12 : y02);
-              while ((a = (a + direction + 4) % 4) !== a1);
-            } else {
-              stream.point(to[0], to[1]);
-            }
-          }
-          function corner(p, direction) {
-            return abs(p[0] - x02) < epsilon ? direction > 0 ? 0 : 3 : abs(p[0] - x12) < epsilon ? direction > 0 ? 2 : 1 : abs(p[1] - y02) < epsilon ? direction > 0 ? 1 : 0 : direction > 0 ? 3 : 2;
-          }
-          function compareIntersection2(a, b) {
-            return comparePoint(a.x, b.x);
-          }
-          function comparePoint(a, b) {
-            var ca = corner(a, 1), cb = corner(b, 1);
-            return ca !== cb ? ca - cb : ca === 0 ? b[1] - a[1] : ca === 1 ? a[0] - b[0] : ca === 2 ? a[1] - b[1] : b[0] - a[0];
-          }
-          return function(stream) {
-            var activeStream = stream, bufferStream = clipBuffer(), segments, polygon, ring, x__, y__, v__, x_, y_, v_, first, clean;
-            var clipStream = {
-              point,
-              lineStart,
-              lineEnd,
-              polygonStart,
-              polygonEnd
-            };
-            function point(x, y) {
-              if (visible(x, y)) activeStream.point(x, y);
-            }
-            function polygonInside() {
-              var winding = 0;
-              for (var i = 0, n = polygon.length; i < n; ++i) {
-                for (var ring2 = polygon[i], j = 1, m = ring2.length, point2 = ring2[0], a0, a1, b0 = point2[0], b1 = point2[1]; j < m; ++j) {
-                  a0 = b0, a1 = b1, point2 = ring2[j], b0 = point2[0], b1 = point2[1];
-                  if (a1 <= y12) {
-                    if (b1 > y12 && (b0 - a0) * (y12 - a1) > (b1 - a1) * (x02 - a0)) ++winding;
-                  } else {
-                    if (b1 <= y12 && (b0 - a0) * (y12 - a1) < (b1 - a1) * (x02 - a0)) --winding;
-                  }
-                }
-              }
-              return winding;
-            }
-            function polygonStart() {
-              activeStream = bufferStream, segments = [], polygon = [], clean = true;
-            }
-            function polygonEnd() {
-              var startInside = polygonInside(), cleanInside = clean && startInside, visible2 = (segments = d3Array.merge(segments)).length;
-              if (cleanInside || visible2) {
-                stream.polygonStart();
-                if (cleanInside) {
-                  stream.lineStart();
-                  interpolate2(null, null, 1, stream);
-                  stream.lineEnd();
-                }
-                if (visible2) {
-                  clipRejoin(segments, compareIntersection2, startInside, interpolate2, stream);
-                }
-                stream.polygonEnd();
-              }
-              activeStream = stream, segments = polygon = ring = null;
-            }
-            function lineStart() {
-              clipStream.point = linePoint2;
-              if (polygon) polygon.push(ring = []);
-              first = true;
-              v_ = false;
-              x_ = y_ = NaN;
-            }
-            function lineEnd() {
-              if (segments) {
-                linePoint2(x__, y__);
-                if (v__ && v_) bufferStream.rejoin();
-                segments.push(bufferStream.result());
-              }
-              clipStream.point = point;
-              if (v_) activeStream.lineEnd();
-            }
-            function linePoint2(x, y) {
-              var v = visible(x, y);
-              if (polygon) ring.push([x, y]);
-              if (first) {
-                x__ = x, y__ = y, v__ = v;
-                first = false;
-                if (v) {
-                  activeStream.lineStart();
-                  activeStream.point(x, y);
-                }
-              } else {
-                if (v && v_) activeStream.point(x, y);
-                else {
-                  var a = [x_ = Math.max(clipMin, Math.min(clipMax, x_)), y_ = Math.max(clipMin, Math.min(clipMax, y_))], b = [x = Math.max(clipMin, Math.min(clipMax, x)), y = Math.max(clipMin, Math.min(clipMax, y))];
-                  if (clipLine(a, b, x02, y02, x12, y12)) {
-                    if (!v_) {
-                      activeStream.lineStart();
-                      activeStream.point(a[0], a[1]);
-                    }
-                    activeStream.point(b[0], b[1]);
-                    if (!v) activeStream.lineEnd();
-                    clean = false;
-                  } else if (v) {
-                    activeStream.lineStart();
-                    activeStream.point(x, y);
-                    clean = false;
-                  }
-                }
-              }
-              x_ = x, y_ = y, v_ = v;
-            }
-            return clipStream;
-          };
-        }
-        function extent() {
-          var x02 = 0, y02 = 0, x12 = 960, y12 = 500, cache, cacheStream, clip2;
-          return clip2 = {
-            stream: function(stream) {
-              return cache && cacheStream === stream ? cache : cache = clipRectangle(x02, y02, x12, y12)(cacheStream = stream);
-            },
-            extent: function(_) {
-              return arguments.length ? (x02 = +_[0][0], y02 = +_[0][1], x12 = +_[1][0], y12 = +_[1][1], cache = cacheStream = null, clip2) : [[x02, y02], [x12, y12]];
-            }
-          };
-        }
-        var lengthSum = adder(), lambda0$2, sinPhi0$1, cosPhi0$1;
-        var lengthStream = {
-          sphere: noop,
-          point: noop,
-          lineStart: lengthLineStart,
-          lineEnd: noop,
-          polygonStart: noop,
-          polygonEnd: noop
-        };
-        function lengthLineStart() {
-          lengthStream.point = lengthPointFirst;
-          lengthStream.lineEnd = lengthLineEnd;
-        }
-        function lengthLineEnd() {
-          lengthStream.point = lengthStream.lineEnd = noop;
-        }
-        function lengthPointFirst(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          lambda0$2 = lambda, sinPhi0$1 = sin(phi), cosPhi0$1 = cos(phi);
-          lengthStream.point = lengthPoint;
-        }
-        function lengthPoint(lambda, phi) {
-          lambda *= radians, phi *= radians;
-          var sinPhi = sin(phi), cosPhi = cos(phi), delta = abs(lambda - lambda0$2), cosDelta = cos(delta), sinDelta = sin(delta), x = cosPhi * sinDelta, y = cosPhi0$1 * sinPhi - sinPhi0$1 * cosPhi * cosDelta, z = sinPhi0$1 * sinPhi + cosPhi0$1 * cosPhi * cosDelta;
-          lengthSum.add(atan2(sqrt(x * x + y * y), z));
-          lambda0$2 = lambda, sinPhi0$1 = sinPhi, cosPhi0$1 = cosPhi;
-        }
-        function length(object2) {
-          lengthSum.reset();
-          geoStream(object2, lengthStream);
-          return +lengthSum;
-        }
-        var coordinates = [null, null], object = { type: "LineString", coordinates };
-        function distance(a, b) {
-          coordinates[0] = a;
-          coordinates[1] = b;
-          return length(object);
-        }
-        var containsObjectType = {
-          Feature: function(object2, point) {
-            return containsGeometry(object2.geometry, point);
-          },
-          FeatureCollection: function(object2, point) {
-            var features = object2.features, i = -1, n = features.length;
-            while (++i < n) if (containsGeometry(features[i].geometry, point)) return true;
-            return false;
-          }
-        };
-        var containsGeometryType = {
-          Sphere: function() {
-            return true;
-          },
-          Point: function(object2, point) {
-            return containsPoint(object2.coordinates, point);
-          },
-          MultiPoint: function(object2, point) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) if (containsPoint(coordinates2[i], point)) return true;
-            return false;
-          },
-          LineString: function(object2, point) {
-            return containsLine(object2.coordinates, point);
-          },
-          MultiLineString: function(object2, point) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) if (containsLine(coordinates2[i], point)) return true;
-            return false;
-          },
-          Polygon: function(object2, point) {
-            return containsPolygon(object2.coordinates, point);
-          },
-          MultiPolygon: function(object2, point) {
-            var coordinates2 = object2.coordinates, i = -1, n = coordinates2.length;
-            while (++i < n) if (containsPolygon(coordinates2[i], point)) return true;
-            return false;
-          },
-          GeometryCollection: function(object2, point) {
-            var geometries = object2.geometries, i = -1, n = geometries.length;
-            while (++i < n) if (containsGeometry(geometries[i], point)) return true;
-            return false;
-          }
-        };
-        function containsGeometry(geometry, point) {
-          return geometry && containsGeometryType.hasOwnProperty(geometry.type) ? containsGeometryType[geometry.type](geometry, point) : false;
-        }
-        function containsPoint(coordinates2, point) {
-          return distance(coordinates2, point) === 0;
-        }
-        function containsLine(coordinates2, point) {
-          var ao, bo, ab;
-          for (var i = 0, n = coordinates2.length; i < n; i++) {
-            bo = distance(coordinates2[i], point);
-            if (bo === 0) return true;
-            if (i > 0) {
-              ab = distance(coordinates2[i], coordinates2[i - 1]);
-              if (ab > 0 && ao <= ab && bo <= ab && (ao + bo - ab) * (1 - Math.pow((ao - bo) / ab, 2)) < epsilon2 * ab)
-                return true;
-            }
-            ao = bo;
-          }
-          return false;
-        }
-        function containsPolygon(coordinates2, point) {
-          return !!polygonContains(coordinates2.map(ringRadians), pointRadians(point));
-        }
-        function ringRadians(ring) {
-          return ring = ring.map(pointRadians), ring.pop(), ring;
-        }
-        function pointRadians(point) {
-          return [point[0] * radians, point[1] * radians];
-        }
-        function contains(object2, point) {
-          return (object2 && containsObjectType.hasOwnProperty(object2.type) ? containsObjectType[object2.type] : containsGeometry)(object2, point);
-        }
-        function graticuleX(y02, y12, dy) {
-          var y = d3Array.range(y02, y12 - epsilon, dy).concat(y12);
-          return function(x) {
-            return y.map(function(y2) {
-              return [x, y2];
-            });
-          };
-        }
-        function graticuleY(x02, x12, dx) {
-          var x = d3Array.range(x02, x12 - epsilon, dx).concat(x12);
-          return function(y) {
-            return x.map(function(x2) {
-              return [x2, y];
-            });
-          };
-        }
-        function graticule() {
-          var x12, x02, X12, X02, y12, y02, Y12, Y02, dx = 10, dy = dx, DX = 90, DY = 360, x, y, X, Y, precision = 2.5;
-          function graticule2() {
-            return { type: "MultiLineString", coordinates: lines() };
-          }
-          function lines() {
-            return d3Array.range(ceil(X02 / DX) * DX, X12, DX).map(X).concat(d3Array.range(ceil(Y02 / DY) * DY, Y12, DY).map(Y)).concat(d3Array.range(ceil(x02 / dx) * dx, x12, dx).filter(function(x2) {
-              return abs(x2 % DX) > epsilon;
-            }).map(x)).concat(d3Array.range(ceil(y02 / dy) * dy, y12, dy).filter(function(y2) {
-              return abs(y2 % DY) > epsilon;
-            }).map(y));
-          }
-          graticule2.lines = function() {
-            return lines().map(function(coordinates2) {
-              return { type: "LineString", coordinates: coordinates2 };
-            });
-          };
-          graticule2.outline = function() {
-            return {
-              type: "Polygon",
-              coordinates: [
-                X(X02).concat(
-                  Y(Y12).slice(1),
-                  X(X12).reverse().slice(1),
-                  Y(Y02).reverse().slice(1)
-                )
-              ]
-            };
-          };
-          graticule2.extent = function(_) {
-            if (!arguments.length) return graticule2.extentMinor();
-            return graticule2.extentMajor(_).extentMinor(_);
-          };
-          graticule2.extentMajor = function(_) {
-            if (!arguments.length) return [[X02, Y02], [X12, Y12]];
-            X02 = +_[0][0], X12 = +_[1][0];
-            Y02 = +_[0][1], Y12 = +_[1][1];
-            if (X02 > X12) _ = X02, X02 = X12, X12 = _;
-            if (Y02 > Y12) _ = Y02, Y02 = Y12, Y12 = _;
-            return graticule2.precision(precision);
-          };
-          graticule2.extentMinor = function(_) {
-            if (!arguments.length) return [[x02, y02], [x12, y12]];
-            x02 = +_[0][0], x12 = +_[1][0];
-            y02 = +_[0][1], y12 = +_[1][1];
-            if (x02 > x12) _ = x02, x02 = x12, x12 = _;
-            if (y02 > y12) _ = y02, y02 = y12, y12 = _;
-            return graticule2.precision(precision);
-          };
-          graticule2.step = function(_) {
-            if (!arguments.length) return graticule2.stepMinor();
-            return graticule2.stepMajor(_).stepMinor(_);
-          };
-          graticule2.stepMajor = function(_) {
-            if (!arguments.length) return [DX, DY];
-            DX = +_[0], DY = +_[1];
-            return graticule2;
-          };
-          graticule2.stepMinor = function(_) {
-            if (!arguments.length) return [dx, dy];
-            dx = +_[0], dy = +_[1];
-            return graticule2;
-          };
-          graticule2.precision = function(_) {
-            if (!arguments.length) return precision;
-            precision = +_;
-            x = graticuleX(y02, y12, 90);
-            y = graticuleY(x02, x12, precision);
-            X = graticuleX(Y02, Y12, 90);
-            Y = graticuleY(X02, X12, precision);
-            return graticule2;
-          };
-          return graticule2.extentMajor([[-180, -90 + epsilon], [180, 90 - epsilon]]).extentMinor([[-180, -80 - epsilon], [180, 80 + epsilon]]);
-        }
-        function graticule10() {
-          return graticule()();
-        }
-        function interpolate(a, b) {
-          var x02 = a[0] * radians, y02 = a[1] * radians, x12 = b[0] * radians, y12 = b[1] * radians, cy0 = cos(y02), sy0 = sin(y02), cy1 = cos(y12), sy1 = sin(y12), kx0 = cy0 * cos(x02), ky0 = cy0 * sin(x02), kx1 = cy1 * cos(x12), ky1 = cy1 * sin(x12), d = 2 * asin(sqrt(haversin(y12 - y02) + cy0 * cy1 * haversin(x12 - x02))), k = sin(d);
-          var interpolate2 = d ? function(t) {
-            var B = sin(t *= d) / k, A = sin(d - t) / k, x = A * kx0 + B * kx1, y = A * ky0 + B * ky1, z = A * sy0 + B * sy1;
-            return [
-              atan2(y, x) * degrees,
-              atan2(z, sqrt(x * x + y * y)) * degrees
-            ];
-          } : function() {
-            return [x02 * degrees, y02 * degrees];
-          };
-          interpolate2.distance = d;
-          return interpolate2;
-        }
-        function identity(x) {
-          return x;
-        }
-        var areaSum$1 = adder(), areaRingSum$1 = adder(), x00, y00, x0$1, y0$1;
-        var areaStream$1 = {
-          point: noop,
-          lineStart: noop,
-          lineEnd: noop,
-          polygonStart: function() {
-            areaStream$1.lineStart = areaRingStart$1;
-            areaStream$1.lineEnd = areaRingEnd$1;
-          },
-          polygonEnd: function() {
-            areaStream$1.lineStart = areaStream$1.lineEnd = areaStream$1.point = noop;
-            areaSum$1.add(abs(areaRingSum$1));
-            areaRingSum$1.reset();
-          },
-          result: function() {
-            var area2 = areaSum$1 / 2;
-            areaSum$1.reset();
-            return area2;
-          }
-        };
-        function areaRingStart$1() {
-          areaStream$1.point = areaPointFirst$1;
-        }
-        function areaPointFirst$1(x, y) {
-          areaStream$1.point = areaPoint$1;
-          x00 = x0$1 = x, y00 = y0$1 = y;
-        }
-        function areaPoint$1(x, y) {
-          areaRingSum$1.add(y0$1 * x - x0$1 * y);
-          x0$1 = x, y0$1 = y;
-        }
-        function areaRingEnd$1() {
-          areaPoint$1(x00, y00);
-        }
-        var x0$2 = Infinity, y0$2 = x0$2, x1 = -x0$2, y1 = x1;
-        var boundsStream$1 = {
-          point: boundsPoint$1,
-          lineStart: noop,
-          lineEnd: noop,
-          polygonStart: noop,
-          polygonEnd: noop,
-          result: function() {
-            var bounds2 = [[x0$2, y0$2], [x1, y1]];
-            x1 = y1 = -(y0$2 = x0$2 = Infinity);
-            return bounds2;
-          }
-        };
-        function boundsPoint$1(x, y) {
-          if (x < x0$2) x0$2 = x;
-          if (x > x1) x1 = x;
-          if (y < y0$2) y0$2 = y;
-          if (y > y1) y1 = y;
-        }
-        var X0$1 = 0, Y0$1 = 0, Z0$1 = 0, X1$1 = 0, Y1$1 = 0, Z1$1 = 0, X2$1 = 0, Y2$1 = 0, Z2$1 = 0, x00$1, y00$1, x0$3, y0$3;
-        var centroidStream$1 = {
-          point: centroidPoint$1,
-          lineStart: centroidLineStart$1,
-          lineEnd: centroidLineEnd$1,
-          polygonStart: function() {
-            centroidStream$1.lineStart = centroidRingStart$1;
-            centroidStream$1.lineEnd = centroidRingEnd$1;
-          },
-          polygonEnd: function() {
-            centroidStream$1.point = centroidPoint$1;
-            centroidStream$1.lineStart = centroidLineStart$1;
-            centroidStream$1.lineEnd = centroidLineEnd$1;
-          },
-          result: function() {
-            var centroid2 = Z2$1 ? [X2$1 / Z2$1, Y2$1 / Z2$1] : Z1$1 ? [X1$1 / Z1$1, Y1$1 / Z1$1] : Z0$1 ? [X0$1 / Z0$1, Y0$1 / Z0$1] : [NaN, NaN];
-            X0$1 = Y0$1 = Z0$1 = X1$1 = Y1$1 = Z1$1 = X2$1 = Y2$1 = Z2$1 = 0;
-            return centroid2;
-          }
-        };
-        function centroidPoint$1(x, y) {
-          X0$1 += x;
-          Y0$1 += y;
-          ++Z0$1;
-        }
-        function centroidLineStart$1() {
-          centroidStream$1.point = centroidPointFirstLine;
-        }
-        function centroidPointFirstLine(x, y) {
-          centroidStream$1.point = centroidPointLine;
-          centroidPoint$1(x0$3 = x, y0$3 = y);
-        }
-        function centroidPointLine(x, y) {
-          var dx = x - x0$3, dy = y - y0$3, z = sqrt(dx * dx + dy * dy);
-          X1$1 += z * (x0$3 + x) / 2;
-          Y1$1 += z * (y0$3 + y) / 2;
-          Z1$1 += z;
-          centroidPoint$1(x0$3 = x, y0$3 = y);
-        }
-        function centroidLineEnd$1() {
-          centroidStream$1.point = centroidPoint$1;
-        }
-        function centroidRingStart$1() {
-          centroidStream$1.point = centroidPointFirstRing;
-        }
-        function centroidRingEnd$1() {
-          centroidPointRing(x00$1, y00$1);
-        }
-        function centroidPointFirstRing(x, y) {
-          centroidStream$1.point = centroidPointRing;
-          centroidPoint$1(x00$1 = x0$3 = x, y00$1 = y0$3 = y);
-        }
-        function centroidPointRing(x, y) {
-          var dx = x - x0$3, dy = y - y0$3, z = sqrt(dx * dx + dy * dy);
-          X1$1 += z * (x0$3 + x) / 2;
-          Y1$1 += z * (y0$3 + y) / 2;
-          Z1$1 += z;
-          z = y0$3 * x - x0$3 * y;
-          X2$1 += z * (x0$3 + x);
-          Y2$1 += z * (y0$3 + y);
-          Z2$1 += z * 3;
-          centroidPoint$1(x0$3 = x, y0$3 = y);
-        }
-        function PathContext(context) {
-          this._context = context;
-        }
-        PathContext.prototype = {
-          _radius: 4.5,
-          pointRadius: function(_) {
-            return this._radius = _, this;
-          },
-          polygonStart: function() {
-            this._line = 0;
-          },
-          polygonEnd: function() {
-            this._line = NaN;
-          },
-          lineStart: function() {
-            this._point = 0;
-          },
-          lineEnd: function() {
-            if (this._line === 0) this._context.closePath();
-            this._point = NaN;
-          },
-          point: function(x, y) {
-            switch (this._point) {
-              case 0: {
-                this._context.moveTo(x, y);
-                this._point = 1;
-                break;
-              }
-              case 1: {
-                this._context.lineTo(x, y);
-                break;
-              }
-              default: {
-                this._context.moveTo(x + this._radius, y);
-                this._context.arc(x, y, this._radius, 0, tau);
-                break;
-              }
-            }
-          },
-          result: noop
-        };
-        var lengthSum$1 = adder(), lengthRing, x00$2, y00$2, x0$4, y0$4;
-        var lengthStream$1 = {
-          point: noop,
-          lineStart: function() {
-            lengthStream$1.point = lengthPointFirst$1;
-          },
-          lineEnd: function() {
-            if (lengthRing) lengthPoint$1(x00$2, y00$2);
-            lengthStream$1.point = noop;
-          },
-          polygonStart: function() {
-            lengthRing = true;
-          },
-          polygonEnd: function() {
-            lengthRing = null;
-          },
-          result: function() {
-            var length2 = +lengthSum$1;
-            lengthSum$1.reset();
-            return length2;
-          }
-        };
-        function lengthPointFirst$1(x, y) {
-          lengthStream$1.point = lengthPoint$1;
-          x00$2 = x0$4 = x, y00$2 = y0$4 = y;
-        }
-        function lengthPoint$1(x, y) {
-          x0$4 -= x, y0$4 -= y;
-          lengthSum$1.add(sqrt(x0$4 * x0$4 + y0$4 * y0$4));
-          x0$4 = x, y0$4 = y;
-        }
-        function PathString() {
-          this._string = [];
-        }
-        PathString.prototype = {
-          _radius: 4.5,
-          _circle: circle$1(4.5),
-          pointRadius: function(_) {
-            if ((_ = +_) !== this._radius) this._radius = _, this._circle = null;
-            return this;
-          },
-          polygonStart: function() {
-            this._line = 0;
-          },
-          polygonEnd: function() {
-            this._line = NaN;
-          },
-          lineStart: function() {
-            this._point = 0;
-          },
-          lineEnd: function() {
-            if (this._line === 0) this._string.push("Z");
-            this._point = NaN;
-          },
-          point: function(x, y) {
-            switch (this._point) {
-              case 0: {
-                this._string.push("M", x, ",", y);
-                this._point = 1;
-                break;
-              }
-              case 1: {
-                this._string.push("L", x, ",", y);
-                break;
-              }
-              default: {
-                if (this._circle == null) this._circle = circle$1(this._radius);
-                this._string.push("M", x, ",", y, this._circle);
-                break;
-              }
-            }
-          },
-          result: function() {
-            if (this._string.length) {
-              var result = this._string.join("");
-              this._string = [];
-              return result;
-            } else {
-              return null;
-            }
-          }
-        };
-        function circle$1(radius) {
-          return "m0," + radius + "a" + radius + "," + radius + " 0 1,1 0," + -2 * radius + "a" + radius + "," + radius + " 0 1,1 0," + 2 * radius + "z";
-        }
-        function index(projection2, context) {
-          var pointRadius = 4.5, projectionStream, contextStream;
-          function path(object2) {
-            if (object2) {
-              if (typeof pointRadius === "function") contextStream.pointRadius(+pointRadius.apply(this, arguments));
-              geoStream(object2, projectionStream(contextStream));
-            }
-            return contextStream.result();
-          }
-          path.area = function(object2) {
-            geoStream(object2, projectionStream(areaStream$1));
-            return areaStream$1.result();
-          };
-          path.measure = function(object2) {
-            geoStream(object2, projectionStream(lengthStream$1));
-            return lengthStream$1.result();
-          };
-          path.bounds = function(object2) {
-            geoStream(object2, projectionStream(boundsStream$1));
-            return boundsStream$1.result();
-          };
-          path.centroid = function(object2) {
-            geoStream(object2, projectionStream(centroidStream$1));
-            return centroidStream$1.result();
-          };
-          path.projection = function(_) {
-            return arguments.length ? (projectionStream = _ == null ? (projection2 = null, identity) : (projection2 = _).stream, path) : projection2;
-          };
-          path.context = function(_) {
-            if (!arguments.length) return context;
-            contextStream = _ == null ? (context = null, new PathString()) : new PathContext(context = _);
-            if (typeof pointRadius !== "function") contextStream.pointRadius(pointRadius);
-            return path;
-          };
-          path.pointRadius = function(_) {
-            if (!arguments.length) return pointRadius;
-            pointRadius = typeof _ === "function" ? _ : (contextStream.pointRadius(+_), +_);
-            return path;
-          };
-          return path.projection(projection2).context(context);
-        }
-        function transform(methods) {
-          return {
-            stream: transformer(methods)
-          };
-        }
-        function transformer(methods) {
-          return function(stream) {
-            var s = new TransformStream();
-            for (var key in methods) s[key] = methods[key];
-            s.stream = stream;
-            return s;
-          };
-        }
-        function TransformStream() {
-        }
-        TransformStream.prototype = {
-          constructor: TransformStream,
-          point: function(x, y) {
-            this.stream.point(x, y);
-          },
-          sphere: function() {
-            this.stream.sphere();
-          },
-          lineStart: function() {
-            this.stream.lineStart();
-          },
-          lineEnd: function() {
-            this.stream.lineEnd();
-          },
-          polygonStart: function() {
-            this.stream.polygonStart();
-          },
-          polygonEnd: function() {
-            this.stream.polygonEnd();
-          }
-        };
-        function fit(projection2, fitBounds, object2) {
-          var clip2 = projection2.clipExtent && projection2.clipExtent();
-          projection2.scale(150).translate([0, 0]);
-          if (clip2 != null) projection2.clipExtent(null);
-          geoStream(object2, projection2.stream(boundsStream$1));
-          fitBounds(boundsStream$1.result());
-          if (clip2 != null) projection2.clipExtent(clip2);
-          return projection2;
-        }
-        function fitExtent(projection2, extent2, object2) {
-          return fit(projection2, function(b) {
-            var w = extent2[1][0] - extent2[0][0], h = extent2[1][1] - extent2[0][1], k = Math.min(w / (b[1][0] - b[0][0]), h / (b[1][1] - b[0][1])), x = +extent2[0][0] + (w - k * (b[1][0] + b[0][0])) / 2, y = +extent2[0][1] + (h - k * (b[1][1] + b[0][1])) / 2;
-            projection2.scale(150 * k).translate([x, y]);
-          }, object2);
-        }
-        function fitSize(projection2, size, object2) {
-          return fitExtent(projection2, [[0, 0], size], object2);
-        }
-        function fitWidth(projection2, width, object2) {
-          return fit(projection2, function(b) {
-            var w = +width, k = w / (b[1][0] - b[0][0]), x = (w - k * (b[1][0] + b[0][0])) / 2, y = -k * b[0][1];
-            projection2.scale(150 * k).translate([x, y]);
-          }, object2);
-        }
-        function fitHeight(projection2, height, object2) {
-          return fit(projection2, function(b) {
-            var h = +height, k = h / (b[1][1] - b[0][1]), x = -k * b[0][0], y = (h - k * (b[1][1] + b[0][1])) / 2;
-            projection2.scale(150 * k).translate([x, y]);
-          }, object2);
-        }
-        var maxDepth = 16, cosMinDistance = cos(30 * radians);
-        function resample(project, delta2) {
-          return +delta2 ? resample$1(project, delta2) : resampleNone(project);
-        }
-        function resampleNone(project) {
-          return transformer({
-            point: function(x, y) {
-              x = project(x, y);
-              this.stream.point(x[0], x[1]);
-            }
-          });
-        }
-        function resample$1(project, delta2) {
-          function resampleLineTo(x02, y02, lambda02, a0, b0, c0, x12, y12, lambda12, a1, b1, c1, depth, stream) {
-            var dx = x12 - x02, dy = y12 - y02, d2 = dx * dx + dy * dy;
-            if (d2 > 4 * delta2 && depth--) {
-              var a = a0 + a1, b = b0 + b1, c = c0 + c1, m = sqrt(a * a + b * b + c * c), phi2 = asin(c /= m), lambda22 = abs(abs(c) - 1) < epsilon || abs(lambda02 - lambda12) < epsilon ? (lambda02 + lambda12) / 2 : atan2(b, a), p = project(lambda22, phi2), x2 = p[0], y2 = p[1], dx2 = x2 - x02, dy2 = y2 - y02, dz = dy * dx2 - dx * dy2;
-              if (dz * dz / d2 > delta2 || abs((dx * dx2 + dy * dy2) / d2 - 0.5) > 0.3 || a0 * a1 + b0 * b1 + c0 * c1 < cosMinDistance) {
-                resampleLineTo(x02, y02, lambda02, a0, b0, c0, x2, y2, lambda22, a /= m, b /= m, c, depth, stream);
-                stream.point(x2, y2);
-                resampleLineTo(x2, y2, lambda22, a, b, c, x12, y12, lambda12, a1, b1, c1, depth, stream);
-              }
-            }
-          }
-          return function(stream) {
-            var lambda002, x002, y002, a00, b00, c00, lambda02, x02, y02, a0, b0, c0;
-            var resampleStream = {
-              point,
-              lineStart,
-              lineEnd,
-              polygonStart: function() {
-                stream.polygonStart();
-                resampleStream.lineStart = ringStart;
-              },
-              polygonEnd: function() {
-                stream.polygonEnd();
-                resampleStream.lineStart = lineStart;
-              }
-            };
-            function point(x, y) {
-              x = project(x, y);
-              stream.point(x[0], x[1]);
-            }
-            function lineStart() {
-              x02 = NaN;
-              resampleStream.point = linePoint2;
-              stream.lineStart();
-            }
-            function linePoint2(lambda, phi) {
-              var c = cartesian([lambda, phi]), p = project(lambda, phi);
-              resampleLineTo(x02, y02, lambda02, a0, b0, c0, x02 = p[0], y02 = p[1], lambda02 = lambda, a0 = c[0], b0 = c[1], c0 = c[2], maxDepth, stream);
-              stream.point(x02, y02);
-            }
-            function lineEnd() {
-              resampleStream.point = point;
-              stream.lineEnd();
-            }
-            function ringStart() {
-              lineStart();
-              resampleStream.point = ringPoint;
-              resampleStream.lineEnd = ringEnd;
-            }
-            function ringPoint(lambda, phi) {
-              linePoint2(lambda002 = lambda, phi), x002 = x02, y002 = y02, a00 = a0, b00 = b0, c00 = c0;
-              resampleStream.point = linePoint2;
-            }
-            function ringEnd() {
-              resampleLineTo(x02, y02, lambda02, a0, b0, c0, x002, y002, lambda002, a00, b00, c00, maxDepth, stream);
-              resampleStream.lineEnd = lineEnd;
-              lineEnd();
-            }
-            return resampleStream;
-          };
-        }
-        var transformRadians = transformer({
-          point: function(x, y) {
-            this.stream.point(x * radians, y * radians);
-          }
-        });
-        function transformRotate(rotate) {
-          return transformer({
-            point: function(x, y) {
-              var r = rotate(x, y);
-              return this.stream.point(r[0], r[1]);
-            }
-          });
-        }
-        function scaleTranslate(k, dx, dy, sx, sy) {
-          function transform2(x, y) {
-            x *= sx;
-            y *= sy;
-            return [dx + k * x, dy - k * y];
-          }
-          transform2.invert = function(x, y) {
-            return [(x - dx) / k * sx, (dy - y) / k * sy];
-          };
-          return transform2;
-        }
-        function scaleTranslateRotate(k, dx, dy, sx, sy, alpha) {
-          var cosAlpha = cos(alpha), sinAlpha = sin(alpha), a = cosAlpha * k, b = sinAlpha * k, ai = cosAlpha / k, bi = sinAlpha / k, ci = (sinAlpha * dy - cosAlpha * dx) / k, fi = (sinAlpha * dx + cosAlpha * dy) / k;
-          function transform2(x, y) {
-            x *= sx;
-            y *= sy;
-            return [a * x - b * y + dx, dy - b * x - a * y];
-          }
-          transform2.invert = function(x, y) {
-            return [sx * (ai * x - bi * y + ci), sy * (fi - bi * x - ai * y)];
-          };
-          return transform2;
-        }
-        function projection(project) {
-          return projectionMutator(function() {
-            return project;
-          })();
-        }
-        function projectionMutator(projectAt) {
-          var project, k = 150, x = 480, y = 250, lambda = 0, phi = 0, deltaLambda = 0, deltaPhi = 0, deltaGamma = 0, rotate, alpha = 0, sx = 1, sy = 1, theta = null, preclip = clipAntimeridian, x02 = null, y02, x12, y12, postclip = identity, delta2 = 0.5, projectResample, projectTransform, projectRotateTransform, cache, cacheStream;
-          function projection2(point) {
-            return projectRotateTransform(point[0] * radians, point[1] * radians);
-          }
-          function invert(point) {
-            point = projectRotateTransform.invert(point[0], point[1]);
-            return point && [point[0] * degrees, point[1] * degrees];
-          }
-          projection2.stream = function(stream) {
-            return cache && cacheStream === stream ? cache : cache = transformRadians(transformRotate(rotate)(preclip(projectResample(postclip(cacheStream = stream)))));
-          };
-          projection2.preclip = function(_) {
-            return arguments.length ? (preclip = _, theta = void 0, reset()) : preclip;
-          };
-          projection2.postclip = function(_) {
-            return arguments.length ? (postclip = _, x02 = y02 = x12 = y12 = null, reset()) : postclip;
-          };
-          projection2.clipAngle = function(_) {
-            return arguments.length ? (preclip = +_ ? clipCircle(theta = _ * radians) : (theta = null, clipAntimeridian), reset()) : theta * degrees;
-          };
-          projection2.clipExtent = function(_) {
-            return arguments.length ? (postclip = _ == null ? (x02 = y02 = x12 = y12 = null, identity) : clipRectangle(x02 = +_[0][0], y02 = +_[0][1], x12 = +_[1][0], y12 = +_[1][1]), reset()) : x02 == null ? null : [[x02, y02], [x12, y12]];
-          };
-          projection2.scale = function(_) {
-            return arguments.length ? (k = +_, recenter()) : k;
-          };
-          projection2.translate = function(_) {
-            return arguments.length ? (x = +_[0], y = +_[1], recenter()) : [x, y];
-          };
-          projection2.center = function(_) {
-            return arguments.length ? (lambda = _[0] % 360 * radians, phi = _[1] % 360 * radians, recenter()) : [lambda * degrees, phi * degrees];
-          };
-          projection2.rotate = function(_) {
-            return arguments.length ? (deltaLambda = _[0] % 360 * radians, deltaPhi = _[1] % 360 * radians, deltaGamma = _.length > 2 ? _[2] % 360 * radians : 0, recenter()) : [deltaLambda * degrees, deltaPhi * degrees, deltaGamma * degrees];
-          };
-          projection2.angle = function(_) {
-            return arguments.length ? (alpha = _ % 360 * radians, recenter()) : alpha * degrees;
-          };
-          projection2.reflectX = function(_) {
-            return arguments.length ? (sx = _ ? -1 : 1, recenter()) : sx < 0;
-          };
-          projection2.reflectY = function(_) {
-            return arguments.length ? (sy = _ ? -1 : 1, recenter()) : sy < 0;
-          };
-          projection2.precision = function(_) {
-            return arguments.length ? (projectResample = resample(projectTransform, delta2 = _ * _), reset()) : sqrt(delta2);
-          };
-          projection2.fitExtent = function(extent2, object2) {
-            return fitExtent(projection2, extent2, object2);
-          };
-          projection2.fitSize = function(size, object2) {
-            return fitSize(projection2, size, object2);
-          };
-          projection2.fitWidth = function(width, object2) {
-            return fitWidth(projection2, width, object2);
-          };
-          projection2.fitHeight = function(height, object2) {
-            return fitHeight(projection2, height, object2);
-          };
-          function recenter() {
-            var center = scaleTranslateRotate(k, 0, 0, sx, sy, alpha).apply(null, project(lambda, phi)), transform2 = (alpha ? scaleTranslateRotate : scaleTranslate)(k, x - center[0], y - center[1], sx, sy, alpha);
-            rotate = rotateRadians(deltaLambda, deltaPhi, deltaGamma);
-            projectTransform = compose(project, transform2);
-            projectRotateTransform = compose(rotate, projectTransform);
-            projectResample = resample(projectTransform, delta2);
-            return reset();
-          }
-          function reset() {
-            cache = cacheStream = null;
-            return projection2;
-          }
-          return function() {
-            project = projectAt.apply(this, arguments);
-            projection2.invert = project.invert && invert;
-            return recenter();
-          };
-        }
-        function conicProjection(projectAt) {
-          var phi02 = 0, phi12 = pi / 3, m = projectionMutator(projectAt), p = m(phi02, phi12);
-          p.parallels = function(_) {
-            return arguments.length ? m(phi02 = _[0] * radians, phi12 = _[1] * radians) : [phi02 * degrees, phi12 * degrees];
-          };
-          return p;
-        }
-        function cylindricalEqualAreaRaw(phi02) {
-          var cosPhi02 = cos(phi02);
-          function forward(lambda, phi) {
-            return [lambda * cosPhi02, sin(phi) / cosPhi02];
-          }
-          forward.invert = function(x, y) {
-            return [x / cosPhi02, asin(y * cosPhi02)];
-          };
-          return forward;
-        }
-        function conicEqualAreaRaw(y02, y12) {
-          var sy0 = sin(y02), n = (sy0 + sin(y12)) / 2;
-          if (abs(n) < epsilon) return cylindricalEqualAreaRaw(y02);
-          var c = 1 + sy0 * (2 * n - sy0), r0 = sqrt(c) / n;
-          function project(x, y) {
-            var r = sqrt(c - 2 * n * sin(y)) / n;
-            return [r * sin(x *= n), r0 - r * cos(x)];
-          }
-          project.invert = function(x, y) {
-            var r0y = r0 - y, l = atan2(x, abs(r0y)) * sign(r0y);
-            if (r0y * n < 0)
-              l -= pi * sign(x) * sign(r0y);
-            return [l / n, asin((c - (x * x + r0y * r0y) * n * n) / (2 * n))];
-          };
-          return project;
-        }
-        function conicEqualArea() {
-          return conicProjection(conicEqualAreaRaw).scale(155.424).center([0, 33.6442]);
-        }
-        function albers() {
-          return conicEqualArea().parallels([29.5, 45.5]).scale(1070).translate([480, 250]).rotate([96, 0]).center([-0.6, 38.7]);
-        }
-        function multiplex(streams) {
-          var n = streams.length;
-          return {
-            point: function(x, y) {
-              var i = -1;
-              while (++i < n) streams[i].point(x, y);
-            },
-            sphere: function() {
-              var i = -1;
-              while (++i < n) streams[i].sphere();
-            },
-            lineStart: function() {
-              var i = -1;
-              while (++i < n) streams[i].lineStart();
-            },
-            lineEnd: function() {
-              var i = -1;
-              while (++i < n) streams[i].lineEnd();
-            },
-            polygonStart: function() {
-              var i = -1;
-              while (++i < n) streams[i].polygonStart();
-            },
-            polygonEnd: function() {
-              var i = -1;
-              while (++i < n) streams[i].polygonEnd();
-            }
-          };
-        }
-        function albersUsa() {
-          var cache, cacheStream, lower48 = albers(), lower48Point, alaska = conicEqualArea().rotate([154, 0]).center([-2, 58.5]).parallels([55, 65]), alaskaPoint, hawaii = conicEqualArea().rotate([157, 0]).center([-3, 19.9]).parallels([8, 18]), hawaiiPoint, point, pointStream = { point: function(x, y) {
-            point = [x, y];
-          } };
-          function albersUsa2(coordinates2) {
-            var x = coordinates2[0], y = coordinates2[1];
-            return point = null, (lower48Point.point(x, y), point) || (alaskaPoint.point(x, y), point) || (hawaiiPoint.point(x, y), point);
-          }
-          albersUsa2.invert = function(coordinates2) {
-            var k = lower48.scale(), t = lower48.translate(), x = (coordinates2[0] - t[0]) / k, y = (coordinates2[1] - t[1]) / k;
-            return (y >= 0.12 && y < 0.234 && x >= -0.425 && x < -0.214 ? alaska : y >= 0.166 && y < 0.234 && x >= -0.214 && x < -0.115 ? hawaii : lower48).invert(coordinates2);
-          };
-          albersUsa2.stream = function(stream) {
-            return cache && cacheStream === stream ? cache : cache = multiplex([lower48.stream(cacheStream = stream), alaska.stream(stream), hawaii.stream(stream)]);
-          };
-          albersUsa2.precision = function(_) {
-            if (!arguments.length) return lower48.precision();
-            lower48.precision(_), alaska.precision(_), hawaii.precision(_);
-            return reset();
-          };
-          albersUsa2.scale = function(_) {
-            if (!arguments.length) return lower48.scale();
-            lower48.scale(_), alaska.scale(_ * 0.35), hawaii.scale(_);
-            return albersUsa2.translate(lower48.translate());
-          };
-          albersUsa2.translate = function(_) {
-            if (!arguments.length) return lower48.translate();
-            var k = lower48.scale(), x = +_[0], y = +_[1];
-            lower48Point = lower48.translate(_).clipExtent([[x - 0.455 * k, y - 0.238 * k], [x + 0.455 * k, y + 0.238 * k]]).stream(pointStream);
-            alaskaPoint = alaska.translate([x - 0.307 * k, y + 0.201 * k]).clipExtent([[x - 0.425 * k + epsilon, y + 0.12 * k + epsilon], [x - 0.214 * k - epsilon, y + 0.234 * k - epsilon]]).stream(pointStream);
-            hawaiiPoint = hawaii.translate([x - 0.205 * k, y + 0.212 * k]).clipExtent([[x - 0.214 * k + epsilon, y + 0.166 * k + epsilon], [x - 0.115 * k - epsilon, y + 0.234 * k - epsilon]]).stream(pointStream);
-            return reset();
-          };
-          albersUsa2.fitExtent = function(extent2, object2) {
-            return fitExtent(albersUsa2, extent2, object2);
-          };
-          albersUsa2.fitSize = function(size, object2) {
-            return fitSize(albersUsa2, size, object2);
-          };
-          albersUsa2.fitWidth = function(width, object2) {
-            return fitWidth(albersUsa2, width, object2);
-          };
-          albersUsa2.fitHeight = function(height, object2) {
-            return fitHeight(albersUsa2, height, object2);
-          };
-          function reset() {
-            cache = cacheStream = null;
-            return albersUsa2;
-          }
-          return albersUsa2.scale(1070);
-        }
-        function azimuthalRaw(scale) {
-          return function(x, y) {
-            var cx = cos(x), cy = cos(y), k = scale(cx * cy);
-            return [
-              k * cy * sin(x),
-              k * sin(y)
-            ];
-          };
-        }
-        function azimuthalInvert(angle2) {
-          return function(x, y) {
-            var z = sqrt(x * x + y * y), c = angle2(z), sc = sin(c), cc = cos(c);
-            return [
-              atan2(x * sc, z * cc),
-              asin(z && y * sc / z)
-            ];
-          };
-        }
-        var azimuthalEqualAreaRaw = azimuthalRaw(function(cxcy) {
-          return sqrt(2 / (1 + cxcy));
-        });
-        azimuthalEqualAreaRaw.invert = azimuthalInvert(function(z) {
-          return 2 * asin(z / 2);
-        });
-        function azimuthalEqualArea() {
-          return projection(azimuthalEqualAreaRaw).scale(124.75).clipAngle(180 - 1e-3);
-        }
-        var azimuthalEquidistantRaw = azimuthalRaw(function(c) {
-          return (c = acos(c)) && c / sin(c);
-        });
-        azimuthalEquidistantRaw.invert = azimuthalInvert(function(z) {
-          return z;
-        });
-        function azimuthalEquidistant() {
-          return projection(azimuthalEquidistantRaw).scale(79.4188).clipAngle(180 - 1e-3);
-        }
-        function mercatorRaw(lambda, phi) {
-          return [lambda, log(tan((halfPi + phi) / 2))];
-        }
-        mercatorRaw.invert = function(x, y) {
-          return [x, 2 * atan(exp(y)) - halfPi];
-        };
-        function mercator() {
-          return mercatorProjection(mercatorRaw).scale(961 / tau);
-        }
-        function mercatorProjection(project) {
-          var m = projection(project), center = m.center, scale = m.scale, translate = m.translate, clipExtent = m.clipExtent, x02 = null, y02, x12, y12;
-          m.scale = function(_) {
-            return arguments.length ? (scale(_), reclip()) : scale();
-          };
-          m.translate = function(_) {
-            return arguments.length ? (translate(_), reclip()) : translate();
-          };
-          m.center = function(_) {
-            return arguments.length ? (center(_), reclip()) : center();
-          };
-          m.clipExtent = function(_) {
-            return arguments.length ? (_ == null ? x02 = y02 = x12 = y12 = null : (x02 = +_[0][0], y02 = +_[0][1], x12 = +_[1][0], y12 = +_[1][1]), reclip()) : x02 == null ? null : [[x02, y02], [x12, y12]];
-          };
-          function reclip() {
-            var k = pi * scale(), t = m(rotation(m.rotate()).invert([0, 0]));
-            return clipExtent(x02 == null ? [[t[0] - k, t[1] - k], [t[0] + k, t[1] + k]] : project === mercatorRaw ? [[Math.max(t[0] - k, x02), y02], [Math.min(t[0] + k, x12), y12]] : [[x02, Math.max(t[1] - k, y02)], [x12, Math.min(t[1] + k, y12)]]);
-          }
-          return reclip();
-        }
-        function tany(y) {
-          return tan((halfPi + y) / 2);
-        }
-        function conicConformalRaw(y02, y12) {
-          var cy0 = cos(y02), n = y02 === y12 ? sin(y02) : log(cy0 / cos(y12)) / log(tany(y12) / tany(y02)), f = cy0 * pow(tany(y02), n) / n;
-          if (!n) return mercatorRaw;
-          function project(x, y) {
-            if (f > 0) {
-              if (y < -halfPi + epsilon) y = -halfPi + epsilon;
-            } else {
-              if (y > halfPi - epsilon) y = halfPi - epsilon;
-            }
-            var r = f / pow(tany(y), n);
-            return [r * sin(n * x), f - r * cos(n * x)];
-          }
-          project.invert = function(x, y) {
-            var fy = f - y, r = sign(n) * sqrt(x * x + fy * fy), l = atan2(x, abs(fy)) * sign(fy);
-            if (fy * n < 0)
-              l -= pi * sign(x) * sign(fy);
-            return [l / n, 2 * atan(pow(f / r, 1 / n)) - halfPi];
-          };
-          return project;
-        }
-        function conicConformal() {
-          return conicProjection(conicConformalRaw).scale(109.5).parallels([30, 30]);
-        }
-        function equirectangularRaw(lambda, phi) {
-          return [lambda, phi];
-        }
-        equirectangularRaw.invert = equirectangularRaw;
-        function equirectangular() {
-          return projection(equirectangularRaw).scale(152.63);
-        }
-        function conicEquidistantRaw(y02, y12) {
-          var cy0 = cos(y02), n = y02 === y12 ? sin(y02) : (cy0 - cos(y12)) / (y12 - y02), g = cy0 / n + y02;
-          if (abs(n) < epsilon) return equirectangularRaw;
-          function project(x, y) {
-            var gy = g - y, nx = n * x;
-            return [gy * sin(nx), g - gy * cos(nx)];
-          }
-          project.invert = function(x, y) {
-            var gy = g - y, l = atan2(x, abs(gy)) * sign(gy);
-            if (gy * n < 0)
-              l -= pi * sign(x) * sign(gy);
-            return [l / n, g - sign(n) * sqrt(x * x + gy * gy)];
-          };
-          return project;
-        }
-        function conicEquidistant() {
-          return conicProjection(conicEquidistantRaw).scale(131.154).center([0, 13.9389]);
-        }
-        var A1 = 1.340264, A2 = -0.081106, A3 = 893e-6, A4 = 3796e-6, M = sqrt(3) / 2, iterations = 12;
-        function equalEarthRaw(lambda, phi) {
-          var l = asin(M * sin(phi)), l2 = l * l, l6 = l2 * l2 * l2;
-          return [
-            lambda * cos(l) / (M * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2))),
-            l * (A1 + A2 * l2 + l6 * (A3 + A4 * l2))
-          ];
-        }
-        equalEarthRaw.invert = function(x, y) {
-          var l = y, l2 = l * l, l6 = l2 * l2 * l2;
-          for (var i = 0, delta, fy, fpy; i < iterations; ++i) {
-            fy = l * (A1 + A2 * l2 + l6 * (A3 + A4 * l2)) - y;
-            fpy = A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2);
-            l -= delta = fy / fpy, l2 = l * l, l6 = l2 * l2 * l2;
-            if (abs(delta) < epsilon2) break;
-          }
-          return [
-            M * x * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2)) / cos(l),
-            asin(sin(l) / M)
-          ];
-        };
-        function equalEarth() {
-          return projection(equalEarthRaw).scale(177.158);
-        }
-        function gnomonicRaw(x, y) {
-          var cy = cos(y), k = cos(x) * cy;
-          return [cy * sin(x) / k, sin(y) / k];
-        }
-        gnomonicRaw.invert = azimuthalInvert(atan);
-        function gnomonic() {
-          return projection(gnomonicRaw).scale(144.049).clipAngle(60);
-        }
-        function identity$1() {
-          var k = 1, tx = 0, ty = 0, sx = 1, sy = 1, alpha = 0, ca, sa, x02 = null, y02, x12, y12, kx = 1, ky = 1, transform2 = transformer({
-            point: function(x, y) {
-              var p = projection2([x, y]);
-              this.stream.point(p[0], p[1]);
-            }
-          }), postclip = identity, cache, cacheStream;
-          function reset() {
-            kx = k * sx;
-            ky = k * sy;
-            cache = cacheStream = null;
-            return projection2;
-          }
-          function projection2(p) {
-            var x = p[0] * kx, y = p[1] * ky;
-            if (alpha) {
-              var t = y * ca - x * sa;
-              x = x * ca + y * sa;
-              y = t;
-            }
-            return [x + tx, y + ty];
-          }
-          projection2.invert = function(p) {
-            var x = p[0] - tx, y = p[1] - ty;
-            if (alpha) {
-              var t = y * ca + x * sa;
-              x = x * ca - y * sa;
-              y = t;
-            }
-            return [x / kx, y / ky];
-          };
-          projection2.stream = function(stream) {
-            return cache && cacheStream === stream ? cache : cache = transform2(postclip(cacheStream = stream));
-          };
-          projection2.postclip = function(_) {
-            return arguments.length ? (postclip = _, x02 = y02 = x12 = y12 = null, reset()) : postclip;
-          };
-          projection2.clipExtent = function(_) {
-            return arguments.length ? (postclip = _ == null ? (x02 = y02 = x12 = y12 = null, identity) : clipRectangle(x02 = +_[0][0], y02 = +_[0][1], x12 = +_[1][0], y12 = +_[1][1]), reset()) : x02 == null ? null : [[x02, y02], [x12, y12]];
-          };
-          projection2.scale = function(_) {
-            return arguments.length ? (k = +_, reset()) : k;
-          };
-          projection2.translate = function(_) {
-            return arguments.length ? (tx = +_[0], ty = +_[1], reset()) : [tx, ty];
-          };
-          projection2.angle = function(_) {
-            return arguments.length ? (alpha = _ % 360 * radians, sa = sin(alpha), ca = cos(alpha), reset()) : alpha * degrees;
-          };
-          projection2.reflectX = function(_) {
-            return arguments.length ? (sx = _ ? -1 : 1, reset()) : sx < 0;
-          };
-          projection2.reflectY = function(_) {
-            return arguments.length ? (sy = _ ? -1 : 1, reset()) : sy < 0;
-          };
-          projection2.fitExtent = function(extent2, object2) {
-            return fitExtent(projection2, extent2, object2);
-          };
-          projection2.fitSize = function(size, object2) {
-            return fitSize(projection2, size, object2);
-          };
-          projection2.fitWidth = function(width, object2) {
-            return fitWidth(projection2, width, object2);
-          };
-          projection2.fitHeight = function(height, object2) {
-            return fitHeight(projection2, height, object2);
-          };
-          return projection2;
-        }
-        function naturalEarth1Raw(lambda, phi) {
-          var phi2 = phi * phi, phi4 = phi2 * phi2;
-          return [
-            lambda * (0.8707 - 0.131979 * phi2 + phi4 * (-0.013791 + phi4 * (3971e-6 * phi2 - 1529e-6 * phi4))),
-            phi * (1.007226 + phi2 * (0.015085 + phi4 * (-0.044475 + 0.028874 * phi2 - 5916e-6 * phi4)))
-          ];
-        }
-        naturalEarth1Raw.invert = function(x, y) {
-          var phi = y, i = 25, delta;
-          do {
-            var phi2 = phi * phi, phi4 = phi2 * phi2;
-            phi -= delta = (phi * (1.007226 + phi2 * (0.015085 + phi4 * (-0.044475 + 0.028874 * phi2 - 5916e-6 * phi4))) - y) / (1.007226 + phi2 * (0.015085 * 3 + phi4 * (-0.044475 * 7 + 0.028874 * 9 * phi2 - 5916e-6 * 11 * phi4)));
-          } while (abs(delta) > epsilon && --i > 0);
-          return [
-            x / (0.8707 + (phi2 = phi * phi) * (-0.131979 + phi2 * (-0.013791 + phi2 * phi2 * phi2 * (3971e-6 - 1529e-6 * phi2)))),
-            phi
-          ];
-        };
-        function naturalEarth1() {
-          return projection(naturalEarth1Raw).scale(175.295);
-        }
-        function orthographicRaw(x, y) {
-          return [cos(y) * sin(x), sin(y)];
-        }
-        orthographicRaw.invert = azimuthalInvert(asin);
-        function orthographic() {
-          return projection(orthographicRaw).scale(249.5).clipAngle(90 + epsilon);
-        }
-        function stereographicRaw(x, y) {
-          var cy = cos(y), k = 1 + cos(x) * cy;
-          return [cy * sin(x) / k, sin(y) / k];
-        }
-        stereographicRaw.invert = azimuthalInvert(function(z) {
-          return 2 * atan(z);
-        });
-        function stereographic() {
-          return projection(stereographicRaw).scale(250).clipAngle(142);
-        }
-        function transverseMercatorRaw(lambda, phi) {
-          return [log(tan((halfPi + phi) / 2)), -lambda];
-        }
-        transverseMercatorRaw.invert = function(x, y) {
-          return [-y, 2 * atan(exp(x)) - halfPi];
-        };
-        function transverseMercator() {
-          var m = mercatorProjection(transverseMercatorRaw), center = m.center, rotate = m.rotate;
-          m.center = function(_) {
-            return arguments.length ? center([-_[1], _[0]]) : (_ = center(), [_[1], -_[0]]);
-          };
-          m.rotate = function(_) {
-            return arguments.length ? rotate([_[0], _[1], _.length > 2 ? _[2] + 90 : 90]) : (_ = rotate(), [_[0], _[1], _[2] - 90]);
-          };
-          return rotate([0, 0, 90]).scale(159.155);
-        }
-        exports2.geoAlbers = albers;
-        exports2.geoAlbersUsa = albersUsa;
-        exports2.geoArea = area;
-        exports2.geoAzimuthalEqualArea = azimuthalEqualArea;
-        exports2.geoAzimuthalEqualAreaRaw = azimuthalEqualAreaRaw;
-        exports2.geoAzimuthalEquidistant = azimuthalEquidistant;
-        exports2.geoAzimuthalEquidistantRaw = azimuthalEquidistantRaw;
-        exports2.geoBounds = bounds;
-        exports2.geoCentroid = centroid;
-        exports2.geoCircle = circle;
-        exports2.geoClipAntimeridian = clipAntimeridian;
-        exports2.geoClipCircle = clipCircle;
-        exports2.geoClipExtent = extent;
-        exports2.geoClipRectangle = clipRectangle;
-        exports2.geoConicConformal = conicConformal;
-        exports2.geoConicConformalRaw = conicConformalRaw;
-        exports2.geoConicEqualArea = conicEqualArea;
-        exports2.geoConicEqualAreaRaw = conicEqualAreaRaw;
-        exports2.geoConicEquidistant = conicEquidistant;
-        exports2.geoConicEquidistantRaw = conicEquidistantRaw;
-        exports2.geoContains = contains;
-        exports2.geoDistance = distance;
-        exports2.geoEqualEarth = equalEarth;
-        exports2.geoEqualEarthRaw = equalEarthRaw;
-        exports2.geoEquirectangular = equirectangular;
-        exports2.geoEquirectangularRaw = equirectangularRaw;
-        exports2.geoGnomonic = gnomonic;
-        exports2.geoGnomonicRaw = gnomonicRaw;
-        exports2.geoGraticule = graticule;
-        exports2.geoGraticule10 = graticule10;
-        exports2.geoIdentity = identity$1;
-        exports2.geoInterpolate = interpolate;
-        exports2.geoLength = length;
-        exports2.geoMercator = mercator;
-        exports2.geoMercatorRaw = mercatorRaw;
-        exports2.geoNaturalEarth1 = naturalEarth1;
-        exports2.geoNaturalEarth1Raw = naturalEarth1Raw;
-        exports2.geoOrthographic = orthographic;
-        exports2.geoOrthographicRaw = orthographicRaw;
-        exports2.geoPath = index;
-        exports2.geoProjection = projection;
-        exports2.geoProjectionMutator = projectionMutator;
-        exports2.geoRotation = rotation;
-        exports2.geoStereographic = stereographic;
-        exports2.geoStereographicRaw = stereographicRaw;
-        exports2.geoStream = geoStream;
-        exports2.geoTransform = transform;
-        exports2.geoTransverseMercator = transverseMercator;
-        exports2.geoTransverseMercatorRaw = transverseMercatorRaw;
-        Object.defineProperty(exports2, "__esModule", { value: true });
-      });
-    }
-  });
-
-  // node_modules/d3-geo-projection/dist/d3-geo-projection.js
-  var require_d3_geo_projection = __commonJS({
-    "node_modules/d3-geo-projection/dist/d3-geo-projection.js"(exports, module) {
-      (function(global2, factory) {
-        typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require_d3_geo(), require_d3_array()) : typeof define === "function" && false ? define(["exports", "d3-geo", "d3-array"], factory) : factory(global2.d3 = global2.d3 || {}, global2.d3, global2.d3);
-      })(exports, function(exports2, d3Geo, d3Array) {
-        "use strict";
-        var abs = Math.abs;
-        var atan = Math.atan;
-        var atan2 = Math.atan2;
-        var cos = Math.cos;
-        var exp = Math.exp;
-        var floor = Math.floor;
-        var log = Math.log;
-        var max = Math.max;
-        var min = Math.min;
-        var pow = Math.pow;
-        var round = Math.round;
-        var sign = Math.sign || function(x) {
-          return x > 0 ? 1 : x < 0 ? -1 : 0;
-        };
-        var sin = Math.sin;
-        var tan = Math.tan;
-        var epsilon = 1e-6;
-        var epsilon2 = 1e-12;
-        var pi = Math.PI;
-        var halfPi = pi / 2;
-        var quarterPi = pi / 4;
-        var sqrt1_2 = Math.SQRT1_2;
-        var sqrt2 = sqrt(2);
-        var sqrtPi = sqrt(pi);
-        var tau = pi * 2;
-        var degrees = 180 / pi;
-        var radians = pi / 180;
-        function sinci(x) {
-          return x ? x / Math.sin(x) : 1;
-        }
-        function asin(x) {
-          return x > 1 ? halfPi : x < -1 ? -halfPi : Math.asin(x);
-        }
-        function acos(x) {
-          return x > 1 ? 0 : x < -1 ? pi : Math.acos(x);
-        }
-        function sqrt(x) {
-          return x > 0 ? Math.sqrt(x) : 0;
-        }
-        function tanh(x) {
-          x = exp(2 * x);
-          return (x - 1) / (x + 1);
-        }
-        function sinh(x) {
-          return (exp(x) - exp(-x)) / 2;
-        }
-        function cosh(x) {
-          return (exp(x) + exp(-x)) / 2;
-        }
-        function arsinh(x) {
-          return log(x + sqrt(x * x + 1));
-        }
-        function arcosh(x) {
-          return log(x + sqrt(x * x - 1));
-        }
-        function airyRaw(beta) {
-          var tanBeta_2 = tan(beta / 2), b = 2 * log(cos(beta / 2)) / (tanBeta_2 * tanBeta_2);
-          function forward(x, y) {
-            var cosx = cos(x), cosy = cos(y), siny = sin(y), cosz = cosy * cosx, k2 = -((1 - cosz ? log((1 + cosz) / 2) / (1 - cosz) : -0.5) + b / (1 + cosz));
-            return [k2 * cosy * sin(x), k2 * siny];
-          }
-          forward.invert = function(x, y) {
-            var r = sqrt(x * x + y * y), z = -beta / 2, i = 50, delta;
-            if (!r) return [0, 0];
-            do {
-              var z_2 = z / 2, cosz_2 = cos(z_2), sinz_2 = sin(z_2), tanz_2 = sinz_2 / cosz_2, lnsecz_2 = -log(abs(cosz_2));
-              z -= delta = (2 / tanz_2 * lnsecz_2 - b * tanz_2 - r) / (-lnsecz_2 / (sinz_2 * sinz_2) + 1 - b / (2 * cosz_2 * cosz_2)) * (cosz_2 < 0 ? 0.7 : 1);
-            } while (abs(delta) > epsilon && --i > 0);
-            var sinz = sin(z);
-            return [atan2(x * sinz, r * cos(z)), asin(y * sinz / r)];
-          };
-          return forward;
-        }
-        function airy() {
-          var beta = halfPi, m = d3Geo.geoProjectionMutator(airyRaw), p = m(beta);
-          p.radius = function(_) {
-            return arguments.length ? m(beta = _ * radians) : beta * degrees;
-          };
-          return p.scale(179.976).clipAngle(147);
-        }
-        function aitoffRaw(x, y) {
-          var cosy = cos(y), sincia = sinci(acos(cosy * cos(x /= 2)));
-          return [2 * cosy * sin(x) * sincia, sin(y) * sincia];
-        }
-        aitoffRaw.invert = function(x, y) {
-          if (x * x + 4 * y * y > pi * pi + epsilon) return;
-          var x12 = x, y12 = y, i = 25;
-          do {
-            var sinx = sin(x12), sinx_2 = sin(x12 / 2), cosx_2 = cos(x12 / 2), siny = sin(y12), cosy = cos(y12), sin_2y = sin(2 * y12), sin2y = siny * siny, cos2y = cosy * cosy, sin2x_2 = sinx_2 * sinx_2, c = 1 - cos2y * cosx_2 * cosx_2, e = c ? acos(cosy * cosx_2) * sqrt(f = 1 / c) : f = 0, f, fx = 2 * e * cosy * sinx_2 - x, fy = e * siny - y, dxdx = f * (cos2y * sin2x_2 + e * cosy * cosx_2 * sin2y), dxdy = f * (0.5 * sinx * sin_2y - e * 2 * siny * sinx_2), dydx = f * 0.25 * (sin_2y * sinx_2 - e * siny * cos2y * sinx), dydy = f * (sin2y * cosx_2 + e * sin2x_2 * cosy), z = dxdy * dydx - dydy * dxdx;
-            if (!z) break;
-            var dx = (fy * dxdy - fx * dydy) / z, dy = (fx * dydx - fy * dxdx) / z;
-            x12 -= dx, y12 -= dy;
-          } while ((abs(dx) > epsilon || abs(dy) > epsilon) && --i > 0);
-          return [x12, y12];
-        };
-        function aitoff() {
-          return d3Geo.geoProjection(aitoffRaw).scale(152.63);
-        }
-        function armadilloRaw(phi02) {
-          var sinPhi0 = sin(phi02), cosPhi0 = cos(phi02), sPhi0 = phi02 >= 0 ? 1 : -1, tanPhi0 = tan(sPhi0 * phi02), k2 = (1 + sinPhi0 - cosPhi0) / 2;
-          function forward(lambda, phi) {
-            var cosPhi = cos(phi), cosLambda = cos(lambda /= 2);
-            return [
-              (1 + cosPhi) * sin(lambda),
-              (sPhi0 * phi > -atan2(cosLambda, tanPhi0) - 1e-3 ? 0 : -sPhi0 * 10) + k2 + sin(phi) * cosPhi0 - (1 + cosPhi) * sinPhi0 * cosLambda
-              // TODO D3 core should allow null or [NaN, NaN] to be returned.
-            ];
-          }
-          forward.invert = function(x, y) {
-            var lambda = 0, phi = 0, i = 50;
-            do {
-              var cosLambda = cos(lambda), sinLambda = sin(lambda), cosPhi = cos(phi), sinPhi = sin(phi), A2 = 1 + cosPhi, fx = A2 * sinLambda - x, fy = k2 + sinPhi * cosPhi0 - A2 * sinPhi0 * cosLambda - y, dxdLambda = A2 * cosLambda / 2, dxdPhi = -sinLambda * sinPhi, dydLambda = sinPhi0 * A2 * sinLambda / 2, dydPhi = cosPhi0 * cosPhi + sinPhi0 * cosLambda * sinPhi, denominator = dxdPhi * dydLambda - dydPhi * dxdLambda, dLambda = (fy * dxdPhi - fx * dydPhi) / denominator / 2, dPhi = (fx * dydLambda - fy * dxdLambda) / denominator;
-              if (abs(dPhi) > 2) dPhi /= 2;
-              lambda -= dLambda, phi -= dPhi;
-            } while ((abs(dLambda) > epsilon || abs(dPhi) > epsilon) && --i > 0);
-            return sPhi0 * phi > -atan2(cos(lambda), tanPhi0) - 1e-3 ? [lambda * 2, phi] : null;
-          };
-          return forward;
-        }
-        function armadillo() {
-          var phi02 = 20 * radians, sPhi0 = phi02 >= 0 ? 1 : -1, tanPhi0 = tan(sPhi0 * phi02), m = d3Geo.geoProjectionMutator(armadilloRaw), p = m(phi02), stream_ = p.stream;
-          p.parallel = function(_) {
-            if (!arguments.length) return phi02 * degrees;
-            tanPhi0 = tan((sPhi0 = (phi02 = _ * radians) >= 0 ? 1 : -1) * phi02);
-            return m(phi02);
-          };
-          p.stream = function(stream) {
-            var rotate = p.rotate(), rotateStream = stream_(stream), sphereStream = (p.rotate([0, 0]), stream_(stream)), precision = p.precision();
-            p.rotate(rotate);
-            rotateStream.sphere = function() {
-              sphereStream.polygonStart(), sphereStream.lineStart();
-              for (var lambda = sPhi0 * -180; sPhi0 * lambda < 180; lambda += sPhi0 * 90)
-                sphereStream.point(lambda, sPhi0 * 90);
-              if (phi02) while (sPhi0 * (lambda -= 3 * sPhi0 * precision) >= -180) {
-                sphereStream.point(lambda, sPhi0 * -atan2(cos(lambda * radians / 2), tanPhi0) * degrees);
-              }
-              sphereStream.lineEnd(), sphereStream.polygonEnd();
-            };
-            return rotateStream;
-          };
-          return p.scale(218.695).center([0, 28.0974]);
-        }
-        function augustRaw(lambda, phi) {
-          var tanPhi = tan(phi / 2), k2 = sqrt(1 - tanPhi * tanPhi), c = 1 + k2 * cos(lambda /= 2), x = sin(lambda) * k2 / c, y = tanPhi / c, x2 = x * x, y2 = y * y;
-          return [
-            4 / 3 * x * (3 + x2 - 3 * y2),
-            4 / 3 * y * (3 + 3 * x2 - y2)
-          ];
-        }
-        augustRaw.invert = function(x, y) {
-          x *= 3 / 8, y *= 3 / 8;
-          if (!x && abs(y) > 1) return null;
-          var x2 = x * x, y2 = y * y, s = 1 + x2 + y2, sin3Eta = sqrt((s - sqrt(s * s - 4 * y * y)) / 2), eta = asin(sin3Eta) / 3, xi = sin3Eta ? arcosh(abs(y / sin3Eta)) / 3 : arsinh(abs(x)) / 3, cosEta = cos(eta), coshXi = cosh(xi), d = coshXi * coshXi - cosEta * cosEta;
-          return [
-            sign(x) * 2 * atan2(sinh(xi) * cosEta, 0.25 - d),
-            sign(y) * 2 * atan2(coshXi * sin(eta), 0.25 + d)
-          ];
-        };
-        function august() {
-          return d3Geo.geoProjection(augustRaw).scale(66.1603);
-        }
-        var sqrt8 = sqrt(8), phi0 = log(1 + sqrt2);
-        function bakerRaw(lambda, phi) {
-          var phi02 = abs(phi);
-          return phi02 < quarterPi ? [lambda, log(tan(quarterPi + phi / 2))] : [lambda * cos(phi02) * (2 * sqrt2 - 1 / sin(phi02)), sign(phi) * (2 * sqrt2 * (phi02 - quarterPi) - log(tan(phi02 / 2)))];
-        }
-        bakerRaw.invert = function(x, y) {
-          if ((y02 = abs(y)) < phi0) return [x, 2 * atan(exp(y)) - halfPi];
-          var phi = quarterPi, i = 25, delta, y02;
-          do {
-            var cosPhi_2 = cos(phi / 2), tanPhi_2 = tan(phi / 2);
-            phi -= delta = (sqrt8 * (phi - quarterPi) - log(tanPhi_2) - y02) / (sqrt8 - cosPhi_2 * cosPhi_2 / (2 * tanPhi_2));
-          } while (abs(delta) > epsilon2 && --i > 0);
-          return [x / (cos(phi) * (sqrt8 - 1 / sin(phi))), sign(y) * phi];
-        };
-        function baker() {
-          return d3Geo.geoProjection(bakerRaw).scale(112.314);
-        }
-        function berghausRaw(lobes2) {
-          var k2 = 2 * pi / lobes2;
-          function forward(lambda, phi) {
-            var p = d3Geo.geoAzimuthalEquidistantRaw(lambda, phi);
-            if (abs(lambda) > halfPi) {
-              var theta = atan2(p[1], p[0]), r = sqrt(p[0] * p[0] + p[1] * p[1]), theta0 = k2 * round((theta - halfPi) / k2) + halfPi, alpha = atan2(sin(theta -= theta0), 2 - cos(theta));
-              theta = theta0 + asin(pi / r * sin(alpha)) - alpha;
-              p[0] = r * cos(theta);
-              p[1] = r * sin(theta);
-            }
-            return p;
-          }
-          forward.invert = function(x, y) {
-            var r = sqrt(x * x + y * y);
-            if (r > halfPi) {
-              var theta = atan2(y, x), theta0 = k2 * round((theta - halfPi) / k2) + halfPi, s = theta > theta0 ? -1 : 1, A2 = r * cos(theta0 - theta), cotAlpha = 1 / tan(s * acos((A2 - pi) / sqrt(pi * (pi - 2 * A2) + r * r)));
-              theta = theta0 + 2 * atan((cotAlpha + s * sqrt(cotAlpha * cotAlpha - 3)) / 3);
-              x = r * cos(theta), y = r * sin(theta);
-            }
-            return d3Geo.geoAzimuthalEquidistantRaw.invert(x, y);
-          };
-          return forward;
-        }
-        function berghaus() {
-          var lobes2 = 5, m = d3Geo.geoProjectionMutator(berghausRaw), p = m(lobes2), projectionStream = p.stream, epsilon$$1 = 0.01, cr = -cos(epsilon$$1 * radians), sr = sin(epsilon$$1 * radians);
-          p.lobes = function(_) {
-            return arguments.length ? m(lobes2 = +_) : lobes2;
-          };
-          p.stream = function(stream) {
-            var rotate = p.rotate(), rotateStream = projectionStream(stream), sphereStream = (p.rotate([0, 0]), projectionStream(stream));
-            p.rotate(rotate);
-            rotateStream.sphere = function() {
-              sphereStream.polygonStart(), sphereStream.lineStart();
-              for (var i = 0, delta = 360 / lobes2, delta0 = 2 * pi / lobes2, phi = 90 - 180 / lobes2, phi02 = halfPi; i < lobes2; ++i, phi -= delta, phi02 -= delta0) {
-                sphereStream.point(atan2(sr * cos(phi02), cr) * degrees, asin(sr * sin(phi02)) * degrees);
-                if (phi < -90) {
-                  sphereStream.point(-90, -180 - phi - epsilon$$1);
-                  sphereStream.point(-90, -180 - phi + epsilon$$1);
-                } else {
-                  sphereStream.point(90, phi + epsilon$$1);
-                  sphereStream.point(90, phi - epsilon$$1);
-                }
-              }
-              sphereStream.lineEnd(), sphereStream.polygonEnd();
-            };
-            return rotateStream;
-          };
-          return p.scale(87.8076).center([0, 17.1875]).clipAngle(180 - 1e-3);
-        }
-        function hammerRaw(A2, B2) {
-          if (arguments.length < 2) B2 = A2;
-          if (B2 === 1) return d3Geo.geoAzimuthalEqualAreaRaw;
-          if (B2 === Infinity) return hammerQuarticAuthalicRaw;
-          function forward(lambda, phi) {
-            var coordinates = d3Geo.geoAzimuthalEqualAreaRaw(lambda / B2, phi);
-            coordinates[0] *= A2;
-            return coordinates;
-          }
-          forward.invert = function(x, y) {
-            var coordinates = d3Geo.geoAzimuthalEqualAreaRaw.invert(x / A2, y);
-            coordinates[0] *= B2;
-            return coordinates;
-          };
-          return forward;
-        }
-        function hammerQuarticAuthalicRaw(lambda, phi) {
-          return [
-            lambda * cos(phi) / cos(phi /= 2),
-            2 * sin(phi)
-          ];
-        }
-        hammerQuarticAuthalicRaw.invert = function(x, y) {
-          var phi = 2 * asin(y / 2);
-          return [
-            x * cos(phi / 2) / cos(phi),
-            phi
-          ];
-        };
-        function hammer() {
-          var B2 = 2, m = d3Geo.geoProjectionMutator(hammerRaw), p = m(B2);
-          p.coefficient = function(_) {
-            if (!arguments.length) return B2;
-            return m(B2 = +_);
-          };
-          return p.scale(169.529);
-        }
-        function solve(f, y, x) {
-          var steps = 100, delta, f0, f1;
-          x = x === void 0 ? 0 : +x;
-          y = +y;
-          do {
-            f0 = f(x);
-            f1 = f(x + epsilon);
-            if (f0 === f1) f1 = f0 + epsilon;
-            x -= delta = -1 * epsilon * (f0 - y) / (f0 - f1);
-          } while (steps-- > 0 && abs(delta) > epsilon);
-          return steps < 0 ? NaN : x;
-        }
-        function solve2d(f, MAX_ITERATIONS, eps) {
-          if (MAX_ITERATIONS === void 0) MAX_ITERATIONS = 40;
-          if (eps === void 0) eps = epsilon2;
-          return function(x, y, a, b) {
-            var err2, da, db;
-            a = a === void 0 ? 0 : +a;
-            b = b === void 0 ? 0 : +b;
-            for (var i = 0; i < MAX_ITERATIONS; i++) {
-              var p = f(a, b), tx = p[0] - x, ty = p[1] - y;
-              if (abs(tx) < eps && abs(ty) < eps) break;
-              var h = tx * tx + ty * ty;
-              if (h > err2) {
-                a -= da /= 2;
-                b -= db /= 2;
-                continue;
-              }
-              err2 = h;
-              var ea = (a > 0 ? -1 : 1) * eps, eb = (b > 0 ? -1 : 1) * eps, pa = f(a + ea, b), pb = f(a, b + eb), dxa = (pa[0] - p[0]) / ea, dya = (pa[1] - p[1]) / ea, dxb = (pb[0] - p[0]) / eb, dyb = (pb[1] - p[1]) / eb, D = dyb * dxa - dya * dxb, l = (abs(D) < 0.5 ? 0.5 : 1) / D;
-              da = (ty * dxb - tx * dyb) * l;
-              db = (tx * dya - ty * dxa) * l;
-              a += da;
-              b += db;
-              if (abs(da) < eps && abs(db) < eps) break;
-            }
-            return [a, b];
-          };
-        }
-        function bertin1953Raw() {
-          var hammer$$1 = hammerRaw(1.68, 2), fu = 1.4, k2 = 12;
-          function forward(lambda, phi) {
-            if (lambda + phi < -fu) {
-              var u = (lambda - phi + 1.6) * (lambda + phi + fu) / 8;
-              lambda += u;
-              phi -= 0.8 * u * sin(phi + pi / 2);
-            }
-            var r = hammer$$1(lambda, phi);
-            var d = (1 - cos(lambda * phi)) / k2;
-            if (r[1] < 0) {
-              r[0] *= 1 + d;
-            }
-            if (r[1] > 0) {
-              r[1] *= 1 + d / 1.5 * r[0] * r[0];
-            }
-            return r;
-          }
-          forward.invert = solve2d(forward);
-          return forward;
-        }
-        function bertin() {
-          return d3Geo.geoProjection(bertin1953Raw()).rotate([-16.5, -42]).scale(176.57).center([7.93, 0.09]);
-        }
-        function mollweideBromleyTheta(cp, phi) {
-          var cpsinPhi = cp * sin(phi), i = 30, delta;
-          do
-            phi -= delta = (phi + sin(phi) - cpsinPhi) / (1 + cos(phi));
-          while (abs(delta) > epsilon && --i > 0);
-          return phi / 2;
-        }
-        function mollweideBromleyRaw(cx, cy, cp) {
-          function forward(lambda, phi) {
-            return [cx * lambda * cos(phi = mollweideBromleyTheta(cp, phi)), cy * sin(phi)];
-          }
-          forward.invert = function(x, y) {
-            return y = asin(y / cy), [x / (cx * cos(y)), asin((2 * y + sin(2 * y)) / cp)];
-          };
-          return forward;
-        }
-        var mollweideRaw = mollweideBromleyRaw(sqrt2 / halfPi, sqrt2, pi);
-        function mollweide() {
-          return d3Geo.geoProjection(mollweideRaw).scale(169.529);
-        }
-        var k = 2.00276, w = 1.11072;
-        function boggsRaw(lambda, phi) {
-          var theta = mollweideBromleyTheta(pi, phi);
-          return [k * lambda / (1 / cos(phi) + w / cos(theta)), (phi + sqrt2 * sin(theta)) / k];
-        }
-        boggsRaw.invert = function(x, y) {
-          var ky = k * y, theta = y < 0 ? -quarterPi : quarterPi, i = 25, delta, phi;
-          do {
-            phi = ky - sqrt2 * sin(theta);
-            theta -= delta = (sin(2 * theta) + 2 * theta - pi * sin(phi)) / (2 * cos(2 * theta) + 2 + pi * cos(phi) * sqrt2 * cos(theta));
-          } while (abs(delta) > epsilon && --i > 0);
-          phi = ky - sqrt2 * sin(theta);
-          return [x * (1 / cos(phi) + w / cos(theta)) / k, phi];
-        };
-        function boggs() {
-          return d3Geo.geoProjection(boggsRaw).scale(160.857);
-        }
-        function parallel1(projectAt) {
-          var phi02 = 0, m = d3Geo.geoProjectionMutator(projectAt), p = m(phi02);
-          p.parallel = function(_) {
-            return arguments.length ? m(phi02 = _ * radians) : phi02 * degrees;
-          };
-          return p;
-        }
-        function sinusoidalRaw(lambda, phi) {
-          return [lambda * cos(phi), phi];
-        }
-        sinusoidalRaw.invert = function(x, y) {
-          return [x / cos(y), y];
-        };
-        function sinusoidal() {
-          return d3Geo.geoProjection(sinusoidalRaw).scale(152.63);
-        }
-        function bonneRaw(phi02) {
-          if (!phi02) return sinusoidalRaw;
-          var cotPhi0 = 1 / tan(phi02);
-          function forward(lambda, phi) {
-            var rho = cotPhi0 + phi02 - phi, e = rho ? lambda * cos(phi) / rho : rho;
-            return [rho * sin(e), cotPhi0 - rho * cos(e)];
-          }
-          forward.invert = function(x, y) {
-            var rho = sqrt(x * x + (y = cotPhi0 - y) * y), phi = cotPhi0 + phi02 - rho;
-            return [rho / cos(phi) * atan2(x, y), phi];
-          };
-          return forward;
-        }
-        function bonne() {
-          return parallel1(bonneRaw).scale(123.082).center([0, 26.1441]).parallel(45);
-        }
-        function bottomleyRaw(sinPsi) {
-          function forward(lambda, phi) {
-            var rho = halfPi - phi, eta = rho ? lambda * sinPsi * sin(rho) / rho : rho;
-            return [rho * sin(eta) / sinPsi, halfPi - rho * cos(eta)];
-          }
-          forward.invert = function(x, y) {
-            var x12 = x * sinPsi, y12 = halfPi - y, rho = sqrt(x12 * x12 + y12 * y12), eta = atan2(x12, y12);
-            return [(rho ? rho / sin(rho) : 1) * eta / sinPsi, halfPi - rho];
-          };
-          return forward;
-        }
-        function bottomley() {
-          var sinPsi = 0.5, m = d3Geo.geoProjectionMutator(bottomleyRaw), p = m(sinPsi);
-          p.fraction = function(_) {
-            return arguments.length ? m(sinPsi = +_) : sinPsi;
-          };
-          return p.scale(158.837);
-        }
-        var bromleyRaw = mollweideBromleyRaw(1, 4 / pi, pi);
-        function bromley() {
-          return d3Geo.geoProjection(bromleyRaw).scale(152.63);
-        }
-        function distance(dPhi, c1, s1, c2, s2, dLambda) {
-          var cosdLambda = cos(dLambda), r;
-          if (abs(dPhi) > 1 || abs(dLambda) > 1) {
-            r = acos(s1 * s2 + c1 * c2 * cosdLambda);
-          } else {
-            var sindPhi = sin(dPhi / 2), sindLambda = sin(dLambda / 2);
-            r = 2 * asin(sqrt(sindPhi * sindPhi + c1 * c2 * sindLambda * sindLambda));
-          }
-          return abs(r) > epsilon ? [r, atan2(c2 * sin(dLambda), c1 * s2 - s1 * c2 * cosdLambda)] : [0, 0];
-        }
-        function angle(b, c, a) {
-          return acos((b * b + c * c - a * a) / (2 * b * c));
-        }
-        function longitude(lambda) {
-          return lambda - 2 * pi * floor((lambda + pi) / (2 * pi));
-        }
-        function chamberlinRaw(p0, p1, p2) {
-          var points2 = [
-            [p0[0], p0[1], sin(p0[1]), cos(p0[1])],
-            [p1[0], p1[1], sin(p1[1]), cos(p1[1])],
-            [p2[0], p2[1], sin(p2[1]), cos(p2[1])]
-          ];
-          for (var a = points2[2], b, i = 0; i < 3; ++i, a = b) {
-            b = points2[i];
-            a.v = distance(b[1] - a[1], a[3], a[2], b[3], b[2], b[0] - a[0]);
-            a.point = [0, 0];
-          }
-          var beta0 = angle(points2[0].v[0], points2[2].v[0], points2[1].v[0]), beta1 = angle(points2[0].v[0], points2[1].v[0], points2[2].v[0]), beta2 = pi - beta0;
-          points2[2].point[1] = 0;
-          points2[0].point[0] = -(points2[1].point[0] = points2[0].v[0] / 2);
-          var mean = [
-            points2[2].point[0] = points2[0].point[0] + points2[2].v[0] * cos(beta0),
-            2 * (points2[0].point[1] = points2[1].point[1] = points2[2].v[0] * sin(beta0))
-          ];
-          function forward(lambda, phi) {
-            var sinPhi = sin(phi), cosPhi = cos(phi), v = new Array(3), i2;
-            for (i2 = 0; i2 < 3; ++i2) {
-              var p = points2[i2];
-              v[i2] = distance(phi - p[1], p[3], p[2], cosPhi, sinPhi, lambda - p[0]);
-              if (!v[i2][0]) return p.point;
-              v[i2][1] = longitude(v[i2][1] - p.v[1]);
-            }
-            var point = mean.slice();
-            for (i2 = 0; i2 < 3; ++i2) {
-              var j = i2 == 2 ? 0 : i2 + 1;
-              var a2 = angle(points2[i2].v[0], v[i2][0], v[j][0]);
-              if (v[i2][1] < 0) a2 = -a2;
-              if (!i2) {
-                point[0] += v[i2][0] * cos(a2);
-                point[1] -= v[i2][0] * sin(a2);
-              } else if (i2 == 1) {
-                a2 = beta1 - a2;
-                point[0] -= v[i2][0] * cos(a2);
-                point[1] -= v[i2][0] * sin(a2);
-              } else {
-                a2 = beta2 - a2;
-                point[0] += v[i2][0] * cos(a2);
-                point[1] += v[i2][0] * sin(a2);
-              }
-            }
-            point[0] /= 3, point[1] /= 3;
-            return point;
-          }
-          return forward;
-        }
-        function pointRadians(p) {
-          return p[0] *= radians, p[1] *= radians, p;
-        }
-        function chamberlinAfrica() {
-          return chamberlin([0, 22], [45, 22], [22.5, -22]).scale(380).center([22.5, 2]);
-        }
-        function chamberlin(p0, p1, p2) {
-          var c = d3Geo.geoCentroid({ type: "MultiPoint", coordinates: [p0, p1, p2] }), R = [-c[0], -c[1]], r = d3Geo.geoRotation(R), f = chamberlinRaw(pointRadians(r(p0)), pointRadians(r(p1)), pointRadians(r(p2)));
-          f.invert = solve2d(f);
-          var p = d3Geo.geoProjection(f).rotate(R), center = p.center;
-          delete p.rotate;
-          p.center = function(_) {
-            return arguments.length ? center(r(_)) : r.invert(center());
-          };
-          return p.clipAngle(90);
-        }
-        function collignonRaw(lambda, phi) {
-          var alpha = sqrt(1 - sin(phi));
-          return [2 / sqrtPi * lambda * alpha, sqrtPi * (1 - alpha)];
-        }
-        collignonRaw.invert = function(x, y) {
-          var lambda = (lambda = y / sqrtPi - 1) * lambda;
-          return [lambda > 0 ? x * sqrt(pi / lambda) / 2 : 0, asin(1 - lambda)];
-        };
-        function collignon() {
-          return d3Geo.geoProjection(collignonRaw).scale(95.6464).center([0, 30]);
-        }
-        function craigRaw(phi02) {
-          var tanPhi0 = tan(phi02);
-          function forward(lambda, phi) {
-            return [lambda, (lambda ? lambda / sin(lambda) : 1) * (sin(phi) * cos(lambda) - tanPhi0 * cos(phi))];
-          }
-          forward.invert = tanPhi0 ? function(x, y) {
-            if (x) y *= sin(x) / x;
-            var cosLambda = cos(x);
-            return [x, 2 * atan2(sqrt(cosLambda * cosLambda + tanPhi0 * tanPhi0 - y * y) - cosLambda, tanPhi0 - y)];
-          } : function(x, y) {
-            return [x, asin(x ? y * tan(x) / x : y)];
-          };
-          return forward;
-        }
-        function craig() {
-          return parallel1(craigRaw).scale(249.828).clipAngle(90);
-        }
-        var sqrt3 = sqrt(3);
-        function crasterRaw(lambda, phi) {
-          return [sqrt3 * lambda * (2 * cos(2 * phi / 3) - 1) / sqrtPi, sqrt3 * sqrtPi * sin(phi / 3)];
-        }
-        crasterRaw.invert = function(x, y) {
-          var phi = 3 * asin(y / (sqrt3 * sqrtPi));
-          return [sqrtPi * x / (sqrt3 * (2 * cos(2 * phi / 3) - 1)), phi];
-        };
-        function craster() {
-          return d3Geo.geoProjection(crasterRaw).scale(156.19);
-        }
-        function cylindricalEqualAreaRaw(phi02) {
-          var cosPhi0 = cos(phi02);
-          function forward(lambda, phi) {
-            return [lambda * cosPhi0, sin(phi) / cosPhi0];
-          }
-          forward.invert = function(x, y) {
-            return [x / cosPhi0, asin(y * cosPhi0)];
-          };
-          return forward;
-        }
-        function cylindricalEqualArea() {
-          return parallel1(cylindricalEqualAreaRaw).parallel(38.58).scale(195.044);
-        }
-        function cylindricalStereographicRaw(phi02) {
-          var cosPhi0 = cos(phi02);
-          function forward(lambda, phi) {
-            return [lambda * cosPhi0, (1 + cosPhi0) * tan(phi / 2)];
-          }
-          forward.invert = function(x, y) {
-            return [x / cosPhi0, atan(y / (1 + cosPhi0)) * 2];
-          };
-          return forward;
-        }
-        function cylindricalStereographic() {
-          return parallel1(cylindricalStereographicRaw).scale(124.75);
-        }
-        function eckert1Raw(lambda, phi) {
-          var alpha = sqrt(8 / (3 * pi));
-          return [
-            alpha * lambda * (1 - abs(phi) / pi),
-            alpha * phi
-          ];
-        }
-        eckert1Raw.invert = function(x, y) {
-          var alpha = sqrt(8 / (3 * pi)), phi = y / alpha;
-          return [
-            x / (alpha * (1 - abs(phi) / pi)),
-            phi
-          ];
-        };
-        function eckert1() {
-          return d3Geo.geoProjection(eckert1Raw).scale(165.664);
-        }
-        function eckert2Raw(lambda, phi) {
-          var alpha = sqrt(4 - 3 * sin(abs(phi)));
-          return [
-            2 / sqrt(6 * pi) * lambda * alpha,
-            sign(phi) * sqrt(2 * pi / 3) * (2 - alpha)
-          ];
-        }
-        eckert2Raw.invert = function(x, y) {
-          var alpha = 2 - abs(y) / sqrt(2 * pi / 3);
-          return [
-            x * sqrt(6 * pi) / (2 * alpha),
-            sign(y) * asin((4 - alpha * alpha) / 3)
-          ];
-        };
-        function eckert2() {
-          return d3Geo.geoProjection(eckert2Raw).scale(165.664);
-        }
-        function eckert3Raw(lambda, phi) {
-          var k2 = sqrt(pi * (4 + pi));
-          return [
-            2 / k2 * lambda * (1 + sqrt(1 - 4 * phi * phi / (pi * pi))),
-            4 / k2 * phi
-          ];
-        }
-        eckert3Raw.invert = function(x, y) {
-          var k2 = sqrt(pi * (4 + pi)) / 2;
-          return [
-            x * k2 / (1 + sqrt(1 - y * y * (4 + pi) / (4 * pi))),
-            y * k2 / 2
-          ];
-        };
-        function eckert3() {
-          return d3Geo.geoProjection(eckert3Raw).scale(180.739);
-        }
-        function eckert4Raw(lambda, phi) {
-          var k2 = (2 + halfPi) * sin(phi);
-          phi /= 2;
-          for (var i = 0, delta = Infinity; i < 10 && abs(delta) > epsilon; i++) {
-            var cosPhi = cos(phi);
-            phi -= delta = (phi + sin(phi) * (cosPhi + 2) - k2) / (2 * cosPhi * (1 + cosPhi));
-          }
-          return [
-            2 / sqrt(pi * (4 + pi)) * lambda * (1 + cos(phi)),
-            2 * sqrt(pi / (4 + pi)) * sin(phi)
-          ];
-        }
-        eckert4Raw.invert = function(x, y) {
-          var A2 = y * sqrt((4 + pi) / pi) / 2, k2 = asin(A2), c = cos(k2);
-          return [
-            x / (2 / sqrt(pi * (4 + pi)) * (1 + c)),
-            asin((k2 + A2 * (c + 2)) / (2 + halfPi))
-          ];
-        };
-        function eckert4() {
-          return d3Geo.geoProjection(eckert4Raw).scale(180.739);
-        }
-        function eckert5Raw(lambda, phi) {
-          return [
-            lambda * (1 + cos(phi)) / sqrt(2 + pi),
-            2 * phi / sqrt(2 + pi)
-          ];
-        }
-        eckert5Raw.invert = function(x, y) {
-          var k2 = sqrt(2 + pi), phi = y * k2 / 2;
-          return [
-            k2 * x / (1 + cos(phi)),
-            phi
-          ];
-        };
-        function eckert5() {
-          return d3Geo.geoProjection(eckert5Raw).scale(173.044);
-        }
-        function eckert6Raw(lambda, phi) {
-          var k2 = (1 + halfPi) * sin(phi);
-          for (var i = 0, delta = Infinity; i < 10 && abs(delta) > epsilon; i++) {
-            phi -= delta = (phi + sin(phi) - k2) / (1 + cos(phi));
-          }
-          k2 = sqrt(2 + pi);
-          return [
-            lambda * (1 + cos(phi)) / k2,
-            2 * phi / k2
-          ];
-        }
-        eckert6Raw.invert = function(x, y) {
-          var j = 1 + halfPi, k2 = sqrt(j / 2);
-          return [
-            x * 2 * k2 / (1 + cos(y *= k2)),
-            asin((y + sin(y)) / j)
-          ];
-        };
-        function eckert6() {
-          return d3Geo.geoProjection(eckert6Raw).scale(173.044);
-        }
-        var eisenlohrK = 3 + 2 * sqrt2;
-        function eisenlohrRaw(lambda, phi) {
-          var s0 = sin(lambda /= 2), c0 = cos(lambda), k2 = sqrt(cos(phi)), c1 = cos(phi /= 2), t = sin(phi) / (c1 + sqrt2 * c0 * k2), c = sqrt(2 / (1 + t * t)), v = sqrt((sqrt2 * c1 + (c0 + s0) * k2) / (sqrt2 * c1 + (c0 - s0) * k2));
-          return [
-            eisenlohrK * (c * (v - 1 / v) - 2 * log(v)),
-            eisenlohrK * (c * t * (v + 1 / v) - 2 * atan(t))
-          ];
-        }
-        eisenlohrRaw.invert = function(x, y) {
-          if (!(p = augustRaw.invert(x / 1.2, y * 1.065))) return null;
-          var lambda = p[0], phi = p[1], i = 20, p;
-          x /= eisenlohrK, y /= eisenlohrK;
-          do {
-            var _0 = lambda / 2, _1 = phi / 2, s0 = sin(_0), c0 = cos(_0), s1 = sin(_1), c1 = cos(_1), cos1 = cos(phi), k2 = sqrt(cos1), t = s1 / (c1 + sqrt2 * c0 * k2), t2 = t * t, c = sqrt(2 / (1 + t2)), v0 = sqrt2 * c1 + (c0 + s0) * k2, v1 = sqrt2 * c1 + (c0 - s0) * k2, v2 = v0 / v1, v = sqrt(v2), vm1v = v - 1 / v, vp1v = v + 1 / v, fx = c * vm1v - 2 * log(v) - x, fy = c * t * vp1v - 2 * atan(t) - y, deltatDeltaLambda = s1 && sqrt1_2 * k2 * s0 * t2 / s1, deltatDeltaPhi = (sqrt2 * c0 * c1 + k2) / (2 * (c1 + sqrt2 * c0 * k2) * (c1 + sqrt2 * c0 * k2) * k2), deltacDeltat = -0.5 * t * c * c * c, deltacDeltaLambda = deltacDeltat * deltatDeltaLambda, deltacDeltaPhi = deltacDeltat * deltatDeltaPhi, A2 = (A2 = 2 * c1 + sqrt2 * k2 * (c0 - s0)) * A2 * v, deltavDeltaLambda = (sqrt2 * c0 * c1 * k2 + cos1) / A2, deltavDeltaPhi = -(sqrt2 * s0 * s1) / (k2 * A2), deltaxDeltaLambda = vm1v * deltacDeltaLambda - 2 * deltavDeltaLambda / v + c * (deltavDeltaLambda + deltavDeltaLambda / v2), deltaxDeltaPhi = vm1v * deltacDeltaPhi - 2 * deltavDeltaPhi / v + c * (deltavDeltaPhi + deltavDeltaPhi / v2), deltayDeltaLambda = t * vp1v * deltacDeltaLambda - 2 * deltatDeltaLambda / (1 + t2) + c * vp1v * deltatDeltaLambda + c * t * (deltavDeltaLambda - deltavDeltaLambda / v2), deltayDeltaPhi = t * vp1v * deltacDeltaPhi - 2 * deltatDeltaPhi / (1 + t2) + c * vp1v * deltatDeltaPhi + c * t * (deltavDeltaPhi - deltavDeltaPhi / v2), denominator = deltaxDeltaPhi * deltayDeltaLambda - deltayDeltaPhi * deltaxDeltaLambda;
-            if (!denominator) break;
-            var deltaLambda = (fy * deltaxDeltaPhi - fx * deltayDeltaPhi) / denominator, deltaPhi = (fx * deltayDeltaLambda - fy * deltaxDeltaLambda) / denominator;
-            lambda -= deltaLambda;
-            phi = max(-halfPi, min(halfPi, phi - deltaPhi));
-          } while ((abs(deltaLambda) > epsilon || abs(deltaPhi) > epsilon) && --i > 0);
-          return abs(abs(phi) - halfPi) < epsilon ? [0, phi] : i && [lambda, phi];
-        };
-        function eisenlohr() {
-          return d3Geo.geoProjection(eisenlohrRaw).scale(62.5271);
-        }
-        var faheyK = cos(35 * radians);
-        function faheyRaw(lambda, phi) {
-          var t = tan(phi / 2);
-          return [lambda * faheyK * sqrt(1 - t * t), (1 + faheyK) * t];
-        }
-        faheyRaw.invert = function(x, y) {
-          var t = y / (1 + faheyK);
-          return [x && x / (faheyK * sqrt(1 - t * t)), 2 * atan(t)];
-        };
-        function fahey() {
-          return d3Geo.geoProjection(faheyRaw).scale(137.152);
-        }
-        function foucautRaw(lambda, phi) {
-          var k2 = phi / 2, cosk = cos(k2);
-          return [2 * lambda / sqrtPi * cos(phi) * cosk * cosk, sqrtPi * tan(k2)];
-        }
-        foucautRaw.invert = function(x, y) {
-          var k2 = atan(y / sqrtPi), cosk = cos(k2), phi = 2 * k2;
-          return [x * sqrtPi / 2 / (cos(phi) * cosk * cosk), phi];
-        };
-        function foucaut() {
-          return d3Geo.geoProjection(foucautRaw).scale(135.264);
-        }
-        function foucautSinusoidalRaw(alpha) {
-          var beta = 1 - alpha, equatorial = raw(pi, 0)[0] - raw(-pi, 0)[0], polar = raw(0, halfPi)[1] - raw(0, -halfPi)[1], ratio = sqrt(2 * polar / equatorial);
-          function raw(lambda, phi) {
-            var cosphi = cos(phi), sinphi = sin(phi);
-            return [
-              cosphi / (beta + alpha * cosphi) * lambda,
-              beta * phi + alpha * sinphi
-            ];
-          }
-          function forward(lambda, phi) {
-            var p = raw(lambda, phi);
-            return [p[0] * ratio, p[1] / ratio];
-          }
-          function forwardMeridian(phi) {
-            return forward(0, phi)[1];
-          }
-          forward.invert = function(x, y) {
-            var phi = solve(forwardMeridian, y), lambda = x / ratio * (alpha + beta / cos(phi));
-            return [lambda, phi];
-          };
-          return forward;
-        }
-        function foucautSinusoidal() {
-          var alpha = 0.5, m = d3Geo.geoProjectionMutator(foucautSinusoidalRaw), p = m(alpha);
-          p.alpha = function(_) {
-            return arguments.length ? m(alpha = +_) : alpha;
-          };
-          return p.scale(168.725);
-        }
-        function gilbertForward(point) {
-          return [point[0] / 2, asin(tan(point[1] / 2 * radians)) * degrees];
-        }
-        function gilbertInvert(point) {
-          return [point[0] * 2, 2 * atan(sin(point[1] * radians)) * degrees];
-        }
-        function gilbert(projectionType) {
-          if (projectionType == null) projectionType = d3Geo.geoOrthographic;
-          var projection = projectionType(), equirectangular = d3Geo.geoEquirectangular().scale(degrees).precision(0).clipAngle(null).translate([0, 0]);
-          function gilbert2(point) {
-            return projection(gilbertForward(point));
-          }
-          if (projection.invert) gilbert2.invert = function(point) {
-            return gilbertInvert(projection.invert(point));
-          };
-          gilbert2.stream = function(stream) {
-            var s1 = projection.stream(stream), s0 = equirectangular.stream({
-              point: function(lambda, phi) {
-                s1.point(lambda / 2, asin(tan(-phi / 2 * radians)) * degrees);
-              },
-              lineStart: function() {
-                s1.lineStart();
-              },
-              lineEnd: function() {
-                s1.lineEnd();
-              },
-              polygonStart: function() {
-                s1.polygonStart();
-              },
-              polygonEnd: function() {
-                s1.polygonEnd();
-              }
-            });
-            s0.sphere = s1.sphere;
-            return s0;
-          };
-          function property(name) {
-            gilbert2[name] = function() {
-              return arguments.length ? (projection[name].apply(projection, arguments), gilbert2) : projection[name]();
-            };
-          }
-          gilbert2.rotate = function(_) {
-            return arguments.length ? (equirectangular.rotate(_), gilbert2) : equirectangular.rotate();
-          };
-          gilbert2.center = function(_) {
-            return arguments.length ? (projection.center(gilbertForward(_)), gilbert2) : gilbertInvert(projection.center());
-          };
-          property("angle");
-          property("clipAngle");
-          property("clipExtent");
-          property("fitExtent");
-          property("fitHeight");
-          property("fitSize");
-          property("fitWidth");
-          property("scale");
-          property("translate");
-          property("precision");
-          return gilbert2.scale(249.5);
-        }
-        function gingeryRaw(rho, n) {
-          var k2 = 2 * pi / n, rho2 = rho * rho;
-          function forward(lambda, phi) {
-            var p = d3Geo.geoAzimuthalEquidistantRaw(lambda, phi), x = p[0], y = p[1], r2 = x * x + y * y;
-            if (r2 > rho2) {
-              var r = sqrt(r2), theta = atan2(y, x), theta0 = k2 * round(theta / k2), alpha = theta - theta0, rhoCosAlpha = rho * cos(alpha), k_ = (rho * sin(alpha) - alpha * sin(rhoCosAlpha)) / (halfPi - rhoCosAlpha), s_ = gingeryLength(alpha, k_), e = (pi - rho) / gingeryIntegrate(s_, rhoCosAlpha, pi);
-              x = r;
-              var i = 50, delta;
-              do {
-                x -= delta = (rho + gingeryIntegrate(s_, rhoCosAlpha, x) * e - r) / (s_(x) * e);
-              } while (abs(delta) > epsilon && --i > 0);
-              y = alpha * sin(x);
-              if (x < halfPi) y -= k_ * (x - halfPi);
-              var s = sin(theta0), c = cos(theta0);
-              p[0] = x * c - y * s;
-              p[1] = x * s + y * c;
-            }
-            return p;
-          }
-          forward.invert = function(x, y) {
-            var r2 = x * x + y * y;
-            if (r2 > rho2) {
-              var r = sqrt(r2), theta = atan2(y, x), theta0 = k2 * round(theta / k2), dTheta = theta - theta0;
-              x = r * cos(dTheta);
-              y = r * sin(dTheta);
-              var x_halfPi = x - halfPi, sinx = sin(x), alpha = y / sinx, delta = x < halfPi ? Infinity : 0, i = 10;
-              while (true) {
-                var rhosinAlpha = rho * sin(alpha), rhoCosAlpha = rho * cos(alpha), sinRhoCosAlpha = sin(rhoCosAlpha), halfPi_RhoCosAlpha = halfPi - rhoCosAlpha, k_ = (rhosinAlpha - alpha * sinRhoCosAlpha) / halfPi_RhoCosAlpha, s_ = gingeryLength(alpha, k_);
-                if (abs(delta) < epsilon2 || !--i) break;
-                alpha -= delta = (alpha * sinx - k_ * x_halfPi - y) / (sinx - x_halfPi * 2 * (halfPi_RhoCosAlpha * (rhoCosAlpha + alpha * rhosinAlpha * cos(rhoCosAlpha) - sinRhoCosAlpha) - rhosinAlpha * (rhosinAlpha - alpha * sinRhoCosAlpha)) / (halfPi_RhoCosAlpha * halfPi_RhoCosAlpha));
-              }
-              r = rho + gingeryIntegrate(s_, rhoCosAlpha, x) * (pi - rho) / gingeryIntegrate(s_, rhoCosAlpha, pi);
-              theta = theta0 + alpha;
-              x = r * cos(theta);
-              y = r * sin(theta);
-            }
-            return d3Geo.geoAzimuthalEquidistantRaw.invert(x, y);
-          };
-          return forward;
-        }
-        function gingeryLength(alpha, k2) {
-          return function(x) {
-            var y_ = alpha * cos(x);
-            if (x < halfPi) y_ -= k2;
-            return sqrt(1 + y_ * y_);
-          };
-        }
-        function gingeryIntegrate(f, a, b) {
-          var n = 50, h = (b - a) / n, s = f(a) + f(b);
-          for (var i = 1, x = a; i < n; ++i) s += 2 * f(x += h);
-          return s * 0.5 * h;
-        }
-        function gingery() {
-          var n = 6, rho = 30 * radians, cRho = cos(rho), sRho = sin(rho), m = d3Geo.geoProjectionMutator(gingeryRaw), p = m(rho, n), stream_ = p.stream, epsilon$$1 = 0.01, cr = -cos(epsilon$$1 * radians), sr = sin(epsilon$$1 * radians);
-          p.radius = function(_) {
-            if (!arguments.length) return rho * degrees;
-            cRho = cos(rho = _ * radians);
-            sRho = sin(rho);
-            return m(rho, n);
-          };
-          p.lobes = function(_) {
-            if (!arguments.length) return n;
-            return m(rho, n = +_);
-          };
-          p.stream = function(stream) {
-            var rotate = p.rotate(), rotateStream = stream_(stream), sphereStream = (p.rotate([0, 0]), stream_(stream));
-            p.rotate(rotate);
-            rotateStream.sphere = function() {
-              sphereStream.polygonStart(), sphereStream.lineStart();
-              for (var i = 0, delta = 2 * pi / n, phi = 0; i < n; ++i, phi -= delta) {
-                sphereStream.point(atan2(sr * cos(phi), cr) * degrees, asin(sr * sin(phi)) * degrees);
-                sphereStream.point(atan2(sRho * cos(phi - delta / 2), cRho) * degrees, asin(sRho * sin(phi - delta / 2)) * degrees);
-              }
-              sphereStream.lineEnd(), sphereStream.polygonEnd();
-            };
-            return rotateStream;
-          };
-          return p.rotate([90, -40]).scale(91.7095).clipAngle(180 - 1e-3);
-        }
-        function ginzburgPolyconicRaw(a, b, c, d, e, f, g, h) {
-          if (arguments.length < 8) h = 0;
-          function forward(lambda, phi) {
-            if (!phi) return [a * lambda / pi, 0];
-            var phi2 = phi * phi, xB = a + phi2 * (b + phi2 * (c + phi2 * d)), yB = phi * (e - 1 + phi2 * (f - h + phi2 * g)), m = (xB * xB + yB * yB) / (2 * yB), alpha = lambda * asin(xB / m) / pi;
-            return [m * sin(alpha), phi * (1 + phi2 * h) + m * (1 - cos(alpha))];
-          }
-          forward.invert = function(x, y) {
-            var lambda = pi * x / a, phi = y, deltaLambda, deltaPhi, i = 50;
-            do {
-              var phi2 = phi * phi, xB = a + phi2 * (b + phi2 * (c + phi2 * d)), yB = phi * (e - 1 + phi2 * (f - h + phi2 * g)), p = xB * xB + yB * yB, q = 2 * yB, m = p / q, m2 = m * m, dAlphadLambda = asin(xB / m) / pi, alpha = lambda * dAlphadLambda, xB2 = xB * xB, dxBdPhi = (2 * b + phi2 * (4 * c + phi2 * 6 * d)) * phi, dyBdPhi = e + phi2 * (3 * f + phi2 * 5 * g), dpdPhi = 2 * (xB * dxBdPhi + yB * (dyBdPhi - 1)), dqdPhi = 2 * (dyBdPhi - 1), dmdPhi = (dpdPhi * q - p * dqdPhi) / (q * q), cosAlpha = cos(alpha), sinAlpha = sin(alpha), mcosAlpha = m * cosAlpha, msinAlpha = m * sinAlpha, dAlphadPhi = lambda / pi * (1 / sqrt(1 - xB2 / m2)) * (dxBdPhi * m - xB * dmdPhi) / m2, fx = msinAlpha - x, fy = phi * (1 + phi2 * h) + m - mcosAlpha - y, deltaxDeltaPhi = dmdPhi * sinAlpha + mcosAlpha * dAlphadPhi, deltaxDeltaLambda = mcosAlpha * dAlphadLambda, deltayDeltaPhi = 1 + dmdPhi - (dmdPhi * cosAlpha - msinAlpha * dAlphadPhi), deltayDeltaLambda = msinAlpha * dAlphadLambda, denominator = deltaxDeltaPhi * deltayDeltaLambda - deltayDeltaPhi * deltaxDeltaLambda;
-              if (!denominator) break;
-              lambda -= deltaLambda = (fy * deltaxDeltaPhi - fx * deltayDeltaPhi) / denominator;
-              phi -= deltaPhi = (fx * deltayDeltaLambda - fy * deltaxDeltaLambda) / denominator;
-            } while ((abs(deltaLambda) > epsilon || abs(deltaPhi) > epsilon) && --i > 0);
-            return [lambda, phi];
-          };
-          return forward;
-        }
-        var ginzburg4Raw = ginzburgPolyconicRaw(2.8284, -1.6988, 0.75432, -0.18071, 1.76003, -0.38914, 0.042555);
-        function ginzburg4() {
-          return d3Geo.geoProjection(ginzburg4Raw).scale(149.995);
-        }
-        var ginzburg5Raw = ginzburgPolyconicRaw(2.583819, -0.835827, 0.170354, -0.038094, 1.543313, -0.411435, 0.082742);
-        function ginzburg5() {
-          return d3Geo.geoProjection(ginzburg5Raw).scale(153.93);
-        }
-        var ginzburg6Raw = ginzburgPolyconicRaw(5 / 6 * pi, -0.62636, -0.0344, 0, 1.3493, -0.05524, 0, 0.045);
-        function ginzburg6() {
-          return d3Geo.geoProjection(ginzburg6Raw).scale(130.945);
-        }
-        function ginzburg8Raw(lambda, phi) {
-          var lambda2 = lambda * lambda, phi2 = phi * phi;
-          return [
-            lambda * (1 - 0.162388 * phi2) * (0.87 - 952426e-9 * lambda2 * lambda2),
-            phi * (1 + phi2 / 12)
-          ];
-        }
-        ginzburg8Raw.invert = function(x, y) {
-          var lambda = x, phi = y, i = 50, delta;
-          do {
-            var phi2 = phi * phi;
-            phi -= delta = (phi * (1 + phi2 / 12) - y) / (1 + phi2 / 4);
-          } while (abs(delta) > epsilon && --i > 0);
-          i = 50;
-          x /= 1 - 0.162388 * phi2;
-          do {
-            var lambda4 = (lambda4 = lambda * lambda) * lambda4;
-            lambda -= delta = (lambda * (0.87 - 952426e-9 * lambda4) - x) / (0.87 - 476213e-8 * lambda4);
-          } while (abs(delta) > epsilon && --i > 0);
-          return [lambda, phi];
-        };
-        function ginzburg8() {
-          return d3Geo.geoProjection(ginzburg8Raw).scale(131.747);
-        }
-        var ginzburg9Raw = ginzburgPolyconicRaw(2.6516, -0.76534, 0.19123, -0.047094, 1.36289, -0.13965, 0.031762);
-        function ginzburg9() {
-          return d3Geo.geoProjection(ginzburg9Raw).scale(131.087);
-        }
-        function squareRaw(project) {
-          var dx = project(halfPi, 0)[0] - project(-halfPi, 0)[0];
-          function projectSquare(lambda, phi) {
-            var s = lambda > 0 ? -0.5 : 0.5, point = project(lambda + s * pi, phi);
-            point[0] -= s * dx;
-            return point;
-          }
-          if (project.invert) projectSquare.invert = function(x, y) {
-            var s = x > 0 ? -0.5 : 0.5, location = project.invert(x + s * dx, y), lambda = location[0] - s * pi;
-            if (lambda < -pi) lambda += 2 * pi;
-            else if (lambda > pi) lambda -= 2 * pi;
-            location[0] = lambda;
-            return location;
-          };
-          return projectSquare;
-        }
-        function gringortenRaw(lambda, phi) {
-          var sLambda = sign(lambda), sPhi = sign(phi), cosPhi = cos(phi), x = cos(lambda) * cosPhi, y = sin(lambda) * cosPhi, z = sin(sPhi * phi);
-          lambda = abs(atan2(y, z));
-          phi = asin(x);
-          if (abs(lambda - halfPi) > epsilon) lambda %= halfPi;
-          var point = gringortenHexadecant(lambda > pi / 4 ? halfPi - lambda : lambda, phi);
-          if (lambda > pi / 4) z = point[0], point[0] = -point[1], point[1] = -z;
-          return point[0] *= sLambda, point[1] *= -sPhi, point;
-        }
-        gringortenRaw.invert = function(x, y) {
-          if (abs(x) > 1) x = sign(x) * 2 - x;
-          if (abs(y) > 1) y = sign(y) * 2 - y;
-          var sx = sign(x), sy = sign(y), x02 = -sx * x, y02 = -sy * y, t = y02 / x02 < 1, p = gringortenHexadecantInvert(t ? y02 : x02, t ? x02 : y02), lambda = p[0], phi = p[1], cosPhi = cos(phi);
-          if (t) lambda = -halfPi - lambda;
-          return [sx * (atan2(sin(lambda) * cosPhi, -sin(phi)) + pi), sy * asin(cos(lambda) * cosPhi)];
-        };
-        function gringortenHexadecant(lambda, phi) {
-          if (phi === halfPi) return [0, 0];
-          var sinPhi = sin(phi), r = sinPhi * sinPhi, r2 = r * r, j = 1 + r2, k2 = 1 + 3 * r2, q = 1 - r2, z = asin(1 / sqrt(j)), v = q + r * j * z, p2 = (1 - sinPhi) / v, p = sqrt(p2), a2 = p2 * j, a = sqrt(a2), h = p * q, x, i;
-          if (lambda === 0) return [0, -(h + r * a)];
-          var cosPhi = cos(phi), secPhi = 1 / cosPhi, drdPhi = 2 * sinPhi * cosPhi, dvdPhi = (-3 * r + z * k2) * drdPhi, dp2dPhi = (-v * cosPhi - (1 - sinPhi) * dvdPhi) / (v * v), dpdPhi = 0.5 * dp2dPhi / p, dhdPhi = q * dpdPhi - 2 * r * p * drdPhi, dra2dPhi = r * j * dp2dPhi + p2 * k2 * drdPhi, mu = -secPhi * drdPhi, nu = -secPhi * dra2dPhi, zeta = -2 * secPhi * dhdPhi, lambda1 = 4 * lambda / pi, delta;
-          if (lambda > 0.222 * pi || phi < pi / 4 && lambda > 0.175 * pi) {
-            x = (h + r * sqrt(a2 * (1 + r2) - h * h)) / (1 + r2);
-            if (lambda > pi / 4) return [x, x];
-            var x12 = x, x02 = 0.5 * x;
-            x = 0.5 * (x02 + x12), i = 50;
-            do {
-              var g = sqrt(a2 - x * x), f = x * (zeta + mu * g) + nu * asin(x / a) - lambda1;
-              if (!f) break;
-              if (f < 0) x02 = x;
-              else x12 = x;
-              x = 0.5 * (x02 + x12);
-            } while (abs(x12 - x02) > epsilon && --i > 0);
-          } else {
-            x = epsilon, i = 25;
-            do {
-              var x2 = x * x, g2 = sqrt(a2 - x2), zetaMug = zeta + mu * g2, f2 = x * zetaMug + nu * asin(x / a) - lambda1, df = zetaMug + (nu - mu * x2) / g2;
-              x -= delta = g2 ? f2 / df : 0;
-            } while (abs(delta) > epsilon && --i > 0);
-          }
-          return [x, -h - r * sqrt(a2 - x * x)];
-        }
-        function gringortenHexadecantInvert(x, y) {
-          var x02 = 0, x12 = 1, r = 0.5, i = 50;
-          while (true) {
-            var r2 = r * r, sinPhi = sqrt(r), z = asin(1 / sqrt(1 + r2)), v = 1 - r2 + r * (1 + r2) * z, p2 = (1 - sinPhi) / v, p = sqrt(p2), a2 = p2 * (1 + r2), h = p * (1 - r2), g2 = a2 - x * x, g = sqrt(g2), y02 = y + h + r * g;
-            if (abs(x12 - x02) < epsilon2 || --i === 0 || y02 === 0) break;
-            if (y02 > 0) x02 = r;
-            else x12 = r;
-            r = 0.5 * (x02 + x12);
-          }
-          if (!i) return null;
-          var phi = asin(sinPhi), cosPhi = cos(phi), secPhi = 1 / cosPhi, drdPhi = 2 * sinPhi * cosPhi, dvdPhi = (-3 * r + z * (1 + 3 * r2)) * drdPhi, dp2dPhi = (-v * cosPhi - (1 - sinPhi) * dvdPhi) / (v * v), dpdPhi = 0.5 * dp2dPhi / p, dhdPhi = (1 - r2) * dpdPhi - 2 * r * p * drdPhi, zeta = -2 * secPhi * dhdPhi, mu = -secPhi * drdPhi, nu = -secPhi * (r * (1 + r2) * dp2dPhi + p2 * (1 + 3 * r2) * drdPhi);
-          return [pi / 4 * (x * (zeta + mu * g) + nu * asin(x / sqrt(a2))), phi];
-        }
-        function gringorten() {
-          return d3Geo.geoProjection(squareRaw(gringortenRaw)).scale(239.75);
-        }
-        function ellipticJi(u, v, m) {
-          var a, b, c;
-          if (!u) {
-            b = ellipticJ(v, 1 - m);
-            return [
-              [0, b[0] / b[1]],
-              [1 / b[1], 0],
-              [b[2] / b[1], 0]
-            ];
-          }
-          a = ellipticJ(u, m);
-          if (!v) return [[a[0], 0], [a[1], 0], [a[2], 0]];
-          b = ellipticJ(v, 1 - m);
-          c = b[1] * b[1] + m * a[0] * a[0] * b[0] * b[0];
-          return [
-            [a[0] * b[2] / c, a[1] * a[2] * b[0] * b[1] / c],
-            [a[1] * b[1] / c, -a[0] * a[2] * b[0] * b[2] / c],
-            [a[2] * b[1] * b[2] / c, -m * a[0] * a[1] * b[0] / c]
-          ];
-        }
-        function ellipticJ(u, m) {
-          var ai, b, phi, t, twon;
-          if (m < epsilon) {
-            t = sin(u);
-            b = cos(u);
-            ai = m * (u - t * b) / 4;
-            return [
-              t - ai * b,
-              b + ai * t,
-              1 - m * t * t / 2,
-              u - ai
-            ];
-          }
-          if (m >= 1 - epsilon) {
-            ai = (1 - m) / 4;
-            b = cosh(u);
-            t = tanh(u);
-            phi = 1 / b;
-            twon = b * sinh(u);
-            return [
-              t + ai * (twon - u) / (b * b),
-              phi - ai * t * phi * (twon - u),
-              phi + ai * t * phi * (twon + u),
-              2 * atan(exp(u)) - halfPi + ai * (twon - u) / b
-            ];
-          }
-          var a = [1, 0, 0, 0, 0, 0, 0, 0, 0], c = [sqrt(m), 0, 0, 0, 0, 0, 0, 0, 0], i = 0;
-          b = sqrt(1 - m);
-          twon = 1;
-          while (abs(c[i] / a[i]) > epsilon && i < 8) {
-            ai = a[i++];
-            c[i] = (ai - b) / 2;
-            a[i] = (ai + b) / 2;
-            b = sqrt(ai * b);
-            twon *= 2;
-          }
-          phi = twon * a[i] * u;
-          do {
-            t = c[i] * sin(b = phi) / a[i];
-            phi = (asin(t) + phi) / 2;
-          } while (--i);
-          return [sin(phi), t = cos(phi), t / cos(phi - b), phi];
-        }
-        function ellipticFi(phi, psi, m) {
-          var r = abs(phi), i = abs(psi), sinhPsi = sinh(i);
-          if (r) {
-            var cscPhi = 1 / sin(r), cotPhi2 = 1 / (tan(r) * tan(r)), b = -(cotPhi2 + m * (sinhPsi * sinhPsi * cscPhi * cscPhi) - 1 + m), c = (m - 1) * cotPhi2, cotLambda2 = (-b + sqrt(b * b - 4 * c)) / 2;
-            return [
-              ellipticF(atan(1 / sqrt(cotLambda2)), m) * sign(phi),
-              ellipticF(atan(sqrt((cotLambda2 / cotPhi2 - 1) / m)), 1 - m) * sign(psi)
-            ];
-          }
-          return [
-            0,
-            ellipticF(atan(sinhPsi), 1 - m) * sign(psi)
-          ];
-        }
-        function ellipticF(phi, m) {
-          if (!m) return phi;
-          if (m === 1) return log(tan(phi / 2 + quarterPi));
-          var a = 1, b = sqrt(1 - m), c = sqrt(m);
-          for (var i = 0; abs(c) > epsilon; i++) {
-            if (phi % pi) {
-              var dPhi = atan(b * tan(phi) / a);
-              if (dPhi < 0) dPhi += pi;
-              phi += dPhi + ~~(phi / pi) * pi;
-            } else phi += phi;
-            c = (a + b) / 2;
-            b = sqrt(a * b);
-            c = ((a = c) - b) / 2;
-          }
-          return phi / (pow(2, i) * a);
-        }
-        function guyouRaw(lambda, phi) {
-          var k_ = (sqrt2 - 1) / (sqrt2 + 1), k2 = sqrt(1 - k_ * k_), K2 = ellipticF(halfPi, k2 * k2), f = -1, psi = log(tan(pi / 4 + abs(phi) / 2)), r = exp(f * psi) / sqrt(k_), at = guyouComplexAtan(r * cos(f * lambda), r * sin(f * lambda)), t = ellipticFi(at[0], at[1], k2 * k2);
-          return [-t[1], (phi >= 0 ? 1 : -1) * (0.5 * K2 - t[0])];
-        }
-        function guyouComplexAtan(x, y) {
-          var x2 = x * x, y_1 = y + 1, t = 1 - x2 - y * y;
-          return [
-            0.5 * ((x >= 0 ? halfPi : -halfPi) - atan2(t, 2 * x)),
-            -0.25 * log(t * t + 4 * x2) + 0.5 * log(y_1 * y_1 + x2)
-          ];
-        }
-        function guyouComplexDivide(a, b) {
-          var denominator = b[0] * b[0] + b[1] * b[1];
-          return [
-            (a[0] * b[0] + a[1] * b[1]) / denominator,
-            (a[1] * b[0] - a[0] * b[1]) / denominator
-          ];
-        }
-        guyouRaw.invert = function(x, y) {
-          var k_ = (sqrt2 - 1) / (sqrt2 + 1), k2 = sqrt(1 - k_ * k_), K2 = ellipticF(halfPi, k2 * k2), f = -1, j = ellipticJi(0.5 * K2 - y, -x, k2 * k2), tn = guyouComplexDivide(j[0], j[1]), lambda = atan2(tn[1], tn[0]) / f;
-          return [
-            lambda,
-            2 * atan(exp(0.5 / f * log(k_ * tn[0] * tn[0] + k_ * tn[1] * tn[1]))) - halfPi
-          ];
-        };
-        function guyou() {
-          return d3Geo.geoProjection(squareRaw(guyouRaw)).scale(151.496);
-        }
-        function hammerRetroazimuthalRaw(phi02) {
-          var sinPhi0 = sin(phi02), cosPhi0 = cos(phi02), rotate = hammerRetroazimuthalRotation(phi02);
-          rotate.invert = hammerRetroazimuthalRotation(-phi02);
-          function forward(lambda, phi) {
-            var p = rotate(lambda, phi);
-            lambda = p[0], phi = p[1];
-            var sinPhi = sin(phi), cosPhi = cos(phi), cosLambda = cos(lambda), z = acos(sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosLambda), sinz = sin(z), K2 = abs(sinz) > epsilon ? z / sinz : 1;
-            return [
-              K2 * cosPhi0 * sin(lambda),
-              (abs(lambda) > halfPi ? K2 : -K2) * (sinPhi0 * cosPhi - cosPhi0 * sinPhi * cosLambda)
-            ];
-          }
-          forward.invert = function(x, y) {
-            var rho = sqrt(x * x + y * y), sinz = -sin(rho), cosz = cos(rho), a = rho * cosz, b = -y * sinz, c = rho * sinPhi0, d = sqrt(a * a + b * b - c * c), phi = atan2(a * c + b * d, b * c - a * d), lambda = (rho > halfPi ? -1 : 1) * atan2(x * sinz, rho * cos(phi) * cosz + y * sin(phi) * sinz);
-            return rotate.invert(lambda, phi);
-          };
-          return forward;
-        }
-        function hammerRetroazimuthalRotation(phi02) {
-          var sinPhi0 = sin(phi02), cosPhi0 = cos(phi02);
-          return function(lambda, phi) {
-            var cosPhi = cos(phi), x = cos(lambda) * cosPhi, y = sin(lambda) * cosPhi, z = sin(phi);
-            return [
-              atan2(y, x * cosPhi0 - z * sinPhi0),
-              asin(z * cosPhi0 + x * sinPhi0)
-            ];
-          };
-        }
-        function hammerRetroazimuthal() {
-          var phi02 = 0, m = d3Geo.geoProjectionMutator(hammerRetroazimuthalRaw), p = m(phi02), rotate_ = p.rotate, stream_ = p.stream, circle = d3Geo.geoCircle();
-          p.parallel = function(_) {
-            if (!arguments.length) return phi02 * degrees;
-            var r = p.rotate();
-            return m(phi02 = _ * radians).rotate(r);
-          };
-          p.rotate = function(_) {
-            if (!arguments.length) return _ = rotate_.call(p), _[1] += phi02 * degrees, _;
-            rotate_.call(p, [_[0], _[1] - phi02 * degrees]);
-            circle.center([-_[0], -_[1]]);
-            return p;
-          };
-          p.stream = function(stream) {
-            stream = stream_(stream);
-            stream.sphere = function() {
-              stream.polygonStart();
-              var epsilon$$1 = 0.01, ring = circle.radius(90 - epsilon$$1)().coordinates[0], n = ring.length - 1, i = -1, p2;
-              stream.lineStart();
-              while (++i < n) stream.point((p2 = ring[i])[0], p2[1]);
-              stream.lineEnd();
-              ring = circle.radius(90 + epsilon$$1)().coordinates[0];
-              n = ring.length - 1;
-              stream.lineStart();
-              while (--i >= 0) stream.point((p2 = ring[i])[0], p2[1]);
-              stream.lineEnd();
-              stream.polygonEnd();
-            };
-            return stream;
-          };
-          return p.scale(79.4187).parallel(45).clipAngle(180 - 1e-3);
-        }
-        var K = 3, healpixParallel = asin(1 - 1 / K) * degrees, healpixLambert = cylindricalEqualAreaRaw(0);
-        function healpixRaw(H) {
-          var phi02 = healpixParallel * radians, dx = collignonRaw(pi, phi02)[0] - collignonRaw(-pi, phi02)[0], y02 = healpixLambert(0, phi02)[1], y12 = collignonRaw(0, phi02)[1], dy1 = sqrtPi - y12, k2 = tau / H, w2 = 4 / tau, h = y02 + dy1 * dy1 * 4 / tau;
-          function forward(lambda, phi) {
-            var point, phi2 = abs(phi);
-            if (phi2 > phi02) {
-              var i = min(H - 1, max(0, floor((lambda + pi) / k2)));
-              lambda += pi * (H - 1) / H - i * k2;
-              point = collignonRaw(lambda, phi2);
-              point[0] = point[0] * tau / dx - tau * (H - 1) / (2 * H) + i * tau / H;
-              point[1] = y02 + (point[1] - y12) * 4 * dy1 / tau;
-              if (phi < 0) point[1] = -point[1];
-            } else {
-              point = healpixLambert(lambda, phi);
-            }
-            point[0] *= w2, point[1] /= h;
-            return point;
-          }
-          forward.invert = function(x, y) {
-            x /= w2, y *= h;
-            var y2 = abs(y);
-            if (y2 > y02) {
-              var i = min(H - 1, max(0, floor((x + pi) / k2)));
-              x = (x + pi * (H - 1) / H - i * k2) * dx / tau;
-              var point = collignonRaw.invert(x, 0.25 * (y2 - y02) * tau / dy1 + y12);
-              point[0] -= pi * (H - 1) / H - i * k2;
-              if (y < 0) point[1] = -point[1];
-              return point;
-            }
-            return healpixLambert.invert(x, y);
-          };
-          return forward;
-        }
-        function sphereTop(x, i) {
-          return [x, i & 1 ? 90 - epsilon : healpixParallel];
-        }
-        function sphereBottom(x, i) {
-          return [x, i & 1 ? -90 + epsilon : -healpixParallel];
-        }
-        function sphereNudge(d) {
-          return [d[0] * (1 - epsilon), d[1]];
-        }
-        function sphere(step) {
-          var c = [].concat(
-            d3Array.range(-180, 180 + step / 2, step).map(sphereTop),
-            d3Array.range(180, -180 - step / 2, -step).map(sphereBottom)
-          );
-          return {
-            type: "Polygon",
-            coordinates: [step === 180 ? c.map(sphereNudge) : c]
-          };
-        }
-        function healpix() {
-          var H = 4, m = d3Geo.geoProjectionMutator(healpixRaw), p = m(H), stream_ = p.stream;
-          p.lobes = function(_) {
-            return arguments.length ? m(H = +_) : H;
-          };
-          p.stream = function(stream) {
-            var rotate = p.rotate(), rotateStream = stream_(stream), sphereStream = (p.rotate([0, 0]), stream_(stream));
-            p.rotate(rotate);
-            rotateStream.sphere = function() {
-              d3Geo.geoStream(sphere(180 / H), sphereStream);
-            };
-            return rotateStream;
-          };
-          return p.scale(239.75);
-        }
-        function hillRaw(K2) {
-          var L = 1 + K2, sinBt = sin(1 / L), Bt = asin(sinBt), A2 = 2 * sqrt(pi / (B2 = pi + 4 * Bt * L)), B2, rho0 = 0.5 * A2 * (L + sqrt(K2 * (2 + K2))), K22 = K2 * K2, L2 = L * L;
-          function forward(lambda, phi) {
-            var t = 1 - sin(phi), rho, omega;
-            if (t && t < 2) {
-              var theta = halfPi - phi, i = 25, delta;
-              do {
-                var sinTheta = sin(theta), cosTheta = cos(theta), Bt_Bt1 = Bt + atan2(sinTheta, L - cosTheta), C = 1 + L2 - 2 * L * cosTheta;
-                theta -= delta = (theta - K22 * Bt - L * sinTheta + C * Bt_Bt1 - 0.5 * t * B2) / (2 * L * sinTheta * Bt_Bt1);
-              } while (abs(delta) > epsilon2 && --i > 0);
-              rho = A2 * sqrt(C);
-              omega = lambda * Bt_Bt1 / pi;
-            } else {
-              rho = A2 * (K2 + t);
-              omega = lambda * Bt / pi;
-            }
-            return [
-              rho * sin(omega),
-              rho0 - rho * cos(omega)
-            ];
-          }
-          forward.invert = function(x, y) {
-            var rho2 = x * x + (y -= rho0) * y, cosTheta = (1 + L2 - rho2 / (A2 * A2)) / (2 * L), theta = acos(cosTheta), sinTheta = sin(theta), Bt_Bt1 = Bt + atan2(sinTheta, L - cosTheta);
-            return [
-              asin(x / sqrt(rho2)) * pi / Bt_Bt1,
-              asin(1 - 2 * (theta - K22 * Bt - L * sinTheta + (1 + L2 - 2 * L * cosTheta) * Bt_Bt1) / B2)
-            ];
-          };
-          return forward;
-        }
-        function hill() {
-          var K2 = 1, m = d3Geo.geoProjectionMutator(hillRaw), p = m(K2);
-          p.ratio = function(_) {
-            return arguments.length ? m(K2 = +_) : K2;
-          };
-          return p.scale(167.774).center([0, 18.67]);
-        }
-        var sinuMollweidePhi = 0.7109889596207567;
-        var sinuMollweideY = 0.0528035274542;
-        function sinuMollweideRaw(lambda, phi) {
-          return phi > -sinuMollweidePhi ? (lambda = mollweideRaw(lambda, phi), lambda[1] += sinuMollweideY, lambda) : sinusoidalRaw(lambda, phi);
-        }
-        sinuMollweideRaw.invert = function(x, y) {
-          return y > -sinuMollweidePhi ? mollweideRaw.invert(x, y - sinuMollweideY) : sinusoidalRaw.invert(x, y);
-        };
-        function sinuMollweide() {
-          return d3Geo.geoProjection(sinuMollweideRaw).rotate([-20, -55]).scale(164.263).center([0, -5.4036]);
-        }
-        function homolosineRaw(lambda, phi) {
-          return abs(phi) > sinuMollweidePhi ? (lambda = mollweideRaw(lambda, phi), lambda[1] -= phi > 0 ? sinuMollweideY : -sinuMollweideY, lambda) : sinusoidalRaw(lambda, phi);
-        }
-        homolosineRaw.invert = function(x, y) {
-          return abs(y) > sinuMollweidePhi ? mollweideRaw.invert(x, y + (y > 0 ? sinuMollweideY : -sinuMollweideY)) : sinusoidalRaw.invert(x, y);
-        };
-        function homolosine() {
-          return d3Geo.geoProjection(homolosineRaw).scale(152.63);
-        }
-        function hufnagelRaw(a, b, psiMax, ratio) {
-          var k2 = sqrt(
-            4 * pi / (2 * psiMax + (1 + a - b / 2) * sin(2 * psiMax) + (a + b) / 2 * sin(4 * psiMax) + b / 2 * sin(6 * psiMax))
-          ), c = sqrt(
-            ratio * sin(psiMax) * sqrt((1 + a * cos(2 * psiMax) + b * cos(4 * psiMax)) / (1 + a + b))
-          ), M = psiMax * mapping(1);
-          function radius(psi) {
-            return sqrt(1 + a * cos(2 * psi) + b * cos(4 * psi));
-          }
-          function mapping(t) {
-            var psi = t * psiMax;
-            return (2 * psi + (1 + a - b / 2) * sin(2 * psi) + (a + b) / 2 * sin(4 * psi) + b / 2 * sin(6 * psi)) / psiMax;
-          }
-          function inversemapping(psi) {
-            return radius(psi) * sin(psi);
-          }
-          var forward = function(lambda, phi) {
-            var psi = psiMax * solve(mapping, M * sin(phi) / psiMax, phi / pi);
-            if (isNaN(psi)) psi = psiMax * sign(phi);
-            var kr = k2 * radius(psi);
-            return [kr * c * lambda / pi * cos(psi), kr / c * sin(psi)];
-          };
-          forward.invert = function(x, y) {
-            var psi = solve(inversemapping, y * c / k2);
-            return [
-              x * pi / (cos(psi) * k2 * c * radius(psi)),
-              asin(psiMax * mapping(psi / psiMax) / M)
-            ];
-          };
-          if (psiMax === 0) {
-            k2 = sqrt(ratio / pi);
-            forward = function(lambda, phi) {
-              return [lambda * k2, sin(phi) / k2];
-            };
-            forward.invert = function(x, y) {
-              return [x / k2, asin(y * k2)];
-            };
-          }
-          return forward;
-        }
-        function hufnagel() {
-          var a = 1, b = 0, psiMax = 45 * radians, ratio = 2, mutate = d3Geo.geoProjectionMutator(hufnagelRaw), projection = mutate(a, b, psiMax, ratio);
-          projection.a = function(_) {
-            return arguments.length ? mutate(a = +_, b, psiMax, ratio) : a;
-          };
-          projection.b = function(_) {
-            return arguments.length ? mutate(a, b = +_, psiMax, ratio) : b;
-          };
-          projection.psiMax = function(_) {
-            return arguments.length ? mutate(a, b, psiMax = +_ * radians, ratio) : psiMax * degrees;
-          };
-          projection.ratio = function(_) {
-            return arguments.length ? mutate(a, b, psiMax, ratio = +_) : ratio;
-          };
-          return projection.scale(180.739);
-        }
-        function adsimp(f, a, b, fa, fm, fb, V0, tol, maxdepth, depth, state) {
-          if (state.nanEncountered) {
-            return NaN;
-          }
-          var h, f1, f2, sl, sr, s2, m, V1, V2, err;
-          h = b - a;
-          f1 = f(a + h * 0.25);
-          f2 = f(b - h * 0.25);
-          if (isNaN(f1)) {
-            state.nanEncountered = true;
-            return;
-          }
-          if (isNaN(f2)) {
-            state.nanEncountered = true;
-            return;
-          }
-          sl = h * (fa + 4 * f1 + fm) / 12;
-          sr = h * (fm + 4 * f2 + fb) / 12;
-          s2 = sl + sr;
-          err = (s2 - V0) / 15;
-          if (depth > maxdepth) {
-            state.maxDepthCount++;
-            return s2 + err;
-          } else if (Math.abs(err) < tol) {
-            return s2 + err;
-          } else {
-            m = a + h * 0.5;
-            V1 = adsimp(f, a, m, fa, f1, fm, sl, tol * 0.5, maxdepth, depth + 1, state);
-            if (isNaN(V1)) {
-              state.nanEncountered = true;
-              return NaN;
-            }
-            V2 = adsimp(f, m, b, fm, f2, fb, sr, tol * 0.5, maxdepth, depth + 1, state);
-            if (isNaN(V2)) {
-              state.nanEncountered = true;
-              return NaN;
-            }
-            return V1 + V2;
-          }
-        }
-        function integrate(f, a, b, tol, maxdepth) {
-          var state = {
-            maxDepthCount: 0,
-            nanEncountered: false
-          };
-          if (tol === void 0) {
-            tol = 1e-8;
-          }
-          if (maxdepth === void 0) {
-            maxdepth = 20;
-          }
-          var fa = f(a);
-          var fm = f(0.5 * (a + b));
-          var fb = f(b);
-          var V0 = (fa + 4 * fm + fb) * (b - a) / 6;
-          var result = adsimp(f, a, b, fa, fm, fb, V0, tol, maxdepth, 1, state);
-          return result;
-        }
-        function hyperellipticalRaw(alpha, k2, gamma) {
-          function elliptic(f) {
-            return alpha + (1 - alpha) * pow(1 - pow(f, k2), 1 / k2);
-          }
-          function z(f) {
-            return integrate(elliptic, 0, f, 1e-4);
-          }
-          var G = 1 / z(1), n = 1e3, m = (1 + 1e-8) * G, approx = [];
-          for (var i = 0; i <= n; i++)
-            approx.push(z(i / n) * m);
-          function Y(sinphi) {
-            var rmin = 0, rmax = n, r = n >> 1;
-            do {
-              if (approx[r] > sinphi) rmax = r;
-              else rmin = r;
-              r = rmin + rmax >> 1;
-            } while (r > rmin);
-            var u = approx[r + 1] - approx[r];
-            if (u) u = (sinphi - approx[r + 1]) / u;
-            return (r + 1 + u) / n;
-          }
-          var ratio = 2 * Y(1) / pi * G / gamma;
-          var forward = function(lambda, phi) {
-            var y = Y(abs(sin(phi))), x = elliptic(y) * lambda;
-            y /= ratio;
-            return [x, phi >= 0 ? y : -y];
-          };
-          forward.invert = function(x, y) {
-            var phi;
-            y *= ratio;
-            if (abs(y) < 1) phi = sign(y) * asin(z(abs(y)) * G);
-            return [x / elliptic(abs(y)), phi];
-          };
-          return forward;
-        }
-        function hyperelliptical() {
-          var alpha = 0, k2 = 2.5, gamma = 1.183136, m = d3Geo.geoProjectionMutator(hyperellipticalRaw), p = m(alpha, k2, gamma);
-          p.alpha = function(_) {
-            return arguments.length ? m(alpha = +_, k2, gamma) : alpha;
-          };
-          p.k = function(_) {
-            return arguments.length ? m(alpha, k2 = +_, gamma) : k2;
-          };
-          p.gamma = function(_) {
-            return arguments.length ? m(alpha, k2, gamma = +_) : gamma;
-          };
-          return p.scale(152.63);
-        }
-        function pointEqual(a, b) {
-          return abs(a[0] - b[0]) < epsilon && abs(a[1] - b[1]) < epsilon;
-        }
-        function interpolateLine(coordinates, m) {
-          var i = -1, n = coordinates.length, p0 = coordinates[0], p1, dx, dy, resampled = [];
-          while (++i < n) {
-            p1 = coordinates[i];
-            dx = (p1[0] - p0[0]) / m;
-            dy = (p1[1] - p0[1]) / m;
-            for (var j = 0; j < m; ++j) resampled.push([p0[0] + j * dx, p0[1] + j * dy]);
-            p0 = p1;
-          }
-          resampled.push(p1);
-          return resampled;
-        }
-        function interpolateSphere(lobes2) {
-          var coordinates = [], lobe, lambda0, phi02, phi1, lambda2, phi2, i, n = lobes2[0].length;
-          for (i = 0; i < n; ++i) {
-            lobe = lobes2[0][i];
-            lambda0 = lobe[0][0], phi02 = lobe[0][1], phi1 = lobe[1][1];
-            lambda2 = lobe[2][0], phi2 = lobe[2][1];
-            coordinates.push(interpolateLine([
-              [lambda0 + epsilon, phi02 + epsilon],
-              [lambda0 + epsilon, phi1 - epsilon],
-              [lambda2 - epsilon, phi1 - epsilon],
-              [lambda2 - epsilon, phi2 + epsilon]
-            ], 30));
-          }
-          for (i = lobes2[1].length - 1; i >= 0; --i) {
-            lobe = lobes2[1][i];
-            lambda0 = lobe[0][0], phi02 = lobe[0][1], phi1 = lobe[1][1];
-            lambda2 = lobe[2][0], phi2 = lobe[2][1];
-            coordinates.push(interpolateLine([
-              [lambda2 - epsilon, phi2 - epsilon],
-              [lambda2 - epsilon, phi1 + epsilon],
-              [lambda0 + epsilon, phi1 + epsilon],
-              [lambda0 + epsilon, phi02 - epsilon]
-            ], 30));
-          }
-          return {
-            type: "Polygon",
-            coordinates: [d3Array.merge(coordinates)]
-          };
-        }
-        function interrupt(project, lobes2, inverse2) {
-          var sphere2, bounds;
-          function forward(lambda, phi) {
-            var sign$$1 = phi < 0 ? -1 : 1, lobe = lobes2[+(phi < 0)];
-            for (var i = 0, n = lobe.length - 1; i < n && lambda > lobe[i][2][0]; ++i) ;
-            var p2 = project(lambda - lobe[i][1][0], phi);
-            p2[0] += project(lobe[i][1][0], sign$$1 * phi > sign$$1 * lobe[i][0][1] ? lobe[i][0][1] : phi)[0];
-            return p2;
-          }
-          if (inverse2) {
-            forward.invert = inverse2(forward);
-          } else if (project.invert) {
-            forward.invert = function(x, y) {
-              var bound = bounds[+(y < 0)], lobe = lobes2[+(y < 0)];
-              for (var i = 0, n = bound.length; i < n; ++i) {
-                var b = bound[i];
-                if (b[0][0] <= x && x < b[1][0] && b[0][1] <= y && y < b[1][1]) {
-                  var p2 = project.invert(x - project(lobe[i][1][0], 0)[0], y);
-                  p2[0] += lobe[i][1][0];
-                  return pointEqual(forward(p2[0], p2[1]), [x, y]) ? p2 : null;
-                }
-              }
-            };
-          }
-          var p = d3Geo.geoProjection(forward), stream_ = p.stream;
-          p.stream = function(stream) {
-            var rotate = p.rotate(), rotateStream = stream_(stream), sphereStream = (p.rotate([0, 0]), stream_(stream));
-            p.rotate(rotate);
-            rotateStream.sphere = function() {
-              d3Geo.geoStream(sphere2, sphereStream);
-            };
-            return rotateStream;
-          };
-          p.lobes = function(_) {
-            if (!arguments.length) return lobes2.map(function(lobe) {
-              return lobe.map(function(l) {
-                return [
-                  [l[0][0] * degrees, l[0][1] * degrees],
-                  [l[1][0] * degrees, l[1][1] * degrees],
-                  [l[2][0] * degrees, l[2][1] * degrees]
-                ];
-              });
-            });
-            sphere2 = interpolateSphere(_);
-            lobes2 = _.map(function(lobe) {
-              return lobe.map(function(l) {
-                return [
-                  [l[0][0] * radians, l[0][1] * radians],
-                  [l[1][0] * radians, l[1][1] * radians],
-                  [l[2][0] * radians, l[2][1] * radians]
-                ];
-              });
-            });
-            bounds = lobes2.map(function(lobe) {
-              return lobe.map(function(l) {
-                var x02 = project(l[0][0], l[0][1])[0], x12 = project(l[2][0], l[2][1])[0], y02 = project(l[1][0], l[0][1])[1], y12 = project(l[1][0], l[1][1])[1], t;
-                if (y02 > y12) t = y02, y02 = y12, y12 = t;
-                return [[x02, y02], [x12, y12]];
-              });
-            });
-            return p;
-          };
-          if (lobes2 != null) p.lobes(lobes2);
-          return p;
-        }
-        var lobes = [[
-          // northern hemisphere
-          [[-180, 0], [-100, 90], [-40, 0]],
-          [[-40, 0], [30, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-160, -90], [-100, 0]],
-          [[-100, 0], [-60, -90], [-20, 0]],
-          [[-20, 0], [20, -90], [80, 0]],
-          [[80, 0], [140, -90], [180, 0]]
-        ]];
-        function boggs$1() {
-          return interrupt(boggsRaw, lobes).scale(160.857);
-        }
-        var lobes$1 = [[
-          // northern hemisphere
-          [[-180, 0], [-100, 90], [-40, 0]],
-          [[-40, 0], [30, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-160, -90], [-100, 0]],
-          [[-100, 0], [-60, -90], [-20, 0]],
-          [[-20, 0], [20, -90], [80, 0]],
-          [[80, 0], [140, -90], [180, 0]]
-        ]];
-        function homolosine$1() {
-          return interrupt(homolosineRaw, lobes$1).scale(152.63);
-        }
-        var lobes$2 = [[
-          // northern hemisphere
-          [[-180, 0], [-100, 90], [-40, 0]],
-          [[-40, 0], [30, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-160, -90], [-100, 0]],
-          [[-100, 0], [-60, -90], [-20, 0]],
-          [[-20, 0], [20, -90], [80, 0]],
-          [[80, 0], [140, -90], [180, 0]]
-        ]];
-        function mollweide$1() {
-          return interrupt(mollweideRaw, lobes$2).scale(169.529);
-        }
-        var lobes$3 = [[
-          // northern hemisphere
-          [[-180, 0], [-90, 90], [0, 0]],
-          [[0, 0], [90, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-90, -90], [0, 0]],
-          [[0, 0], [90, -90], [180, 0]]
-        ]];
-        function mollweideHemispheres() {
-          return interrupt(mollweideRaw, lobes$3).scale(169.529).rotate([20, 0]);
-        }
-        var lobes$4 = [[
-          // northern hemisphere
-          [[-180, 35], [-30, 90], [0, 35]],
-          [[0, 35], [30, 90], [180, 35]]
-        ], [
-          // southern hemisphere
-          [[-180, -10], [-102, -90], [-65, -10]],
-          [[-65, -10], [5, -90], [77, -10]],
-          [[77, -10], [103, -90], [180, -10]]
-        ]];
-        function sinuMollweide$1() {
-          return interrupt(sinuMollweideRaw, lobes$4, solve2d).rotate([-20, -55]).scale(164.263).center([0, -5.4036]);
-        }
-        var lobes$5 = [[
-          // northern hemisphere
-          [[-180, 0], [-110, 90], [-40, 0]],
-          [[-40, 0], [0, 90], [40, 0]],
-          [[40, 0], [110, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-110, -90], [-40, 0]],
-          [[-40, 0], [0, -90], [40, 0]],
-          [[40, 0], [110, -90], [180, 0]]
-        ]];
-        function sinusoidal$1() {
-          return interrupt(sinusoidalRaw, lobes$5).scale(152.63).rotate([-20, 0]);
-        }
-        function kavrayskiy7Raw(lambda, phi) {
-          return [3 / tau * lambda * sqrt(pi * pi / 3 - phi * phi), phi];
-        }
-        kavrayskiy7Raw.invert = function(x, y) {
-          return [tau / 3 * x / sqrt(pi * pi / 3 - y * y), y];
-        };
-        function kavrayskiy7() {
-          return d3Geo.geoProjection(kavrayskiy7Raw).scale(158.837);
-        }
-        function lagrangeRaw(n) {
-          function forward(lambda, phi) {
-            if (abs(abs(phi) - halfPi) < epsilon) return [0, phi < 0 ? -2 : 2];
-            var sinPhi = sin(phi), v = pow((1 + sinPhi) / (1 - sinPhi), n / 2), c = 0.5 * (v + 1 / v) + cos(lambda *= n);
-            return [
-              2 * sin(lambda) / c,
-              (v - 1 / v) / c
-            ];
-          }
-          forward.invert = function(x, y) {
-            var y02 = abs(y);
-            if (abs(y02 - 2) < epsilon) return x ? null : [0, sign(y) * halfPi];
-            if (y02 > 2) return null;
-            x /= 2, y /= 2;
-            var x2 = x * x, y2 = y * y, t = 2 * y / (1 + x2 + y2);
-            t = pow((1 + t) / (1 - t), 1 / n);
-            return [
-              atan2(2 * x, 1 - x2 - y2) / n,
-              asin((t - 1) / (t + 1))
-            ];
-          };
-          return forward;
-        }
-        function lagrange() {
-          var n = 0.5, m = d3Geo.geoProjectionMutator(lagrangeRaw), p = m(n);
-          p.spacing = function(_) {
-            return arguments.length ? m(n = +_) : n;
-          };
-          return p.scale(124.75);
-        }
-        var pi_sqrt2 = pi / sqrt2;
-        function larriveeRaw(lambda, phi) {
-          return [
-            lambda * (1 + sqrt(cos(phi))) / 2,
-            phi / (cos(phi / 2) * cos(lambda / 6))
-          ];
-        }
-        larriveeRaw.invert = function(x, y) {
-          var x02 = abs(x), y02 = abs(y), lambda = epsilon, phi = halfPi;
-          if (y02 < pi_sqrt2) phi *= y02 / pi_sqrt2;
-          else lambda += 6 * acos(pi_sqrt2 / y02);
-          for (var i = 0; i < 25; i++) {
-            var sinPhi = sin(phi), sqrtcosPhi = sqrt(cos(phi)), sinPhi_2 = sin(phi / 2), cosPhi_2 = cos(phi / 2), sinLambda_6 = sin(lambda / 6), cosLambda_6 = cos(lambda / 6), f0 = 0.5 * lambda * (1 + sqrtcosPhi) - x02, f1 = phi / (cosPhi_2 * cosLambda_6) - y02, df0dPhi = sqrtcosPhi ? -0.25 * lambda * sinPhi / sqrtcosPhi : 0, df0dLambda = 0.5 * (1 + sqrtcosPhi), df1dPhi = (1 + 0.5 * phi * sinPhi_2 / cosPhi_2) / (cosPhi_2 * cosLambda_6), df1dLambda = phi / cosPhi_2 * (sinLambda_6 / 6) / (cosLambda_6 * cosLambda_6), denom = df0dPhi * df1dLambda - df1dPhi * df0dLambda, dPhi = (f0 * df1dLambda - f1 * df0dLambda) / denom, dLambda = (f1 * df0dPhi - f0 * df1dPhi) / denom;
-            phi -= dPhi;
-            lambda -= dLambda;
-            if (abs(dPhi) < epsilon && abs(dLambda) < epsilon) break;
-          }
-          return [x < 0 ? -lambda : lambda, y < 0 ? -phi : phi];
-        };
-        function larrivee() {
-          return d3Geo.geoProjection(larriveeRaw).scale(97.2672);
-        }
-        function laskowskiRaw(lambda, phi) {
-          var lambda2 = lambda * lambda, phi2 = phi * phi;
-          return [
-            lambda * (0.975534 + phi2 * (-0.119161 + lambda2 * -0.0143059 + phi2 * -0.0547009)),
-            phi * (1.00384 + lambda2 * (0.0802894 + phi2 * -0.02855 + lambda2 * 199025e-9) + phi2 * (0.0998909 + phi2 * -0.0491032))
-          ];
-        }
-        laskowskiRaw.invert = function(x, y) {
-          var lambda = sign(x) * pi, phi = y / 2, i = 50;
-          do {
-            var lambda2 = lambda * lambda, phi2 = phi * phi, lambdaPhi = lambda * phi, fx = lambda * (0.975534 + phi2 * (-0.119161 + lambda2 * -0.0143059 + phi2 * -0.0547009)) - x, fy = phi * (1.00384 + lambda2 * (0.0802894 + phi2 * -0.02855 + lambda2 * 199025e-9) + phi2 * (0.0998909 + phi2 * -0.0491032)) - y, deltaxDeltaLambda = 0.975534 - phi2 * (0.119161 + 3 * lambda2 * 0.0143059 + phi2 * 0.0547009), deltaxDeltaPhi = -lambdaPhi * (2 * 0.119161 + 4 * 0.0547009 * phi2 + 2 * 0.0143059 * lambda2), deltayDeltaLambda = lambdaPhi * (2 * 0.0802894 + 4 * 199025e-9 * lambda2 + 2 * -0.02855 * phi2), deltayDeltaPhi = 1.00384 + lambda2 * (0.0802894 + 199025e-9 * lambda2) + phi2 * (3 * (0.0998909 - 0.02855 * lambda2) - 5 * 0.0491032 * phi2), denominator = deltaxDeltaPhi * deltayDeltaLambda - deltayDeltaPhi * deltaxDeltaLambda, deltaLambda = (fy * deltaxDeltaPhi - fx * deltayDeltaPhi) / denominator, deltaPhi = (fx * deltayDeltaLambda - fy * deltaxDeltaLambda) / denominator;
-            lambda -= deltaLambda, phi -= deltaPhi;
-          } while ((abs(deltaLambda) > epsilon || abs(deltaPhi) > epsilon) && --i > 0);
-          return i && [lambda, phi];
-        };
-        function laskowski() {
-          return d3Geo.geoProjection(laskowskiRaw).scale(139.98);
-        }
-        function littrowRaw(lambda, phi) {
-          return [
-            sin(lambda) / cos(phi),
-            tan(phi) * cos(lambda)
-          ];
-        }
-        littrowRaw.invert = function(x, y) {
-          var x2 = x * x, y2 = y * y, y2_1 = y2 + 1, x2_y2_1 = x2 + y2_1, cosPhi = x ? sqrt1_2 * sqrt((x2_y2_1 - sqrt(x2_y2_1 * x2_y2_1 - 4 * x2)) / x2) : 1 / sqrt(y2_1);
-          return [
-            asin(x * cosPhi),
-            sign(y) * acos(cosPhi)
-          ];
-        };
-        function littrow() {
-          return d3Geo.geoProjection(littrowRaw).scale(144.049).clipAngle(90 - 1e-3);
-        }
-        function loximuthalRaw(phi02) {
-          var cosPhi0 = cos(phi02), tanPhi0 = tan(quarterPi + phi02 / 2);
-          function forward(lambda, phi) {
-            var y = phi - phi02, x = abs(y) < epsilon ? lambda * cosPhi0 : abs(x = quarterPi + phi / 2) < epsilon || abs(abs(x) - halfPi) < epsilon ? 0 : lambda * y / log(tan(x) / tanPhi0);
-            return [x, y];
-          }
-          forward.invert = function(x, y) {
-            var lambda, phi = y + phi02;
-            return [
-              abs(y) < epsilon ? x / cosPhi0 : abs(lambda = quarterPi + phi / 2) < epsilon || abs(abs(lambda) - halfPi) < epsilon ? 0 : x * log(tan(lambda) / tanPhi0) / y,
-              phi
-            ];
-          };
-          return forward;
-        }
-        function loximuthal() {
-          return parallel1(loximuthalRaw).parallel(40).scale(158.837);
-        }
-        function millerRaw(lambda, phi) {
-          return [lambda, 1.25 * log(tan(quarterPi + 0.4 * phi))];
-        }
-        millerRaw.invert = function(x, y) {
-          return [x, 2.5 * atan(exp(0.8 * y)) - 0.625 * pi];
-        };
-        function miller() {
-          return d3Geo.geoProjection(millerRaw).scale(108.318);
-        }
-        function modifiedStereographicRaw(C) {
-          var m = C.length - 1;
-          function forward(lambda, phi) {
-            var cosPhi = cos(phi), k2 = 2 / (1 + cosPhi * cos(lambda)), zr = k2 * cosPhi * sin(lambda), zi = k2 * sin(phi), i = m, w2 = C[i], ar = w2[0], ai = w2[1], t;
-            while (--i >= 0) {
-              w2 = C[i];
-              ar = w2[0] + zr * (t = ar) - zi * ai;
-              ai = w2[1] + zr * ai + zi * t;
-            }
-            ar = zr * (t = ar) - zi * ai;
-            ai = zr * ai + zi * t;
-            return [ar, ai];
-          }
-          forward.invert = function(x, y) {
-            var i = 20, zr = x, zi = y;
-            do {
-              var j = m, w2 = C[j], ar = w2[0], ai = w2[1], br = 0, bi = 0, t;
-              while (--j >= 0) {
-                w2 = C[j];
-                br = ar + zr * (t = br) - zi * bi;
-                bi = ai + zr * bi + zi * t;
-                ar = w2[0] + zr * (t = ar) - zi * ai;
-                ai = w2[1] + zr * ai + zi * t;
-              }
-              br = ar + zr * (t = br) - zi * bi;
-              bi = ai + zr * bi + zi * t;
-              ar = zr * (t = ar) - zi * ai - x;
-              ai = zr * ai + zi * t - y;
-              var denominator = br * br + bi * bi, deltar, deltai;
-              zr -= deltar = (ar * br + ai * bi) / denominator;
-              zi -= deltai = (ai * br - ar * bi) / denominator;
-            } while (abs(deltar) + abs(deltai) > epsilon * epsilon && --i > 0);
-            if (i) {
-              var rho = sqrt(zr * zr + zi * zi), c = 2 * atan(rho * 0.5), sinc = sin(c);
-              return [atan2(zr * sinc, rho * cos(c)), rho ? asin(zi * sinc / rho) : 0];
-            }
-          };
-          return forward;
-        }
-        var alaska = [[0.9972523, 0], [52513e-7, -41175e-7], [74606e-7, 48125e-7], [-0.0153783, -0.1968253], [0.0636871, -0.1408027], [0.3660976, -0.2937382]], gs48 = [[0.98879, 0], [0, 0], [-0.050909, 0], [0, 0], [0.075528, 0]], gs50 = [[0.984299, 0], [0.0211642, 37608e-7], [-0.1036018, -0.0575102], [-0.0329095, -0.0320119], [0.0499471, 0.1223335], [0.026046, 0.0899805], [7388e-7, -0.1435792], [75848e-7, -0.1334108], [-0.0216473, 0.0776645], [-0.0225161, 0.0853673]], miller$1 = [[0.9245, 0], [0, 0], [0.01943, 0]], lee = [[0.721316, 0], [0, 0], [-881625e-8, -617325e-8]];
-        function modifiedStereographicAlaska() {
-          return modifiedStereographic(alaska, [152, -64]).scale(1400).center([-160.908, 62.4864]).clipAngle(30).angle(7.8);
-        }
-        function modifiedStereographicGs48() {
-          return modifiedStereographic(gs48, [95, -38]).scale(1e3).clipAngle(55).center([-96.5563, 38.8675]);
-        }
-        function modifiedStereographicGs50() {
-          return modifiedStereographic(gs50, [120, -45]).scale(359.513).clipAngle(55).center([-117.474, 53.0628]);
-        }
-        function modifiedStereographicMiller() {
-          return modifiedStereographic(miller$1, [-20, -18]).scale(209.091).center([20, 16.7214]).clipAngle(82);
-        }
-        function modifiedStereographicLee() {
-          return modifiedStereographic(lee, [165, 10]).scale(250).clipAngle(130).center([-165, -10]);
-        }
-        function modifiedStereographic(coefficients, rotate) {
-          var p = d3Geo.geoProjection(modifiedStereographicRaw(coefficients)).rotate(rotate).clipAngle(90), r = d3Geo.geoRotation(rotate), center = p.center;
-          delete p.rotate;
-          p.center = function(_) {
-            return arguments.length ? center(r(_)) : r.invert(center());
-          };
-          return p;
-        }
-        var sqrt6 = sqrt(6), sqrt7 = sqrt(7);
-        function mtFlatPolarParabolicRaw(lambda, phi) {
-          var theta = asin(7 * sin(phi) / (3 * sqrt6));
-          return [
-            sqrt6 * lambda * (2 * cos(2 * theta / 3) - 1) / sqrt7,
-            9 * sin(theta / 3) / sqrt7
-          ];
-        }
-        mtFlatPolarParabolicRaw.invert = function(x, y) {
-          var theta = 3 * asin(y * sqrt7 / 9);
-          return [
-            x * sqrt7 / (sqrt6 * (2 * cos(2 * theta / 3) - 1)),
-            asin(sin(theta) * 3 * sqrt6 / 7)
-          ];
-        };
-        function mtFlatPolarParabolic() {
-          return d3Geo.geoProjection(mtFlatPolarParabolicRaw).scale(164.859);
-        }
-        function mtFlatPolarQuarticRaw(lambda, phi) {
-          var k2 = (1 + sqrt1_2) * sin(phi), theta = phi;
-          for (var i = 0, delta; i < 25; i++) {
-            theta -= delta = (sin(theta / 2) + sin(theta) - k2) / (0.5 * cos(theta / 2) + cos(theta));
-            if (abs(delta) < epsilon) break;
-          }
-          return [
-            lambda * (1 + 2 * cos(theta) / cos(theta / 2)) / (3 * sqrt2),
-            2 * sqrt(3) * sin(theta / 2) / sqrt(2 + sqrt2)
-          ];
-        }
-        mtFlatPolarQuarticRaw.invert = function(x, y) {
-          var sinTheta_2 = y * sqrt(2 + sqrt2) / (2 * sqrt(3)), theta = 2 * asin(sinTheta_2);
-          return [
-            3 * sqrt2 * x / (1 + 2 * cos(theta) / cos(theta / 2)),
-            asin((sinTheta_2 + sin(theta)) / (1 + sqrt1_2))
-          ];
-        };
-        function mtFlatPolarQuartic() {
-          return d3Geo.geoProjection(mtFlatPolarQuarticRaw).scale(188.209);
-        }
-        function mtFlatPolarSinusoidalRaw(lambda, phi) {
-          var A2 = sqrt(6 / (4 + pi)), k2 = (1 + pi / 4) * sin(phi), theta = phi / 2;
-          for (var i = 0, delta; i < 25; i++) {
-            theta -= delta = (theta / 2 + sin(theta) - k2) / (0.5 + cos(theta));
-            if (abs(delta) < epsilon) break;
-          }
-          return [
-            A2 * (0.5 + cos(theta)) * lambda / 1.5,
-            A2 * theta
-          ];
-        }
-        mtFlatPolarSinusoidalRaw.invert = function(x, y) {
-          var A2 = sqrt(6 / (4 + pi)), theta = y / A2;
-          if (abs(abs(theta) - halfPi) < epsilon) theta = theta < 0 ? -halfPi : halfPi;
-          return [
-            1.5 * x / (A2 * (0.5 + cos(theta))),
-            asin((theta / 2 + sin(theta)) / (1 + pi / 4))
-          ];
-        };
-        function mtFlatPolarSinusoidal() {
-          return d3Geo.geoProjection(mtFlatPolarSinusoidalRaw).scale(166.518);
-        }
-        function naturalEarth2Raw(lambda, phi) {
-          var phi2 = phi * phi, phi4 = phi2 * phi2, phi6 = phi2 * phi4;
-          return [
-            lambda * (0.84719 - 0.13063 * phi2 + phi6 * phi6 * (-0.04515 + 0.05494 * phi2 - 0.02326 * phi4 + 331e-5 * phi6)),
-            phi * (1.01183 + phi4 * phi4 * (-0.02625 + 0.01926 * phi2 - 396e-5 * phi4))
-          ];
-        }
-        naturalEarth2Raw.invert = function(x, y) {
-          var phi = y, i = 25, delta, phi2, phi4, phi6;
-          do {
-            phi2 = phi * phi;
-            phi4 = phi2 * phi2;
-            phi -= delta = (phi * (1.01183 + phi4 * phi4 * (-0.02625 + 0.01926 * phi2 - 396e-5 * phi4)) - y) / (1.01183 + phi4 * phi4 * (9 * -0.02625 + 11 * 0.01926 * phi2 + 13 * -396e-5 * phi4));
-          } while (abs(delta) > epsilon2 && --i > 0);
-          phi2 = phi * phi;
-          phi4 = phi2 * phi2;
-          phi6 = phi2 * phi4;
-          return [
-            x / (0.84719 - 0.13063 * phi2 + phi6 * phi6 * (-0.04515 + 0.05494 * phi2 - 0.02326 * phi4 + 331e-5 * phi6)),
-            phi
-          ];
-        };
-        function naturalEarth2() {
-          return d3Geo.geoProjection(naturalEarth2Raw).scale(175.295);
-        }
-        function nellHammerRaw(lambda, phi) {
-          return [
-            lambda * (1 + cos(phi)) / 2,
-            2 * (phi - tan(phi / 2))
-          ];
-        }
-        nellHammerRaw.invert = function(x, y) {
-          var p = y / 2;
-          for (var i = 0, delta = Infinity; i < 10 && abs(delta) > epsilon; ++i) {
-            var c = cos(y / 2);
-            y -= delta = (y - tan(y / 2) - p) / (1 - 0.5 / (c * c));
-          }
-          return [
-            2 * x / (1 + cos(y)),
-            y
-          ];
-        };
-        function nellHammer() {
-          return d3Geo.geoProjection(nellHammerRaw).scale(152.63);
-        }
-        var lobes$6 = [[
-          // northern hemisphere
-          [[-180, 0], [-90, 90], [0, 0]],
-          [[0, 0], [90, 90], [180, 0]]
-        ], [
-          // southern hemisphere
-          [[-180, 0], [-90, -90], [0, 0]],
-          [[0, 0], [90, -90], [180, 0]]
-        ]];
-        function quarticAuthalic() {
-          return interrupt(hammerRaw(Infinity), lobes$6).rotate([20, 0]).scale(152.63);
-        }
-        function nicolosiRaw(lambda, phi) {
-          var sinPhi = sin(phi), q = cos(phi), s = sign(lambda);
-          if (lambda === 0 || abs(phi) === halfPi) return [0, phi];
-          else if (phi === 0) return [lambda, 0];
-          else if (abs(lambda) === halfPi) return [lambda * q, halfPi * sinPhi];
-          var b = pi / (2 * lambda) - 2 * lambda / pi, c = 2 * phi / pi, d = (1 - c * c) / (sinPhi - c);
-          var b2 = b * b, d2 = d * d, b2d2 = 1 + b2 / d2, d2b2 = 1 + d2 / b2;
-          var M = (b * sinPhi / d - b / 2) / b2d2, N = (d2 * sinPhi / b2 + d / 2) / d2b2, m = M * M + q * q / b2d2, n = N * N - (d2 * sinPhi * sinPhi / b2 + d * sinPhi - 1) / d2b2;
-          return [
-            halfPi * (M + sqrt(m) * s),
-            halfPi * (N + sqrt(n < 0 ? 0 : n) * sign(-phi * b) * s)
-          ];
-        }
-        nicolosiRaw.invert = function(x, y) {
-          x /= halfPi;
-          y /= halfPi;
-          var x2 = x * x, y2 = y * y, x2y2 = x2 + y2, pi2 = pi * pi;
-          return [
-            x ? (x2y2 - 1 + sqrt((1 - x2y2) * (1 - x2y2) + 4 * x2)) / (2 * x) * halfPi : 0,
-            solve(function(phi) {
-              return x2y2 * (pi * sin(phi) - 2 * phi) * pi + 4 * phi * phi * (y - sin(phi)) + 2 * pi * phi - pi2 * y;
-            }, 0)
-          ];
-        };
-        function nicolosi() {
-          return d3Geo.geoProjection(nicolosiRaw).scale(127.267);
-        }
-        var pattersonK1 = 1.0148, pattersonK2 = 0.23185, pattersonK3 = -0.14499, pattersonK4 = 0.02406, pattersonC1 = pattersonK1, pattersonC2 = 5 * pattersonK2, pattersonC3 = 7 * pattersonK3, pattersonC4 = 9 * pattersonK4, pattersonYmax = 1.790857183;
-        function pattersonRaw(lambda, phi) {
-          var phi2 = phi * phi;
-          return [
-            lambda,
-            phi * (pattersonK1 + phi2 * phi2 * (pattersonK2 + phi2 * (pattersonK3 + pattersonK4 * phi2)))
-          ];
-        }
-        pattersonRaw.invert = function(x, y) {
-          if (y > pattersonYmax) y = pattersonYmax;
-          else if (y < -pattersonYmax) y = -pattersonYmax;
-          var yc = y, delta;
-          do {
-            var y2 = yc * yc;
-            yc -= delta = (yc * (pattersonK1 + y2 * y2 * (pattersonK2 + y2 * (pattersonK3 + pattersonK4 * y2))) - y) / (pattersonC1 + y2 * y2 * (pattersonC2 + y2 * (pattersonC3 + pattersonC4 * y2)));
-          } while (abs(delta) > epsilon);
-          return [x, yc];
-        };
-        function patterson() {
-          return d3Geo.geoProjection(pattersonRaw).scale(139.319);
-        }
-        function polyconicRaw(lambda, phi) {
-          if (abs(phi) < epsilon) return [lambda, 0];
-          var tanPhi = tan(phi), k2 = lambda * sin(phi);
-          return [
-            sin(k2) / tanPhi,
-            phi + (1 - cos(k2)) / tanPhi
-          ];
-        }
-        polyconicRaw.invert = function(x, y) {
-          if (abs(y) < epsilon) return [x, 0];
-          var k2 = x * x + y * y, phi = y * 0.5, i = 10, delta;
-          do {
-            var tanPhi = tan(phi), secPhi = 1 / cos(phi), j = k2 - 2 * y * phi + phi * phi;
-            phi -= delta = (tanPhi * j + 2 * (phi - y)) / (2 + j * secPhi * secPhi + 2 * (phi - y) * tanPhi);
-          } while (abs(delta) > epsilon && --i > 0);
-          tanPhi = tan(phi);
-          return [
-            (abs(y) < abs(phi + 1 / tanPhi) ? asin(x * tanPhi) : sign(y) * sign(x) * (acos(abs(x * tanPhi)) + halfPi)) / sin(phi),
-            phi
-          ];
-        };
-        function polyconic() {
-          return d3Geo.geoProjection(polyconicRaw).scale(103.74);
-        }
-        function matrix(a, b) {
-          var u = subtract(a[1], a[0]), v = subtract(b[1], b[0]), phi = angle$1(u, v), s = length(u) / length(v);
-          return multiply([
-            1,
-            0,
-            a[0][0],
-            0,
-            1,
-            a[0][1]
-          ], multiply([
-            s,
-            0,
-            0,
-            0,
-            s,
-            0
-          ], multiply([
-            cos(phi),
-            sin(phi),
-            0,
-            -sin(phi),
-            cos(phi),
-            0
-          ], [
-            1,
-            0,
-            -b[0][0],
-            0,
-            1,
-            -b[0][1]
-          ])));
-        }
-        function inverse(m) {
-          var k2 = 1 / (m[0] * m[4] - m[1] * m[3]);
-          return [
-            k2 * m[4],
-            -k2 * m[1],
-            k2 * (m[1] * m[5] - m[2] * m[4]),
-            -k2 * m[3],
-            k2 * m[0],
-            k2 * (m[2] * m[3] - m[0] * m[5])
-          ];
-        }
-        function multiply(a, b) {
-          return [
-            a[0] * b[0] + a[1] * b[3],
-            a[0] * b[1] + a[1] * b[4],
-            a[0] * b[2] + a[1] * b[5] + a[2],
-            a[3] * b[0] + a[4] * b[3],
-            a[3] * b[1] + a[4] * b[4],
-            a[3] * b[2] + a[4] * b[5] + a[5]
-          ];
-        }
-        function subtract(a, b) {
-          return [a[0] - b[0], a[1] - b[1]];
-        }
-        function length(v) {
-          return sqrt(v[0] * v[0] + v[1] * v[1]);
-        }
-        function angle$1(a, b) {
-          return atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]);
-        }
-        function polyhedral(root, face, r) {
-          recurse(root, { transform: null });
-          function recurse(node, parent) {
-            node.edges = faceEdges(node.face);
-            if (parent.face) {
-              var shared = node.shared = sharedEdge(node.face, parent.face), m = matrix(shared.map(parent.project), shared.map(node.project));
-              node.transform = parent.transform ? multiply(parent.transform, m) : m;
-              var edges = parent.edges;
-              for (var i = 0, n = edges.length; i < n; ++i) {
-                if (pointEqual$1(shared[0], edges[i][1]) && pointEqual$1(shared[1], edges[i][0])) edges[i] = node;
-                if (pointEqual$1(shared[0], edges[i][0]) && pointEqual$1(shared[1], edges[i][1])) edges[i] = node;
-              }
-              edges = node.edges;
-              for (i = 0, n = edges.length; i < n; ++i) {
-                if (pointEqual$1(shared[0], edges[i][0]) && pointEqual$1(shared[1], edges[i][1])) edges[i] = parent;
-                if (pointEqual$1(shared[0], edges[i][1]) && pointEqual$1(shared[1], edges[i][0])) edges[i] = parent;
-              }
-            } else {
-              node.transform = parent.transform;
-            }
-            if (node.children) {
-              node.children.forEach(function(child) {
-                recurse(child, node);
-              });
-            }
-            return node;
-          }
-          function forward(lambda, phi) {
-            var node = face(lambda, phi), point = node.project([lambda * degrees, phi * degrees]), t;
-            if (t = node.transform) {
-              return [
-                t[0] * point[0] + t[1] * point[1] + t[2],
-                -(t[3] * point[0] + t[4] * point[1] + t[5])
-              ];
-            }
-            point[1] = -point[1];
-            return point;
-          }
-          if (hasInverse(root)) forward.invert = function(x, y) {
-            var coordinates = faceInvert(root, [x, -y]);
-            return coordinates && (coordinates[0] *= radians, coordinates[1] *= radians, coordinates);
-          };
-          function faceInvert(node, coordinates) {
-            var invert = node.project.invert, t = node.transform, point = coordinates;
-            if (t) {
-              t = inverse(t);
-              point = [
-                t[0] * point[0] + t[1] * point[1] + t[2],
-                t[3] * point[0] + t[4] * point[1] + t[5]
-              ];
-            }
-            if (invert && node === faceDegrees(p = invert(point))) return p;
-            var p, children = node.children;
-            for (var i = 0, n = children && children.length; i < n; ++i) {
-              if (p = faceInvert(children[i], coordinates)) return p;
-            }
-          }
-          function faceDegrees(coordinates) {
-            return face(coordinates[0] * radians, coordinates[1] * radians);
-          }
-          var proj = d3Geo.geoProjection(forward), stream_ = proj.stream;
-          proj.stream = function(stream) {
-            var rotate = proj.rotate(), rotateStream = stream_(stream), sphereStream = (proj.rotate([0, 0]), stream_(stream));
-            proj.rotate(rotate);
-            rotateStream.sphere = function() {
-              sphereStream.polygonStart();
-              sphereStream.lineStart();
-              outline(sphereStream, root);
-              sphereStream.lineEnd();
-              sphereStream.polygonEnd();
-            };
-            return rotateStream;
-          };
-          return proj.angle(r == null ? -30 : r * degrees);
-        }
-        function outline(stream, node, parent) {
-          var point, edges = node.edges, n = edges.length, edge, multiPoint = { type: "MultiPoint", coordinates: node.face }, notPoles = node.face.filter(function(d) {
-            return abs(d[1]) !== 90;
-          }), b = d3Geo.geoBounds({ type: "MultiPoint", coordinates: notPoles }), inside = false, j = -1, dx = b[1][0] - b[0][0];
-          var c = dx === 180 || dx === 360 ? [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2] : d3Geo.geoCentroid(multiPoint);
-          if (parent) while (++j < n) {
-            if (edges[j] === parent) break;
-          }
-          ++j;
-          for (var i = 0; i < n; ++i) {
-            edge = edges[(i + j) % n];
-            if (Array.isArray(edge)) {
-              if (!inside) {
-                stream.point((point = d3Geo.geoInterpolate(edge[0], c)(epsilon))[0], point[1]);
-                inside = true;
-              }
-              stream.point((point = d3Geo.geoInterpolate(edge[1], c)(epsilon))[0], point[1]);
-            } else {
-              inside = false;
-              if (edge !== parent) outline(stream, edge, node);
-            }
-          }
-        }
-        function pointEqual$1(a, b) {
-          return a && b && a[0] === b[0] && a[1] === b[1];
-        }
-        function sharedEdge(a, b) {
-          var x, y, n = a.length, found = null;
-          for (var i = 0; i < n; ++i) {
-            x = a[i];
-            for (var j = b.length; --j >= 0; ) {
-              y = b[j];
-              if (x[0] === y[0] && x[1] === y[1]) {
-                if (found) return [found, x];
-                found = x;
-              }
-            }
-          }
-        }
-        function faceEdges(face) {
-          var n = face.length, edges = [];
-          for (var a = face[n - 1], i = 0; i < n; ++i) edges.push([a, a = face[i]]);
-          return edges;
-        }
-        function hasInverse(node) {
-          return node.project.invert || node.children && node.children.some(hasInverse);
-        }
-        var octahedron = [
-          [0, 90],
-          [-90, 0],
-          [0, 0],
-          [90, 0],
-          [180, 0],
-          [0, -90]
-        ];
-        var octahedron$1 = [
-          [0, 2, 1],
-          [0, 3, 2],
-          [5, 1, 2],
-          [5, 2, 3],
-          [0, 1, 4],
-          [0, 4, 3],
-          [5, 4, 1],
-          [5, 3, 4]
-        ].map(function(face) {
-          return face.map(function(i) {
-            return octahedron[i];
-          });
-        });
-        function butterfly(faceProjection) {
-          faceProjection = faceProjection || function(face) {
-            var c = d3Geo.geoCentroid({ type: "MultiPoint", coordinates: face });
-            return d3Geo.geoGnomonic().scale(1).translate([0, 0]).rotate([-c[0], -c[1]]);
-          };
-          var faces = octahedron$1.map(function(face) {
-            return { face, project: faceProjection(face) };
-          });
-          [-1, 0, 0, 1, 0, 1, 4, 5].forEach(function(d, i) {
-            var node = faces[d];
-            node && (node.children || (node.children = [])).push(faces[i]);
-          });
-          return polyhedral(faces[0], function(lambda, phi) {
-            return faces[lambda < -pi / 2 ? phi < 0 ? 6 : 4 : lambda < 0 ? phi < 0 ? 2 : 0 : lambda < pi / 2 ? phi < 0 ? 3 : 1 : phi < 0 ? 7 : 5];
-          }).angle(-30).scale(101.858).center([0, 45]);
-        }
-        var kx = 2 / sqrt(3);
-        function collignonK(a, b) {
-          var p = collignonRaw(a, b);
-          return [p[0] * kx, p[1]];
-        }
-        collignonK.invert = function(x, y) {
-          return collignonRaw.invert(x / kx, y);
-        };
-        function collignon$1(faceProjection) {
-          faceProjection = faceProjection || function(face) {
-            var c = d3Geo.geoCentroid({ type: "MultiPoint", coordinates: face });
-            return d3Geo.geoProjection(collignonK).translate([0, 0]).scale(1).rotate(c[1] > 0 ? [-c[0], 0] : [180 - c[0], 180]);
-          };
-          var faces = octahedron$1.map(function(face) {
-            return { face, project: faceProjection(face) };
-          });
-          [-1, 0, 0, 1, 0, 1, 4, 5].forEach(function(d, i) {
-            var node = faces[d];
-            node && (node.children || (node.children = [])).push(faces[i]);
-          });
-          return polyhedral(faces[0], function(lambda, phi) {
-            return faces[lambda < -pi / 2 ? phi < 0 ? 6 : 4 : lambda < 0 ? phi < 0 ? 2 : 0 : lambda < pi / 2 ? phi < 0 ? 3 : 1 : phi < 0 ? 7 : 5];
-          }).angle(-30).scale(121.906).center([0, 48.5904]);
-        }
-        function waterman(faceProjection) {
-          faceProjection = faceProjection || function(face2) {
-            var c = face2.length === 6 ? d3Geo.geoCentroid({ type: "MultiPoint", coordinates: face2 }) : face2[0];
-            return d3Geo.geoGnomonic().scale(1).translate([0, 0]).rotate([-c[0], -c[1]]);
-          };
-          var w5 = octahedron$1.map(function(face2) {
-            var xyz = face2.map(cartesian), n = xyz.length, a = xyz[n - 1], b, hexagon = [];
-            for (var i = 0; i < n; ++i) {
-              b = xyz[i];
-              hexagon.push(spherical([
-                a[0] * 0.9486832980505138 + b[0] * 0.31622776601683794,
-                a[1] * 0.9486832980505138 + b[1] * 0.31622776601683794,
-                a[2] * 0.9486832980505138 + b[2] * 0.31622776601683794
-              ]), spherical([
-                b[0] * 0.9486832980505138 + a[0] * 0.31622776601683794,
-                b[1] * 0.9486832980505138 + a[1] * 0.31622776601683794,
-                b[2] * 0.9486832980505138 + a[2] * 0.31622776601683794
-              ]));
-              a = b;
-            }
-            return hexagon;
-          });
-          var cornerNormals = [];
-          var parents = [-1, 0, 0, 1, 0, 1, 4, 5];
-          w5.forEach(function(hexagon, j) {
-            var face2 = octahedron$1[j], n = face2.length, normals = cornerNormals[j] = [];
-            for (var i = 0; i < n; ++i) {
-              w5.push([
-                face2[i],
-                hexagon[(i * 2 + 2) % (2 * n)],
-                hexagon[(i * 2 + 1) % (2 * n)]
-              ]);
-              parents.push(j);
-              normals.push(cross(
-                cartesian(hexagon[(i * 2 + 2) % (2 * n)]),
-                cartesian(hexagon[(i * 2 + 1) % (2 * n)])
-              ));
-            }
-          });
-          var faces = w5.map(function(face2) {
-            return {
-              project: faceProjection(face2),
-              face: face2
-            };
-          });
-          parents.forEach(function(d, i) {
-            var parent = faces[d];
-            parent && (parent.children || (parent.children = [])).push(faces[i]);
-          });
-          function face(lambda, phi) {
-            var cosphi = cos(phi), p = [cosphi * cos(lambda), cosphi * sin(lambda), sin(phi)];
-            var hexagon = lambda < -pi / 2 ? phi < 0 ? 6 : 4 : lambda < 0 ? phi < 0 ? 2 : 0 : lambda < pi / 2 ? phi < 0 ? 3 : 1 : phi < 0 ? 7 : 5;
-            var n = cornerNormals[hexagon];
-            return faces[dot(n[0], p) < 0 ? 8 + 3 * hexagon : dot(n[1], p) < 0 ? 8 + 3 * hexagon + 1 : dot(n[2], p) < 0 ? 8 + 3 * hexagon + 2 : hexagon];
-          }
-          return polyhedral(faces[0], face).angle(-30).scale(110.625).center([0, 45]);
-        }
-        function dot(a, b) {
-          for (var i = 0, n = a.length, s = 0; i < n; ++i) s += a[i] * b[i];
-          return s;
-        }
-        function cross(a, b) {
-          return [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0]
-          ];
-        }
-        function spherical(cartesian2) {
-          return [
-            atan2(cartesian2[1], cartesian2[0]) * degrees,
-            asin(max(-1, min(1, cartesian2[2]))) * degrees
-          ];
-        }
-        function cartesian(coordinates) {
-          var lambda = coordinates[0] * radians, phi = coordinates[1] * radians, cosphi = cos(phi);
-          return [
-            cosphi * cos(lambda),
-            cosphi * sin(lambda),
-            sin(phi)
-          ];
-        }
-        function noop() {
-        }
-        function clockwise(ring) {
-          if ((n = ring.length) < 4) return false;
-          var i = 0, n, area = ring[n - 1][1] * ring[0][0] - ring[n - 1][0] * ring[0][1];
-          while (++i < n) area += ring[i - 1][1] * ring[i][0] - ring[i - 1][0] * ring[i][1];
-          return area <= 0;
-        }
-        function contains(ring, point) {
-          var x = point[0], y = point[1], contains2 = false;
-          for (var i = 0, n = ring.length, j = n - 1; i < n; j = i++) {
-            var pi2 = ring[i], xi = pi2[0], yi = pi2[1], pj = ring[j], xj = pj[0], yj = pj[1];
-            if (yi > y ^ yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) contains2 = !contains2;
-          }
-          return contains2;
-        }
-        function index(object, projection) {
-          var stream = projection.stream, project;
-          if (!stream) throw new Error("invalid projection");
-          switch (object && object.type) {
-            case "Feature":
-              project = projectFeature;
-              break;
-            case "FeatureCollection":
-              project = projectFeatureCollection;
-              break;
-            default:
-              project = projectGeometry;
-              break;
-          }
-          return project(object, stream);
-        }
-        function projectFeatureCollection(o, stream) {
-          return {
-            type: "FeatureCollection",
-            features: o.features.map(function(f) {
-              return projectFeature(f, stream);
-            })
-          };
-        }
-        function projectFeature(o, stream) {
-          return {
-            type: "Feature",
-            id: o.id,
-            properties: o.properties,
-            geometry: projectGeometry(o.geometry, stream)
-          };
-        }
-        function projectGeometryCollection(o, stream) {
-          return {
-            type: "GeometryCollection",
-            geometries: o.geometries.map(function(o2) {
-              return projectGeometry(o2, stream);
-            })
-          };
-        }
-        function projectGeometry(o, stream) {
-          if (!o) return null;
-          if (o.type === "GeometryCollection") return projectGeometryCollection(o, stream);
-          var sink;
-          switch (o.type) {
-            case "Point":
-              sink = sinkPoint;
-              break;
-            case "MultiPoint":
-              sink = sinkPoint;
-              break;
-            case "LineString":
-              sink = sinkLine;
-              break;
-            case "MultiLineString":
-              sink = sinkLine;
-              break;
-            case "Polygon":
-              sink = sinkPolygon;
-              break;
-            case "MultiPolygon":
-              sink = sinkPolygon;
-              break;
-            case "Sphere":
-              sink = sinkPolygon;
-              break;
-            default:
-              return null;
-          }
-          d3Geo.geoStream(o, stream(sink));
-          return sink.result();
-        }
-        var points = [], lines = [];
-        var sinkPoint = {
-          point: function(x, y) {
-            points.push([x, y]);
-          },
-          result: function() {
-            var result = !points.length ? null : points.length < 2 ? { type: "Point", coordinates: points[0] } : { type: "MultiPoint", coordinates: points };
-            points = [];
-            return result;
-          }
-        };
-        var sinkLine = {
-          lineStart: noop,
-          point: function(x, y) {
-            points.push([x, y]);
-          },
-          lineEnd: function() {
-            if (points.length) lines.push(points), points = [];
-          },
-          result: function() {
-            var result = !lines.length ? null : lines.length < 2 ? { type: "LineString", coordinates: lines[0] } : { type: "MultiLineString", coordinates: lines };
-            lines = [];
-            return result;
-          }
-        };
-        var sinkPolygon = {
-          polygonStart: noop,
-          lineStart: noop,
-          point: function(x, y) {
-            points.push([x, y]);
-          },
-          lineEnd: function() {
-            var n = points.length;
-            if (n) {
-              do
-                points.push(points[0].slice());
-              while (++n < 4);
-              lines.push(points), points = [];
-            }
-          },
-          polygonEnd: noop,
-          result: function() {
-            if (!lines.length) return null;
-            var polygons = [], holes = [];
-            lines.forEach(function(ring) {
-              if (clockwise(ring)) polygons.push([ring]);
-              else holes.push(ring);
-            });
-            holes.forEach(function(hole) {
-              var point = hole[0];
-              polygons.some(function(polygon) {
-                if (contains(polygon[0], point)) {
-                  polygon.push(hole);
-                  return true;
-                }
-              }) || polygons.push([hole]);
-            });
-            lines = [];
-            return !polygons.length ? null : polygons.length > 1 ? { type: "MultiPolygon", coordinates: polygons } : { type: "Polygon", coordinates: polygons[0] };
-          }
-        };
-        function quincuncial(project) {
-          var dx = project(halfPi, 0)[0] - project(-halfPi, 0)[0];
-          function projectQuincuncial(lambda, phi) {
-            var t = abs(lambda) < halfPi, p = project(t ? lambda : lambda > 0 ? lambda - pi : lambda + pi, phi), x = (p[0] - p[1]) * sqrt1_2, y = (p[0] + p[1]) * sqrt1_2;
-            if (t) return [x, y];
-            var d = dx * sqrt1_2, s = x > 0 ^ y > 0 ? -1 : 1;
-            return [s * x - sign(y) * d, s * y - sign(x) * d];
-          }
-          if (project.invert) projectQuincuncial.invert = function(x02, y02) {
-            var x = (x02 + y02) * sqrt1_2, y = (y02 - x02) * sqrt1_2, t = abs(x) < 0.5 * dx && abs(y) < 0.5 * dx;
-            if (!t) {
-              var d = dx * sqrt1_2, s = x > 0 ^ y > 0 ? -1 : 1, x12 = -s * x02 + (y > 0 ? 1 : -1) * d, y12 = -s * y02 + (x > 0 ? 1 : -1) * d;
-              x = (-x12 - y12) * sqrt1_2;
-              y = (x12 - y12) * sqrt1_2;
-            }
-            var p = project.invert(x, y);
-            if (!t) p[0] += x > 0 ? pi : -pi;
-            return p;
-          };
-          return d3Geo.geoProjection(projectQuincuncial).rotate([-90, -90, 45]).clipAngle(180 - 1e-3);
-        }
-        function gringorten$1() {
-          return quincuncial(gringortenRaw).scale(176.423);
-        }
-        function peirce() {
-          return quincuncial(guyouRaw).scale(111.48);
-        }
-        function quantize(input, digits) {
-          if (!(0 <= (digits = +digits) && digits <= 20)) throw new Error("invalid digits");
-          function quantizePoint(input2) {
-            var n = input2.length, i = 2, output2 = new Array(n);
-            output2[0] = +input2[0].toFixed(digits);
-            output2[1] = +input2[1].toFixed(digits);
-            while (i < n) output2[i] = input2[i], ++i;
-            return output2;
-          }
-          function quantizePoints(input2) {
-            return input2.map(quantizePoint);
-          }
-          function quantizePointsNoDuplicates(input2) {
-            var point0 = quantizePoint(input2[0]);
-            var output2 = [point0];
-            for (var i = 1; i < input2.length; i++) {
-              var point = quantizePoint(input2[i]);
-              if (point.length > 2 || point[0] != point0[0] || point[1] != point0[1]) {
-                output2.push(point);
-                point0 = point;
-              }
-            }
-            if (output2.length === 1 && input2.length > 1) {
-              output2.push(quantizePoint(input2[input2.length - 1]));
-            }
-            return output2;
-          }
-          function quantizePolygon(input2) {
-            return input2.map(quantizePointsNoDuplicates);
-          }
-          function quantizeGeometry(input2) {
-            if (input2 == null) return input2;
-            var output2;
-            switch (input2.type) {
-              case "GeometryCollection":
-                output2 = { type: "GeometryCollection", geometries: input2.geometries.map(quantizeGeometry) };
-                break;
-              case "Point":
-                output2 = { type: "Point", coordinates: quantizePoint(input2.coordinates) };
-                break;
-              case "MultiPoint":
-                output2 = { type: input2.type, coordinates: quantizePoints(input2.coordinates) };
-                break;
-              case "LineString":
-                output2 = { type: input2.type, coordinates: quantizePointsNoDuplicates(input2.coordinates) };
-                break;
-              case "MultiLineString":
-              case "Polygon":
-                output2 = { type: input2.type, coordinates: quantizePolygon(input2.coordinates) };
-                break;
-              case "MultiPolygon":
-                output2 = { type: "MultiPolygon", coordinates: input2.coordinates.map(quantizePolygon) };
-                break;
-              default:
-                return input2;
-            }
-            if (input2.bbox != null) output2.bbox = input2.bbox;
-            return output2;
-          }
-          function quantizeFeature(input2) {
-            var output2 = { type: "Feature", properties: input2.properties, geometry: quantizeGeometry(input2.geometry) };
-            if (input2.id != null) output2.id = input2.id;
-            if (input2.bbox != null) output2.bbox = input2.bbox;
-            return output2;
-          }
-          if (input != null) switch (input.type) {
-            case "Feature":
-              return quantizeFeature(input);
-            case "FeatureCollection": {
-              var output = { type: "FeatureCollection", features: input.features.map(quantizeFeature) };
-              if (input.bbox != null) output.bbox = input.bbox;
-              return output;
-            }
-            default:
-              return quantizeGeometry(input);
-          }
-          return input;
-        }
-        function rectangularPolyconicRaw(phi02) {
-          var sinPhi0 = sin(phi02);
-          function forward(lambda, phi) {
-            var A2 = sinPhi0 ? tan(lambda * sinPhi0 / 2) / sinPhi0 : lambda / 2;
-            if (!phi) return [2 * A2, -phi02];
-            var E = 2 * atan(A2 * sin(phi)), cotPhi = 1 / tan(phi);
-            return [
-              sin(E) * cotPhi,
-              phi + (1 - cos(E)) * cotPhi - phi02
-            ];
-          }
-          forward.invert = function(x, y) {
-            if (abs(y += phi02) < epsilon) return [sinPhi0 ? 2 * atan(sinPhi0 * x / 2) / sinPhi0 : x, 0];
-            var k2 = x * x + y * y, phi = 0, i = 10, delta;
-            do {
-              var tanPhi = tan(phi), secPhi = 1 / cos(phi), j = k2 - 2 * y * phi + phi * phi;
-              phi -= delta = (tanPhi * j + 2 * (phi - y)) / (2 + j * secPhi * secPhi + 2 * (phi - y) * tanPhi);
-            } while (abs(delta) > epsilon && --i > 0);
-            var E = x * (tanPhi = tan(phi)), A2 = tan(abs(y) < abs(phi + 1 / tanPhi) ? asin(E) * 0.5 : acos(E) * 0.5 + pi / 4) / sin(phi);
-            return [
-              sinPhi0 ? 2 * atan(sinPhi0 * A2) / sinPhi0 : 2 * A2,
-              phi
-            ];
-          };
-          return forward;
-        }
-        function rectangularPolyconic() {
-          return parallel1(rectangularPolyconicRaw).scale(131.215);
-        }
-        var K$1 = [
-          [0.9986, -0.062],
-          [1, 0],
-          [0.9986, 0.062],
-          [0.9954, 0.124],
-          [0.99, 0.186],
-          [0.9822, 0.248],
-          [0.973, 0.31],
-          [0.96, 0.372],
-          [0.9427, 0.434],
-          [0.9216, 0.4958],
-          [0.8962, 0.5571],
-          [0.8679, 0.6176],
-          [0.835, 0.6769],
-          [0.7986, 0.7346],
-          [0.7597, 0.7903],
-          [0.7186, 0.8435],
-          [0.6732, 0.8936],
-          [0.6213, 0.9394],
-          [0.5722, 0.9761],
-          [0.5322, 1]
-        ];
-        K$1.forEach(function(d) {
-          d[1] *= 1.0144;
-        });
-        function robinsonRaw(lambda, phi) {
-          var i = min(18, abs(phi) * 36 / pi), i0 = floor(i), di = i - i0, ax = (k2 = K$1[i0])[0], ay = k2[1], bx = (k2 = K$1[++i0])[0], by = k2[1], cx = (k2 = K$1[min(19, ++i0)])[0], cy = k2[1], k2;
-          return [
-            lambda * (bx + di * (cx - ax) / 2 + di * di * (cx - 2 * bx + ax) / 2),
-            (phi > 0 ? halfPi : -halfPi) * (by + di * (cy - ay) / 2 + di * di * (cy - 2 * by + ay) / 2)
-          ];
-        }
-        robinsonRaw.invert = function(x, y) {
-          var yy = y / halfPi, phi = yy * 90, i = min(18, abs(phi / 5)), i0 = max(0, floor(i));
-          do {
-            var ay = K$1[i0][1], by = K$1[i0 + 1][1], cy = K$1[min(19, i0 + 2)][1], u = cy - ay, v = cy - 2 * by + ay, t = 2 * (abs(yy) - by) / u, c = v / u, di = t * (1 - c * t * (1 - 2 * c * t));
-            if (di >= 0 || i0 === 1) {
-              phi = (y >= 0 ? 5 : -5) * (di + i);
-              var j = 50, delta;
-              do {
-                i = min(18, abs(phi) / 5);
-                i0 = floor(i);
-                di = i - i0;
-                ay = K$1[i0][1];
-                by = K$1[i0 + 1][1];
-                cy = K$1[min(19, i0 + 2)][1];
-                phi -= (delta = (y >= 0 ? halfPi : -halfPi) * (by + di * (cy - ay) / 2 + di * di * (cy - 2 * by + ay) / 2) - y) * degrees;
-              } while (abs(delta) > epsilon2 && --j > 0);
-              break;
-            }
-          } while (--i0 >= 0);
-          var ax = K$1[i0][0], bx = K$1[i0 + 1][0], cx = K$1[min(19, i0 + 2)][0];
-          return [
-            x / (bx + di * (cx - ax) / 2 + di * di * (cx - 2 * bx + ax) / 2),
-            phi * radians
-          ];
-        };
-        function robinson() {
-          return d3Geo.geoProjection(robinsonRaw).scale(152.63);
-        }
-        function satelliteVerticalRaw(P) {
-          function forward(lambda, phi) {
-            var cosPhi = cos(phi), k2 = (P - 1) / (P - cosPhi * cos(lambda));
-            return [
-              k2 * cosPhi * sin(lambda),
-              k2 * sin(phi)
-            ];
-          }
-          forward.invert = function(x, y) {
-            var rho2 = x * x + y * y, rho = sqrt(rho2), sinc = (P - sqrt(1 - rho2 * (P + 1) / (P - 1))) / ((P - 1) / rho + rho / (P - 1));
-            return [
-              atan2(x * sinc, rho * sqrt(1 - sinc * sinc)),
-              rho ? asin(y * sinc / rho) : 0
-            ];
-          };
-          return forward;
-        }
-        function satelliteRaw(P, omega) {
-          var vertical = satelliteVerticalRaw(P);
-          if (!omega) return vertical;
-          var cosOmega = cos(omega), sinOmega = sin(omega);
-          function forward(lambda, phi) {
-            var coordinates = vertical(lambda, phi), y = coordinates[1], A2 = y * sinOmega / (P - 1) + cosOmega;
-            return [
-              coordinates[0] * cosOmega / A2,
-              y / A2
-            ];
-          }
-          forward.invert = function(x, y) {
-            var k2 = (P - 1) / (P - 1 - y * sinOmega);
-            return vertical.invert(k2 * x, k2 * y * cosOmega);
-          };
-          return forward;
-        }
-        function satellite() {
-          var distance2 = 2, omega = 0, m = d3Geo.geoProjectionMutator(satelliteRaw), p = m(distance2, omega);
-          p.distance = function(_) {
-            if (!arguments.length) return distance2;
-            return m(distance2 = +_, omega);
-          };
-          p.tilt = function(_) {
-            if (!arguments.length) return omega * degrees;
-            return m(distance2, omega = _ * radians);
-          };
-          return p.scale(432.147).clipAngle(acos(1 / distance2) * degrees - 1e-6);
-        }
-        var epsilon$1 = 1e-4, epsilonInverse = 1e4, x0 = -180, x0e = x0 + epsilon$1, x1 = 180, x1e = x1 - epsilon$1, y0 = -90, y0e = y0 + epsilon$1, y1 = 90, y1e = y1 - epsilon$1;
-        function nonempty(coordinates) {
-          return coordinates.length > 0;
-        }
-        function quantize$1(x) {
-          return Math.floor(x * epsilonInverse) / epsilonInverse;
-        }
-        function normalizePoint(y) {
-          return y === y0 || y === y1 ? [0, y] : [x0, quantize$1(y)];
-        }
-        function clampPoint(p) {
-          var x = p[0], y = p[1], clamped = false;
-          if (x <= x0e) x = x0, clamped = true;
-          else if (x >= x1e) x = x1, clamped = true;
-          if (y <= y0e) y = y0, clamped = true;
-          else if (y >= y1e) y = y1, clamped = true;
-          return clamped ? [x, y] : p;
-        }
-        function clampPoints(points2) {
-          return points2.map(clampPoint);
-        }
-        function extractFragments(rings, polygon, fragments) {
-          for (var j = 0, m = rings.length; j < m; ++j) {
-            var ring = rings[j].slice();
-            fragments.push({ index: -1, polygon, ring });
-            for (var i = 0, n = ring.length; i < n; ++i) {
-              var point = ring[i], x = point[0], y = point[1];
-              if (x <= x0e || x >= x1e || y <= y0e || y >= y1e) {
-                ring[i] = clampPoint(point);
-                for (var k2 = i + 1; k2 < n; ++k2) {
-                  var pointk = ring[k2], xk = pointk[0], yk = pointk[1];
-                  if (xk > x0e && xk < x1e && yk > y0e && yk < y1e) break;
-                }
-                if (k2 === i + 1) continue;
-                if (i) {
-                  var fragmentBefore = { index: -1, polygon, ring: ring.slice(0, i + 1) };
-                  fragmentBefore.ring[fragmentBefore.ring.length - 1] = normalizePoint(y);
-                  fragments[fragments.length - 1] = fragmentBefore;
-                } else fragments.pop();
-                if (k2 >= n) break;
-                fragments.push({ index: -1, polygon, ring: ring = ring.slice(k2 - 1) });
-                ring[0] = normalizePoint(ring[0][1]);
-                i = -1;
-                n = ring.length;
-              }
-            }
-          }
-        }
-        function stitchFragments(fragments) {
-          var i, n = fragments.length;
-          var fragmentByStart = {}, fragmentByEnd = {}, fragment, start, startFragment, end, endFragment;
-          for (i = 0; i < n; ++i) {
-            fragment = fragments[i];
-            start = fragment.ring[0];
-            end = fragment.ring[fragment.ring.length - 1];
-            if (start[0] === end[0] && start[1] === end[1]) {
-              fragment.polygon.push(fragment.ring);
-              fragments[i] = null;
-              continue;
-            }
-            fragment.index = i;
-            fragmentByStart[start] = fragmentByEnd[end] = fragment;
-          }
-          for (i = 0; i < n; ++i) {
-            fragment = fragments[i];
-            if (fragment) {
-              start = fragment.ring[0];
-              end = fragment.ring[fragment.ring.length - 1];
-              startFragment = fragmentByEnd[start];
-              endFragment = fragmentByStart[end];
-              delete fragmentByStart[start];
-              delete fragmentByEnd[end];
-              if (start[0] === end[0] && start[1] === end[1]) {
-                fragment.polygon.push(fragment.ring);
-                continue;
-              }
-              if (startFragment) {
-                delete fragmentByEnd[start];
-                delete fragmentByStart[startFragment.ring[0]];
-                startFragment.ring.pop();
-                fragments[startFragment.index] = null;
-                fragment = { index: -1, polygon: startFragment.polygon, ring: startFragment.ring.concat(fragment.ring) };
-                if (startFragment === endFragment) {
-                  fragment.polygon.push(fragment.ring);
-                } else {
-                  fragment.index = n++;
-                  fragments.push(fragmentByStart[fragment.ring[0]] = fragmentByEnd[fragment.ring[fragment.ring.length - 1]] = fragment);
-                }
-              } else if (endFragment) {
-                delete fragmentByStart[end];
-                delete fragmentByEnd[endFragment.ring[endFragment.ring.length - 1]];
-                fragment.ring.pop();
-                fragment = { index: n++, polygon: endFragment.polygon, ring: fragment.ring.concat(endFragment.ring) };
-                fragments[endFragment.index] = null;
-                fragments.push(fragmentByStart[fragment.ring[0]] = fragmentByEnd[fragment.ring[fragment.ring.length - 1]] = fragment);
-              } else {
-                fragment.ring.push(fragment.ring[0]);
-                fragment.polygon.push(fragment.ring);
-              }
-            }
-          }
-        }
-        function stitchFeature(input) {
-          var output = { type: "Feature", geometry: stitchGeometry(input.geometry) };
-          if (input.id != null) output.id = input.id;
-          if (input.bbox != null) output.bbox = input.bbox;
-          if (input.properties != null) output.properties = input.properties;
-          return output;
-        }
-        function stitchGeometry(input) {
-          if (input == null) return input;
-          var output, fragments, i, n;
-          switch (input.type) {
-            case "GeometryCollection":
-              output = { type: "GeometryCollection", geometries: input.geometries.map(stitchGeometry) };
-              break;
-            case "Point":
-              output = { type: "Point", coordinates: clampPoint(input.coordinates) };
-              break;
-            case "MultiPoint":
-            case "LineString":
-              output = { type: input.type, coordinates: clampPoints(input.coordinates) };
-              break;
-            case "MultiLineString":
-              output = { type: "MultiLineString", coordinates: input.coordinates.map(clampPoints) };
-              break;
-            case "Polygon": {
-              var polygon = [];
-              extractFragments(input.coordinates, polygon, fragments = []);
-              stitchFragments(fragments);
-              output = { type: "Polygon", coordinates: polygon };
-              break;
-            }
-            case "MultiPolygon": {
-              fragments = [], i = -1, n = input.coordinates.length;
-              var polygons = new Array(n);
-              while (++i < n) extractFragments(input.coordinates[i], polygons[i] = [], fragments);
-              stitchFragments(fragments);
-              output = { type: "MultiPolygon", coordinates: polygons.filter(nonempty) };
-              break;
-            }
-            default:
-              return input;
-          }
-          if (input.bbox != null) output.bbox = input.bbox;
-          return output;
-        }
-        function stitch(input) {
-          if (input == null) return input;
-          switch (input.type) {
-            case "Feature":
-              return stitchFeature(input);
-            case "FeatureCollection": {
-              var output = { type: "FeatureCollection", features: input.features.map(stitchFeature) };
-              if (input.bbox != null) output.bbox = input.bbox;
-              return output;
-            }
-            default:
-              return stitchGeometry(input);
-          }
-        }
-        function timesRaw(lambda, phi) {
-          var t = tan(phi / 2), s = sin(quarterPi * t);
-          return [
-            lambda * (0.74482 - 0.34588 * s * s),
-            1.70711 * t
-          ];
-        }
-        timesRaw.invert = function(x, y) {
-          var t = y / 1.70711, s = sin(quarterPi * t);
-          return [
-            x / (0.74482 - 0.34588 * s * s),
-            2 * atan(t)
-          ];
-        };
-        function times() {
-          return d3Geo.geoProjection(timesRaw).scale(146.153);
-        }
-        function twoPoint(raw, p0, p1) {
-          var i = d3Geo.geoInterpolate(p0, p1), o = i(0.5), a = d3Geo.geoRotation([-o[0], -o[1]])(p0), b = i.distance / 2, y = -asin(sin(a[1] * radians) / sin(b)), R = [-o[0], -o[1], -(a[0] > 0 ? pi - y : y) * degrees], p = d3Geo.geoProjection(raw(b)).rotate(R), r = d3Geo.geoRotation(R), center = p.center;
-          delete p.rotate;
-          p.center = function(_) {
-            return arguments.length ? center(r(_)) : r.invert(center());
-          };
-          return p.clipAngle(90);
-        }
-        function twoPointAzimuthalRaw(d) {
-          var cosd = cos(d);
-          function forward(lambda, phi) {
-            var coordinates = d3Geo.geoGnomonicRaw(lambda, phi);
-            coordinates[0] *= cosd;
-            return coordinates;
-          }
-          forward.invert = function(x, y) {
-            return d3Geo.geoGnomonicRaw.invert(x / cosd, y);
-          };
-          return forward;
-        }
-        function twoPointAzimuthalUsa() {
-          return twoPointAzimuthal([-158, 21.5], [-77, 39]).clipAngle(60).scale(400);
-        }
-        function twoPointAzimuthal(p0, p1) {
-          return twoPoint(twoPointAzimuthalRaw, p0, p1);
-        }
-        function twoPointEquidistantRaw(z0) {
-          if (!(z0 *= 2)) return d3Geo.geoAzimuthalEquidistantRaw;
-          var lambdaa = -z0 / 2, lambdab = -lambdaa, z02 = z0 * z0, tanLambda0 = tan(lambdab), S = 0.5 / sin(lambdab);
-          function forward(lambda, phi) {
-            var za = acos(cos(phi) * cos(lambda - lambdaa)), zb = acos(cos(phi) * cos(lambda - lambdab)), ys = phi < 0 ? -1 : 1;
-            za *= za, zb *= zb;
-            return [
-              (za - zb) / (2 * z0),
-              ys * sqrt(4 * z02 * zb - (z02 - za + zb) * (z02 - za + zb)) / (2 * z0)
-            ];
-          }
-          forward.invert = function(x, y) {
-            var y2 = y * y, cosza = cos(sqrt(y2 + (t = x + lambdaa) * t)), coszb = cos(sqrt(y2 + (t = x + lambdab) * t)), t, d;
-            return [
-              atan2(d = cosza - coszb, t = (cosza + coszb) * tanLambda0),
-              (y < 0 ? -1 : 1) * acos(sqrt(t * t + d * d) * S)
-            ];
-          };
-          return forward;
-        }
-        function twoPointEquidistantUsa() {
-          return twoPointEquidistant([-158, 21.5], [-77, 39]).clipAngle(130).scale(122.571);
-        }
-        function twoPointEquidistant(p0, p1) {
-          return twoPoint(twoPointEquidistantRaw, p0, p1);
-        }
-        function vanDerGrintenRaw(lambda, phi) {
-          if (abs(phi) < epsilon) return [lambda, 0];
-          var sinTheta = abs(phi / halfPi), theta = asin(sinTheta);
-          if (abs(lambda) < epsilon || abs(abs(phi) - halfPi) < epsilon) return [0, sign(phi) * pi * tan(theta / 2)];
-          var cosTheta = cos(theta), A2 = abs(pi / lambda - lambda / pi) / 2, A22 = A2 * A2, G = cosTheta / (sinTheta + cosTheta - 1), P = G * (2 / sinTheta - 1), P2 = P * P, P2_A2 = P2 + A22, G_P2 = G - P2, Q = A22 + G;
-          return [
-            sign(lambda) * pi * (A2 * G_P2 + sqrt(A22 * G_P2 * G_P2 - P2_A2 * (G * G - P2))) / P2_A2,
-            sign(phi) * pi * (P * Q - A2 * sqrt((A22 + 1) * P2_A2 - Q * Q)) / P2_A2
-          ];
-        }
-        vanDerGrintenRaw.invert = function(x, y) {
-          if (abs(y) < epsilon) return [x, 0];
-          if (abs(x) < epsilon) return [0, halfPi * sin(2 * atan(y / pi))];
-          var x2 = (x /= pi) * x, y2 = (y /= pi) * y, x2_y2 = x2 + y2, z = x2_y2 * x2_y2, c1 = -abs(y) * (1 + x2_y2), c2 = c1 - 2 * y2 + x2, c3 = -2 * c1 + 1 + 2 * y2 + z, d = y2 / c3 + (2 * c2 * c2 * c2 / (c3 * c3 * c3) - 9 * c1 * c2 / (c3 * c3)) / 27, a1 = (c1 - c2 * c2 / (3 * c3)) / c3, m1 = 2 * sqrt(-a1 / 3), theta1 = acos(3 * d / (a1 * m1)) / 3;
-          return [
-            pi * (x2_y2 - 1 + sqrt(1 + 2 * (x2 - y2) + z)) / (2 * x),
-            sign(y) * pi * (-m1 * cos(theta1 + pi / 3) - c2 / (3 * c3))
-          ];
-        };
-        function vanDerGrinten() {
-          return d3Geo.geoProjection(vanDerGrintenRaw).scale(79.4183);
-        }
-        function vanDerGrinten2Raw(lambda, phi) {
-          if (abs(phi) < epsilon) return [lambda, 0];
-          var sinTheta = abs(phi / halfPi), theta = asin(sinTheta);
-          if (abs(lambda) < epsilon || abs(abs(phi) - halfPi) < epsilon) return [0, sign(phi) * pi * tan(theta / 2)];
-          var cosTheta = cos(theta), A2 = abs(pi / lambda - lambda / pi) / 2, A22 = A2 * A2, x12 = cosTheta * (sqrt(1 + A22) - A2 * cosTheta) / (1 + A22 * sinTheta * sinTheta);
-          return [
-            sign(lambda) * pi * x12,
-            sign(phi) * pi * sqrt(1 - x12 * (2 * A2 + x12))
-          ];
-        }
-        vanDerGrinten2Raw.invert = function(x, y) {
-          if (!x) return [0, halfPi * sin(2 * atan(y / pi))];
-          var x12 = abs(x / pi), A2 = (1 - x12 * x12 - (y /= pi) * y) / (2 * x12), A22 = A2 * A2, B2 = sqrt(A22 + 1);
-          return [
-            sign(x) * pi * (B2 - A2),
-            sign(y) * halfPi * sin(2 * atan2(sqrt((1 - 2 * A2 * x12) * (A2 + B2) - x12), sqrt(B2 + A2 + x12)))
-          ];
-        };
-        function vanDerGrinten2() {
-          return d3Geo.geoProjection(vanDerGrinten2Raw).scale(79.4183);
-        }
-        function vanDerGrinten3Raw(lambda, phi) {
-          if (abs(phi) < epsilon) return [lambda, 0];
-          var sinTheta = phi / halfPi, theta = asin(sinTheta);
-          if (abs(lambda) < epsilon || abs(abs(phi) - halfPi) < epsilon) return [0, pi * tan(theta / 2)];
-          var A2 = (pi / lambda - lambda / pi) / 2, y12 = sinTheta / (1 + cos(theta));
-          return [
-            pi * (sign(lambda) * sqrt(A2 * A2 + 1 - y12 * y12) - A2),
-            pi * y12
-          ];
-        }
-        vanDerGrinten3Raw.invert = function(x, y) {
-          if (!y) return [x, 0];
-          var y12 = y / pi, A2 = (pi * pi * (1 - y12 * y12) - x * x) / (2 * pi * x);
-          return [
-            x ? pi * (sign(x) * sqrt(A2 * A2 + 1) - A2) : 0,
-            halfPi * sin(2 * atan(y12))
-          ];
-        };
-        function vanDerGrinten3() {
-          return d3Geo.geoProjection(vanDerGrinten3Raw).scale(79.4183);
-        }
-        function vanDerGrinten4Raw(lambda, phi) {
-          if (!phi) return [lambda, 0];
-          var phi02 = abs(phi);
-          if (!lambda || phi02 === halfPi) return [0, phi];
-          var B2 = phi02 / halfPi, B22 = B2 * B2, C = (8 * B2 - B22 * (B22 + 2) - 5) / (2 * B22 * (B2 - 1)), C2 = C * C, BC = B2 * C, B_C2 = B22 + C2 + 2 * BC, B_3C = B2 + 3 * C, lambda0 = lambda / halfPi, lambda1 = lambda0 + 1 / lambda0, D = sign(abs(lambda) - halfPi) * sqrt(lambda1 * lambda1 - 4), D2 = D * D, F = B_C2 * (B22 + C2 * D2 - 1) + (1 - B22) * (B22 * (B_3C * B_3C + 4 * C2) + 12 * BC * C2 + 4 * C2 * C2), x12 = (D * (B_C2 + C2 - 1) + 2 * sqrt(F)) / (4 * B_C2 + D2);
-          return [
-            sign(lambda) * halfPi * x12,
-            sign(phi) * halfPi * sqrt(1 + D * abs(x12) - x12 * x12)
-          ];
-        }
-        vanDerGrinten4Raw.invert = function(x, y) {
-          var delta;
-          if (!x || !y) return [x, y];
-          y /= pi;
-          var x12 = sign(x) * x / halfPi, D = (x12 * x12 - 1 + 4 * y * y) / abs(x12), D2 = D * D, B2 = 2 * y, i = 50;
-          do {
-            var B22 = B2 * B2, C = (8 * B2 - B22 * (B22 + 2) - 5) / (2 * B22 * (B2 - 1)), C_ = (3 * B2 - B22 * B2 - 10) / (2 * B22 * B2), C2 = C * C, BC = B2 * C, B_C = B2 + C, B_C2 = B_C * B_C, B_3C = B2 + 3 * C, F = B_C2 * (B22 + C2 * D2 - 1) + (1 - B22) * (B22 * (B_3C * B_3C + 4 * C2) + C2 * (12 * BC + 4 * C2)), F_ = -2 * B_C * (4 * BC * C2 + (1 - 4 * B22 + 3 * B22 * B22) * (1 + C_) + C2 * (-6 + 14 * B22 - D2 + (-8 + 8 * B22 - 2 * D2) * C_) + BC * (-8 + 12 * B22 + (-10 + 10 * B22 - D2) * C_)), sqrtF = sqrt(F), f = D * (B_C2 + C2 - 1) + 2 * sqrtF - x12 * (4 * B_C2 + D2), f_ = D * (2 * C * C_ + 2 * B_C * (1 + C_)) + F_ / sqrtF - 8 * B_C * (D * (-1 + C2 + B_C2) + 2 * sqrtF) * (1 + C_) / (D2 + 4 * B_C2);
-            B2 -= delta = f / f_;
-          } while (delta > epsilon && --i > 0);
-          return [
-            sign(x) * (sqrt(D * D + 4) + D) * pi / 4,
-            halfPi * B2
-          ];
-        };
-        function vanDerGrinten4() {
-          return d3Geo.geoProjection(vanDerGrinten4Raw).scale(127.16);
-        }
-        function wagnerFormula(cx, cy, m1, m2, n) {
-          function forward(lambda, phi) {
-            var s = m1 * sin(m2 * phi), c0 = sqrt(1 - s * s), c1 = sqrt(2 / (1 + c0 * cos(lambda *= n)));
-            return [
-              cx * c0 * c1 * sin(lambda),
-              cy * s * c1
-            ];
-          }
-          forward.invert = function(x, y) {
-            var t1 = x / cx, t2 = y / cy, p = sqrt(t1 * t1 + t2 * t2), c = 2 * asin(p / 2);
-            return [
-              atan2(x * tan(c), cx * p) / n,
-              p && asin(y * sin(c) / (cy * m1 * p)) / m2
-            ];
-          };
-          return forward;
-        }
-        function wagnerRaw(poleline, parallels, inflation, ratio) {
-          var phi1 = pi / 3;
-          poleline = max(poleline, epsilon);
-          parallels = max(parallels, epsilon);
-          poleline = min(poleline, halfPi);
-          parallels = min(parallels, pi - epsilon);
-          inflation = max(inflation, 0);
-          inflation = min(inflation, 100 - epsilon);
-          ratio = max(ratio, epsilon);
-          var vinflation = inflation / 100 + 1;
-          var vratio = ratio / 100;
-          var m2 = acos(vinflation * cos(phi1)) / phi1, m1 = sin(poleline) / sin(m2 * halfPi), n = parallels / pi, k2 = sqrt(vratio * sin(poleline / 2) / sin(parallels / 2)), cx = k2 / sqrt(n * m1 * m2), cy = 1 / (k2 * sqrt(n * m1 * m2));
-          return wagnerFormula(cx, cy, m1, m2, n);
-        }
-        function wagner() {
-          var poleline = 65 * radians, parallels = 60 * radians, inflation = 20, ratio = 200, mutate = d3Geo.geoProjectionMutator(wagnerRaw), projection = mutate(poleline, parallels, inflation, ratio);
-          projection.poleline = function(_) {
-            return arguments.length ? mutate(poleline = +_ * radians, parallels, inflation, ratio) : poleline * degrees;
-          };
-          projection.parallels = function(_) {
-            return arguments.length ? mutate(poleline, parallels = +_ * radians, inflation, ratio) : parallels * degrees;
-          };
-          projection.inflation = function(_) {
-            return arguments.length ? mutate(poleline, parallels, inflation = +_, ratio) : inflation;
-          };
-          projection.ratio = function(_) {
-            return arguments.length ? mutate(poleline, parallels, inflation, ratio = +_) : ratio;
-          };
-          return projection.scale(163.775);
-        }
-        function wagner7() {
-          return wagner().poleline(65).parallels(60).inflation(0).ratio(200).scale(172.633);
-        }
-        var A = 4 * pi + 3 * sqrt(3), B = 2 * sqrt(2 * pi * sqrt(3) / A);
-        var wagner4Raw = mollweideBromleyRaw(B * sqrt(3) / pi, B, A / 6);
-        function wagner4() {
-          return d3Geo.geoProjection(wagner4Raw).scale(176.84);
-        }
-        function wagner6Raw(lambda, phi) {
-          return [lambda * sqrt(1 - 3 * phi * phi / (pi * pi)), phi];
-        }
-        wagner6Raw.invert = function(x, y) {
-          return [x / sqrt(1 - 3 * y * y / (pi * pi)), y];
-        };
-        function wagner6() {
-          return d3Geo.geoProjection(wagner6Raw).scale(152.63);
-        }
-        function wiechelRaw(lambda, phi) {
-          var cosPhi = cos(phi), sinPhi = cos(lambda) * cosPhi, sin1_Phi = 1 - sinPhi, cosLambda = cos(lambda = atan2(sin(lambda) * cosPhi, -sin(phi))), sinLambda = sin(lambda);
-          cosPhi = sqrt(1 - sinPhi * sinPhi);
-          return [
-            sinLambda * cosPhi - cosLambda * sin1_Phi,
-            -cosLambda * cosPhi - sinLambda * sin1_Phi
-          ];
-        }
-        wiechelRaw.invert = function(x, y) {
-          var w2 = (x * x + y * y) / -2, k2 = sqrt(-w2 * (2 + w2)), b = y * w2 + x * k2, a = x * w2 - y * k2, D = sqrt(a * a + b * b);
-          return [
-            atan2(k2 * b, D * (1 + w2)),
-            D ? -asin(k2 * a / D) : 0
-          ];
-        };
-        function wiechel() {
-          return d3Geo.geoProjection(wiechelRaw).rotate([0, -90, 45]).scale(124.75).clipAngle(180 - 1e-3);
-        }
-        function winkel3Raw(lambda, phi) {
-          var coordinates = aitoffRaw(lambda, phi);
-          return [
-            (coordinates[0] + lambda / halfPi) / 2,
-            (coordinates[1] + phi) / 2
-          ];
-        }
-        winkel3Raw.invert = function(x, y) {
-          var lambda = x, phi = y, i = 25;
-          do {
-            var cosphi = cos(phi), sinphi = sin(phi), sin_2phi = sin(2 * phi), sin2phi = sinphi * sinphi, cos2phi = cosphi * cosphi, sinlambda = sin(lambda), coslambda_2 = cos(lambda / 2), sinlambda_2 = sin(lambda / 2), sin2lambda_2 = sinlambda_2 * sinlambda_2, C = 1 - cos2phi * coslambda_2 * coslambda_2, E = C ? acos(cosphi * coslambda_2) * sqrt(F = 1 / C) : F = 0, F, fx = 0.5 * (2 * E * cosphi * sinlambda_2 + lambda / halfPi) - x, fy = 0.5 * (E * sinphi + phi) - y, dxdlambda = 0.5 * F * (cos2phi * sin2lambda_2 + E * cosphi * coslambda_2 * sin2phi) + 0.5 / halfPi, dxdphi = F * (sinlambda * sin_2phi / 4 - E * sinphi * sinlambda_2), dydlambda = 0.125 * F * (sin_2phi * sinlambda_2 - E * sinphi * cos2phi * sinlambda), dydphi = 0.5 * F * (sin2phi * coslambda_2 + E * sin2lambda_2 * cosphi) + 0.5, denominator = dxdphi * dydlambda - dydphi * dxdlambda, dlambda = (fy * dxdphi - fx * dydphi) / denominator, dphi = (fx * dydlambda - fy * dxdlambda) / denominator;
-            lambda -= dlambda, phi -= dphi;
-          } while ((abs(dlambda) > epsilon || abs(dphi) > epsilon) && --i > 0);
-          return [lambda, phi];
-        };
-        function winkel3() {
-          return d3Geo.geoProjection(winkel3Raw).scale(158.837);
-        }
-        exports2.geoNaturalEarth = d3Geo.geoNaturalEarth1;
-        exports2.geoNaturalEarthRaw = d3Geo.geoNaturalEarth1Raw;
-        exports2.geoAiry = airy;
-        exports2.geoAiryRaw = airyRaw;
-        exports2.geoAitoff = aitoff;
-        exports2.geoAitoffRaw = aitoffRaw;
-        exports2.geoArmadillo = armadillo;
-        exports2.geoArmadilloRaw = armadilloRaw;
-        exports2.geoAugust = august;
-        exports2.geoAugustRaw = augustRaw;
-        exports2.geoBaker = baker;
-        exports2.geoBakerRaw = bakerRaw;
-        exports2.geoBerghaus = berghaus;
-        exports2.geoBerghausRaw = berghausRaw;
-        exports2.geoBertin1953 = bertin;
-        exports2.geoBertin1953Raw = bertin1953Raw;
-        exports2.geoBoggs = boggs;
-        exports2.geoBoggsRaw = boggsRaw;
-        exports2.geoBonne = bonne;
-        exports2.geoBonneRaw = bonneRaw;
-        exports2.geoBottomley = bottomley;
-        exports2.geoBottomleyRaw = bottomleyRaw;
-        exports2.geoBromley = bromley;
-        exports2.geoBromleyRaw = bromleyRaw;
-        exports2.geoChamberlin = chamberlin;
-        exports2.geoChamberlinRaw = chamberlinRaw;
-        exports2.geoChamberlinAfrica = chamberlinAfrica;
-        exports2.geoCollignon = collignon;
-        exports2.geoCollignonRaw = collignonRaw;
-        exports2.geoCraig = craig;
-        exports2.geoCraigRaw = craigRaw;
-        exports2.geoCraster = craster;
-        exports2.geoCrasterRaw = crasterRaw;
-        exports2.geoCylindricalEqualArea = cylindricalEqualArea;
-        exports2.geoCylindricalEqualAreaRaw = cylindricalEqualAreaRaw;
-        exports2.geoCylindricalStereographic = cylindricalStereographic;
-        exports2.geoCylindricalStereographicRaw = cylindricalStereographicRaw;
-        exports2.geoEckert1 = eckert1;
-        exports2.geoEckert1Raw = eckert1Raw;
-        exports2.geoEckert2 = eckert2;
-        exports2.geoEckert2Raw = eckert2Raw;
-        exports2.geoEckert3 = eckert3;
-        exports2.geoEckert3Raw = eckert3Raw;
-        exports2.geoEckert4 = eckert4;
-        exports2.geoEckert4Raw = eckert4Raw;
-        exports2.geoEckert5 = eckert5;
-        exports2.geoEckert5Raw = eckert5Raw;
-        exports2.geoEckert6 = eckert6;
-        exports2.geoEckert6Raw = eckert6Raw;
-        exports2.geoEisenlohr = eisenlohr;
-        exports2.geoEisenlohrRaw = eisenlohrRaw;
-        exports2.geoFahey = fahey;
-        exports2.geoFaheyRaw = faheyRaw;
-        exports2.geoFoucaut = foucaut;
-        exports2.geoFoucautRaw = foucautRaw;
-        exports2.geoFoucautSinusoidal = foucautSinusoidal;
-        exports2.geoFoucautSinusoidalRaw = foucautSinusoidalRaw;
-        exports2.geoGilbert = gilbert;
-        exports2.geoGingery = gingery;
-        exports2.geoGingeryRaw = gingeryRaw;
-        exports2.geoGinzburg4 = ginzburg4;
-        exports2.geoGinzburg4Raw = ginzburg4Raw;
-        exports2.geoGinzburg5 = ginzburg5;
-        exports2.geoGinzburg5Raw = ginzburg5Raw;
-        exports2.geoGinzburg6 = ginzburg6;
-        exports2.geoGinzburg6Raw = ginzburg6Raw;
-        exports2.geoGinzburg8 = ginzburg8;
-        exports2.geoGinzburg8Raw = ginzburg8Raw;
-        exports2.geoGinzburg9 = ginzburg9;
-        exports2.geoGinzburg9Raw = ginzburg9Raw;
-        exports2.geoGringorten = gringorten;
-        exports2.geoGringortenRaw = gringortenRaw;
-        exports2.geoGuyou = guyou;
-        exports2.geoGuyouRaw = guyouRaw;
-        exports2.geoHammer = hammer;
-        exports2.geoHammerRaw = hammerRaw;
-        exports2.geoHammerRetroazimuthal = hammerRetroazimuthal;
-        exports2.geoHammerRetroazimuthalRaw = hammerRetroazimuthalRaw;
-        exports2.geoHealpix = healpix;
-        exports2.geoHealpixRaw = healpixRaw;
-        exports2.geoHill = hill;
-        exports2.geoHillRaw = hillRaw;
-        exports2.geoHomolosine = homolosine;
-        exports2.geoHomolosineRaw = homolosineRaw;
-        exports2.geoHufnagel = hufnagel;
-        exports2.geoHufnagelRaw = hufnagelRaw;
-        exports2.geoHyperelliptical = hyperelliptical;
-        exports2.geoHyperellipticalRaw = hyperellipticalRaw;
-        exports2.geoInterrupt = interrupt;
-        exports2.geoInterruptedBoggs = boggs$1;
-        exports2.geoInterruptedHomolosine = homolosine$1;
-        exports2.geoInterruptedMollweide = mollweide$1;
-        exports2.geoInterruptedMollweideHemispheres = mollweideHemispheres;
-        exports2.geoInterruptedSinuMollweide = sinuMollweide$1;
-        exports2.geoInterruptedSinusoidal = sinusoidal$1;
-        exports2.geoKavrayskiy7 = kavrayskiy7;
-        exports2.geoKavrayskiy7Raw = kavrayskiy7Raw;
-        exports2.geoLagrange = lagrange;
-        exports2.geoLagrangeRaw = lagrangeRaw;
-        exports2.geoLarrivee = larrivee;
-        exports2.geoLarriveeRaw = larriveeRaw;
-        exports2.geoLaskowski = laskowski;
-        exports2.geoLaskowskiRaw = laskowskiRaw;
-        exports2.geoLittrow = littrow;
-        exports2.geoLittrowRaw = littrowRaw;
-        exports2.geoLoximuthal = loximuthal;
-        exports2.geoLoximuthalRaw = loximuthalRaw;
-        exports2.geoMiller = miller;
-        exports2.geoMillerRaw = millerRaw;
-        exports2.geoModifiedStereographic = modifiedStereographic;
-        exports2.geoModifiedStereographicRaw = modifiedStereographicRaw;
-        exports2.geoModifiedStereographicAlaska = modifiedStereographicAlaska;
-        exports2.geoModifiedStereographicGs48 = modifiedStereographicGs48;
-        exports2.geoModifiedStereographicGs50 = modifiedStereographicGs50;
-        exports2.geoModifiedStereographicMiller = modifiedStereographicMiller;
-        exports2.geoModifiedStereographicLee = modifiedStereographicLee;
-        exports2.geoMollweide = mollweide;
-        exports2.geoMollweideRaw = mollweideRaw;
-        exports2.geoMtFlatPolarParabolic = mtFlatPolarParabolic;
-        exports2.geoMtFlatPolarParabolicRaw = mtFlatPolarParabolicRaw;
-        exports2.geoMtFlatPolarQuartic = mtFlatPolarQuartic;
-        exports2.geoMtFlatPolarQuarticRaw = mtFlatPolarQuarticRaw;
-        exports2.geoMtFlatPolarSinusoidal = mtFlatPolarSinusoidal;
-        exports2.geoMtFlatPolarSinusoidalRaw = mtFlatPolarSinusoidalRaw;
-        exports2.geoNaturalEarth2 = naturalEarth2;
-        exports2.geoNaturalEarth2Raw = naturalEarth2Raw;
-        exports2.geoNellHammer = nellHammer;
-        exports2.geoNellHammerRaw = nellHammerRaw;
-        exports2.geoInterruptedQuarticAuthalic = quarticAuthalic;
-        exports2.geoNicolosi = nicolosi;
-        exports2.geoNicolosiRaw = nicolosiRaw;
-        exports2.geoPatterson = patterson;
-        exports2.geoPattersonRaw = pattersonRaw;
-        exports2.geoPolyconic = polyconic;
-        exports2.geoPolyconicRaw = polyconicRaw;
-        exports2.geoPolyhedral = polyhedral;
-        exports2.geoPolyhedralButterfly = butterfly;
-        exports2.geoPolyhedralCollignon = collignon$1;
-        exports2.geoPolyhedralWaterman = waterman;
-        exports2.geoProject = index;
-        exports2.geoGringortenQuincuncial = gringorten$1;
-        exports2.geoPeirceQuincuncial = peirce;
-        exports2.geoPierceQuincuncial = peirce;
-        exports2.geoQuantize = quantize;
-        exports2.geoQuincuncial = quincuncial;
-        exports2.geoRectangularPolyconic = rectangularPolyconic;
-        exports2.geoRectangularPolyconicRaw = rectangularPolyconicRaw;
-        exports2.geoRobinson = robinson;
-        exports2.geoRobinsonRaw = robinsonRaw;
-        exports2.geoSatellite = satellite;
-        exports2.geoSatelliteRaw = satelliteRaw;
-        exports2.geoSinuMollweide = sinuMollweide;
-        exports2.geoSinuMollweideRaw = sinuMollweideRaw;
-        exports2.geoSinusoidal = sinusoidal;
-        exports2.geoSinusoidalRaw = sinusoidalRaw;
-        exports2.geoStitch = stitch;
-        exports2.geoTimes = times;
-        exports2.geoTimesRaw = timesRaw;
-        exports2.geoTwoPointAzimuthal = twoPointAzimuthal;
-        exports2.geoTwoPointAzimuthalRaw = twoPointAzimuthalRaw;
-        exports2.geoTwoPointAzimuthalUsa = twoPointAzimuthalUsa;
-        exports2.geoTwoPointEquidistant = twoPointEquidistant;
-        exports2.geoTwoPointEquidistantRaw = twoPointEquidistantRaw;
-        exports2.geoTwoPointEquidistantUsa = twoPointEquidistantUsa;
-        exports2.geoVanDerGrinten = vanDerGrinten;
-        exports2.geoVanDerGrintenRaw = vanDerGrintenRaw;
-        exports2.geoVanDerGrinten2 = vanDerGrinten2;
-        exports2.geoVanDerGrinten2Raw = vanDerGrinten2Raw;
-        exports2.geoVanDerGrinten3 = vanDerGrinten3;
-        exports2.geoVanDerGrinten3Raw = vanDerGrinten3Raw;
-        exports2.geoVanDerGrinten4 = vanDerGrinten4;
-        exports2.geoVanDerGrinten4Raw = vanDerGrinten4Raw;
-        exports2.geoWagner = wagner;
-        exports2.geoWagner7 = wagner7;
-        exports2.geoWagnerRaw = wagnerRaw;
-        exports2.geoWagner4 = wagner4;
-        exports2.geoWagner4Raw = wagner4Raw;
-        exports2.geoWagner6 = wagner6;
-        exports2.geoWagner6Raw = wagner6Raw;
-        exports2.geoWiechel = wiechel;
-        exports2.geoWiechelRaw = wiechelRaw;
-        exports2.geoWinkel3 = winkel3;
-        exports2.geoWinkel3Raw = winkel3Raw;
-        Object.defineProperty(exports2, "__esModule", { value: true });
-      });
-    }
-  });
-
-  // src/plots/geo/zoom.js
-  var require_zoom = __commonJS({
-    "src/plots/geo/zoom.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var Lib = require_lib();
-      var Registry = require_registry();
-      var radians = Math.PI / 180;
-      var degrees = 180 / Math.PI;
-      var zoomstartStyle = { cursor: "pointer" };
-      var zoomendStyle = { cursor: "auto" };
-      function createGeoZoom(geo, geoLayout) {
-        var projection = geo.projection;
-        var zoomConstructor;
-        if (geoLayout._isScoped) {
-          zoomConstructor = zoomScoped;
-        } else if (geoLayout._isClipped) {
-          zoomConstructor = zoomClipped;
-        } else {
-          zoomConstructor = zoomNonClipped;
-        }
-        return zoomConstructor(geo, projection);
-      }
-      module.exports = createGeoZoom;
-      function initZoom(geo, projection) {
-        return d3.behavior.zoom().translate(projection.translate()).scale(projection.scale());
-      }
-      function sync(geo, projection, cb) {
-        var id = geo.id;
-        var gd = geo.graphDiv;
-        var layout = gd.layout;
-        var userOpts = layout[id];
-        var fullLayout = gd._fullLayout;
-        var fullOpts = fullLayout[id];
-        var preGUI = {};
-        var eventData = {};
-        function set(propStr, val) {
-          preGUI[id + "." + propStr] = Lib.nestedProperty(userOpts, propStr).get();
-          Registry.call("_storeDirectGUIEdit", layout, fullLayout._preGUI, preGUI);
-          var fullNp = Lib.nestedProperty(fullOpts, propStr);
-          if (fullNp.get() !== val) {
-            fullNp.set(val);
-            Lib.nestedProperty(userOpts, propStr).set(val);
-            eventData[id + "." + propStr] = val;
-          }
-        }
-        cb(set);
-        set("projection.scale", projection.scale() / geo.fitScale);
-        set("fitbounds", false);
-        gd.emit("plotly_relayout", eventData);
-      }
-      function zoomScoped(geo, projection) {
-        var zoom = initZoom(geo, projection);
-        function handleZoomstart() {
-          d3.select(this).style(zoomstartStyle);
-        }
-        function handleZoom() {
-          projection.scale(d3.event.scale).translate(d3.event.translate);
-          geo.render(true);
-          var center = projection.invert(geo.midPt);
-          geo.graphDiv.emit("plotly_relayouting", {
-            "geo.projection.scale": projection.scale() / geo.fitScale,
-            "geo.center.lon": center[0],
-            "geo.center.lat": center[1]
-          });
-        }
-        function syncCb(set) {
-          var center = projection.invert(geo.midPt);
-          set("center.lon", center[0]);
-          set("center.lat", center[1]);
-        }
-        function handleZoomend() {
-          d3.select(this).style(zoomendStyle);
-          sync(geo, projection, syncCb);
-        }
-        zoom.on("zoomstart", handleZoomstart).on("zoom", handleZoom).on("zoomend", handleZoomend);
-        return zoom;
-      }
-      function zoomNonClipped(geo, projection) {
-        var zoom = initZoom(geo, projection);
-        var INSIDETOLORANCEPXS = 2;
-        var mouse0, rotate0, translate0, lastRotate, zoomPoint, mouse1, rotate1, point1, didZoom;
-        function position2(x) {
-          return projection.invert(x);
-        }
-        function outside(x) {
-          var pos = position2(x);
-          if (!pos) return true;
-          var pt = projection(pos);
-          return Math.abs(pt[0] - x[0]) > INSIDETOLORANCEPXS || Math.abs(pt[1] - x[1]) > INSIDETOLORANCEPXS;
-        }
-        function handleZoomstart() {
-          d3.select(this).style(zoomstartStyle);
-          mouse0 = d3.mouse(this);
-          rotate0 = projection.rotate();
-          translate0 = projection.translate();
-          lastRotate = rotate0;
-          zoomPoint = position2(mouse0);
-        }
-        function handleZoom() {
-          mouse1 = d3.mouse(this);
-          if (outside(mouse0)) {
-            zoom.scale(projection.scale());
-            zoom.translate(projection.translate());
-            return;
-          }
-          projection.scale(d3.event.scale);
-          projection.translate([translate0[0], d3.event.translate[1]]);
-          if (!zoomPoint) {
-            mouse0 = mouse1;
-            zoomPoint = position2(mouse0);
-          } else if (position2(mouse1)) {
-            point1 = position2(mouse1);
-            rotate1 = [lastRotate[0] + (point1[0] - zoomPoint[0]), rotate0[1], rotate0[2]];
-            projection.rotate(rotate1);
-            lastRotate = rotate1;
-          }
-          didZoom = true;
-          geo.render(true);
-          var rotate = projection.rotate();
-          var center = projection.invert(geo.midPt);
-          geo.graphDiv.emit("plotly_relayouting", {
-            "geo.projection.scale": projection.scale() / geo.fitScale,
-            "geo.center.lon": center[0],
-            "geo.center.lat": center[1],
-            "geo.projection.rotation.lon": -rotate[0]
-          });
-        }
-        function handleZoomend() {
-          d3.select(this).style(zoomendStyle);
-          if (didZoom) sync(geo, projection, syncCb);
-        }
-        function syncCb(set) {
-          var rotate = projection.rotate();
-          var center = projection.invert(geo.midPt);
-          set("projection.rotation.lon", -rotate[0]);
-          set("center.lon", center[0]);
-          set("center.lat", center[1]);
-        }
-        zoom.on("zoomstart", handleZoomstart).on("zoom", handleZoom).on("zoomend", handleZoomend);
-        return zoom;
-      }
-      function zoomClipped(geo, projection) {
-        var view = { r: projection.rotate(), k: projection.scale() };
-        var zoom = initZoom(geo, projection);
-        var event = d3eventDispatch(zoom, "zoomstart", "zoom", "zoomend");
-        var zooming = 0;
-        var zoomOn = zoom.on;
-        var zoomPoint;
-        zoom.on("zoomstart", function() {
-          d3.select(this).style(zoomstartStyle);
-          var mouse0 = d3.mouse(this);
-          var rotate0 = projection.rotate();
-          var lastRotate = rotate0;
-          var translate0 = projection.translate();
-          var q = quaternionFromEuler(rotate0);
-          zoomPoint = position(projection, mouse0);
-          zoomOn.call(zoom, "zoom", function() {
-            var mouse1 = d3.mouse(this);
-            projection.scale(view.k = d3.event.scale);
-            if (!zoomPoint) {
-              mouse0 = mouse1;
-              zoomPoint = position(projection, mouse0);
-            } else if (position(projection, mouse1)) {
-              projection.rotate(rotate0).translate(translate0);
-              var point1 = position(projection, mouse1);
-              var between = rotateBetween(zoomPoint, point1);
-              var newEuler = eulerFromQuaternion(multiply(q, between));
-              var rotateAngles = view.r = unRoll(newEuler, zoomPoint, lastRotate);
-              if (!isFinite(rotateAngles[0]) || !isFinite(rotateAngles[1]) || !isFinite(rotateAngles[2])) {
-                rotateAngles = lastRotate;
-              }
-              projection.rotate(rotateAngles);
-              lastRotate = rotateAngles;
-            }
-            zoomed(event.of(this, arguments));
-          });
-          zoomstarted(event.of(this, arguments));
-        }).on("zoomend", function() {
-          d3.select(this).style(zoomendStyle);
-          zoomOn.call(zoom, "zoom", null);
-          zoomended(event.of(this, arguments));
-          sync(geo, projection, syncCb);
-        }).on("zoom.redraw", function() {
-          geo.render(true);
-          var _rotate = projection.rotate();
-          geo.graphDiv.emit("plotly_relayouting", {
-            "geo.projection.scale": projection.scale() / geo.fitScale,
-            "geo.projection.rotation.lon": -_rotate[0],
-            "geo.projection.rotation.lat": -_rotate[1]
-          });
-        });
-        function zoomstarted(dispatch) {
-          if (!zooming++) dispatch({ type: "zoomstart" });
-        }
-        function zoomed(dispatch) {
-          dispatch({ type: "zoom" });
-        }
-        function zoomended(dispatch) {
-          if (!--zooming) dispatch({ type: "zoomend" });
-        }
-        function syncCb(set) {
-          var _rotate = projection.rotate();
-          set("projection.rotation.lon", -_rotate[0]);
-          set("projection.rotation.lat", -_rotate[1]);
-        }
-        return d3.rebind(zoom, event, "on");
-      }
-      function position(projection, point) {
-        var spherical = projection.invert(point);
-        return spherical && isFinite(spherical[0]) && isFinite(spherical[1]) && cartesian(spherical);
-      }
-      function quaternionFromEuler(euler) {
-        var lambda = 0.5 * euler[0] * radians;
-        var phi = 0.5 * euler[1] * radians;
-        var gamma = 0.5 * euler[2] * radians;
-        var sinLambda = Math.sin(lambda);
-        var cosLambda = Math.cos(lambda);
-        var sinPhi = Math.sin(phi);
-        var cosPhi = Math.cos(phi);
-        var sinGamma = Math.sin(gamma);
-        var cosGamma = Math.cos(gamma);
-        return [
-          cosLambda * cosPhi * cosGamma + sinLambda * sinPhi * sinGamma,
-          sinLambda * cosPhi * cosGamma - cosLambda * sinPhi * sinGamma,
-          cosLambda * sinPhi * cosGamma + sinLambda * cosPhi * sinGamma,
-          cosLambda * cosPhi * sinGamma - sinLambda * sinPhi * cosGamma
-        ];
-      }
-      function multiply(a, b) {
-        var a0 = a[0];
-        var a1 = a[1];
-        var a2 = a[2];
-        var a3 = a[3];
-        var b0 = b[0];
-        var b1 = b[1];
-        var b2 = b[2];
-        var b3 = b[3];
-        return [
-          a0 * b0 - a1 * b1 - a2 * b2 - a3 * b3,
-          a0 * b1 + a1 * b0 + a2 * b3 - a3 * b2,
-          a0 * b2 - a1 * b3 + a2 * b0 + a3 * b1,
-          a0 * b3 + a1 * b2 - a2 * b1 + a3 * b0
-        ];
-      }
-      function rotateBetween(a, b) {
-        if (!a || !b) return;
-        var axis = cross(a, b);
-        var norm = Math.sqrt(dot(axis, axis));
-        var halfgamma = 0.5 * Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
-        var k = Math.sin(halfgamma) / norm;
-        return norm && [Math.cos(halfgamma), axis[2] * k, -axis[1] * k, axis[0] * k];
-      }
-      function unRoll(rotateAngles, pt, lastRotate) {
-        var ptRotated = rotateCartesian(pt, 2, rotateAngles[0]);
-        ptRotated = rotateCartesian(ptRotated, 1, rotateAngles[1]);
-        ptRotated = rotateCartesian(ptRotated, 0, rotateAngles[2] - lastRotate[2]);
-        var x = pt[0];
-        var y = pt[1];
-        var z = pt[2];
-        var f = ptRotated[0];
-        var g = ptRotated[1];
-        var h = ptRotated[2];
-        var theta = Math.atan2(y, x) * degrees;
-        var a = Math.sqrt(x * x + y * y);
-        var b;
-        var newYaw1;
-        if (Math.abs(g) > a) {
-          newYaw1 = (g > 0 ? 90 : -90) - theta;
-          b = 0;
-        } else {
-          newYaw1 = Math.asin(g / a) * degrees - theta;
-          b = Math.sqrt(a * a - g * g);
-        }
-        var newYaw2 = 180 - newYaw1 - 2 * theta;
-        var newPitch1 = (Math.atan2(h, f) - Math.atan2(z, b)) * degrees;
-        var newPitch2 = (Math.atan2(h, f) - Math.atan2(z, -b)) * degrees;
-        var dist1 = angleDistance(lastRotate[0], lastRotate[1], newYaw1, newPitch1);
-        var dist2 = angleDistance(lastRotate[0], lastRotate[1], newYaw2, newPitch2);
-        if (dist1 <= dist2) return [newYaw1, newPitch1, lastRotate[2]];
-        else return [newYaw2, newPitch2, lastRotate[2]];
-      }
-      function angleDistance(yaw0, pitch0, yaw1, pitch1) {
-        var dYaw = angleMod(yaw1 - yaw0);
-        var dPitch = angleMod(pitch1 - pitch0);
-        return Math.sqrt(dYaw * dYaw + dPitch * dPitch);
-      }
-      function angleMod(angle) {
-        return (angle % 360 + 540) % 360 - 180;
-      }
-      function rotateCartesian(vector, axis, angle) {
-        var angleRads = angle * radians;
-        var vectorOut = vector.slice();
-        var ax1 = axis === 0 ? 1 : 0;
-        var ax2 = axis === 2 ? 1 : 2;
-        var cosa = Math.cos(angleRads);
-        var sina = Math.sin(angleRads);
-        vectorOut[ax1] = vector[ax1] * cosa - vector[ax2] * sina;
-        vectorOut[ax2] = vector[ax2] * cosa + vector[ax1] * sina;
-        return vectorOut;
-      }
-      function eulerFromQuaternion(q) {
-        return [
-          Math.atan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] * q[1] + q[2] * q[2])) * degrees,
-          Math.asin(Math.max(-1, Math.min(1, 2 * (q[0] * q[2] - q[3] * q[1])))) * degrees,
-          Math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3])) * degrees
-        ];
-      }
-      function cartesian(spherical) {
-        var lambda = spherical[0] * radians;
-        var phi = spherical[1] * radians;
-        var cosPhi = Math.cos(phi);
-        return [
-          cosPhi * Math.cos(lambda),
-          cosPhi * Math.sin(lambda),
-          Math.sin(phi)
-        ];
-      }
-      function dot(a, b) {
-        var s = 0;
-        for (var i = 0, n = a.length; i < n; ++i) s += a[i] * b[i];
-        return s;
-      }
-      function cross(a, b) {
-        return [
-          a[1] * b[2] - a[2] * b[1],
-          a[2] * b[0] - a[0] * b[2],
-          a[0] * b[1] - a[1] * b[0]
-        ];
-      }
-      function d3eventDispatch(target) {
-        var i = 0;
-        var n = arguments.length;
-        var argumentz = [];
-        while (++i < n) argumentz.push(arguments[i]);
-        var dispatch = d3.dispatch.apply(null, argumentz);
-        dispatch.of = function(thiz, argumentz2) {
-          return function(e1) {
-            var e0;
-            try {
-              e0 = e1.sourceEvent = d3.event;
-              e1.target = target;
-              d3.event = e1;
-              dispatch[e1.type].apply(thiz, argumentz2);
-            } finally {
-              d3.event = e0;
-            }
-          };
-        };
-        return dispatch;
-      }
-    }
-  });
-
-  // src/plots/geo/geo.js
-  var require_geo = __commonJS({
-    "src/plots/geo/geo.js"(exports, module) {
-      "use strict";
-      var d3 = require_d3();
-      var geo = require_d3_geo();
-      var geoPath = geo.geoPath;
-      var geoDistance = geo.geoDistance;
-      var geoProjection = require_d3_geo_projection();
-      var Registry = require_registry();
-      var Lib = require_lib();
-      var strTranslate = Lib.strTranslate;
-      var Color = require_color();
-      var Drawing = require_drawing();
-      var Fx = require_fx();
-      var Plots = require_plots();
-      var Axes = require_axes();
-      var getAutoRange = require_autorange().getAutoRange;
-      var dragElement = require_dragelement();
-      var prepSelect = require_selections().prepSelect;
-      var clearOutline = require_selections().clearOutline;
-      var selectOnClick = require_selections().selectOnClick;
-      var createGeoZoom = require_zoom();
-      var constants = require_constants14();
-      var geoUtils = require_geo_location_utils();
-      var topojsonUtils = require_topojson_utils();
-      var topojsonFeature = require_topojson_client().feature;
-      function Geo(opts) {
-        this.id = opts.id;
-        this.graphDiv = opts.graphDiv;
-        this.container = opts.container;
-        this.topojsonURL = opts.topojsonURL;
-        this.isStatic = opts.staticPlot;
-        this.topojsonName = null;
-        this.topojson = null;
-        this.projection = null;
-        this.scope = null;
-        this.viewInitial = null;
-        this.fitScale = null;
-        this.bounds = null;
-        this.midPt = null;
-        this.hasChoropleth = false;
-        this.traceHash = {};
-        this.layers = {};
-        this.basePaths = {};
-        this.dataPaths = {};
-        this.dataPoints = {};
-        this.clipDef = null;
-        this.clipRect = null;
-        this.bgRect = null;
-        this.makeFramework();
-      }
-      var proto = Geo.prototype;
-      module.exports = function createGeo(opts) {
-        return new Geo(opts);
-      };
-      proto.plot = function(geoCalcData, fullLayout, promises, replot) {
-        var _this = this;
-        if (replot) return _this.update(geoCalcData, fullLayout, true);
-        _this._geoCalcData = geoCalcData;
-        _this._fullLayout = fullLayout;
-        var geoLayout = fullLayout[this.id];
-        var geoPromises = [];
-        var needsTopojson = false;
-        for (var k in constants.layerNameToAdjective) {
-          if (k !== "frame" && geoLayout["show" + k]) {
-            needsTopojson = true;
-            break;
-          }
-        }
-        var hasMarkerAngles = false;
-        for (var i = 0; i < geoCalcData.length; i++) {
-          var trace = geoCalcData[0][0].trace;
-          trace._geo = _this;
-          if (trace.locationmode) {
-            needsTopojson = true;
-          }
-          var marker = trace.marker;
-          if (marker) {
-            var angle = marker.angle;
-            var angleref = marker.angleref;
-            if (angle || angleref === "north" || angleref === "previous") hasMarkerAngles = true;
-          }
-        }
-        this._hasMarkerAngles = hasMarkerAngles;
-        if (needsTopojson) {
-          var topojsonNameNew = topojsonUtils.getTopojsonName(geoLayout);
-          if (_this.topojson === null || topojsonNameNew !== _this.topojsonName) {
-            _this.topojsonName = topojsonNameNew;
-            if (PlotlyGeoAssets.topojson[_this.topojsonName] === void 0) {
-              geoPromises.push(_this.fetchTopojson());
-            }
-          }
-        }
-        geoPromises = geoPromises.concat(geoUtils.fetchTraceGeoData(geoCalcData));
-        promises.push(new Promise(function(resolve, reject) {
-          Promise.all(geoPromises).then(function() {
-            _this.topojson = PlotlyGeoAssets.topojson[_this.topojsonName];
-            _this.update(geoCalcData, fullLayout);
-            resolve();
-          }).catch(reject);
-        }));
-      };
-      proto.fetchTopojson = function() {
-        var _this = this;
-        var topojsonPath = topojsonUtils.getTopojsonPath(_this.topojsonURL, _this.topojsonName);
-        return new Promise(function(resolve, reject) {
-          d3.json(topojsonPath, function(err, topojson) {
-            if (err) {
-              if (err.status === 404) {
-                return reject(new Error([
-                  "plotly.js could not find topojson file at",
-                  topojsonPath + ".",
-                  "Make sure the *topojsonURL* plot config option",
-                  "is set properly."
-                ].join(" ")));
-              } else {
-                return reject(new Error([
-                  "unexpected error while fetching topojson file at",
-                  topojsonPath
-                ].join(" ")));
-              }
-            }
-            PlotlyGeoAssets.topojson[_this.topojsonName] = topojson;
-            resolve();
-          });
-        });
-      };
-      proto.update = function(geoCalcData, fullLayout, replot) {
-        var geoLayout = fullLayout[this.id];
-        this.hasChoropleth = false;
-        for (var i = 0; i < geoCalcData.length; i++) {
-          var calcTrace = geoCalcData[i];
-          var trace = calcTrace[0].trace;
-          if (trace.type === "choropleth") {
-            this.hasChoropleth = true;
-          }
-          if (trace.visible === true && trace._length > 0) {
-            trace._module.calcGeoJSON(calcTrace, fullLayout);
-          }
-        }
-        if (!replot) {
-          var hasInvalidBounds = this.updateProjection(geoCalcData, fullLayout);
-          if (hasInvalidBounds) return;
-          if (!this.viewInitial || this.scope !== geoLayout.scope) {
-            this.saveViewInitial(geoLayout);
-          }
-        }
-        this.scope = geoLayout.scope;
-        this.updateBaseLayers(fullLayout, geoLayout);
-        this.updateDims(fullLayout, geoLayout);
-        this.updateFx(fullLayout, geoLayout);
-        Plots.generalUpdatePerTraceModule(this.graphDiv, this, geoCalcData, geoLayout);
-        var scatterLayer = this.layers.frontplot.select(".scatterlayer");
-        this.dataPoints.point = scatterLayer.selectAll(".point");
-        this.dataPoints.text = scatterLayer.selectAll("text");
-        this.dataPaths.line = scatterLayer.selectAll(".js-line");
-        var choroplethLayer = this.layers.backplot.select(".choroplethlayer");
-        this.dataPaths.choropleth = choroplethLayer.selectAll("path");
-        this._render();
-      };
-      proto.updateProjection = function(geoCalcData, fullLayout) {
-        var gd = this.graphDiv;
-        var geoLayout = fullLayout[this.id];
-        var gs = fullLayout._size;
-        var domain = geoLayout.domain;
-        var projLayout = geoLayout.projection;
-        var lonaxis = geoLayout.lonaxis;
-        var lataxis = geoLayout.lataxis;
-        var axLon = lonaxis._ax;
-        var axLat = lataxis._ax;
-        var projection = this.projection = getProjection(geoLayout);
-        var extent = [[
-          gs.l + gs.w * domain.x[0],
-          gs.t + gs.h * (1 - domain.y[1])
-        ], [
-          gs.l + gs.w * domain.x[1],
-          gs.t + gs.h * (1 - domain.y[0])
-        ]];
-        var center = geoLayout.center || {};
-        var rotation = projLayout.rotation || {};
-        var lonaxisRange = lonaxis.range || [];
-        var lataxisRange = lataxis.range || [];
-        if (geoLayout.fitbounds) {
-          axLon._length = extent[1][0] - extent[0][0];
-          axLat._length = extent[1][1] - extent[0][1];
-          axLon.range = getAutoRange(gd, axLon);
-          axLat.range = getAutoRange(gd, axLat);
-          var midLon = (axLon.range[0] + axLon.range[1]) / 2;
-          var midLat = (axLat.range[0] + axLat.range[1]) / 2;
-          if (geoLayout._isScoped) {
-            center = { lon: midLon, lat: midLat };
-          } else if (geoLayout._isClipped) {
-            center = { lon: midLon, lat: midLat };
-            rotation = { lon: midLon, lat: midLat, roll: rotation.roll };
-            var projType = projLayout.type;
-            var lonHalfSpan = constants.lonaxisSpan[projType] / 2 || 180;
-            var latHalfSpan = constants.lataxisSpan[projType] / 2 || 90;
-            lonaxisRange = [midLon - lonHalfSpan, midLon + lonHalfSpan];
-            lataxisRange = [midLat - latHalfSpan, midLat + latHalfSpan];
-          } else {
-            center = { lon: midLon, lat: midLat };
-            rotation = { lon: midLon, lat: rotation.lat, roll: rotation.roll };
-          }
-        }
-        projection.center([center.lon - rotation.lon, center.lat - rotation.lat]).rotate([-rotation.lon, -rotation.lat, rotation.roll]).parallels(projLayout.parallels);
-        var rangeBox = makeRangeBox(lonaxisRange, lataxisRange);
-        projection.fitExtent(extent, rangeBox);
-        var b = this.bounds = projection.getBounds(rangeBox);
-        var s = this.fitScale = projection.scale();
-        var t = projection.translate();
-        if (geoLayout.fitbounds) {
-          var b2 = projection.getBounds(makeRangeBox(axLon.range, axLat.range));
-          var k2 = Math.min(
-            (b[1][0] - b[0][0]) / (b2[1][0] - b2[0][0]),
-            (b[1][1] - b[0][1]) / (b2[1][1] - b2[0][1])
-          );
-          if (isFinite(k2)) {
-            projection.scale(k2 * s);
-          } else {
-            Lib.warn("Something went wrong during" + this.id + "fitbounds computations.");
-          }
-        } else {
-          projection.scale(projLayout.scale * s);
-        }
-        var midPt = this.midPt = [
-          (b[0][0] + b[1][0]) / 2,
-          (b[0][1] + b[1][1]) / 2
-        ];
-        projection.translate([t[0] + (midPt[0] - t[0]), t[1] + (midPt[1] - t[1])]).clipExtent(b);
-        if (geoLayout._isAlbersUsa) {
-          var centerPx = projection([center.lon, center.lat]);
-          var tt = projection.translate();
-          projection.translate([
-            tt[0] - (centerPx[0] - tt[0]),
-            tt[1] - (centerPx[1] - tt[1])
-          ]);
-        }
-      };
-      proto.updateBaseLayers = function(fullLayout, geoLayout) {
-        var _this = this;
-        var topojson = _this.topojson;
-        var layers = _this.layers;
-        var basePaths = _this.basePaths;
-        function isAxisLayer(d) {
-          return d === "lonaxis" || d === "lataxis";
-        }
-        function isLineLayer(d) {
-          return Boolean(constants.lineLayers[d]);
-        }
-        function isFillLayer(d) {
-          return Boolean(constants.fillLayers[d]);
-        }
-        var allLayers = this.hasChoropleth ? constants.layersForChoropleth : constants.layers;
-        var layerData = allLayers.filter(function(d) {
-          return isLineLayer(d) || isFillLayer(d) ? geoLayout["show" + d] : isAxisLayer(d) ? geoLayout[d].showgrid : true;
-        });
-        var join = _this.framework.selectAll(".layer").data(layerData, String);
-        join.exit().each(function(d) {
-          delete layers[d];
-          delete basePaths[d];
-          d3.select(this).remove();
-        });
-        join.enter().append("g").attr("class", function(d) {
-          return "layer " + d;
-        }).each(function(d) {
-          var layer = layers[d] = d3.select(this);
-          if (d === "bg") {
-            _this.bgRect = layer.append("rect").style("pointer-events", "all");
-          } else if (isAxisLayer(d)) {
-            basePaths[d] = layer.append("path").style("fill", "none");
-          } else if (d === "backplot") {
-            layer.append("g").classed("choroplethlayer", true);
-          } else if (d === "frontplot") {
-            layer.append("g").classed("scatterlayer", true);
-          } else if (isLineLayer(d)) {
-            basePaths[d] = layer.append("path").style("fill", "none").style("stroke-miterlimit", 2);
-          } else if (isFillLayer(d)) {
-            basePaths[d] = layer.append("path").style("stroke", "none");
-          }
-        });
-        join.order();
-        join.each(function(d) {
-          var path = basePaths[d];
-          var adj = constants.layerNameToAdjective[d];
-          if (d === "frame") {
-            path.datum(constants.sphereSVG);
-          } else if (isLineLayer(d) || isFillLayer(d)) {
-            path.datum(topojsonFeature(topojson, topojson.objects[d]));
-          } else if (isAxisLayer(d)) {
-            path.datum(makeGraticule(d, geoLayout, fullLayout)).call(Color.stroke, geoLayout[d].gridcolor).call(Drawing.dashLine, geoLayout[d].griddash, geoLayout[d].gridwidth);
-          }
-          if (isLineLayer(d)) {
-            path.call(Color.stroke, geoLayout[adj + "color"]).call(Drawing.dashLine, "", geoLayout[adj + "width"]);
-          } else if (isFillLayer(d)) {
-            path.call(Color.fill, geoLayout[adj + "color"]);
-          }
-        });
-      };
-      proto.updateDims = function(fullLayout, geoLayout) {
-        var b = this.bounds;
-        var hFrameWidth = (geoLayout.framewidth || 0) / 2;
-        var l = b[0][0] - hFrameWidth;
-        var t = b[0][1] - hFrameWidth;
-        var w = b[1][0] - l + hFrameWidth;
-        var h = b[1][1] - t + hFrameWidth;
-        Drawing.setRect(this.clipRect, l, t, w, h);
-        this.bgRect.call(Drawing.setRect, l, t, w, h).call(Color.fill, geoLayout.bgcolor);
-        this.xaxis._offset = l;
-        this.xaxis._length = w;
-        this.yaxis._offset = t;
-        this.yaxis._length = h;
-      };
-      proto.updateFx = function(fullLayout, geoLayout) {
-        var _this = this;
-        var gd = _this.graphDiv;
-        var bgRect = _this.bgRect;
-        var dragMode = fullLayout.dragmode;
-        var clickMode = fullLayout.clickmode;
-        if (_this.isStatic) return;
-        function zoomReset() {
-          var viewInitial = _this.viewInitial;
-          var updateObj = {};
-          for (var k in viewInitial) {
-            updateObj[_this.id + "." + k] = viewInitial[k];
-          }
-          Registry.call("_guiRelayout", gd, updateObj);
-          gd.emit("plotly_doubleclick", null);
-        }
-        function invert(lonlat) {
-          return _this.projection.invert([
-            lonlat[0] + _this.xaxis._offset,
-            lonlat[1] + _this.yaxis._offset
-          ]);
-        }
-        var fillRangeItems = function(eventData, poly) {
-          if (poly.isRect) {
-            var ranges = eventData.range = {};
-            ranges[_this.id] = [
-              invert([poly.xmin, poly.ymin]),
-              invert([poly.xmax, poly.ymax])
-            ];
-          } else {
-            var dataPts = eventData.lassoPoints = {};
-            dataPts[_this.id] = poly.map(invert);
-          }
-        };
-        var dragOptions = {
-          element: _this.bgRect.node(),
-          gd,
-          plotinfo: {
-            id: _this.id,
-            xaxis: _this.xaxis,
-            yaxis: _this.yaxis,
-            fillRangeItems
-          },
-          xaxes: [_this.xaxis],
-          yaxes: [_this.yaxis],
-          subplot: _this.id,
-          clickFn: function(numClicks) {
-            if (numClicks === 2) {
-              clearOutline(gd);
-            }
-          }
-        };
-        if (dragMode === "pan") {
-          bgRect.node().onmousedown = null;
-          bgRect.call(createGeoZoom(_this, geoLayout));
-          bgRect.on("dblclick.zoom", zoomReset);
-          if (!gd._context._scrollZoom.geo) {
-            bgRect.on("wheel.zoom", null);
-          }
-        } else if (dragMode === "select" || dragMode === "lasso") {
-          bgRect.on(".zoom", null);
-          dragOptions.prepFn = function(e, startX, startY) {
-            prepSelect(e, startX, startY, dragOptions, dragMode);
-          };
-          dragElement.init(dragOptions);
-        }
-        bgRect.on("mousemove", function() {
-          var lonlat = _this.projection.invert(Lib.getPositionFromD3Event());
-          if (!lonlat) {
-            return dragElement.unhover(gd, d3.event);
-          }
-          _this.xaxis.p2c = function() {
-            return lonlat[0];
-          };
-          _this.yaxis.p2c = function() {
-            return lonlat[1];
-          };
-          Fx.hover(gd, d3.event, _this.id);
-        });
-        bgRect.on("mouseout", function() {
-          if (gd._dragging) return;
-          dragElement.unhover(gd, d3.event);
-        });
-        bgRect.on("click", function() {
-          if (dragMode !== "select" && dragMode !== "lasso") {
-            if (clickMode.indexOf("select") > -1) {
-              selectOnClick(
-                d3.event,
-                gd,
-                [_this.xaxis],
-                [_this.yaxis],
-                _this.id,
-                dragOptions
-              );
-            }
-            if (clickMode.indexOf("event") > -1) {
-              Fx.click(gd, d3.event);
-            }
-          }
-        });
-      };
-      proto.makeFramework = function() {
-        var _this = this;
-        var gd = _this.graphDiv;
-        var fullLayout = gd._fullLayout;
-        var clipId = "clip" + fullLayout._uid + _this.id;
-        _this.clipDef = fullLayout._clips.append("clipPath").attr("id", clipId);
-        _this.clipRect = _this.clipDef.append("rect");
-        _this.framework = d3.select(_this.container).append("g").attr("class", "geo " + _this.id).call(Drawing.setClipUrl, clipId, gd);
-        _this.project = function(v) {
-          var px = _this.projection(v);
-          return px ? [px[0] - _this.xaxis._offset, px[1] - _this.yaxis._offset] : [null, null];
-        };
-        _this.xaxis = {
-          _id: "x",
-          c2p: function(v) {
-            return _this.project(v)[0];
-          }
-        };
-        _this.yaxis = {
-          _id: "y",
-          c2p: function(v) {
-            return _this.project(v)[1];
-          }
-        };
-        _this.mockAxis = {
-          type: "linear",
-          showexponent: "all",
-          exponentformat: "B"
-        };
-        Axes.setConvert(_this.mockAxis, fullLayout);
-      };
-      proto.saveViewInitial = function(geoLayout) {
-        var center = geoLayout.center || {};
-        var projLayout = geoLayout.projection;
-        var rotation = projLayout.rotation || {};
-        this.viewInitial = {
-          fitbounds: geoLayout.fitbounds,
-          "projection.scale": projLayout.scale
-        };
-        var extra;
-        if (geoLayout._isScoped) {
-          extra = {
-            "center.lon": center.lon,
-            "center.lat": center.lat
-          };
-        } else if (geoLayout._isClipped) {
-          extra = {
-            "projection.rotation.lon": rotation.lon,
-            "projection.rotation.lat": rotation.lat
-          };
-        } else {
-          extra = {
-            "center.lon": center.lon,
-            "center.lat": center.lat,
-            "projection.rotation.lon": rotation.lon
-          };
-        }
-        Lib.extendFlat(this.viewInitial, extra);
-      };
-      proto.render = function(mayRedrawOnUpdates) {
-        if (this._hasMarkerAngles && mayRedrawOnUpdates) {
-          this.plot(this._geoCalcData, this._fullLayout, [], true);
-        } else {
-          this._render();
-        }
-      };
-      proto._render = function() {
-        var projection = this.projection;
-        var pathFn = projection.getPath();
-        var k;
-        function translatePoints(d) {
-          var lonlatPx = projection(d.lonlat);
-          return lonlatPx ? strTranslate(lonlatPx[0], lonlatPx[1]) : null;
-        }
-        function hideShowPoints(d) {
-          return projection.isLonLatOverEdges(d.lonlat) ? "none" : null;
-        }
-        for (k in this.basePaths) {
-          this.basePaths[k].attr("d", pathFn);
-        }
-        for (k in this.dataPaths) {
-          this.dataPaths[k].attr("d", function(d) {
-            return pathFn(d.geojson);
-          });
-        }
-        for (k in this.dataPoints) {
-          this.dataPoints[k].attr("display", hideShowPoints).attr("transform", translatePoints);
-        }
-      };
-      function getProjection(geoLayout) {
-        var projLayout = geoLayout.projection;
-        var projType = projLayout.type;
-        var projName = constants.projNames[projType];
-        projName = "geo" + Lib.titleCase(projName);
-        var projFn = geo[projName] || geoProjection[projName];
-        var projection = projFn();
-        var clipAngle = geoLayout._isSatellite ? Math.acos(1 / projLayout.distance) * 180 / Math.PI : geoLayout._isClipped ? constants.lonaxisSpan[projType] / 2 : null;
-        var methods = ["center", "rotate", "parallels", "clipExtent"];
-        var dummyFn = function(_) {
-          return _ ? projection : [];
-        };
-        for (var i = 0; i < methods.length; i++) {
-          var m = methods[i];
-          if (typeof projection[m] !== "function") {
-            projection[m] = dummyFn;
-          }
-        }
-        projection.isLonLatOverEdges = function(lonlat) {
-          if (projection(lonlat) === null) {
-            return true;
-          }
-          if (clipAngle) {
-            var r = projection.rotate();
-            var angle = geoDistance(lonlat, [-r[0], -r[1]]);
-            var maxAngle = clipAngle * Math.PI / 180;
-            return angle > maxAngle;
-          } else {
-            return false;
-          }
-        };
-        projection.getPath = function() {
-          return geoPath().projection(projection);
-        };
-        projection.getBounds = function(object) {
-          return projection.getPath().bounds(object);
-        };
-        projection.precision(constants.precision);
-        if (geoLayout._isSatellite) {
-          projection.tilt(projLayout.tilt).distance(projLayout.distance);
-        }
-        if (clipAngle) {
-          projection.clipAngle(clipAngle - constants.clipPad);
-        }
-        return projection;
-      }
-      function makeGraticule(axisName, geoLayout, fullLayout) {
-        var epsilon = 1e-6;
-        var precision = 2.5;
-        var axLayout = geoLayout[axisName];
-        var scopeDefaults = constants.scopeDefaults[geoLayout.scope];
-        var rng;
-        var oppRng;
-        var coordFn;
-        if (axisName === "lonaxis") {
-          rng = scopeDefaults.lonaxisRange;
-          oppRng = scopeDefaults.lataxisRange;
-          coordFn = function(v2, l2) {
-            return [v2, l2];
-          };
-        } else if (axisName === "lataxis") {
-          rng = scopeDefaults.lataxisRange;
-          oppRng = scopeDefaults.lonaxisRange;
-          coordFn = function(v2, l2) {
-            return [l2, v2];
-          };
-        }
-        var dummyAx = {
-          type: "linear",
-          range: [rng[0], rng[1] - epsilon],
-          tick0: axLayout.tick0,
-          dtick: axLayout.dtick
-        };
-        Axes.setConvert(dummyAx, fullLayout);
-        var vals = Axes.calcTicks(dummyAx);
-        if (!geoLayout.isScoped && axisName === "lonaxis") {
-          vals.pop();
-        }
-        var len = vals.length;
-        var coords = new Array(len);
-        for (var i = 0; i < len; i++) {
-          var v = vals[i].x;
-          var line = coords[i] = [];
-          for (var l = oppRng[0]; l < oppRng[1] + precision; l += precision) {
-            line.push(coordFn(v, l));
-          }
-        }
-        return {
-          type: "MultiLineString",
-          coordinates: coords
-        };
-      }
-      function makeRangeBox(lon, lat) {
-        var clipPad = constants.clipPad;
-        var lon0 = lon[0] + clipPad;
-        var lon1 = lon[1] - clipPad;
-        var lat0 = lat[0] + clipPad;
-        var lat1 = lat[1] - clipPad;
-        if (lon0 > 0 && lon1 < 0) lon1 += 360;
-        var dlon4 = (lon1 - lon0) / 4;
-        return {
-          type: "Polygon",
-          coordinates: [[
-            [lon0, lat0],
-            [lon0, lat1],
-            [lon0 + dlon4, lat1],
-            [lon0 + 2 * dlon4, lat1],
-            [lon0 + 3 * dlon4, lat1],
-            [lon1, lat1],
-            [lon1, lat0],
-            [lon1 - dlon4, lat0],
-            [lon1 - 2 * dlon4, lat0],
-            [lon1 - 3 * dlon4, lat0],
-            [lon0, lat0]
-          ]]
-        };
-      }
-    }
-  });
-
-  // src/plots/geo/layout_attributes.js
-  var require_layout_attributes6 = __commonJS({
-    "src/plots/geo/layout_attributes.js"(exports, module) {
-      "use strict";
-      var colorAttrs = require_attributes3();
-      var domainAttrs = require_domain().attributes;
-      var dash = require_attributes4().dash;
-      var constants = require_constants14();
-      var overrideAll = require_edit_types().overrideAll;
-      var sortObjectKeys = require_sort_object_keys();
-      var geoAxesAttrs = {
-        range: {
-          valType: "info_array",
-          items: [
-            { valType: "number" },
-            { valType: "number" }
-          ]
-        },
-        showgrid: {
-          valType: "boolean",
-          dflt: false
-        },
-        tick0: {
-          valType: "number",
-          dflt: 0
-        },
-        dtick: {
-          valType: "number"
-        },
-        gridcolor: {
-          valType: "color",
-          dflt: colorAttrs.lightLine
-        },
-        gridwidth: {
-          valType: "number",
-          min: 0,
-          dflt: 1
-        },
-        griddash: dash
-      };
-      var attrs = module.exports = overrideAll({
-        domain: domainAttrs({ name: "geo" }, {}),
-        fitbounds: {
+        textposition: {
           valType: "enumerated",
-          values: [false, "locations", "geojson"],
-          dflt: false,
+          values: ["inside", "outside", "auto", "none"],
+          dflt: "auto",
+          arrayOk: true,
+          editType: "calc"
+        },
+        insidetextanchor: {
+          valType: "enumerated",
+          values: ["end", "middle", "start"],
+          dflt: "end",
           editType: "plot"
         },
-        resolution: {
+        textangle: {
+          valType: "angle",
+          dflt: "auto",
+          editType: "plot"
+        },
+        textfont: extendFlat({}, textFontAttrs, {}),
+        insidetextfont: extendFlat({}, textFontAttrs, {}),
+        outsidetextfont: extendFlat({}, textFontAttrs, {}),
+        constraintext: {
           valType: "enumerated",
-          values: [110, 50],
-          dflt: 110,
-          coerceNumber: true
+          values: ["inside", "outside", "both", "none"],
+          dflt: "both",
+          editType: "calc"
         },
-        scope: {
+        cliponaxis: extendFlat({}, scatterAttrs.cliponaxis, {}),
+        orientation: {
           valType: "enumerated",
-          values: sortObjectKeys(constants.scopeDefaults),
-          dflt: "world"
+          values: ["v", "h"],
+          editType: "calc+clearAxisTypes"
         },
-        projection: {
-          type: {
-            valType: "enumerated",
-            values: sortObjectKeys(constants.projNames)
-          },
-          rotation: {
-            lon: {
-              valType: "number"
-            },
-            lat: {
-              valType: "number"
-            },
-            roll: {
-              valType: "number"
-            }
-          },
-          tilt: {
-            valType: "number",
-            dflt: 0
-          },
-          distance: {
-            valType: "number",
-            min: 1.001,
-            dflt: 2
-          },
-          parallels: {
-            valType: "info_array",
-            items: [
-              { valType: "number" },
-              { valType: "number" }
-            ]
-          },
-          scale: {
-            valType: "number",
-            min: 0,
-            dflt: 1
-          }
+        base: {
+          valType: "any",
+          dflt: null,
+          arrayOk: true,
+          editType: "calc"
         },
-        center: {
-          lon: {
-            valType: "number"
-          },
-          lat: {
-            valType: "number"
-          }
-        },
-        visible: {
-          valType: "boolean",
-          dflt: true
-        },
-        showcoastlines: {
-          valType: "boolean"
-        },
-        coastlinecolor: {
-          valType: "color",
-          dflt: colorAttrs.defaultLine
-        },
-        coastlinewidth: {
+        offset: {
           valType: "number",
-          min: 0,
-          dflt: 1
+          dflt: null,
+          arrayOk: true,
+          editType: "calc"
         },
-        showland: {
-          valType: "boolean",
-          dflt: false
-        },
-        landcolor: {
-          valType: "color",
-          dflt: constants.landColor
-        },
-        showocean: {
-          valType: "boolean",
-          dflt: false
-        },
-        oceancolor: {
-          valType: "color",
-          dflt: constants.waterColor
-        },
-        showlakes: {
-          valType: "boolean",
-          dflt: false
-        },
-        lakecolor: {
-          valType: "color",
-          dflt: constants.waterColor
-        },
-        showrivers: {
-          valType: "boolean",
-          dflt: false
-        },
-        rivercolor: {
-          valType: "color",
-          dflt: constants.waterColor
-        },
-        riverwidth: {
+        width: {
           valType: "number",
+          dflt: null,
           min: 0,
-          dflt: 1
+          arrayOk: true,
+          editType: "calc"
         },
-        showcountries: {
-          valType: "boolean"
+        marker,
+        offsetgroup: scatterAttrs.offsetgroup,
+        alignmentgroup: scatterAttrs.alignmentgroup,
+        selected: {
+          marker: {
+            opacity: scatterAttrs.selected.marker.opacity,
+            color: scatterAttrs.selected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.selected.textfont,
+          editType: "style"
         },
-        countrycolor: {
-          valType: "color",
-          dflt: colorAttrs.defaultLine
+        unselected: {
+          marker: {
+            opacity: scatterAttrs.unselected.marker.opacity,
+            color: scatterAttrs.unselected.marker.color,
+            editType: "style"
+          },
+          textfont: scatterAttrs.unselected.textfont,
+          editType: "style"
         },
-        countrywidth: {
-          valType: "number",
-          min: 0,
-          dflt: 1
-        },
-        showsubunits: {
-          valType: "boolean"
-        },
-        subunitcolor: {
-          valType: "color",
-          dflt: colorAttrs.defaultLine
-        },
-        subunitwidth: {
-          valType: "number",
-          min: 0,
-          dflt: 1
-        },
-        showframe: {
-          valType: "boolean"
-        },
-        framecolor: {
-          valType: "color",
-          dflt: colorAttrs.defaultLine
-        },
-        framewidth: {
-          valType: "number",
-          min: 0,
-          dflt: 1
-        },
-        bgcolor: {
-          valType: "color",
-          dflt: colorAttrs.background
-        },
-        lonaxis: geoAxesAttrs,
-        lataxis: geoAxesAttrs
-      }, "plot", "from-root");
-      attrs.uirevision = {
-        valType: "any",
-        editType: "none"
+        zorder: scatterAttrs.zorder
       };
     }
   });
 
-  // src/plots/subplot_defaults.js
-  var require_subplot_defaults = __commonJS({
-    "src/plots/subplot_defaults.js"(exports, module) {
+  // src/traces/histogram/bin_attributes.js
+  var require_bin_attributes = __commonJS({
+    "src/traces/histogram/bin_attributes.js"(exports, module) {
       "use strict";
-      var Lib = require_lib();
-      var Template = require_plot_template();
-      var handleDomainDefaults = require_domain().defaults;
-      module.exports = function handleSubplotDefaults(layoutIn, layoutOut, fullData, opts) {
-        var subplotType = opts.type;
-        var subplotAttributes = opts.attributes;
-        var handleDefaults = opts.handleDefaults;
-        var partition = opts.partition || "x";
-        var ids = layoutOut._subplots[subplotType];
-        var idsLength = ids.length;
-        var baseId = idsLength && ids[0].replace(/\d+$/, "");
-        var subplotLayoutIn, subplotLayoutOut;
-        function coerce(attr, dflt) {
-          return Lib.coerce(subplotLayoutIn, subplotLayoutOut, subplotAttributes, attr, dflt);
-        }
-        for (var i = 0; i < idsLength; i++) {
-          var id = ids[i];
-          if (layoutIn[id]) subplotLayoutIn = layoutIn[id];
-          else subplotLayoutIn = layoutIn[id] = {};
-          subplotLayoutOut = Template.newContainer(layoutOut, id, baseId);
-          if (!opts.noUirevision) coerce("uirevision", layoutOut.uirevision);
-          var dfltDomains = {};
-          dfltDomains[partition] = [i / idsLength, (i + 1) / idsLength];
-          handleDomainDefaults(subplotLayoutOut, layoutOut, coerce, dfltDomains);
-          opts.id = id;
-          handleDefaults(subplotLayoutIn, subplotLayoutOut, coerce, opts);
-        }
-      };
-    }
-  });
-
-  // src/plots/geo/layout_defaults.js
-  var require_layout_defaults5 = __commonJS({
-    "src/plots/geo/layout_defaults.js"(exports, module) {
-      "use strict";
-      var Lib = require_lib();
-      var handleSubplotDefaults = require_subplot_defaults();
-      var getSubplotData = require_get_data().getSubplotData;
-      var constants = require_constants14();
-      var layoutAttributes = require_layout_attributes6();
-      var axesNames = constants.axesNames;
-      module.exports = function supplyLayoutDefaults(layoutIn, layoutOut, fullData) {
-        handleSubplotDefaults(layoutIn, layoutOut, fullData, {
-          type: "geo",
-          attributes: layoutAttributes,
-          handleDefaults: handleGeoDefaults,
-          fullData,
-          partition: "y"
-        });
-      };
-      function handleGeoDefaults(geoLayoutIn, geoLayoutOut, coerce, opts) {
-        var subplotData = getSubplotData(opts.fullData, "geo", opts.id);
-        var traceIndices = subplotData.map(function(t) {
-          return t.index;
-        });
-        var resolution = coerce("resolution");
-        var scope = coerce("scope");
-        var scopeParams = constants.scopeDefaults[scope];
-        var projType = coerce("projection.type", scopeParams.projType);
-        var isAlbersUsa = geoLayoutOut._isAlbersUsa = projType === "albers usa";
-        if (isAlbersUsa) scope = geoLayoutOut.scope = "usa";
-        var isScoped = geoLayoutOut._isScoped = scope !== "world";
-        var isSatellite = geoLayoutOut._isSatellite = projType === "satellite";
-        var isConic = geoLayoutOut._isConic = projType.indexOf("conic") !== -1 || projType === "albers";
-        var isClipped = geoLayoutOut._isClipped = !!constants.lonaxisSpan[projType];
-        if (geoLayoutIn.visible === false) {
-          var newTemplate = Lib.extendDeep({}, geoLayoutOut._template);
-          newTemplate.showcoastlines = false;
-          newTemplate.showcountries = false;
-          newTemplate.showframe = false;
-          newTemplate.showlakes = false;
-          newTemplate.showland = false;
-          newTemplate.showocean = false;
-          newTemplate.showrivers = false;
-          newTemplate.showsubunits = false;
-          if (newTemplate.lonaxis) newTemplate.lonaxis.showgrid = false;
-          if (newTemplate.lataxis) newTemplate.lataxis.showgrid = false;
-          geoLayoutOut._template = newTemplate;
-        }
-        var visible = coerce("visible");
-        var show;
-        for (var i = 0; i < axesNames.length; i++) {
-          var axisName = axesNames[i];
-          var dtickDflt = [30, 10][i];
-          var rangeDflt;
-          if (isScoped) {
-            rangeDflt = scopeParams[axisName + "Range"];
-          } else {
-            var dfltSpans = constants[axisName + "Span"];
-            var hSpan = (dfltSpans[projType] || dfltSpans["*"]) / 2;
-            var rot = coerce(
-              "projection.rotation." + axisName.substr(0, 3),
-              scopeParams.projRotate[i]
-            );
-            rangeDflt = [rot - hSpan, rot + hSpan];
-          }
-          var range = coerce(axisName + ".range", rangeDflt);
-          coerce(axisName + ".tick0");
-          coerce(axisName + ".dtick", dtickDflt);
-          show = coerce(axisName + ".showgrid", !visible ? false : void 0);
-          if (show) {
-            coerce(axisName + ".gridcolor");
-            coerce(axisName + ".gridwidth");
-            coerce(axisName + ".griddash");
-          }
-          geoLayoutOut[axisName]._ax = {
-            type: "linear",
-            _id: axisName.slice(0, 3),
-            _traceIndices: traceIndices,
-            setScale: Lib.identity,
-            c2l: Lib.identity,
-            r2l: Lib.identity,
-            autorange: true,
-            range: range.slice(),
-            _m: 1,
-            _input: {}
-          };
-        }
-        var lonRange = geoLayoutOut.lonaxis.range;
-        var latRange = geoLayoutOut.lataxis.range;
-        var lon0 = lonRange[0];
-        var lon1 = lonRange[1];
-        if (lon0 > 0 && lon1 < 0) lon1 += 360;
-        var centerLon = (lon0 + lon1) / 2;
-        var projLon;
-        if (!isAlbersUsa) {
-          var dfltProjRotate = isScoped ? scopeParams.projRotate : [centerLon, 0, 0];
-          projLon = coerce("projection.rotation.lon", dfltProjRotate[0]);
-          coerce("projection.rotation.lat", dfltProjRotate[1]);
-          coerce("projection.rotation.roll", dfltProjRotate[2]);
-          show = coerce("showcoastlines", !isScoped && visible);
-          if (show) {
-            coerce("coastlinecolor");
-            coerce("coastlinewidth");
-          }
-          show = coerce("showocean", !visible ? false : void 0);
-          if (show) coerce("oceancolor");
-        }
-        var centerLonDflt;
-        var centerLatDflt;
-        if (isAlbersUsa) {
-          centerLonDflt = -96.6;
-          centerLatDflt = 38.7;
-        } else {
-          centerLonDflt = isScoped ? centerLon : projLon;
-          centerLatDflt = (latRange[0] + latRange[1]) / 2;
-        }
-        coerce("center.lon", centerLonDflt);
-        coerce("center.lat", centerLatDflt);
-        if (isSatellite) {
-          coerce("projection.tilt");
-          coerce("projection.distance");
-        }
-        if (isConic) {
-          var dfltProjParallels = scopeParams.projParallels || [0, 60];
-          coerce("projection.parallels", dfltProjParallels);
-        }
-        coerce("projection.scale");
-        show = coerce("showland", !visible ? false : void 0);
-        if (show) coerce("landcolor");
-        show = coerce("showlakes", !visible ? false : void 0);
-        if (show) coerce("lakecolor");
-        show = coerce("showrivers", !visible ? false : void 0);
-        if (show) {
-          coerce("rivercolor");
-          coerce("riverwidth");
-        }
-        show = coerce("showcountries", isScoped && scope !== "usa" && visible);
-        if (show) {
-          coerce("countrycolor");
-          coerce("countrywidth");
-        }
-        if (scope === "usa" || scope === "north america" && resolution === 50) {
-          coerce("showsubunits", visible);
-          coerce("subunitcolor");
-          coerce("subunitwidth");
-        }
-        if (!isScoped) {
-          show = coerce("showframe", visible);
-          if (show) {
-            coerce("framecolor");
-            coerce("framewidth");
-          }
-        }
-        coerce("bgcolor");
-        var fitBounds = coerce("fitbounds");
-        if (fitBounds) {
-          delete geoLayoutOut.projection.scale;
-          if (isScoped) {
-            delete geoLayoutOut.center.lon;
-            delete geoLayoutOut.center.lat;
-          } else if (isClipped) {
-            delete geoLayoutOut.center.lon;
-            delete geoLayoutOut.center.lat;
-            delete geoLayoutOut.projection.rotation.lon;
-            delete geoLayoutOut.projection.rotation.lat;
-            delete geoLayoutOut.lonaxis.range;
-            delete geoLayoutOut.lataxis.range;
-          } else {
-            delete geoLayoutOut.center.lon;
-            delete geoLayoutOut.center.lat;
-            delete geoLayoutOut.projection.rotation.lon;
-          }
-        }
-      }
-    }
-  });
-
-  // src/plots/geo/index.js
-  var require_geo2 = __commonJS({
-    "src/plots/geo/index.js"(exports, module) {
-      "use strict";
-      var getSubplotCalcData = require_get_data().getSubplotCalcData;
-      var counterRegex = require_lib().counterRegex;
-      var createGeo = require_geo();
-      var GEO = "geo";
-      var counter = counterRegex(GEO);
-      var attributes = {};
-      attributes[GEO] = {
-        valType: "subplotid",
-        dflt: GEO,
-        editType: "calc"
-      };
-      function plotGeo(gd) {
-        var fullLayout = gd._fullLayout;
-        var calcData = gd.calcdata;
-        var geoIds = fullLayout._subplots[GEO];
-        for (var i = 0; i < geoIds.length; i++) {
-          var geoId = geoIds[i];
-          var geoCalcData = getSubplotCalcData(calcData, GEO, geoId);
-          var geoLayout = fullLayout[geoId];
-          var geo = geoLayout._subplot;
-          if (!geo) {
-            geo = createGeo({
-              id: geoId,
-              graphDiv: gd,
-              container: fullLayout._geolayer.node(),
-              topojsonURL: gd._context.topojsonURL,
-              staticPlot: gd._context.staticPlot
-            });
-            fullLayout[geoId]._subplot = geo;
-          }
-          geo.plot(geoCalcData, fullLayout, gd._promises);
-        }
-      }
-      function clean(newFullData, newFullLayout, oldFullData, oldFullLayout) {
-        var oldGeoKeys = oldFullLayout._subplots[GEO] || [];
-        for (var i = 0; i < oldGeoKeys.length; i++) {
-          var oldGeoKey = oldGeoKeys[i];
-          var oldGeo = oldFullLayout[oldGeoKey]._subplot;
-          if (!newFullLayout[oldGeoKey] && !!oldGeo) {
-            oldGeo.framework.remove();
-            oldGeo.clipDef.remove();
-          }
-        }
-      }
-      function updateFx(gd) {
-        var fullLayout = gd._fullLayout;
-        var subplotIds = fullLayout._subplots[GEO];
-        for (var i = 0; i < subplotIds.length; i++) {
-          var subplotLayout = fullLayout[subplotIds[i]];
-          var subplotObj = subplotLayout._subplot;
-          subplotObj.updateFx(fullLayout, subplotLayout);
-        }
-      }
-      module.exports = {
-        attr: GEO,
-        name: GEO,
-        idRoot: GEO,
-        idRegex: counter,
-        attrRegex: counter,
-        attributes,
-        layoutAttributes: require_layout_attributes6(),
-        supplyLayoutDefaults: require_layout_defaults5(),
-        plot: plotGeo,
-        updateFx,
-        clean
-      };
-    }
-  });
-
-  // src/traces/scattergeo/index.js
-  var require_scattergeo = __commonJS({
-    "src/traces/scattergeo/index.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        attributes: require_attributes23(),
-        supplyDefaults: require_defaults19(),
-        colorbar: require_marker_colorbar(),
-        formatLabels: require_format_labels2(),
-        calc: require_calc5(),
-        calcGeoJSON: require_plot3().calcGeoJSON,
-        plot: require_plot3().plot,
-        style: require_style4(),
-        styleOnSelect: require_style2().styleOnSelect,
-        hoverPoints: require_hover3(),
-        eventData: require_event_data(),
-        selectPoints: require_select3(),
-        moduleType: "trace",
-        name: "scattergeo",
-        basePlotModule: require_geo2(),
-        categories: ["geo", "symbols", "showLegend", "scatter-like"],
-        meta: {}
-      };
-    }
-  });
-
-  // lib/scattergeo.js
-  var require_scattergeo2 = __commonJS({
-    "lib/scattergeo.js"(exports, module) {
-      "use strict";
-      module.exports = require_scattergeo();
-    }
-  });
-
-  // src/traces/choropleth/attributes.js
-  var require_attributes24 = __commonJS({
-    "src/traces/choropleth/attributes.js"(exports, module) {
-      "use strict";
-      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
-      var scatterGeoAttrs = require_attributes23();
-      var colorScaleAttrs = require_attributes8();
-      var baseAttrs = require_attributes2();
-      var defaultLine = require_attributes3().defaultLine;
-      var extendFlat = require_extend().extendFlat;
-      var scatterGeoMarkerLineAttrs = scatterGeoAttrs.marker.line;
-      module.exports = extendFlat(
-        {
-          locations: {
-            valType: "data_array",
+      module.exports = function makeBinAttrs(axLetter, match) {
+        return {
+          start: {
+            valType: "any",
+            // for date axes
             editType: "calc"
           },
-          locationmode: scatterGeoAttrs.locationmode,
+          end: {
+            valType: "any",
+            // for date axes
+            editType: "calc"
+          },
+          size: {
+            valType: "any",
+            // for date axes
+            editType: "calc"
+          },
+          editType: "calc"
+        };
+      };
+    }
+  });
+
+  // src/traces/histogram/constants.js
+  var require_constants15 = __commonJS({
+    "src/traces/histogram/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        eventDataKeys: ["binNumber"]
+      };
+    }
+  });
+
+  // src/traces/histogram/attributes.js
+  var require_attributes24 = __commonJS({
+    "src/traces/histogram/attributes.js"(exports, module) {
+      "use strict";
+      var barAttrs = require_attributes23();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var fontAttrs = require_font_attributes();
+      var makeBinAttrs = require_bin_attributes();
+      var constants = require_constants15();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = {
+        x: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes"
+        },
+        y: {
+          valType: "data_array",
+          editType: "calc+clearAxisTypes"
+        },
+        xhoverformat: axisHoverFormat("x"),
+        yhoverformat: axisHoverFormat("y"),
+        text: extendFlat({}, barAttrs.text, {}),
+        hovertext: extendFlat({}, barAttrs.hovertext, {}),
+        orientation: barAttrs.orientation,
+        histfunc: {
+          valType: "enumerated",
+          values: ["count", "sum", "avg", "min", "max"],
+          dflt: "count",
+          editType: "calc"
+        },
+        histnorm: {
+          valType: "enumerated",
+          values: ["", "percent", "probability", "density", "probability density"],
+          dflt: "",
+          editType: "calc"
+        },
+        cumulative: {
+          enabled: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc"
+          },
+          direction: {
+            valType: "enumerated",
+            values: ["increasing", "decreasing"],
+            dflt: "increasing",
+            editType: "calc"
+          },
+          currentbin: {
+            valType: "enumerated",
+            values: ["include", "exclude", "half"],
+            dflt: "include",
+            editType: "calc"
+          },
+          editType: "calc"
+        },
+        nbinsx: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc"
+        },
+        xbins: makeBinAttrs("x", true),
+        nbinsy: {
+          valType: "integer",
+          min: 0,
+          dflt: 0,
+          editType: "calc"
+        },
+        ybins: makeBinAttrs("y", true),
+        autobinx: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc"
+        },
+        autobiny: {
+          valType: "boolean",
+          dflt: null,
+          editType: "calc"
+        },
+        bingroup: {
+          valType: "string",
+          dflt: "",
+          editType: "calc"
+        },
+        hovertemplate: hovertemplateAttrs({}, {
+          keys: constants.eventDataKeys
+        }),
+        texttemplate: texttemplateAttrs({
+          arrayOk: false,
+          editType: "plot"
+        }, {
+          keys: ["label", "value"]
+        }),
+        textposition: extendFlat({}, barAttrs.textposition, {
+          arrayOk: false
+        }),
+        textfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        outsidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        insidetextfont: fontAttrs({
+          arrayOk: false,
+          editType: "plot",
+          colorEditType: "style"
+        }),
+        insidetextanchor: barAttrs.insidetextanchor,
+        textangle: barAttrs.textangle,
+        cliponaxis: barAttrs.cliponaxis,
+        constraintext: barAttrs.constraintext,
+        marker: barAttrs.marker,
+        offsetgroup: barAttrs.offsetgroup,
+        alignmentgroup: barAttrs.alignmentgroup,
+        selected: barAttrs.selected,
+        unselected: barAttrs.unselected,
+        zorder: barAttrs.zorder
+      };
+    }
+  });
+
+  // src/traces/heatmap/attributes.js
+  var require_attributes25 = __commonJS({
+    "src/traces/heatmap/attributes.js"(exports, module) {
+      "use strict";
+      var scatterAttrs = require_attributes12();
+      var baseAttrs = require_attributes2();
+      var fontAttrs = require_font_attributes();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
           z: {
             valType: "data_array",
             editType: "calc"
           },
-          geojson: extendFlat({}, scatterGeoAttrs.geojson, {}),
-          featureidkey: scatterGeoAttrs.featureidkey,
-          text: extendFlat({}, scatterGeoAttrs.text, {}),
-          hovertext: extendFlat({}, scatterGeoAttrs.hovertext, {}),
+          x: extendFlat({}, scatterAttrs.x, { impliedEdits: { xtype: "array" } }),
+          x0: extendFlat({}, scatterAttrs.x0, { impliedEdits: { xtype: "scaled" } }),
+          dx: extendFlat({}, scatterAttrs.dx, { impliedEdits: { xtype: "scaled" } }),
+          y: extendFlat({}, scatterAttrs.y, { impliedEdits: { ytype: "array" } }),
+          y0: extendFlat({}, scatterAttrs.y0, { impliedEdits: { ytype: "scaled" } }),
+          dy: extendFlat({}, scatterAttrs.dy, { impliedEdits: { ytype: "scaled" } }),
+          xperiod: extendFlat({}, scatterAttrs.xperiod, { impliedEdits: { xtype: "scaled" } }),
+          yperiod: extendFlat({}, scatterAttrs.yperiod, { impliedEdits: { ytype: "scaled" } }),
+          xperiod0: extendFlat({}, scatterAttrs.xperiod0, { impliedEdits: { xtype: "scaled" } }),
+          yperiod0: extendFlat({}, scatterAttrs.yperiod0, { impliedEdits: { ytype: "scaled" } }),
+          xperiodalignment: extendFlat({}, scatterAttrs.xperiodalignment, { impliedEdits: { xtype: "scaled" } }),
+          yperiodalignment: extendFlat({}, scatterAttrs.yperiodalignment, { impliedEdits: { ytype: "scaled" } }),
+          text: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          hovertext: {
+            valType: "data_array",
+            editType: "calc"
+          },
+          transpose: {
+            valType: "boolean",
+            dflt: false,
+            editType: "calc"
+          },
+          xtype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          ytype: {
+            valType: "enumerated",
+            values: ["array", "scaled"],
+            editType: "calc+clearAxisTypes"
+          },
+          zsmooth: {
+            valType: "enumerated",
+            values: ["fast", "best", false],
+            dflt: false,
+            editType: "calc"
+          },
+          hoverongaps: {
+            valType: "boolean",
+            dflt: true,
+            editType: "none"
+          },
+          connectgaps: {
+            valType: "boolean",
+            editType: "calc"
+          },
+          xgap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          ygap: {
+            valType: "number",
+            dflt: 0,
+            min: 0,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs(),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
+            editType: "plot"
+          }, {
+            keys: ["x", "y", "z", "text"]
+          }),
+          textfont: fontAttrs({
+            editType: "plot",
+            autoSize: true,
+            autoColor: true,
+            colorEditType: "style"
+          }),
+          showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false }),
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/traces/histogram2d/attributes.js
+  var require_attributes26 = __commonJS({
+    "src/traces/histogram2d/attributes.js"(exports, module) {
+      "use strict";
+      var histogramAttrs = require_attributes24();
+      var makeBinAttrs = require_bin_attributes();
+      var heatmapAttrs = require_attributes25();
+      var baseAttrs = require_attributes2();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var hovertemplateAttrs = require_template_attributes().hovertemplateAttrs;
+      var texttemplateAttrs = require_template_attributes().texttemplateAttrs;
+      var colorScaleAttrs = require_attributes8();
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogramAttrs.x,
+          y: histogramAttrs.y,
+          z: {
+            valType: "data_array",
+            editType: "calc"
+          },
           marker: {
-            line: {
-              color: extendFlat({}, scatterGeoMarkerLineAttrs.color, { dflt: defaultLine }),
-              width: extendFlat({}, scatterGeoMarkerLineAttrs.width, { dflt: 1 }),
+            color: {
+              valType: "data_array",
               editType: "calc"
-            },
-            opacity: {
-              valType: "number",
-              arrayOk: true,
-              min: 0,
-              max: 1,
-              dflt: 1,
-              editType: "style"
             },
             editType: "calc"
           },
-          selected: {
-            marker: {
-              opacity: scatterGeoAttrs.selected.marker.opacity,
-              editType: "plot"
-            },
+          histnorm: histogramAttrs.histnorm,
+          histfunc: histogramAttrs.histfunc,
+          nbinsx: histogramAttrs.nbinsx,
+          xbins: makeBinAttrs("x"),
+          nbinsy: histogramAttrs.nbinsy,
+          ybins: makeBinAttrs("y"),
+          autobinx: histogramAttrs.autobinx,
+          autobiny: histogramAttrs.autobiny,
+          bingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xbingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          ybingroup: extendFlat({}, histogramAttrs.bingroup, {}),
+          xgap: heatmapAttrs.xgap,
+          ygap: heatmapAttrs.ygap,
+          zsmooth: heatmapAttrs.zsmooth,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: hovertemplateAttrs({}, { keys: "z" }),
+          texttemplate: texttemplateAttrs({
+            arrayOk: false,
             editType: "plot"
-          },
-          unselected: {
-            marker: {
-              opacity: scatterGeoAttrs.unselected.marker.opacity,
-              editType: "plot"
-            },
-            editType: "plot"
-          },
-          hoverinfo: extendFlat({}, baseAttrs.hoverinfo, {
-            editType: "calc",
-            flags: ["location", "z", "text", "name"]
+          }, {
+            keys: "z"
           }),
-          hovertemplate: hovertemplateAttrs(),
+          textfont: heatmapAttrs.textfont,
           showlegend: extendFlat({}, baseAttrs.showlegend, { dflt: false })
+        },
+        colorScaleAttrs("", { cLetter: "z", autoColorDflt: false })
+      );
+    }
+  });
+
+  // src/constants/filter_ops.js
+  var require_filter_ops = __commonJS({
+    "src/constants/filter_ops.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        COMPARISON_OPS: ["=", "!=", "<", ">=", ">", "<="],
+        COMPARISON_OPS2: ["=", "<", ">=", ">", "<="],
+        INTERVAL_OPS: ["[]", "()", "[)", "(]", "][", ")(", "](", ")["],
+        SET_OPS: ["{}", "}{"],
+        CONSTRAINT_REDUCTION: {
+          // for contour constraints, open/closed endpoints are equivalent
+          "=": "=",
+          "<": "<",
+          "<=": "<",
+          ">": ">",
+          ">=": ">",
+          "[]": "[]",
+          "()": "[]",
+          "[)": "[]",
+          "(]": "[]",
+          "][": "][",
+          ")(": "][",
+          "](": "][",
+          ")[": "]["
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/attributes.js
+  var require_attributes27 = __commonJS({
+    "src/traces/contour/attributes.js"(exports, module) {
+      "use strict";
+      var heatmapAttrs = require_attributes25();
+      var scatterAttrs = require_attributes12();
+      var axisFormat = require_axis_format_attributes();
+      var axisHoverFormat = axisFormat.axisHoverFormat;
+      var descriptionOnlyNumbers = axisFormat.descriptionOnlyNumbers;
+      var colorScaleAttrs = require_attributes8();
+      var dash = require_attributes4().dash;
+      var fontAttrs = require_font_attributes();
+      var extendFlat = require_extend().extendFlat;
+      var filterOps = require_filter_ops();
+      var COMPARISON_OPS2 = filterOps.COMPARISON_OPS2;
+      var INTERVAL_OPS = filterOps.INTERVAL_OPS;
+      var scatterLineAttrs = scatterAttrs.line;
+      module.exports = extendFlat(
+        {
+          z: heatmapAttrs.z,
+          x: heatmapAttrs.x,
+          x0: heatmapAttrs.x0,
+          dx: heatmapAttrs.dx,
+          y: heatmapAttrs.y,
+          y0: heatmapAttrs.y0,
+          dy: heatmapAttrs.dy,
+          xperiod: heatmapAttrs.xperiod,
+          yperiod: heatmapAttrs.yperiod,
+          xperiod0: scatterAttrs.xperiod0,
+          yperiod0: scatterAttrs.yperiod0,
+          xperiodalignment: heatmapAttrs.xperiodalignment,
+          yperiodalignment: heatmapAttrs.yperiodalignment,
+          text: heatmapAttrs.text,
+          hovertext: heatmapAttrs.hovertext,
+          transpose: heatmapAttrs.transpose,
+          xtype: heatmapAttrs.xtype,
+          ytype: heatmapAttrs.ytype,
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: heatmapAttrs.hovertemplate,
+          texttemplate: extendFlat({}, heatmapAttrs.texttemplate, {}),
+          textfont: extendFlat({}, heatmapAttrs.textfont, {}),
+          hoverongaps: heatmapAttrs.hoverongaps,
+          connectgaps: extendFlat({}, heatmapAttrs.connectgaps, {}),
+          fillcolor: {
+            valType: "color",
+            editType: "calc"
+          },
+          autocontour: {
+            valType: "boolean",
+            dflt: true,
+            editType: "calc",
+            impliedEdits: {
+              "contours.start": void 0,
+              "contours.end": void 0,
+              "contours.size": void 0
+            }
+          },
+          ncontours: {
+            valType: "integer",
+            dflt: 15,
+            min: 1,
+            editType: "calc"
+          },
+          contours: {
+            type: {
+              valType: "enumerated",
+              values: ["levels", "constraint"],
+              dflt: "levels",
+              editType: "calc"
+            },
+            start: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            end: {
+              valType: "number",
+              dflt: null,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            size: {
+              valType: "number",
+              dflt: null,
+              min: 0,
+              editType: "plot",
+              impliedEdits: { "^autocontour": false }
+            },
+            thresholds: {
+              valType: "data_array",
+              dflt: null,
+              editType: "calc",
+              impliedEdits: { "^autocontour": false }
+            },
+            coloring: {
+              valType: "enumerated",
+              values: ["fill", "heatmap", "lines", "none"],
+              dflt: "fill",
+              editType: "calc"
+            },
+            showlines: {
+              valType: "boolean",
+              dflt: true,
+              editType: "plot"
+            },
+            showlabels: {
+              valType: "boolean",
+              dflt: false,
+              editType: "plot"
+            },
+            labelfont: fontAttrs({
+              editType: "plot",
+              colorEditType: "style"
+            }),
+            labelformat: {
+              valType: "string",
+              dflt: "",
+              editType: "plot",
+              description: descriptionOnlyNumbers("contour label")
+            },
+            operation: {
+              valType: "enumerated",
+              values: [].concat(COMPARISON_OPS2).concat(INTERVAL_OPS),
+              dflt: "=",
+              editType: "calc"
+            },
+            value: {
+              valType: "any",
+              dflt: 0,
+              editType: "calc"
+            },
+            editType: "calc",
+            impliedEdits: { autocontour: false }
+          },
+          line: {
+            color: extendFlat({}, scatterLineAttrs.color, {
+              editType: "style+colorbars"
+            }),
+            width: {
+              valType: "number",
+              min: 0,
+              editType: "style+colorbars"
+            },
+            dash,
+            smoothing: extendFlat({}, scatterLineAttrs.smoothing, {}),
+            editType: "plot"
+          },
+          zorder: scatterAttrs.zorder
+        },
+        colorScaleAttrs("", {
+          cLetter: "z",
+          autoColorDflt: false,
+          editTypeOverride: "calc"
+        })
+      );
+    }
+  });
+
+  // src/traces/histogram2dcontour/attributes.js
+  var require_attributes28 = __commonJS({
+    "src/traces/histogram2dcontour/attributes.js"(exports, module) {
+      "use strict";
+      var histogram2dAttrs = require_attributes26();
+      var contourAttrs = require_attributes27();
+      var colorScaleAttrs = require_attributes8();
+      var axisHoverFormat = require_axis_format_attributes().axisHoverFormat;
+      var extendFlat = require_extend().extendFlat;
+      module.exports = extendFlat(
+        {
+          x: histogram2dAttrs.x,
+          y: histogram2dAttrs.y,
+          z: histogram2dAttrs.z,
+          marker: histogram2dAttrs.marker,
+          histnorm: histogram2dAttrs.histnorm,
+          histfunc: histogram2dAttrs.histfunc,
+          nbinsx: histogram2dAttrs.nbinsx,
+          xbins: histogram2dAttrs.xbins,
+          nbinsy: histogram2dAttrs.nbinsy,
+          ybins: histogram2dAttrs.ybins,
+          autobinx: histogram2dAttrs.autobinx,
+          autobiny: histogram2dAttrs.autobiny,
+          bingroup: histogram2dAttrs.bingroup,
+          xbingroup: histogram2dAttrs.xbingroup,
+          ybingroup: histogram2dAttrs.ybingroup,
+          autocontour: contourAttrs.autocontour,
+          ncontours: contourAttrs.ncontours,
+          contours: contourAttrs.contours,
+          line: {
+            color: contourAttrs.line.color,
+            width: extendFlat({}, contourAttrs.line.width, {
+              dflt: 0.5
+            }),
+            dash: contourAttrs.line.dash,
+            smoothing: contourAttrs.line.smoothing,
+            editType: "plot"
+          },
+          xhoverformat: axisHoverFormat("x"),
+          yhoverformat: axisHoverFormat("y"),
+          zhoverformat: axisHoverFormat("z", 1),
+          hovertemplate: histogram2dAttrs.hovertemplate,
+          texttemplate: contourAttrs.texttemplate,
+          textfont: contourAttrs.textfont
         },
         colorScaleAttrs("", {
           cLetter: "z",
@@ -69630,8441 +59826,4253 @@ var Plotly = (() => {
     }
   });
 
-  // src/traces/choropleth/defaults.js
-  var require_defaults20 = __commonJS({
-    "src/traces/choropleth/defaults.js"(exports, module) {
+  // src/traces/histogram2d/sample_defaults.js
+  var require_sample_defaults = __commonJS({
+    "src/traces/histogram2d/sample_defaults.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      module.exports = function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
+        var x = coerce("x");
+        var y = coerce("y");
+        var xlen = Lib.minRowLength(x);
+        var ylen = Lib.minRowLength(y);
+        if (!xlen || !ylen) {
+          traceOut.visible = false;
+          return;
+        }
+        traceOut._length = Math.min(xlen, ylen);
+        var handleCalendarDefaults = Registry.getComponentMethod("calendars", "handleTraceDefaults");
+        handleCalendarDefaults(traceIn, traceOut, ["x", "y"], layout);
+        var hasAggregationData = coerce("z") || coerce("marker.color");
+        if (hasAggregationData) coerce("histfunc");
+        coerce("histnorm");
+        coerce("autobinx");
+        coerce("autobiny");
+      };
+    }
+  });
+
+  // src/traces/contour/contours_defaults.js
+  var require_contours_defaults = __commonJS({
+    "src/traces/contour/contours_defaults.js"(exports, module) {
+      "use strict";
+      module.exports = function handleContourDefaults(traceIn, traceOut, coerce, coerce2) {
+        var contourThresholds = coerce("contours.thresholds");
+        var hasThresholds = contourThresholds && contourThresholds.length > 0;
+        if (hasThresholds) {
+          traceOut.autocontour = false;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Contour defaults: using custom thresholds (" + contourThresholds.length + " levels)");
+          }
+          return;
+        }
+        var contourStart = coerce2("contours.start");
+        var contourEnd = coerce2("contours.end");
+        var missingEnd = contourStart === false || contourEnd === false;
+        var contourSize = coerce("contours.size");
+        var autoContour;
+        if (missingEnd) autoContour = traceOut.autocontour = true;
+        else autoContour = coerce("autocontour", false);
+        if (autoContour || !contourSize) coerce("ncontours");
+      };
+    }
+  });
+
+  // src/traces/contour/label_defaults.js
+  var require_label_defaults = __commonJS({
+    "src/traces/contour/label_defaults.js"(exports, module) {
       "use strict";
       var Lib = require_lib();
+      module.exports = function handleLabelDefaults(coerce, layout, lineColor, opts) {
+        if (!opts) opts = {};
+        var showLabels = coerce("contours.showlabels");
+        if (showLabels) {
+          var globalFont = layout.font;
+          Lib.coerceFont(coerce, "contours.labelfont", globalFont, { overrideDflt: {
+            color: lineColor
+          } });
+          coerce("contours.labelformat");
+        }
+        if (opts.hasHover !== false) coerce("zhoverformat");
+      };
+    }
+  });
+
+  // src/traces/contour/style_defaults.js
+  var require_style_defaults = __commonJS({
+    "src/traces/contour/style_defaults.js"(exports, module) {
+      "use strict";
       var colorscaleDefaults = require_defaults2();
-      var attributes = require_attributes24();
+      var handleLabelDefaults = require_label_defaults();
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, layout, opts) {
+        var coloring = coerce("contours.coloring");
+        var showLines;
+        var lineColor = "";
+        if (coloring === "fill") showLines = coerce("contours.showlines");
+        if (showLines !== false) {
+          if (coloring !== "lines") lineColor = coerce("line.color", "#000");
+          coerce("line.width", 0.5);
+          coerce("line.dash");
+        }
+        if (coloring !== "none") {
+          if (traceIn.showlegend !== true) traceOut.showlegend = false;
+          traceOut._dfltShowLegend = false;
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "", cLetter: "z" }
+          );
+        }
+        coerce("line.smoothing");
+        handleLabelDefaults(coerce, layout, lineColor, opts);
+      };
+    }
+  });
+
+  // src/traces/heatmap/label_defaults.js
+  var require_label_defaults2 = __commonJS({
+    "src/traces/heatmap/label_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function handleHeatmapLabelDefaults(coerce, layout) {
+        coerce("texttemplate");
+        var fontDflt = Lib.extendFlat({}, layout.font, {
+          color: "auto",
+          size: "auto"
+        });
+        Lib.coerceFont(coerce, "textfont", fontDflt);
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/defaults.js
+  var require_defaults19 = __commonJS({
+    "src/traces/histogram2dcontour/defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var handleSampleDefaults = require_sample_defaults();
+      var handleContoursDefaults = require_contours_defaults();
+      var handleStyleDefaults = require_style_defaults();
+      var handleHeatmapLabelDefaults = require_label_defaults2();
+      var attributes = require_attributes28();
       module.exports = function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
         function coerce(attr, dflt) {
           return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
         }
-        var locations = coerce("locations");
-        var z = coerce("z");
-        if (!(locations && locations.length && Lib.isArrayOrTypedArray(z) && z.length)) {
+        function coerce2(attr) {
+          return Lib.coerce2(traceIn, traceOut, attributes, attr);
+        }
+        handleSampleDefaults(traceIn, traceOut, coerce, layout);
+        if (traceOut.visible === false) return;
+        handleContoursDefaults(traceIn, traceOut, coerce, coerce2);
+        handleStyleDefaults(traceIn, traceOut, coerce, layout);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("hovertemplate");
+        if (traceOut.contours && traceOut.contours.coloring === "heatmap") {
+          handleHeatmapLabelDefaults(coerce, layout);
+        }
+      };
+    }
+  });
+
+  // src/traces/bar/style_defaults.js
+  var require_style_defaults2 = __commonJS({
+    "src/traces/bar/style_defaults.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var hasColorscale = require_helpers().hasColorscale;
+      var colorscaleDefaults = require_defaults2();
+      var coercePattern = require_lib().coercePattern;
+      module.exports = function handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout) {
+        var markerColor = coerce("marker.color", defaultColor);
+        var hasMarkerColorscale = hasColorscale(traceIn, "marker");
+        if (hasMarkerColorscale) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.color", Color.defaultLine);
+        if (hasColorscale(traceIn, "marker.line")) {
+          colorscaleDefaults(
+            traceIn,
+            traceOut,
+            layout,
+            coerce,
+            { prefix: "marker.line.", cLetter: "c" }
+          );
+        }
+        coerce("marker.line.width");
+        coerce("marker.opacity");
+        coercePattern(coerce, "marker.pattern", markerColor, hasMarkerColorscale);
+        coerce("selected.marker.color");
+        coerce("unselected.marker.color");
+      };
+    }
+  });
+
+  // src/traces/bar/defaults.js
+  var require_defaults20 = __commonJS({
+    "src/traces/bar/defaults.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Color = require_color();
+      var Registry = require_registry();
+      var handleXYDefaults = require_xy_defaults();
+      var handlePeriodDefaults = require_period_defaults();
+      var handleStyleDefaults = require_style_defaults2();
+      var handleGroupingDefaults = require_grouping_defaults();
+      var attributes = require_attributes23();
+      var coerceFont = Lib.coerceFont;
+      function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceIn, traceOut, attributes, attr, dflt);
+        }
+        var len = handleXYDefaults(traceIn, traceOut, layout, coerce);
+        if (!len) {
           traceOut.visible = false;
           return;
         }
-        traceOut._length = Math.min(locations.length, z.length);
-        var geojson = coerce("geojson");
-        var locationmodeDflt;
-        if (typeof geojson === "string" && geojson !== "" || Lib.isPlainObject(geojson)) {
-          locationmodeDflt = "geojson-id";
-        }
-        var locationMode = coerce("locationmode", locationmodeDflt);
-        if (locationMode === "geojson-id") {
-          coerce("featureidkey");
-        }
+        handlePeriodDefaults(traceIn, traceOut, layout, coerce);
+        coerce("xhoverformat");
+        coerce("yhoverformat");
+        coerce("zorder");
+        coerce("orientation", traceOut.x && !traceOut.y ? "h" : "v");
+        coerce("base");
+        coerce("offset");
+        coerce("width");
         coerce("text");
         coerce("hovertext");
         coerce("hovertemplate");
-        var mlw = coerce("marker.line.width");
-        if (mlw) coerce("marker.line.color");
-        coerce("marker.opacity");
-        colorscaleDefaults(traceIn, traceOut, layout, coerce, { prefix: "", cLetter: "z" });
+        var textposition = coerce("textposition");
+        handleText(traceIn, traceOut, layout, coerce, textposition, {
+          moduleHasSelected: true,
+          moduleHasUnselected: true,
+          moduleHasConstrain: true,
+          moduleHasCliponaxis: true,
+          moduleHasTextangle: true,
+          moduleHasInsideanchor: true
+        });
+        handleStyleDefaults(traceIn, traceOut, coerce, defaultColor, layout);
+        var lineColor = (traceOut.marker.line || {}).color;
+        var errorBarsSupplyDefaults = Registry.getComponentMethod("errorbars", "supplyDefaults");
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "y" });
+        errorBarsSupplyDefaults(traceIn, traceOut, lineColor || Color.defaultLine, { axis: "x", inherit: "y" });
         Lib.coerceSelectionMarkerOpacity(traceOut, coerce);
-      };
-    }
-  });
-
-  // src/traces/heatmap/colorbar.js
-  var require_colorbar2 = __commonJS({
-    "src/traces/heatmap/colorbar.js"(exports, module) {
-      "use strict";
+      }
+      function crossTraceDefaults(fullData, fullLayout) {
+        var traceIn, traceOut;
+        function coerce(attr, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, attributes, attr, dflt);
+        }
+        for (var i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceOut.type === "bar") {
+            traceIn = traceOut._input;
+            var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+            if (traceOut.marker) {
+              traceOut.marker.cornerradius = validateCornerradius(r);
+            }
+            handleGroupingDefaults(traceIn, traceOut, fullLayout, coerce, fullLayout.barmode);
+          }
+        }
+      }
+      function validateCornerradius(r) {
+        if (isNumeric(r)) {
+          r = +r;
+          if (r >= 0) return r;
+        } else if (typeof r === "string") {
+          r = r.trim();
+          if (r.slice(-1) === "%" && isNumeric(r.slice(0, -1))) {
+            r = +r.slice(0, -1);
+            if (r >= 0) return r + "%";
+          }
+        }
+        return void 0;
+      }
+      function handleText(traceIn, traceOut, layout, coerce, textposition, opts) {
+        opts = opts || {};
+        var moduleHasSelected = !(opts.moduleHasSelected === false);
+        var moduleHasUnselected = !(opts.moduleHasUnselected === false);
+        var moduleHasConstrain = !(opts.moduleHasConstrain === false);
+        var moduleHasCliponaxis = !(opts.moduleHasCliponaxis === false);
+        var moduleHasTextangle = !(opts.moduleHasTextangle === false);
+        var moduleHasInsideanchor = !(opts.moduleHasInsideanchor === false);
+        var hasPathbar = !!opts.hasPathbar;
+        var hasBoth = Array.isArray(textposition) || textposition === "auto";
+        var hasInside = hasBoth || textposition === "inside";
+        var hasOutside = hasBoth || textposition === "outside";
+        if (hasInside || hasOutside) {
+          var dfltFont = coerceFont(coerce, "textfont", layout.font);
+          var insideTextFontDefault = Lib.extendFlat({}, dfltFont);
+          var isTraceTextfontColorSet = traceIn.textfont && traceIn.textfont.color;
+          var isColorInheritedFromLayoutFont = !isTraceTextfontColorSet;
+          if (isColorInheritedFromLayoutFont) {
+            delete insideTextFontDefault.color;
+          }
+          coerceFont(coerce, "insidetextfont", insideTextFontDefault);
+          if (hasPathbar) {
+            var pathbarTextFontDefault = Lib.extendFlat({}, dfltFont);
+            if (isColorInheritedFromLayoutFont) {
+              delete pathbarTextFontDefault.color;
+            }
+            coerceFont(coerce, "pathbar.textfont", pathbarTextFontDefault);
+          }
+          if (hasOutside) coerceFont(coerce, "outsidetextfont", dfltFont);
+          if (moduleHasSelected) coerce("selected.textfont.color");
+          if (moduleHasUnselected) coerce("unselected.textfont.color");
+          if (moduleHasConstrain) coerce("constraintext");
+          if (moduleHasCliponaxis) coerce("cliponaxis");
+          if (moduleHasTextangle) coerce("textangle");
+          coerce("texttemplate");
+        }
+        if (hasInside) {
+          if (moduleHasInsideanchor) coerce("insidetextanchor");
+        }
+      }
       module.exports = {
-        min: "zmin",
-        max: "zmax"
+        supplyDefaults,
+        crossTraceDefaults,
+        handleText,
+        validateCornerradius
       };
     }
   });
 
-  // src/traces/choropleth/calc.js
-  var require_calc6 = __commonJS({
-    "src/traces/choropleth/calc.js"(exports, module) {
+  // src/traces/histogram/cross_trace_defaults.js
+  var require_cross_trace_defaults3 = __commonJS({
+    "src/traces/histogram/cross_trace_defaults.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var axisIds = require_axis_ids();
+      var traceIs = require_registry().traceIs;
+      var handleGroupingDefaults = require_grouping_defaults();
+      var validateCornerradius = require_defaults20().validateCornerradius;
+      var nestedProperty = Lib.nestedProperty;
+      var getAxisGroup = require_constraints().getAxisGroup;
+      var BINATTRS = [
+        { aStr: { x: "xbins.start", y: "ybins.start" }, name: "start" },
+        { aStr: { x: "xbins.end", y: "ybins.end" }, name: "end" },
+        { aStr: { x: "xbins.size", y: "ybins.size" }, name: "size" },
+        { aStr: { x: "nbinsx", y: "nbinsy" }, name: "nbins" }
+      ];
+      var BINDIRECTIONS = ["x", "y"];
+      module.exports = function crossTraceDefaults(fullData, fullLayout) {
+        var allBinOpts = fullLayout._histogramBinOpts = {};
+        var histTraces = [];
+        var mustMatchTracesLookup = {};
+        var otherTracesList = [];
+        var traceOut, traces, groupName, binDir;
+        var i, j, k;
+        function coerce(attr2, dflt) {
+          return Lib.coerce(traceOut._input, traceOut, traceOut._module.attributes, attr2, dflt);
+        }
+        function orientation2binDir(traceOut2) {
+          return traceOut2.orientation === "v" ? "x" : "y";
+        }
+        function getAxisType(traceOut2, binDir2) {
+          var ax = axisIds.getFromTrace({ _fullLayout: fullLayout }, traceOut2, binDir2);
+          return ax.type;
+        }
+        function fillBinOpts(traceOut2, groupName2, binDir2) {
+          var fallbackGroupName = traceOut2.uid + "__" + binDir2;
+          if (!groupName2) groupName2 = fallbackGroupName;
+          var axType = getAxisType(traceOut2, binDir2);
+          var calendar = traceOut2[binDir2 + "calendar"] || "";
+          var binOpts2 = allBinOpts[groupName2];
+          var needsNewItem = true;
+          if (binOpts2) {
+            if (axType === binOpts2.axType && calendar === binOpts2.calendar) {
+              needsNewItem = false;
+              binOpts2.traces.push(traceOut2);
+              binOpts2.dirs.push(binDir2);
+            } else {
+              groupName2 = fallbackGroupName;
+              if (axType !== binOpts2.axType) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set on a",
+                  "type:" + axType,
+                  "axis",
+                  "with bins on",
+                  "type:" + binOpts2.axType,
+                  "axis."
+                ].join(" "));
+              }
+              if (calendar !== binOpts2.calendar) {
+                Lib.warn([
+                  "Attempted to group the bins of trace",
+                  traceOut2.index,
+                  "set with a",
+                  calendar,
+                  "calendar",
+                  "with bins",
+                  binOpts2.calendar ? "on a " + binOpts2.calendar + " calendar" : "w/o a set calendar"
+                ].join(" "));
+              }
+            }
+          }
+          if (needsNewItem) {
+            allBinOpts[groupName2] = {
+              traces: [traceOut2],
+              dirs: [binDir2],
+              axType,
+              calendar: traceOut2[binDir2 + "calendar"] || ""
+            };
+          }
+          traceOut2["_" + binDir2 + "bingroup"] = groupName2;
+        }
+        for (i = 0; i < fullData.length; i++) {
+          traceOut = fullData[i];
+          if (traceIs(traceOut, "histogram")) {
+            histTraces.push(traceOut);
+            delete traceOut._xautoBinFinished;
+            delete traceOut._yautoBinFinished;
+            if (traceOut.type === "histogram") {
+              var r = coerce("marker.cornerradius", fullLayout.barcornerradius);
+              if (traceOut.marker) {
+                traceOut.marker.cornerradius = validateCornerradius(r);
+              }
+            }
+            if (!traceIs(traceOut, "2dMap")) {
+              handleGroupingDefaults(traceOut._input, traceOut, fullLayout, coerce, fullLayout.barmode);
+            }
+          }
+        }
+        var alignmentOpts = fullLayout._alignmentOpts || {};
+        for (i = 0; i < histTraces.length; i++) {
+          traceOut = histTraces[i];
+          groupName = "";
+          if (!traceIs(traceOut, "2dMap")) {
+            binDir = orientation2binDir(traceOut);
+            if (fullLayout.barmode === "group" && traceOut.alignmentgroup) {
+              var pa = traceOut[binDir + "axis"];
+              var aGroupId = getAxisGroup(fullLayout, pa) + traceOut.orientation;
+              if ((alignmentOpts[aGroupId] || {})[traceOut.alignmentgroup]) {
+                groupName = aGroupId;
+              }
+            }
+            if (!groupName && fullLayout.barmode !== "overlay") {
+              groupName = getAxisGroup(fullLayout, traceOut.xaxis) + getAxisGroup(fullLayout, traceOut.yaxis) + orientation2binDir(traceOut);
+            }
+          }
+          if (groupName) {
+            if (!mustMatchTracesLookup[groupName]) {
+              mustMatchTracesLookup[groupName] = [];
+            }
+            mustMatchTracesLookup[groupName].push(traceOut);
+          } else {
+            otherTracesList.push(traceOut);
+          }
+        }
+        for (groupName in mustMatchTracesLookup) {
+          traces = mustMatchTracesLookup[groupName];
+          if (traces.length === 1) {
+            otherTracesList.push(traces[0]);
+            continue;
+          }
+          var binGroupFound = false;
+          if (traces.length) {
+            traceOut = traces[0];
+            binGroupFound = coerce("bingroup");
+          }
+          groupName = binGroupFound || groupName;
+          for (i = 0; i < traces.length; i++) {
+            traceOut = traces[i];
+            var bingroupIn = traceOut._input.bingroup;
+            if (bingroupIn && bingroupIn !== groupName) {
+              Lib.warn([
+                "Trace",
+                traceOut.index,
+                "must match",
+                "within bingroup",
+                groupName + ".",
+                "Ignoring its bingroup:",
+                bingroupIn,
+                "setting."
+              ].join(" "));
+            }
+            traceOut.bingroup = groupName;
+            fillBinOpts(traceOut, groupName, orientation2binDir(traceOut));
+          }
+        }
+        for (i = 0; i < otherTracesList.length; i++) {
+          traceOut = otherTracesList[i];
+          var binGroup = coerce("bingroup");
+          if (traceIs(traceOut, "2dMap")) {
+            for (k = 0; k < 2; k++) {
+              binDir = BINDIRECTIONS[k];
+              var binGroupInDir = coerce(
+                binDir + "bingroup",
+                binGroup ? binGroup + "__" + binDir : null
+              );
+              fillBinOpts(traceOut, binGroupInDir, binDir);
+            }
+          } else {
+            fillBinOpts(traceOut, binGroup, orientation2binDir(traceOut));
+          }
+        }
+        for (groupName in allBinOpts) {
+          var binOpts = allBinOpts[groupName];
+          traces = binOpts.traces;
+          for (j = 0; j < BINATTRS.length; j++) {
+            var attrSpec = BINATTRS[j];
+            var attr = attrSpec.name;
+            var aStr;
+            var autoVals;
+            if (attr === "nbins" && binOpts.sizeFound) continue;
+            for (i = 0; i < traces.length; i++) {
+              traceOut = traces[i];
+              binDir = binOpts.dirs[i];
+              aStr = attrSpec.aStr[binDir];
+              if (nestedProperty(traceOut._input, aStr).get() !== void 0) {
+                binOpts[attr] = coerce(aStr);
+                binOpts[attr + "Found"] = true;
+                break;
+              }
+              autoVals = (traceOut._autoBin || {})[binDir] || {};
+              if (autoVals[attr]) {
+                nestedProperty(traceOut, aStr).set(autoVals[attr]);
+              }
+            }
+            if (attr === "start" || attr === "end") {
+              for (; i < traces.length; i++) {
+                traceOut = traces[i];
+                if (traceOut["_" + binDir + "bingroup"]) {
+                  autoVals = (traceOut._autoBin || {})[binDir] || {};
+                  coerce(aStr, autoVals[attr]);
+                }
+              }
+            }
+            if (attr === "nbins" && !binOpts.sizeFound && !binOpts.nbinsFound) {
+              traceOut = traces[0];
+              binOpts[attr] = coerce(aStr);
+            }
+          }
+        }
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_functions.js
+  var require_bin_functions = __commonJS({
+    "src/traces/histogram/bin_functions.js"(exports, module) {
       "use strict";
       var isNumeric = require_fast_isnumeric();
-      var BADNUM = require_numerical().BADNUM;
-      var colorscaleCalc = require_calc();
-      var arraysToCalcdata = require_arrays_to_calcdata();
-      var calcSelection = require_calc_selection();
-      function isNonBlankString(v) {
-        return v && typeof v === "string";
-      }
-      module.exports = function calc(gd, trace) {
-        var len = trace._length;
-        var calcTrace = new Array(len);
-        var isValidLoc;
-        if (trace.geojson) {
-          isValidLoc = function(v) {
-            return isNonBlankString(v) || isNumeric(v);
-          };
-        } else {
-          isValidLoc = isNonBlankString;
-        }
-        for (var i = 0; i < len; i++) {
-          var calcPt = calcTrace[i] = {};
-          var loc = trace.locations[i];
-          var z = trace.z[i];
-          if (isValidLoc(loc) && isNumeric(z)) {
-            calcPt.loc = loc;
-            calcPt.z = z;
-          } else {
-            calcPt.loc = null;
-            calcPt.z = BADNUM;
+      module.exports = {
+        count: function(n, i, size) {
+          size[n]++;
+          return 1;
+        },
+        sum: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            size[n] += v;
+            return v;
           }
-          calcPt.index = i;
+          return 0;
+        },
+        avg: function(n, i, size, counterData, counts) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            size[n] += v;
+            counts[n]++;
+          }
+          return 0;
+        },
+        min: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            if (!isNumeric(size[n])) {
+              size[n] = v;
+              return v;
+            } else if (size[n] > v) {
+              var delta = v - size[n];
+              size[n] = v;
+              return delta;
+            }
+          }
+          return 0;
+        },
+        max: function(n, i, size, counterData) {
+          var v = counterData[i];
+          if (isNumeric(v)) {
+            v = Number(v);
+            if (!isNumeric(size[n])) {
+              size[n] = v;
+              return v;
+            } else if (size[n] < v) {
+              var delta = v - size[n];
+              size[n] = v;
+              return delta;
+            }
+          }
+          return 0;
         }
-        arraysToCalcdata(calcTrace, trace);
-        colorscaleCalc(gd, trace, {
-          vals: trace.z,
-          containerStr: "",
-          cLetter: "z"
-        });
-        calcSelection(calcTrace, trace);
-        return calcTrace;
       };
     }
   });
 
-  // src/traces/choropleth/style.js
-  var require_style5 = __commonJS({
-    "src/traces/choropleth/style.js"(exports, module) {
+  // src/traces/histogram/norm_functions.js
+  var require_norm_functions = __commonJS({
+    "src/traces/histogram/norm_functions.js"(exports, module) {
       "use strict";
-      var d3 = require_d3();
-      var Color = require_color();
-      var Drawing = require_drawing();
-      var Colorscale = require_colorscale();
-      function style(gd, calcTrace) {
-        if (calcTrace) styleTrace(gd, calcTrace);
-      }
-      function styleTrace(gd, calcTrace) {
-        var trace = calcTrace[0].trace;
-        var s = calcTrace[0].node3;
-        var locs = s.selectAll(".choroplethlocation");
-        var marker = trace.marker || {};
-        var markerLine = marker.line || {};
-        var sclFunc = Colorscale.makeColorScaleFuncFromTrace(trace);
-        locs.each(function(d) {
-          d3.select(this).attr("fill", sclFunc(d.z)).call(Color.stroke, d.mlc || markerLine.color).call(Drawing.dashLine, "", d.mlw || markerLine.width || 0).style("opacity", marker.opacity);
-        });
-        Drawing.selectedPointStyle(locs, trace);
-      }
-      function styleOnSelect(gd, calcTrace) {
-        var s = calcTrace[0].node3;
-        var trace = calcTrace[0].trace;
-        if (trace.selectedpoints) {
-          Drawing.selectedPointStyle(s.selectAll(".choroplethlocation"), trace);
+      module.exports = {
+        percent: function(size, total) {
+          var nMax = size.length;
+          var norm = 100 / total;
+          for (var n = 0; n < nMax; n++) size[n] *= norm;
+        },
+        probability: function(size, total) {
+          var nMax = size.length;
+          for (var n = 0; n < nMax; n++) size[n] /= total;
+        },
+        density: function(size, total, inc, yinc) {
+          var nMax = size.length;
+          yinc = yinc || 1;
+          for (var n = 0; n < nMax; n++) size[n] *= inc[n] * yinc;
+        },
+        "probability density": function(size, total, inc, yinc) {
+          var nMax = size.length;
+          if (yinc) total /= yinc;
+          for (var n = 0; n < nMax; n++) size[n] *= inc[n] / total;
+        }
+      };
+    }
+  });
+
+  // src/traces/histogram/average.js
+  var require_average = __commonJS({
+    "src/traces/histogram/average.js"(exports, module) {
+      "use strict";
+      module.exports = function doAvg(size, counts) {
+        var nMax = size.length;
+        var total = 0;
+        for (var i = 0; i < nMax; i++) {
+          if (counts[i]) {
+            size[i] /= counts[i];
+            total += size[i];
+          } else size[i] = null;
+        }
+        return total;
+      };
+    }
+  });
+
+  // src/traces/histogram/bin_label_vals.js
+  var require_bin_label_vals = __commonJS({
+    "src/traces/histogram/bin_label_vals.js"(exports, module) {
+      "use strict";
+      var numConstants = require_numerical();
+      var oneYear = numConstants.ONEAVGYEAR;
+      var oneMonth = numConstants.ONEAVGMONTH;
+      var oneDay = numConstants.ONEDAY;
+      var oneHour = numConstants.ONEHOUR;
+      var oneMin = numConstants.ONEMIN;
+      var oneSec = numConstants.ONESEC;
+      var tickIncrement = require_axes().tickIncrement;
+      module.exports = function getBinSpanLabelRound(leftGap, rightGap, binEdges, pa, calendar) {
+        var dv0 = -1.1 * rightGap;
+        var dv1 = -0.1 * rightGap;
+        var dv2 = leftGap - dv1;
+        var edge0 = binEdges[0];
+        var edge1 = binEdges[1];
+        var leftDigit = Math.min(
+          biggestDigitChanged(edge0 + dv1, edge0 + dv2, pa, calendar),
+          biggestDigitChanged(edge1 + dv1, edge1 + dv2, pa, calendar)
+        );
+        var rightDigit = Math.min(
+          biggestDigitChanged(edge0 + dv0, edge0 + dv1, pa, calendar),
+          biggestDigitChanged(edge1 + dv0, edge1 + dv1, pa, calendar)
+        );
+        var digit, disambiguateEdges;
+        if (leftDigit > rightDigit && rightDigit < Math.abs(edge1 - edge0) / 4e3) {
+          digit = leftDigit;
+          disambiguateEdges = false;
         } else {
-          styleTrace(gd, calcTrace);
+          digit = Math.min(leftDigit, rightDigit);
+          disambiguateEdges = true;
+        }
+        if (pa.type === "date" && digit > oneDay) {
+          var dashExclude = digit === oneYear ? 1 : 6;
+          var increment = digit === oneYear ? "M12" : "M1";
+          return function(v, isRightEdge) {
+            var dateStr = pa.c2d(v, oneYear, calendar);
+            var dashPos = dateStr.indexOf("-", dashExclude);
+            if (dashPos > 0) dateStr = dateStr.substr(0, dashPos);
+            var roundedV = pa.d2c(dateStr, 0, calendar);
+            if (roundedV < v) {
+              var nextV = tickIncrement(roundedV, increment, false, calendar);
+              if ((roundedV + nextV) / 2 < v + leftGap) roundedV = nextV;
+            }
+            if (isRightEdge && disambiguateEdges) {
+              return tickIncrement(roundedV, increment, true, calendar);
+            }
+            return roundedV;
+          };
+        }
+        return function(v, isRightEdge) {
+          var roundedV = digit * Math.round(v / digit);
+          if (roundedV + digit / 10 < v && roundedV + digit * 0.9 < v + leftGap) {
+            roundedV += digit;
+          }
+          if (isRightEdge && disambiguateEdges) {
+            roundedV -= digit;
+          }
+          return roundedV;
+        };
+      };
+      function biggestDigitChanged(v1, v2, pa, calendar) {
+        if (v1 * v2 <= 0) return Infinity;
+        var dv = Math.abs(v2 - v1);
+        var isDate = pa.type === "date";
+        var digit = biggestGuaranteedDigitChanged(dv, isDate);
+        for (var i = 0; i < 10; i++) {
+          var nextDigit = biggestGuaranteedDigitChanged(digit * 80, isDate);
+          if (digit === nextDigit) break;
+          if (didDigitChange(nextDigit, v1, v2, isDate, pa, calendar)) digit = nextDigit;
+          else break;
+        }
+        return digit;
+      }
+      function biggestGuaranteedDigitChanged(dv, isDate) {
+        if (isDate && dv > oneSec) {
+          if (dv > oneDay) {
+            if (dv > oneYear * 1.1) return oneYear;
+            if (dv > oneMonth * 1.1) return oneMonth;
+            return oneDay;
+          }
+          if (dv > oneHour) return oneHour;
+          if (dv > oneMin) return oneMin;
+          return oneSec;
+        }
+        return Math.pow(10, Math.floor(Math.log(dv) / Math.LN10));
+      }
+      function didDigitChange(digit, v1, v2, isDate, pa, calendar) {
+        if (isDate && digit > oneDay) {
+          var dateParts1 = dateParts(v1, pa, calendar);
+          var dateParts2 = dateParts(v2, pa, calendar);
+          var parti = digit === oneYear ? 0 : 1;
+          return dateParts1[parti] !== dateParts2[parti];
+        }
+        return Math.floor(v2 / digit) - Math.floor(v1 / digit) > 0.1;
+      }
+      function dateParts(v, pa, calendar) {
+        var parts = pa.c2d(v, oneYear, calendar).split("-");
+        if (parts[0] === "") {
+          parts.unshift();
+          parts[0] = "-" + parts[0];
+        }
+        return parts;
+      }
+    }
+  });
+
+  // src/traces/bar/arrays_to_calcdata.js
+  var require_arrays_to_calcdata2 = __commonJS({
+    "src/traces/bar/arrays_to_calcdata.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function arraysToCalcdata(cd, trace) {
+        for (var i = 0; i < cd.length; i++) cd[i].i = i;
+        Lib.mergeArray(trace.text, cd, "tx");
+        Lib.mergeArray(trace.hovertext, cd, "htx");
+        var marker = trace.marker;
+        if (marker) {
+          Lib.mergeArray(marker.opacity, cd, "mo", true);
+          Lib.mergeArray(marker.color, cd, "mc");
+          var markerLine = marker.line;
+          if (markerLine) {
+            Lib.mergeArray(markerLine.color, cd, "mlc");
+            Lib.mergeArrayCastPositive(markerLine.width, cd, "mlw");
+          }
+        }
+      };
+    }
+  });
+
+  // src/traces/histogram/calc.js
+  var require_calc5 = __commonJS({
+    "src/traces/histogram/calc.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var Registry = require_registry();
+      var Axes = require_axes();
+      var arraysToCalcdata = require_arrays_to_calcdata2();
+      var binFunctions = require_bin_functions();
+      var normFunctions = require_norm_functions();
+      var doAvg = require_average();
+      var getBinSpanLabelRound = require_bin_label_vals();
+      function calc(gd, trace) {
+        var pos = [];
+        var size = [];
+        var isHorizontal = trace.orientation === "h";
+        var pa = Axes.getFromId(gd, isHorizontal ? trace.yaxis : trace.xaxis);
+        var mainData = isHorizontal ? "y" : "x";
+        var counterData = { x: "y", y: "x" }[mainData];
+        var calendar = trace[mainData + "calendar"];
+        var cumulativeSpec = trace.cumulative;
+        var i;
+        var binsAndPos = calcAllAutoBins(gd, trace, pa, mainData);
+        var binSpec = binsAndPos[0];
+        var pos0 = binsAndPos[1];
+        var nonuniformBins = typeof binSpec.size === "string";
+        var binEdges = [];
+        var bins = nonuniformBins ? binEdges : binSpec;
+        var inc = [];
+        var counts = [];
+        var inputPoints = [];
+        var total = 0;
+        var norm = trace.histnorm;
+        var func = trace.histfunc;
+        var densityNorm = norm.indexOf("density") !== -1;
+        var i2, binEnd, n;
+        if (cumulativeSpec.enabled && densityNorm) {
+          norm = norm.replace(/ ?density$/, "");
+          densityNorm = false;
+        }
+        var extremeFunc = func === "max" || func === "min";
+        var sizeInit = extremeFunc ? null : 0;
+        var binFunc = binFunctions.count;
+        var normFunc = normFunctions[norm];
+        var isAvg = false;
+        var pr2c = function(v) {
+          return pa.r2c(v, 0, calendar);
+        };
+        var rawCounterData;
+        if (Lib.isArrayOrTypedArray(trace[counterData]) && func !== "count") {
+          rawCounterData = trace[counterData];
+          isAvg = func === "avg";
+          binFunc = binFunctions[func];
+        }
+        i = pr2c(binSpec.start);
+        binEnd = pr2c(binSpec.end) + (i - Axes.tickIncrement(i, binSpec.size, false, calendar)) / 1e6;
+        while (i < binEnd && pos.length < 1e6) {
+          i2 = Axes.tickIncrement(i, binSpec.size, false, calendar);
+          pos.push((i + i2) / 2);
+          size.push(sizeInit);
+          inputPoints.push([]);
+          binEdges.push(i);
+          if (densityNorm) inc.push(1 / (i2 - i));
+          if (isAvg) counts.push(0);
+          if (i2 <= i) break;
+          i = i2;
+        }
+        binEdges.push(i);
+        if (!nonuniformBins && pa.type === "date") {
+          bins = {
+            start: pr2c(bins.start),
+            end: pr2c(bins.end),
+            size: bins.size
+          };
+        }
+        if (!gd._fullLayout._roundFnOpts) gd._fullLayout._roundFnOpts = {};
+        var groupName = trace["_" + mainData + "bingroup"];
+        var roundFnOpts = { leftGap: Infinity, rightGap: Infinity };
+        if (groupName) {
+          if (!gd._fullLayout._roundFnOpts[groupName]) gd._fullLayout._roundFnOpts[groupName] = roundFnOpts;
+          roundFnOpts = gd._fullLayout._roundFnOpts[groupName];
+        }
+        var nMax = size.length;
+        var uniqueValsPerBin = true;
+        var leftGap = roundFnOpts.leftGap;
+        var rightGap = roundFnOpts.rightGap;
+        var ptNumber2cdIndex = {};
+        for (i = 0; i < pos0.length; i++) {
+          var posi = pos0[i];
+          n = Lib.findBin(posi, bins);
+          if (n >= 0 && n < nMax) {
+            total += binFunc(n, i, size, rawCounterData, counts);
+            if (uniqueValsPerBin && inputPoints[n].length && posi !== pos0[inputPoints[n][0]]) {
+              uniqueValsPerBin = false;
+            }
+            inputPoints[n].push(i);
+            ptNumber2cdIndex[i] = n;
+            leftGap = Math.min(leftGap, posi - binEdges[n]);
+            rightGap = Math.min(rightGap, binEdges[n + 1] - posi);
+          }
+        }
+        roundFnOpts.leftGap = leftGap;
+        roundFnOpts.rightGap = rightGap;
+        var roundFn;
+        if (!uniqueValsPerBin) {
+          roundFn = function(v, isRightEdge) {
+            return function() {
+              var roundFnOpts2 = gd._fullLayout._roundFnOpts[groupName];
+              return getBinSpanLabelRound(
+                roundFnOpts2.leftGap,
+                roundFnOpts2.rightGap,
+                binEdges,
+                pa,
+                calendar
+              )(v, isRightEdge);
+            };
+          };
+        }
+        if (isAvg) total = doAvg(size, counts);
+        if (normFunc) normFunc(size, total, inc);
+        if (cumulativeSpec.enabled) cdf(size, cumulativeSpec.direction, cumulativeSpec.currentbin);
+        var seriesLen = Math.min(pos.length, size.length);
+        var cd = [];
+        var firstNonzero = 0;
+        var lastNonzero = seriesLen - 1;
+        for (i = 0; i < seriesLen; i++) {
+          if (size[i]) {
+            firstNonzero = i;
+            break;
+          }
+        }
+        for (i = seriesLen - 1; i >= firstNonzero; i--) {
+          if (size[i]) {
+            lastNonzero = i;
+            break;
+          }
+        }
+        for (i = firstNonzero; i <= lastNonzero; i++) {
+          if (isNumeric(pos[i]) && isNumeric(size[i])) {
+            var cdi = {
+              p: pos[i],
+              s: size[i],
+              b: 0
+            };
+            if (!cumulativeSpec.enabled) {
+              cdi.pts = inputPoints[i];
+              if (uniqueValsPerBin) {
+                cdi.ph0 = cdi.ph1 = inputPoints[i].length ? pos0[inputPoints[i][0]] : pos[i];
+              } else {
+                trace._computePh = true;
+                cdi.ph0 = roundFn(binEdges[i]);
+                cdi.ph1 = roundFn(binEdges[i + 1], true);
+              }
+            }
+            cd.push(cdi);
+          }
+        }
+        if (cd.length === 1) {
+          cd[0].width1 = Axes.tickIncrement(cd[0].p, binSpec.size, false, calendar) - cd[0].p;
+        }
+        arraysToCalcdata(cd, trace);
+        if (Lib.isArrayOrTypedArray(trace.selectedpoints)) {
+          Lib.tagSelected(cd, trace, ptNumber2cdIndex);
+        }
+        return cd;
+      }
+      function calcAllAutoBins(gd, trace, pa, mainData, _overlayEdgeCase) {
+        var binAttr = mainData + "bins";
+        var fullLayout = gd._fullLayout;
+        var groupName = trace["_" + mainData + "bingroup"];
+        var binOpts = fullLayout._histogramBinOpts[groupName];
+        var isOverlay = fullLayout.barmode === "overlay";
+        var i, traces, tracei, calendar, pos0, autoVals, cumulativeSpec;
+        var r2c = function(v) {
+          return pa.r2c(v, 0, calendar);
+        };
+        var c2r = function(v) {
+          return pa.c2r(v, 0, calendar);
+        };
+        var cleanBound = pa.type === "date" ? function(v) {
+          return v || v === 0 ? Lib.cleanDate(v, null, calendar) : null;
+        } : function(v) {
+          return isNumeric(v) ? Number(v) : null;
+        };
+        function setBound(attr, bins, newBins) {
+          if (bins[attr + "Found"]) {
+            bins[attr] = cleanBound(bins[attr]);
+            if (bins[attr] === null) bins[attr] = newBins[attr];
+          } else {
+            autoVals[attr] = bins[attr] = newBins[attr];
+            Lib.nestedProperty(traces[0], binAttr + "." + attr).set(newBins[attr]);
+          }
+        }
+        if (trace["_" + mainData + "autoBinFinished"]) {
+          delete trace["_" + mainData + "autoBinFinished"];
+        } else {
+          traces = binOpts.traces;
+          var allPos = [];
+          var isFirstVisible = true;
+          var has2dMap = false;
+          var hasHist2dContour = false;
+          for (i = 0; i < traces.length; i++) {
+            tracei = traces[i];
+            if (tracei.visible) {
+              var mainDatai = binOpts.dirs[i];
+              pos0 = tracei["_" + mainDatai + "pos0"] = pa.makeCalcdata(tracei, mainDatai);
+              allPos = Lib.concat(allPos, pos0);
+              delete tracei["_" + mainData + "autoBinFinished"];
+              if (trace.visible === true) {
+                if (isFirstVisible) {
+                  isFirstVisible = false;
+                } else {
+                  delete tracei._autoBin;
+                  tracei["_" + mainData + "autoBinFinished"] = 1;
+                }
+                if (Registry.traceIs(tracei, "2dMap")) {
+                  has2dMap = true;
+                }
+                if (tracei.type === "histogram2dcontour") {
+                  hasHist2dContour = true;
+                }
+              }
+            }
+          }
+          calendar = traces[0][mainData + "calendar"];
+          var newBinSpec = Axes.autoBin(allPos, pa, binOpts.nbins, has2dMap, calendar, binOpts.sizeFound && binOpts.size);
+          var autoBin = traces[0]._autoBin = {};
+          autoVals = autoBin[binOpts.dirs[0]] = {};
+          if (hasHist2dContour) {
+            if (!binOpts.size) {
+              newBinSpec.start = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.start),
+                newBinSpec.size,
+                true,
+                calendar
+              ));
+            }
+            if (binOpts.end === void 0) {
+              newBinSpec.end = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.end),
+                newBinSpec.size,
+                false,
+                calendar
+              ));
+            }
+          }
+          if (isOverlay && !Registry.traceIs(trace, "2dMap") && newBinSpec._dataSpan === 0 && pa.type !== "category" && pa.type !== "multicategory" && trace.bingroup === "" && typeof trace.xbins === "undefined") {
+            if (_overlayEdgeCase) return [newBinSpec, pos0, true];
+            newBinSpec = handleSingleValueOverlays(gd, trace, pa, mainData, binAttr);
+          }
+          cumulativeSpec = tracei.cumulative || {};
+          if (cumulativeSpec.enabled && cumulativeSpec.currentbin !== "include") {
+            if (cumulativeSpec.direction === "decreasing") {
+              newBinSpec.start = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.start),
+                newBinSpec.size,
+                true,
+                calendar
+              ));
+            } else {
+              newBinSpec.end = c2r(Axes.tickIncrement(
+                r2c(newBinSpec.end),
+                newBinSpec.size,
+                false,
+                calendar
+              ));
+            }
+          }
+          binOpts.size = newBinSpec.size;
+          if (!binOpts.sizeFound) {
+            autoVals.size = newBinSpec.size;
+            Lib.nestedProperty(traces[0], binAttr + ".size").set(newBinSpec.size);
+          }
+          setBound("start", binOpts, newBinSpec);
+          setBound("end", binOpts, newBinSpec);
+        }
+        pos0 = trace["_" + mainData + "pos0"];
+        delete trace["_" + mainData + "pos0"];
+        var traceInputBins = trace._input[binAttr] || {};
+        var traceBinOptsCalc = Lib.extendFlat({}, binOpts);
+        var mainStart = binOpts.start;
+        var startIn = pa.r2l(traceInputBins.start);
+        var hasStart = startIn !== void 0;
+        if ((binOpts.startFound || hasStart) && startIn !== pa.r2l(mainStart)) {
+          var traceStart = hasStart ? startIn : Lib.aggNums(Math.min, null, pos0);
+          var dummyAx = {
+            type: pa.type === "category" || pa.type === "multicategory" ? "linear" : pa.type,
+            r2l: pa.r2l,
+            dtick: binOpts.size,
+            tick0: mainStart,
+            calendar,
+            range: [traceStart, Axes.tickIncrement(traceStart, binOpts.size, false, calendar)].map(pa.l2r)
+          };
+          var newStart = Axes.tickFirst(dummyAx);
+          if (newStart > pa.r2l(traceStart)) {
+            newStart = Axes.tickIncrement(newStart, binOpts.size, true, calendar);
+          }
+          traceBinOptsCalc.start = pa.l2r(newStart);
+          if (!hasStart) Lib.nestedProperty(trace, binAttr + ".start").set(traceBinOptsCalc.start);
+        }
+        var mainEnd = binOpts.end;
+        var endIn = pa.r2l(traceInputBins.end);
+        var hasEnd = endIn !== void 0;
+        if ((binOpts.endFound || hasEnd) && endIn !== pa.r2l(mainEnd)) {
+          var traceEnd = hasEnd ? endIn : Lib.aggNums(Math.max, null, pos0);
+          traceBinOptsCalc.end = pa.l2r(traceEnd);
+          if (!hasEnd) Lib.nestedProperty(trace, binAttr + ".start").set(traceBinOptsCalc.end);
+        }
+        var autoBinAttr = "autobin" + mainData;
+        if (trace._input[autoBinAttr] === false) {
+          trace._input[binAttr] = Lib.extendFlat({}, trace[binAttr] || {});
+          delete trace._input[autoBinAttr];
+          delete trace[autoBinAttr];
+        }
+        return [traceBinOptsCalc, pos0];
+      }
+      function handleSingleValueOverlays(gd, trace, pa, mainData, binAttr) {
+        var fullLayout = gd._fullLayout;
+        var overlaidTraceGroup = getConnectedHistograms(gd, trace);
+        var pastThisTrace = false;
+        var minSize = Infinity;
+        var singleValuedTraces = [trace];
+        var i, tracei, binOpts;
+        for (i = 0; i < overlaidTraceGroup.length; i++) {
+          tracei = overlaidTraceGroup[i];
+          if (tracei === trace) {
+            pastThisTrace = true;
+          } else if (!pastThisTrace) {
+            binOpts = fullLayout._histogramBinOpts[tracei["_" + mainData + "bingroup"]];
+            minSize = Math.min(minSize, binOpts.size || tracei[binAttr].size);
+          } else {
+            var resulti = calcAllAutoBins(gd, tracei, pa, mainData, true);
+            var binSpeci = resulti[0];
+            var isSingleValued = resulti[2];
+            tracei["_" + mainData + "autoBinFinished"] = 1;
+            tracei["_" + mainData + "pos0"] = resulti[1];
+            if (isSingleValued) {
+              singleValuedTraces.push(tracei);
+            } else {
+              minSize = Math.min(minSize, binSpeci.size);
+            }
+          }
+        }
+        var dataVals = new Array(singleValuedTraces.length);
+        for (i = 0; i < singleValuedTraces.length; i++) {
+          var pos0 = singleValuedTraces[i]["_" + mainData + "pos0"];
+          for (var j = 0; j < pos0.length; j++) {
+            if (pos0[j] !== void 0) {
+              dataVals[i] = pos0[j];
+              break;
+            }
+          }
+        }
+        if (!isFinite(minSize)) {
+          minSize = Lib.distinctVals(dataVals).minDiff;
+        }
+        for (i = 0; i < singleValuedTraces.length; i++) {
+          tracei = singleValuedTraces[i];
+          var calendar = tracei[mainData + "calendar"];
+          var newBins = {
+            start: pa.c2r(dataVals[i] - minSize / 2, 0, calendar),
+            end: pa.c2r(dataVals[i] + minSize / 2, 0, calendar),
+            size: minSize
+          };
+          tracei._input[binAttr] = tracei[binAttr] = newBins;
+          binOpts = fullLayout._histogramBinOpts[tracei["_" + mainData + "bingroup"]];
+          if (binOpts) Lib.extendFlat(binOpts, newBins);
+        }
+        return trace[binAttr];
+      }
+      function getConnectedHistograms(gd, trace) {
+        var xid = trace.xaxis;
+        var yid = trace.yaxis;
+        var orientation = trace.orientation;
+        var out = [];
+        var fullData = gd._fullData;
+        for (var i = 0; i < fullData.length; i++) {
+          var tracei = fullData[i];
+          if (tracei.type === "histogram" && tracei.visible === true && tracei.orientation === orientation && tracei.xaxis === xid && tracei.yaxis === yid) {
+            out.push(tracei);
+          }
+        }
+        return out;
+      }
+      function cdf(size, direction, currentBin) {
+        var i, vi, prevSum;
+        function firstHalfPoint(i2) {
+          prevSum = size[i2];
+          size[i2] /= 2;
+        }
+        function nextHalfPoint(i2) {
+          vi = size[i2];
+          size[i2] = prevSum + vi / 2;
+          prevSum += vi;
+        }
+        if (currentBin === "half") {
+          if (direction === "increasing") {
+            firstHalfPoint(0);
+            for (i = 1; i < size.length; i++) {
+              nextHalfPoint(i);
+            }
+          } else {
+            firstHalfPoint(size.length - 1);
+            for (i = size.length - 2; i >= 0; i--) {
+              nextHalfPoint(i);
+            }
+          }
+        } else if (direction === "increasing") {
+          for (i = 1; i < size.length; i++) {
+            size[i] += size[i - 1];
+          }
+          if (currentBin === "exclude") {
+            size.unshift(0);
+            size.pop();
+          }
+        } else {
+          for (i = size.length - 2; i >= 0; i--) {
+            size[i] += size[i + 1];
+          }
+          if (currentBin === "exclude") {
+            size.push(0);
+            size.shift();
+          }
         }
       }
       module.exports = {
-        style,
-        styleOnSelect
+        calc,
+        calcAllAutoBins
       };
     }
   });
 
-  // src/traces/choropleth/plot.js
+  // src/traces/histogram2d/calc.js
+  var require_calc6 = __commonJS({
+    "src/traces/histogram2d/calc.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var Axes = require_axes();
+      var binFunctions = require_bin_functions();
+      var normFunctions = require_norm_functions();
+      var doAvg = require_average();
+      var getBinSpanLabelRound = require_bin_label_vals();
+      var calcAllAutoBins = require_calc5().calcAllAutoBins;
+      module.exports = function calc(gd, trace) {
+        var xa = Axes.getFromId(gd, trace.xaxis);
+        var ya = Axes.getFromId(gd, trace.yaxis);
+        var xcalendar = trace.xcalendar;
+        var ycalendar = trace.ycalendar;
+        var xr2c = function(v) {
+          return xa.r2c(v, 0, xcalendar);
+        };
+        var yr2c = function(v) {
+          return ya.r2c(v, 0, ycalendar);
+        };
+        var xc2r = function(v) {
+          return xa.c2r(v, 0, xcalendar);
+        };
+        var yc2r = function(v) {
+          return ya.c2r(v, 0, ycalendar);
+        };
+        var i, j, n, m;
+        var xBinsAndPos = calcAllAutoBins(gd, trace, xa, "x");
+        var xBinSpec = xBinsAndPos[0];
+        var xPos0 = xBinsAndPos[1];
+        var yBinsAndPos = calcAllAutoBins(gd, trace, ya, "y");
+        var yBinSpec = yBinsAndPos[0];
+        var yPos0 = yBinsAndPos[1];
+        var serieslen = trace._length;
+        if (xPos0.length > serieslen) xPos0.splice(serieslen, xPos0.length - serieslen);
+        if (yPos0.length > serieslen) yPos0.splice(serieslen, yPos0.length - serieslen);
+        var z = [];
+        var onecol = [];
+        var zerocol = [];
+        var nonuniformBinsX = typeof xBinSpec.size === "string";
+        var nonuniformBinsY = typeof yBinSpec.size === "string";
+        var xEdges = [];
+        var yEdges = [];
+        var xbins = nonuniformBinsX ? xEdges : xBinSpec;
+        var ybins = nonuniformBinsY ? yEdges : yBinSpec;
+        var total = 0;
+        var counts = [];
+        var inputPoints = [];
+        var norm = trace.histnorm;
+        var func = trace.histfunc;
+        var densitynorm = norm.indexOf("density") !== -1;
+        var extremefunc = func === "max" || func === "min";
+        var sizeinit = extremefunc ? null : 0;
+        var binfunc = binFunctions.count;
+        var normfunc = normFunctions[norm];
+        var doavg = false;
+        var xinc = [];
+        var yinc = [];
+        var rawCounterData = "z" in trace ? trace.z : "marker" in trace && Array.isArray(trace.marker.color) ? trace.marker.color : "";
+        if (rawCounterData && func !== "count") {
+          doavg = func === "avg";
+          binfunc = binFunctions[func];
+        }
+        var xBinSize = xBinSpec.size;
+        var xBinStart = xr2c(xBinSpec.start);
+        var xBinEnd = xr2c(xBinSpec.end) + (xBinStart - Axes.tickIncrement(xBinStart, xBinSize, false, xcalendar)) / 1e6;
+        for (i = xBinStart; i < xBinEnd; i = Axes.tickIncrement(i, xBinSize, false, xcalendar)) {
+          onecol.push(sizeinit);
+          xEdges.push(i);
+          if (doavg) zerocol.push(0);
+        }
+        xEdges.push(i);
+        var nx = onecol.length;
+        var dx = (i - xBinStart) / nx;
+        var x0 = xc2r(xBinStart + dx / 2);
+        var yBinSize = yBinSpec.size;
+        var yBinStart = yr2c(yBinSpec.start);
+        var yBinEnd = yr2c(yBinSpec.end) + (yBinStart - Axes.tickIncrement(yBinStart, yBinSize, false, ycalendar)) / 1e6;
+        for (i = yBinStart; i < yBinEnd; i = Axes.tickIncrement(i, yBinSize, false, ycalendar)) {
+          z.push(onecol.slice());
+          yEdges.push(i);
+          var ipCol = new Array(nx);
+          for (j = 0; j < nx; j++) ipCol[j] = [];
+          inputPoints.push(ipCol);
+          if (doavg) counts.push(zerocol.slice());
+        }
+        yEdges.push(i);
+        var ny = z.length;
+        var dy = (i - yBinStart) / ny;
+        var y0 = yc2r(yBinStart + dy / 2);
+        if (densitynorm) {
+          xinc = makeIncrements(onecol.length, xbins, dx, nonuniformBinsX);
+          yinc = makeIncrements(z.length, ybins, dy, nonuniformBinsY);
+        }
+        if (!nonuniformBinsX && xa.type === "date") xbins = binsToCalc(xr2c, xbins);
+        if (!nonuniformBinsY && ya.type === "date") ybins = binsToCalc(yr2c, ybins);
+        var uniqueValsPerX = true;
+        var uniqueValsPerY = true;
+        var xVals = new Array(nx);
+        var yVals = new Array(ny);
+        var xGapLow = Infinity;
+        var xGapHigh = Infinity;
+        var yGapLow = Infinity;
+        var yGapHigh = Infinity;
+        for (i = 0; i < serieslen; i++) {
+          var xi = xPos0[i];
+          var yi = yPos0[i];
+          n = Lib.findBin(xi, xbins);
+          m = Lib.findBin(yi, ybins);
+          if (n >= 0 && n < nx && m >= 0 && m < ny) {
+            total += binfunc(n, i, z[m], rawCounterData, counts[m]);
+            inputPoints[m][n].push(i);
+            if (uniqueValsPerX) {
+              if (xVals[n] === void 0) xVals[n] = xi;
+              else if (xVals[n] !== xi) uniqueValsPerX = false;
+            }
+            if (uniqueValsPerY) {
+              if (yVals[m] === void 0) yVals[m] = yi;
+              else if (yVals[m] !== yi) uniqueValsPerY = false;
+            }
+            xGapLow = Math.min(xGapLow, xi - xEdges[n]);
+            xGapHigh = Math.min(xGapHigh, xEdges[n + 1] - xi);
+            yGapLow = Math.min(yGapLow, yi - yEdges[m]);
+            yGapHigh = Math.min(yGapHigh, yEdges[m + 1] - yi);
+          }
+        }
+        if (doavg) {
+          for (m = 0; m < ny; m++) total += doAvg(z[m], counts[m]);
+        }
+        if (normfunc) {
+          for (m = 0; m < ny; m++) normfunc(z[m], total, xinc, yinc[m]);
+        }
+        return {
+          x: xPos0,
+          xRanges: getRanges(xEdges, uniqueValsPerX && xVals, xGapLow, xGapHigh, xa, xcalendar),
+          x0,
+          dx,
+          y: yPos0,
+          yRanges: getRanges(yEdges, uniqueValsPerY && yVals, yGapLow, yGapHigh, ya, ycalendar),
+          y0,
+          dy,
+          z,
+          pts: inputPoints
+        };
+      };
+      function makeIncrements(len, bins, dv, nonuniform) {
+        var out = new Array(len);
+        var i;
+        if (nonuniform) {
+          for (i = 0; i < len; i++) out[i] = 1 / (bins[i + 1] - bins[i]);
+        } else {
+          var inc = 1 / dv;
+          for (i = 0; i < len; i++) out[i] = inc;
+        }
+        return out;
+      }
+      function binsToCalc(r2c, bins) {
+        return {
+          start: r2c(bins.start),
+          end: r2c(bins.end),
+          size: bins.size
+        };
+      }
+      function getRanges(edges, uniqueVals, gapLow, gapHigh, ax, calendar) {
+        var i;
+        var len = edges.length - 1;
+        var out = new Array(len);
+        var roundFn = getBinSpanLabelRound(gapLow, gapHigh, edges, ax, calendar);
+        for (i = 0; i < len; i++) {
+          var v = (uniqueVals || [])[i];
+          out[i] = v === void 0 ? [roundFn(edges[i]), roundFn(edges[i + 1], true)] : [v, v];
+        }
+        return out;
+      }
+    }
+  });
+
+  // src/traces/heatmap/convert_column_xyz.js
+  var require_convert_column_xyz = __commonJS({
+    "src/traces/heatmap/convert_column_xyz.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var BADNUM = require_numerical().BADNUM;
+      var alignPeriod = require_align_period();
+      module.exports = function convertColumnData(trace, ax1, ax2, var1Name, var2Name, arrayVarNames) {
+        var colLen = trace._length;
+        var col1 = ax1.makeCalcdata(trace, var1Name);
+        var col2 = ax2.makeCalcdata(trace, var2Name);
+        col1 = alignPeriod(trace, ax1, var1Name, col1).vals;
+        col2 = alignPeriod(trace, ax2, var2Name, col2).vals;
+        var textCol = trace.text;
+        var hasColumnText = textCol !== void 0 && Lib.isArray1D(textCol);
+        var hoverTextCol = trace.hovertext;
+        var hasColumnHoverText = hoverTextCol !== void 0 && Lib.isArray1D(hoverTextCol);
+        var i, j;
+        var col1dv = Lib.distinctVals(col1);
+        var col1vals = col1dv.vals;
+        var col2dv = Lib.distinctVals(col2);
+        var col2vals = col2dv.vals;
+        var newArrays = [];
+        var text;
+        var hovertext;
+        var nI = col2vals.length;
+        var nJ = col1vals.length;
+        for (i = 0; i < arrayVarNames.length; i++) {
+          newArrays[i] = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnText) {
+          text = Lib.init2dArray(nI, nJ);
+        }
+        if (hasColumnHoverText) {
+          hovertext = Lib.init2dArray(nI, nJ);
+        }
+        var after2before = Lib.init2dArray(nI, nJ);
+        for (i = 0; i < colLen; i++) {
+          if (col1[i] !== BADNUM && col2[i] !== BADNUM) {
+            var i1 = Lib.findBin(col1[i] + col1dv.minDiff / 2, col1vals);
+            var i2 = Lib.findBin(col2[i] + col2dv.minDiff / 2, col2vals);
+            for (j = 0; j < arrayVarNames.length; j++) {
+              var arrayVarName = arrayVarNames[j];
+              var arrayVar = trace[arrayVarName];
+              var newArray = newArrays[j];
+              newArray[i2][i1] = arrayVar[i];
+              after2before[i2][i1] = i;
+            }
+            if (hasColumnText) text[i2][i1] = textCol[i];
+            if (hasColumnHoverText) hovertext[i2][i1] = hoverTextCol[i];
+          }
+        }
+        trace["_" + var1Name] = col1vals;
+        trace["_" + var2Name] = col2vals;
+        for (j = 0; j < arrayVarNames.length; j++) {
+          trace["_" + arrayVarNames[j]] = newArrays[j];
+        }
+        if (hasColumnText) trace._text = text;
+        if (hasColumnHoverText) trace._hovertext = hovertext;
+        if (ax1 && ax1.type === "category") {
+          trace["_" + var1Name + "CategoryMap"] = col1vals.map(function(v) {
+            return ax1._categories[v];
+          });
+        }
+        if (ax2 && ax2.type === "category") {
+          trace["_" + var2Name + "CategoryMap"] = col2vals.map(function(v) {
+            return ax2._categories[v];
+          });
+        }
+        trace._after2before = after2before;
+      };
+    }
+  });
+
+  // src/traces/heatmap/clean_2d_array.js
+  var require_clean_2d_array = __commonJS({
+    "src/traces/heatmap/clean_2d_array.js"(exports, module) {
+      "use strict";
+      var isNumeric = require_fast_isnumeric();
+      var Lib = require_lib();
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function clean2dArray(zOld, trace, xa, ya) {
+        var rowlen, collen, getCollen, old2new, i, j;
+        function cleanZvalue(v) {
+          if (!isNumeric(v)) return void 0;
+          return +v;
+        }
+        if (trace && trace.transpose) {
+          rowlen = 0;
+          for (i = 0; i < zOld.length; i++) rowlen = Math.max(rowlen, zOld[i].length);
+          if (rowlen === 0) return false;
+          getCollen = function(zOld2) {
+            return zOld2.length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[j2] || [])[i2];
+          };
+        } else {
+          rowlen = zOld.length;
+          getCollen = function(zOld2, i2) {
+            return zOld2[i2].length;
+          };
+          old2new = function(zOld2, i2, j2) {
+            return (zOld2[i2] || [])[j2];
+          };
+        }
+        var padOld2new = function(zOld2, i2, j2) {
+          if (i2 === BADNUM || j2 === BADNUM) return BADNUM;
+          return old2new(zOld2, i2, j2);
+        };
+        function axisMapping(ax) {
+          if (trace && trace.type !== "carpet" && trace.type !== "contourcarpet" && ax && ax.type === "category" && trace["_" + ax._id.charAt(0)].length) {
+            var axLetter = ax._id.charAt(0);
+            var axMapping = {};
+            var traceCategories = trace["_" + axLetter + "CategoryMap"] || trace[axLetter];
+            for (i = 0; i < traceCategories.length; i++) {
+              axMapping[traceCategories[i]] = i;
+            }
+            return function(i2) {
+              var ind = axMapping[ax._categories[i2]];
+              return ind + 1 ? ind : BADNUM;
+            };
+          } else {
+            return Lib.identity;
+          }
+        }
+        var xMap = axisMapping(xa);
+        var yMap = axisMapping(ya);
+        if (ya && ya.type === "category") rowlen = ya._categories.length;
+        var zNew = new Array(rowlen);
+        for (i = 0; i < rowlen; i++) {
+          if (xa && xa.type === "category") {
+            collen = xa._categories.length;
+          } else {
+            collen = getCollen(zOld, i);
+          }
+          zNew[i] = new Array(collen);
+          for (j = 0; j < collen; j++) zNew[i][j] = cleanZvalue(padOld2new(zOld, yMap(i), xMap(j)));
+        }
+        return zNew;
+      };
+    }
+  });
+
+  // src/traces/heatmap/interp2d.js
+  var require_interp2d = __commonJS({
+    "src/traces/heatmap/interp2d.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var INTERPTHRESHOLD = 0.01;
+      var NEIGHBORSHIFTS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      function correctionOvershoot(maxFractionalChange) {
+        return 0.5 - 0.25 * Math.min(1, maxFractionalChange * 0.5);
+      }
+      module.exports = function interp2d(z, emptyPoints) {
+        var maxFractionalChange = 1;
+        var i;
+        iterateInterp2d(z, emptyPoints);
+        for (i = 0; i < emptyPoints.length; i++) {
+          if (emptyPoints[i][2] < 4) break;
+        }
+        emptyPoints = emptyPoints.slice(i);
+        for (i = 0; i < 100 && maxFractionalChange > INTERPTHRESHOLD; i++) {
+          maxFractionalChange = iterateInterp2d(
+            z,
+            emptyPoints,
+            correctionOvershoot(maxFractionalChange)
+          );
+        }
+        if (maxFractionalChange > INTERPTHRESHOLD) {
+          Lib.log("interp2d didn't converge quickly", maxFractionalChange);
+        }
+        return z;
+      };
+      function iterateInterp2d(z, emptyPoints, overshoot) {
+        var maxFractionalChange = 0;
+        var thisPt;
+        var i;
+        var j;
+        var p;
+        var q;
+        var neighborShift;
+        var neighborRow;
+        var neighborVal;
+        var neighborCount;
+        var neighborSum;
+        var initialVal;
+        var minNeighbor;
+        var maxNeighbor;
+        for (p = 0; p < emptyPoints.length; p++) {
+          thisPt = emptyPoints[p];
+          i = thisPt[0];
+          j = thisPt[1];
+          initialVal = z[i][j];
+          neighborSum = 0;
+          neighborCount = 0;
+          for (q = 0; q < 4; q++) {
+            neighborShift = NEIGHBORSHIFTS[q];
+            neighborRow = z[i + neighborShift[0]];
+            if (!neighborRow) continue;
+            neighborVal = neighborRow[j + neighborShift[1]];
+            if (neighborVal !== void 0) {
+              if (neighborSum === 0) {
+                minNeighbor = maxNeighbor = neighborVal;
+              } else {
+                minNeighbor = Math.min(minNeighbor, neighborVal);
+                maxNeighbor = Math.max(maxNeighbor, neighborVal);
+              }
+              neighborCount++;
+              neighborSum += neighborVal;
+            }
+          }
+          if (neighborCount === 0) {
+            throw "iterateInterp2d order is wrong: no defined neighbors";
+          }
+          z[i][j] = neighborSum / neighborCount;
+          if (initialVal === void 0) {
+            if (neighborCount < 4) maxFractionalChange = 1;
+          } else {
+            z[i][j] = (1 + overshoot) * z[i][j] - overshoot * initialVal;
+            if (maxNeighbor > minNeighbor) {
+              maxFractionalChange = Math.max(
+                maxFractionalChange,
+                Math.abs(z[i][j] - initialVal) / (maxNeighbor - minNeighbor)
+              );
+            }
+          }
+        }
+        return maxFractionalChange;
+      }
+    }
+  });
+
+  // src/traces/heatmap/find_empties.js
+  var require_find_empties = __commonJS({
+    "src/traces/heatmap/find_empties.js"(exports, module) {
+      "use strict";
+      var maxRowLength = require_lib().maxRowLength;
+      module.exports = function findEmpties(z) {
+        var empties = [];
+        var neighborHash = {};
+        var noNeighborList = [];
+        var nextRow = z[0];
+        var row = [];
+        var blank = [0, 0, 0];
+        var rowLength = maxRowLength(z);
+        var prevRow;
+        var i;
+        var j;
+        var thisPt;
+        var p;
+        var neighborCount;
+        var newNeighborHash;
+        var foundNewNeighbors;
+        for (i = 0; i < z.length; i++) {
+          prevRow = row;
+          row = nextRow;
+          nextRow = z[i + 1] || [];
+          for (j = 0; j < rowLength; j++) {
+            if (row[j] === void 0) {
+              neighborCount = (row[j - 1] !== void 0 ? 1 : 0) + (row[j + 1] !== void 0 ? 1 : 0) + (prevRow[j] !== void 0 ? 1 : 0) + (nextRow[j] !== void 0 ? 1 : 0);
+              if (neighborCount) {
+                if (i === 0) neighborCount++;
+                if (j === 0) neighborCount++;
+                if (i === z.length - 1) neighborCount++;
+                if (j === row.length - 1) neighborCount++;
+                if (neighborCount < 4) {
+                  neighborHash[[i, j]] = [i, j, neighborCount];
+                }
+                empties.push([i, j, neighborCount]);
+              } else noNeighborList.push([i, j]);
+            }
+          }
+        }
+        while (noNeighborList.length) {
+          newNeighborHash = {};
+          foundNewNeighbors = false;
+          for (p = noNeighborList.length - 1; p >= 0; p--) {
+            thisPt = noNeighborList[p];
+            i = thisPt[0];
+            j = thisPt[1];
+            neighborCount = ((neighborHash[[i - 1, j]] || blank)[2] + (neighborHash[[i + 1, j]] || blank)[2] + (neighborHash[[i, j - 1]] || blank)[2] + (neighborHash[[i, j + 1]] || blank)[2]) / 20;
+            if (neighborCount) {
+              newNeighborHash[thisPt] = [i, j, neighborCount];
+              noNeighborList.splice(p, 1);
+              foundNewNeighbors = true;
+            }
+          }
+          if (!foundNewNeighbors) {
+            throw "findEmpties iterated with no new neighbors";
+          }
+          for (thisPt in newNeighborHash) {
+            neighborHash[thisPt] = newNeighborHash[thisPt];
+            empties.push(newNeighborHash[thisPt]);
+          }
+        }
+        return empties.sort(function(a, b) {
+          return b[2] - a[2];
+        });
+      };
+    }
+  });
+
+  // src/traces/heatmap/make_bound_array.js
+  var require_make_bound_array = __commonJS({
+    "src/traces/heatmap/make_bound_array.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var isArrayOrTypedArray = require_lib().isArrayOrTypedArray;
+      module.exports = function makeBoundArray(trace, arrayIn, v0In, dvIn, numbricks, ax) {
+        var arrayOut = [];
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var v0;
+        var dv;
+        var i;
+        var isArrayOfTwoItemsOrMore = isArrayOrTypedArray(arrayIn) && arrayIn.length > 1;
+        if (isArrayOfTwoItemsOrMore && !isHist && ax.type !== "category") {
+          var len = arrayIn.length;
+          if (len <= numbricks) {
+            if (isContour) arrayOut = Array.from(arrayIn).slice(0, numbricks);
+            else if (numbricks === 1) {
+              if (ax.type === "log") {
+                arrayOut = [0.5 * arrayIn[0], 2 * arrayIn[0]];
+              } else {
+                arrayOut = [arrayIn[0] - 0.5, arrayIn[0] + 0.5];
+              }
+            } else if (ax.type === "log") {
+              arrayOut = [Math.pow(arrayIn[0], 1.5) / Math.pow(arrayIn[1], 0.5)];
+              for (i = 1; i < len; i++) {
+                arrayOut.push(Math.sqrt(arrayIn[i - 1] * arrayIn[i]));
+              }
+              arrayOut.push(Math.pow(arrayIn[len - 1], 1.5) / Math.pow(arrayIn[len - 2], 0.5));
+            } else {
+              arrayOut = [1.5 * arrayIn[0] - 0.5 * arrayIn[1]];
+              for (i = 1; i < len; i++) {
+                arrayOut.push((arrayIn[i - 1] + arrayIn[i]) * 0.5);
+              }
+              arrayOut.push(1.5 * arrayIn[len - 1] - 0.5 * arrayIn[len - 2]);
+            }
+            if (len < numbricks) {
+              var lastPt = arrayOut[arrayOut.length - 1];
+              var delta;
+              if (ax.type === "log") {
+                delta = lastPt / arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt *= delta;
+                  arrayOut.push(lastPt);
+                }
+              } else {
+                delta = lastPt - arrayOut[arrayOut.length - 2];
+                for (i = len; i < numbricks; i++) {
+                  lastPt += delta;
+                  arrayOut.push(lastPt);
+                }
+              }
+            }
+          } else {
+            return isContour ? arrayIn.slice(0, numbricks) : (
+              // we must be strict for contours
+              arrayIn.slice(0, numbricks + 1)
+            );
+          }
+        } else {
+          var calendar = trace[ax._id.charAt(0) + "calendar"];
+          if (isHist) {
+            v0 = ax.r2c(v0In, 0, calendar);
+          } else {
+            if (isArrayOrTypedArray(arrayIn) && arrayIn.length === 1) {
+              v0 = arrayIn[0];
+            } else if (v0In === void 0) {
+              v0 = 0;
+            } else {
+              var fn = ax.type === "log" ? ax.d2c : ax.r2c;
+              v0 = fn(v0In, 0, calendar);
+            }
+          }
+          dv = dvIn || 1;
+          for (i = isContour ? 0 : -0.5; i < numbricks; i++) {
+            arrayOut.push(v0 + dv * i);
+          }
+        }
+        return arrayOut;
+      };
+    }
+  });
+
+  // src/traces/heatmap/calc.js
+  var require_calc7 = __commonJS({
+    "src/traces/heatmap/calc.js"(exports, module) {
+      "use strict";
+      var Registry = require_registry();
+      var Lib = require_lib();
+      var Axes = require_axes();
+      var alignPeriod = require_align_period();
+      var histogram2dCalc = require_calc6();
+      var colorscaleCalc = require_calc();
+      var convertColumnData = require_convert_column_xyz();
+      var clean2dArray = require_clean_2d_array();
+      var interp2d = require_interp2d();
+      var findEmpties = require_find_empties();
+      var makeBoundArray = require_make_bound_array();
+      var BADNUM = require_numerical().BADNUM;
+      module.exports = function calc(gd, trace) {
+        var xa = Axes.getFromId(gd, trace.xaxis || "x");
+        var ya = Axes.getFromId(gd, trace.yaxis || "y");
+        var isContour = Registry.traceIs(trace, "contour");
+        var isHist = Registry.traceIs(trace, "histogram");
+        var zsmooth = isContour ? "best" : trace.zsmooth;
+        var x, x0, dx, origX;
+        var y, y0, dy, origY;
+        var z, i, binned;
+        xa._minDtick = 0;
+        ya._minDtick = 0;
+        if (isHist) {
+          binned = histogram2dCalc(gd, trace);
+          origX = binned.orig_x;
+          x = binned.x;
+          x0 = binned.x0;
+          dx = binned.dx;
+          origY = binned.orig_y;
+          y = binned.y;
+          y0 = binned.y0;
+          dy = binned.dy;
+          z = binned.z;
+        } else {
+          var zIn = trace.z;
+          if (Lib.isArray1D(zIn)) {
+            convertColumnData(trace, xa, ya, "x", "y", ["z"]);
+            x = trace._x;
+            y = trace._y;
+            zIn = trace._z;
+          } else {
+            origX = trace.x ? xa.makeCalcdata(trace, "x") : [];
+            origY = trace.y ? ya.makeCalcdata(trace, "y") : [];
+            x = alignPeriod(trace, xa, "x", origX).vals;
+            y = alignPeriod(trace, ya, "y", origY).vals;
+            trace._x = x;
+            trace._y = y;
+          }
+          x0 = trace.x0;
+          dx = trace.dx;
+          y0 = trace.y0;
+          dy = trace.dy;
+          z = clean2dArray(zIn, trace, xa, ya);
+        }
+        if (xa.rangebreaks || ya.rangebreaks) {
+          z = dropZonBreaks(x, y, z);
+          if (!isHist) {
+            x = skipBreaks(x);
+            y = skipBreaks(y);
+            trace._x = x;
+            trace._y = y;
+          }
+        }
+        if (!isHist && (isContour || trace.connectgaps)) {
+          trace._emptypoints = findEmpties(z);
+          interp2d(z, trace._emptypoints);
+        }
+        function noZsmooth(msg) {
+          zsmooth = trace._input.zsmooth = trace.zsmooth = false;
+          Lib.warn('cannot use zsmooth: "fast": ' + msg);
+        }
+        function scaleIsLinear(s) {
+          if (s.length > 1) {
+            var avgdx = (s[s.length - 1] - s[0]) / (s.length - 1);
+            var maxErrX = Math.abs(avgdx / 100);
+            for (i = 0; i < s.length - 1; i++) {
+              if (Math.abs(s[i + 1] - s[i] - avgdx) > maxErrX) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+        trace._islinear = false;
+        if (xa.type === "log" || ya.type === "log") {
+          if (zsmooth === "fast") {
+            noZsmooth("log axis found");
+          }
+        } else if (!scaleIsLinear(x)) {
+          if (zsmooth === "fast") noZsmooth("x scale is not linear");
+        } else if (!scaleIsLinear(y)) {
+          if (zsmooth === "fast") noZsmooth("y scale is not linear");
+        } else {
+          trace._islinear = true;
+        }
+        var xlen = Lib.maxRowLength(z);
+        var xIn = trace.xtype === "scaled" ? "" : x;
+        var xArray = makeBoundArray(trace, xIn, x0, dx, xlen, xa);
+        var yIn = trace.ytype === "scaled" ? "" : y;
+        var yArray = makeBoundArray(trace, yIn, y0, dy, z.length, ya);
+        trace._extremes[xa._id] = Axes.findExtremes(xa, xArray);
+        trace._extremes[ya._id] = Axes.findExtremes(ya, yArray);
+        var cd0 = {
+          x: xArray,
+          y: yArray,
+          z,
+          text: trace._text || trace.text,
+          hovertext: trace._hovertext || trace.hovertext
+        };
+        if (trace.xperiodalignment && origX) {
+          cd0.orig_x = origX;
+        }
+        if (trace.yperiodalignment && origY) {
+          cd0.orig_y = origY;
+        }
+        if (xIn && xIn.length === xArray.length - 1) cd0.xCenter = xIn;
+        if (yIn && yIn.length === yArray.length - 1) cd0.yCenter = yIn;
+        if (isHist) {
+          cd0.xRanges = binned.xRanges;
+          cd0.yRanges = binned.yRanges;
+          cd0.pts = binned.pts;
+        }
+        if (!isContour) {
+          colorscaleCalc(gd, trace, { vals: z, cLetter: "z" });
+        }
+        if (isContour && trace.contours && trace.contours.coloring === "heatmap") {
+          var dummyTrace = {
+            type: trace.type === "contour" ? "heatmap" : "histogram2d",
+            xcalendar: trace.xcalendar,
+            ycalendar: trace.ycalendar
+          };
+          cd0.xfill = makeBoundArray(dummyTrace, xIn, x0, dx, xlen, xa);
+          cd0.yfill = makeBoundArray(dummyTrace, yIn, y0, dy, z.length, ya);
+        }
+        return [cd0];
+      };
+      function skipBreaks(a) {
+        var b = [];
+        var len = a.length;
+        for (var i = 0; i < len; i++) {
+          var v = a[i];
+          if (v !== BADNUM) b.push(v);
+        }
+        return b;
+      }
+      function dropZonBreaks(x, y, z) {
+        var newZ = [];
+        var k = -1;
+        for (var i = 0; i < z.length; i++) {
+          if (y[i] === BADNUM) continue;
+          k++;
+          newZ[k] = [];
+          for (var j = 0; j < z[i].length; j++) {
+            if (x[j] === BADNUM) continue;
+            newZ[k].push(z[i][j]);
+          }
+        }
+        return newZ;
+      }
+    }
+  });
+
+  // src/traces/contour/set_contours.js
+  var require_set_contours = __commonJS({
+    "src/traces/contour/set_contours.js"(exports, module) {
+      "use strict";
+      var Axes = require_axes();
+      var Lib = require_lib();
+      module.exports = function setContours(trace, vals) {
+        var contours = trace.contours;
+        if (contours.thresholds && Lib.isArrayOrTypedArray(contours.thresholds) && contours.thresholds.length > 0) {
+          var thresholds = contours.thresholds.slice().sort(function(a, b) {
+            return a - b;
+          });
+          thresholds = thresholds.filter(function(val) {
+            return typeof val === "number" && !isNaN(val) && isFinite(val);
+          });
+          if (thresholds.length > 0) {
+            var dataMin = Lib.aggNums(Math.min, null, vals);
+            var dataMax = Lib.aggNums(Math.max, null, vals);
+            contours.start = thresholds[0];
+            contours.end = thresholds[thresholds.length - 1];
+            contours.size = null;
+            contours._levels = thresholds;
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Processing (including restyle) ===");
+              console.log("Using custom thresholds:", thresholds);
+              console.log("Data range:", dataMin, "to", dataMax);
+              console.log("Input start/end:", contours.start, "/", contours.end);
+              console.log("Trace zmin/zmax:", trace.zmin, "/", trace.zmax);
+              console.log("Thresholds within data range:", thresholds.filter(function(t) {
+                return t >= dataMin && t <= dataMax;
+              }));
+              console.log("Thresholds outside data range:", thresholds.filter(function(t) {
+                return t < dataMin || t > dataMax;
+              }));
+              console.log("=== End Custom Thresholds Processing ===");
+            }
+            if (!trace._input.contours) trace._input.contours = {};
+            trace._input.contours.thresholds = thresholds;
+            trace._input.autocontour = false;
+            return;
+          }
+        }
+        if (trace.autocontour) {
+          var zmin = trace.zmin;
+          var zmax = trace.zmax;
+          if (trace.zauto || zmin === void 0) {
+            zmin = Lib.aggNums(Math.min, null, vals);
+          }
+          if (trace.zauto || zmax === void 0) {
+            zmax = Lib.aggNums(Math.max, null, vals);
+          }
+          var dummyAx = autoContours(zmin, zmax, trace.ncontours);
+          contours.size = dummyAx.dtick;
+          contours.start = Axes.tickFirst(dummyAx);
+          dummyAx.range.reverse();
+          contours.end = Axes.tickFirst(dummyAx);
+          if (contours.start === zmin) contours.start += contours.size;
+          if (contours.end === zmax) contours.end -= contours.size;
+          if (contours.start > contours.end) {
+            contours.start = contours.end = (contours.start + contours.end) / 2;
+          }
+          if (!trace._input.contours) trace._input.contours = {};
+          Lib.extendFlat(trace._input.contours, {
+            start: contours.start,
+            end: contours.end,
+            size: contours.size
+          });
+          trace._input.autocontour = true;
+        } else if (contours.type !== "constraint") {
+          var start = contours.start;
+          var end = contours.end;
+          var inputContours = trace._input.contours;
+          if (start > end) {
+            contours.start = inputContours.start = end;
+            end = contours.end = inputContours.end = start;
+            start = contours.start;
+          }
+          if (!(contours.size > 0)) {
+            var sizeOut;
+            if (start === end) sizeOut = 1;
+            else sizeOut = autoContours(start, end, trace.ncontours).dtick;
+            inputContours.size = contours.size = sizeOut;
+          }
+        }
+      };
+      function autoContours(start, end, ncontours) {
+        var dummyAx = {
+          type: "linear",
+          range: [start, end]
+        };
+        Axes.autoTicks(
+          dummyAx,
+          (end - start) / (ncontours || 15)
+        );
+        return dummyAx;
+      }
+    }
+  });
+
+  // src/traces/contour/end_plus.js
+  var require_end_plus = __commonJS({
+    "src/traces/contour/end_plus.js"(exports, module) {
+      "use strict";
+      module.exports = function endPlus(contours) {
+        return contours.end + contours.size / 1e6;
+      };
+    }
+  });
+
+  // src/traces/contour/calc.js
+  var require_calc8 = __commonJS({
+    "src/traces/contour/calc.js"(exports, module) {
+      "use strict";
+      var Colorscale = require_colorscale();
+      var heatmapCalc = require_calc7();
+      var setContours = require_set_contours();
+      var endPlus = require_end_plus();
+      module.exports = function calc(gd, trace) {
+        var cd = heatmapCalc(gd, trace);
+        var zOut = cd[0].z;
+        setContours(trace, zOut);
+        var contours = trace.contours;
+        var cOpts = Colorscale.extractOpts(trace);
+        var cVals;
+        if (contours.coloring === "heatmap" && cOpts.auto && trace.autocontour === false) {
+          var start = contours.start;
+          var end = endPlus(contours);
+          var cs = contours.size || 1;
+          var nc = Math.floor((end - start) / cs) + 1;
+          if (contours._levels && contours._levels.length > 0) {
+            var levels = contours._levels;
+            var firstGap = levels.length > 1 ? levels[1] - levels[0] : 1;
+            var lastGap = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            var min0 = levels[0] - firstGap / 2;
+            var max0 = levels[levels.length - 1] + lastGap / 2;
+            cVals = [min0, max0];
+          } else {
+            if (!isFinite(cs)) {
+              cs = 1;
+              nc = 1;
+            }
+            var min0 = start - cs / 2;
+            var max0 = min0 + nc * cs;
+            cVals = [min0, max0];
+          }
+        } else {
+          cVals = zOut;
+        }
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== Colorscale.calc in contour/calc.js ===");
+          console.log("Has custom thresholds:", !!(contours._levels && contours._levels.length > 0));
+          console.log("cVals type:", Array.isArray(cVals) ? "array[" + cVals.length + "]" : typeof cVals);
+          console.log("Using cVals:", Array.isArray(cVals) && cVals.length <= 10 ? cVals : "large array");
+        }
+        Colorscale.calc(gd, trace, { vals: cVals, cLetter: "z" });
+        return cd;
+      };
+    }
+  });
+
+  // src/constants/pixelated_image.js
+  var require_pixelated_image = __commonJS({
+    "src/constants/pixelated_image.js"(exports) {
+      "use strict";
+      exports.CSS_DECLARATIONS = [
+        ["image-rendering", "optimizeSpeed"],
+        ["image-rendering", "-moz-crisp-edges"],
+        ["image-rendering", "-o-crisp-edges"],
+        ["image-rendering", "-webkit-optimize-contrast"],
+        ["image-rendering", "optimize-contrast"],
+        ["image-rendering", "crisp-edges"],
+        ["image-rendering", "pixelated"]
+      ];
+      exports.STYLE = exports.CSS_DECLARATIONS.map(function(d) {
+        return d.join(": ") + "; ";
+      }).join("");
+    }
+  });
+
+  // src/lib/supports_pixelated_image.js
+  var require_supports_pixelated_image = __commonJS({
+    "src/lib/supports_pixelated_image.js"(exports, module) {
+      "use strict";
+      var constants = require_pixelated_image();
+      var Drawing = require_drawing();
+      var Lib = require_lib();
+      var _supportsPixelated = null;
+      function supportsPixelatedImage() {
+        if (_supportsPixelated !== null) {
+          return _supportsPixelated;
+        }
+        _supportsPixelated = false;
+        var unsupportedBrowser = Lib.isSafari() || Lib.isIOS();
+        if (window.navigator.userAgent && !unsupportedBrowser) {
+          var declarations = Array.from(constants.CSS_DECLARATIONS).reverse();
+          var supports = window.CSS && window.CSS.supports || window.supportsCSS;
+          if (typeof supports === "function") {
+            _supportsPixelated = declarations.some(function(d) {
+              return supports.apply(null, d);
+            });
+          } else {
+            var image3 = Drawing.tester.append("image").attr("style", constants.STYLE);
+            var cStyles = window.getComputedStyle(image3.node());
+            var imageRendering = cStyles.imageRendering;
+            _supportsPixelated = declarations.some(function(d) {
+              var value = d[1];
+              return imageRendering === value || imageRendering === value.toLowerCase();
+            });
+            image3.remove();
+          }
+        }
+        return _supportsPixelated;
+      }
+      module.exports = supportsPixelatedImage;
+    }
+  });
+
+  // src/traces/heatmap/plot.js
+  var require_plot3 = __commonJS({
+    "src/traces/heatmap/plot.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var tinycolor = require_tinycolor();
+      var Registry = require_registry();
+      var Drawing = require_drawing();
+      var Axes = require_axes();
+      var Lib = require_lib();
+      var svgTextUtils = require_svg_text_utils();
+      var formatLabels = require_format_labels();
+      var Color = require_color();
+      var extractOpts = require_colorscale().extractOpts;
+      var makeColorScaleFuncFromTrace = require_colorscale().makeColorScaleFuncFromTrace;
+      var xmlnsNamespaces = require_xmlns_namespaces();
+      var alignmentConstants = require_alignment();
+      var LINE_SPACING = alignmentConstants.LINE_SPACING;
+      var supportsPixelatedImage = require_supports_pixelated_image();
+      var PIXELATED_IMAGE_STYLE = require_pixelated_image().STYLE;
+      var labelClass = "heatmap-label";
+      function selectLabels(plotGroup) {
+        return plotGroup.selectAll("g." + labelClass);
+      }
+      function removeLabels(plotGroup) {
+        selectLabels(plotGroup).remove();
+      }
+      module.exports = function(gd, plotinfo, cdheatmaps, heatmapLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(heatmapLayer, cdheatmaps, "hm").each(function(cd) {
+          var plotGroup = d3.select(this);
+          var cd0 = cd[0];
+          var trace = cd0.trace;
+          var xGap = trace.xgap || 0;
+          var yGap = trace.ygap || 0;
+          var z = cd0.z;
+          var x = cd0.x;
+          var y = cd0.y;
+          var xc = cd0.xCenter;
+          var yc = cd0.yCenter;
+          var isContour = Registry.traceIs(trace, "contour");
+          var zsmooth = isContour ? "best" : trace.zsmooth;
+          var m = z.length;
+          var n = Lib.maxRowLength(z);
+          var xrev = false;
+          var yrev = false;
+          var left, right, temp, top, bottom, i, j, k;
+          i = 0;
+          while (left === void 0 && i < x.length - 1) {
+            left = xa.c2p(x[i]);
+            i++;
+          }
+          i = x.length - 1;
+          while (right === void 0 && i > 0) {
+            right = xa.c2p(x[i]);
+            i--;
+          }
+          if (right < left) {
+            temp = right;
+            right = left;
+            left = temp;
+            xrev = true;
+          }
+          i = 0;
+          while (top === void 0 && i < y.length - 1) {
+            top = ya.c2p(y[i]);
+            i++;
+          }
+          i = y.length - 1;
+          while (bottom === void 0 && i > 0) {
+            bottom = ya.c2p(y[i]);
+            i--;
+          }
+          if (bottom < top) {
+            temp = top;
+            top = bottom;
+            bottom = temp;
+            yrev = true;
+          }
+          if (isContour) {
+            xc = x;
+            yc = y;
+            x = cd0.xfill;
+            y = cd0.yfill;
+          }
+          var drawingMethod = "default";
+          if (zsmooth) {
+            drawingMethod = zsmooth === "best" ? "smooth" : "fast";
+          } else if (trace._islinear && xGap === 0 && yGap === 0 && supportsPixelatedImage()) {
+            drawingMethod = "fast";
+          }
+          if (drawingMethod !== "fast") {
+            var extra = zsmooth === "best" ? 0 : 0.5;
+            left = Math.max(-extra * xa._length, left);
+            right = Math.min((1 + extra) * xa._length, right);
+            top = Math.max(-extra * ya._length, top);
+            bottom = Math.min((1 + extra) * ya._length, bottom);
+          }
+          var imageWidth = Math.round(right - left);
+          var imageHeight = Math.round(bottom - top);
+          var isOffScreen = left >= xa._length || right <= 0 || top >= ya._length || bottom <= 0;
+          if (isOffScreen) {
+            var noImage = plotGroup.selectAll("image").data([]);
+            noImage.exit().remove();
+            removeLabels(plotGroup);
+            return;
+          }
+          var canvasW, canvasH;
+          if (drawingMethod === "fast") {
+            canvasW = n;
+            canvasH = m;
+          } else {
+            canvasW = imageWidth;
+            canvasH = imageHeight;
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = canvasW;
+          canvas.height = canvasH;
+          var context = canvas.getContext("2d", { willReadFrequently: true });
+          var sclFunc = makeColorScaleFuncFromTrace(trace, { noNumericCheck: true, returnArray: true });
+          var xpx, ypx;
+          if (drawingMethod === "fast") {
+            xpx = xrev ? function(index) {
+              return n - 1 - index;
+            } : Lib.identity;
+            ypx = yrev ? function(index) {
+              return m - 1 - index;
+            } : Lib.identity;
+          } else {
+            xpx = function(index) {
+              return Lib.constrain(
+                Math.round(xa.c2p(x[index]) - left),
+                0,
+                imageWidth
+              );
+            };
+            ypx = function(index) {
+              return Lib.constrain(
+                Math.round(ya.c2p(y[index]) - top),
+                0,
+                imageHeight
+              );
+            };
+          }
+          var yi = ypx(0);
+          var yb = [yi, yi];
+          var xbi = xrev ? 0 : 1;
+          var ybi = yrev ? 0 : 1;
+          var pixcount = 0;
+          var rcount = 0;
+          var gcount = 0;
+          var bcount = 0;
+          var xb, xi, v, row, c;
+          function setColor(v2, pixsize) {
+            if (v2 !== void 0) {
+              var c2 = sclFunc(v2);
+              c2[0] = Math.round(c2[0]);
+              c2[1] = Math.round(c2[1]);
+              c2[2] = Math.round(c2[2]);
+              pixcount += pixsize;
+              rcount += c2[0] * pixsize;
+              gcount += c2[1] * pixsize;
+              bcount += c2[2] * pixsize;
+              return c2;
+            }
+            return [0, 0, 0, 0];
+          }
+          function interpColor(r02, r12, xinterp, yinterp2) {
+            var z00 = r02[xinterp.bin0];
+            if (z00 === void 0) return setColor(void 0, 1);
+            var z01 = r02[xinterp.bin1];
+            var z10 = r12[xinterp.bin0];
+            var z11 = r12[xinterp.bin1];
+            var dx2 = z01 - z00 || 0;
+            var dy2 = z10 - z00 || 0;
+            var dxy;
+            if (z01 === void 0) {
+              if (z11 === void 0) dxy = 0;
+              else if (z10 === void 0) dxy = 2 * (z11 - z00);
+              else dxy = (2 * z11 - z10 - z00) * 2 / 3;
+            } else if (z11 === void 0) {
+              if (z10 === void 0) dxy = 0;
+              else dxy = (2 * z00 - z01 - z10) * 2 / 3;
+            } else if (z10 === void 0) dxy = (2 * z11 - z01 - z00) * 2 / 3;
+            else dxy = z11 + z00 - z01 - z10;
+            return setColor(z00 + xinterp.frac * dx2 + yinterp2.frac * (dy2 + xinterp.frac * dxy));
+          }
+          if (drawingMethod !== "default") {
+            var pxIndex = 0;
+            var pixels;
+            try {
+              pixels = new Uint8Array(canvasW * canvasH * 4);
+            } catch (e) {
+              pixels = new Array(canvasW * canvasH * 4);
+            }
+            if (drawingMethod === "smooth") {
+              var xForPx = xc || x;
+              var yForPx = yc || y;
+              var xPixArray = new Array(xForPx.length);
+              var yPixArray = new Array(yForPx.length);
+              var xinterpArray = new Array(imageWidth);
+              var findInterpX = xc ? findInterpFromCenters : findInterp;
+              var findInterpY = yc ? findInterpFromCenters : findInterp;
+              var yinterp, r0, r1;
+              for (i = 0; i < xForPx.length; i++) xPixArray[i] = Math.round(xa.c2p(xForPx[i]) - left);
+              for (i = 0; i < yForPx.length; i++) yPixArray[i] = Math.round(ya.c2p(yForPx[i]) - top);
+              for (i = 0; i < imageWidth; i++) xinterpArray[i] = findInterpX(i, xPixArray);
+              for (j = 0; j < imageHeight; j++) {
+                yinterp = findInterpY(j, yPixArray);
+                r0 = z[yinterp.bin0];
+                r1 = z[yinterp.bin1];
+                for (i = 0; i < imageWidth; i++, pxIndex += 4) {
+                  c = interpColor(r0, r1, xinterpArray[i], yinterp);
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            } else {
+              for (j = 0; j < m; j++) {
+                row = z[j];
+                yb = ypx(j);
+                for (i = 0; i < n; i++) {
+                  c = setColor(row[i], 1);
+                  pxIndex = (yb * n + xpx(i)) * 4;
+                  putColor(pixels, pxIndex, c);
+                }
+              }
+            }
+            var imageData = context.createImageData(canvasW, canvasH);
+            try {
+              imageData.data.set(pixels);
+            } catch (e) {
+              var pxArray = imageData.data;
+              var dlen = pxArray.length;
+              for (j = 0; j < dlen; j++) {
+                pxArray[j] = pixels[j];
+              }
+            }
+            context.putImageData(imageData, 0, 0);
+          } else {
+            var xGapLeft = Math.floor(xGap / 2);
+            var yGapTop = Math.floor(yGap / 2);
+            for (j = 0; j < m; j++) {
+              row = z[j];
+              yb.reverse();
+              yb[ybi] = ypx(j + 1);
+              if (yb[0] === yb[1] || yb[0] === void 0 || yb[1] === void 0) {
+                continue;
+              }
+              xi = xpx(0);
+              xb = [xi, xi];
+              for (i = 0; i < n; i++) {
+                xb.reverse();
+                xb[xbi] = xpx(i + 1);
+                if (xb[0] === xb[1] || xb[0] === void 0 || xb[1] === void 0) {
+                  continue;
+                }
+                v = row[i];
+                c = setColor(v, (xb[1] - xb[0]) * (yb[1] - yb[0]));
+                context.fillStyle = "rgba(" + c.join(",") + ")";
+                context.fillRect(
+                  xb[0] + xGapLeft,
+                  yb[0] + yGapTop,
+                  xb[1] - xb[0] - xGap,
+                  yb[1] - yb[0] - yGap
+                );
+              }
+            }
+          }
+          rcount = Math.round(rcount / pixcount);
+          gcount = Math.round(gcount / pixcount);
+          bcount = Math.round(bcount / pixcount);
+          var avgColor = tinycolor("rgb(" + rcount + "," + gcount + "," + bcount + ")");
+          gd._hmpixcount = (gd._hmpixcount || 0) + pixcount;
+          gd._hmlumcount = (gd._hmlumcount || 0) + pixcount * avgColor.getLuminance();
+          var image3 = plotGroup.selectAll("image").data(cd);
+          image3.enter().append("svg:image").attr({
+            xmlns: xmlnsNamespaces.svg,
+            preserveAspectRatio: "none"
+          });
+          image3.attr({
+            height: imageHeight,
+            width: imageWidth,
+            x: left,
+            y: top,
+            "xlink:href": canvas.toDataURL("image/png")
+          });
+          if (drawingMethod === "fast" && !zsmooth) {
+            image3.attr("style", PIXELATED_IMAGE_STYLE);
+          }
+          removeLabels(plotGroup);
+          var texttemplate = trace.texttemplate;
+          if (texttemplate) {
+            var cOpts = extractOpts(trace);
+            var dummyAx = {
+              type: "linear",
+              range: [cOpts.min, cOpts.max],
+              _separators: xa._separators,
+              _numFormat: xa._numFormat
+            };
+            var aHistogram2dContour = trace.type === "histogram2dcontour";
+            var aContour = trace.type === "contour";
+            var iStart = aContour ? 1 : 0;
+            var iStop = aContour ? m - 1 : m;
+            var jStart = aContour ? 1 : 0;
+            var jStop = aContour ? n - 1 : n;
+            var textData = [];
+            for (i = iStart; i < iStop; i++) {
+              var yVal;
+              if (aContour) {
+                yVal = cd0.y[i];
+              } else if (aHistogram2dContour) {
+                if (i === 0 || i === m - 1) continue;
+                yVal = cd0.y[i];
+              } else if (cd0.yCenter) {
+                yVal = cd0.yCenter[i];
+              } else {
+                if (i + 1 === m && cd0.y[i + 1] === void 0) continue;
+                yVal = (cd0.y[i] + cd0.y[i + 1]) / 2;
+              }
+              var _y = Math.round(ya.c2p(yVal));
+              if (0 > _y || _y > ya._length) continue;
+              for (j = jStart; j < jStop; j++) {
+                var xVal;
+                if (aContour) {
+                  xVal = cd0.x[j];
+                } else if (aHistogram2dContour) {
+                  if (j === 0 || j === n - 1) continue;
+                  xVal = cd0.x[j];
+                } else if (cd0.xCenter) {
+                  xVal = cd0.xCenter[j];
+                } else {
+                  if (j + 1 === n && cd0.x[j + 1] === void 0) continue;
+                  xVal = (cd0.x[j] + cd0.x[j + 1]) / 2;
+                }
+                var _x = Math.round(xa.c2p(xVal));
+                if (0 > _x || _x > xa._length) continue;
+                var obj = formatLabels({
+                  x: xVal,
+                  y: yVal
+                }, trace, gd._fullLayout);
+                obj.x = xVal;
+                obj.y = yVal;
+                var zVal = cd0.z[i][j];
+                if (zVal === void 0) {
+                  obj.z = "";
+                  obj.zLabel = "";
+                } else {
+                  obj.z = zVal;
+                  obj.zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+                }
+                var theText = cd0.text && cd0.text[i] && cd0.text[i][j];
+                if (theText === void 0 || theText === false) theText = "";
+                obj.text = theText;
+                var _t = Lib.texttemplateString(texttemplate, obj, gd._fullLayout._d3locale, obj, trace._meta || {});
+                if (!_t) continue;
+                var lines = _t.split("<br>");
+                var nL = lines.length;
+                var nC = 0;
+                for (k = 0; k < nL; k++) {
+                  nC = Math.max(nC, lines[k].length);
+                }
+                textData.push({
+                  l: nL,
+                  // number of lines
+                  c: nC,
+                  // maximum number of chars in a line
+                  t: _t,
+                  // text
+                  x: _x,
+                  y: _y,
+                  z: zVal
+                });
+              }
+            }
+            var font = trace.textfont;
+            var fontSize = font.size;
+            var globalFontSize = gd._fullLayout.font.size;
+            if (!fontSize || fontSize === "auto") {
+              var minW = Infinity;
+              var minH = Infinity;
+              var maxL = 0;
+              var maxC = 0;
+              for (k = 0; k < textData.length; k++) {
+                var d = textData[k];
+                maxL = Math.max(maxL, d.l);
+                maxC = Math.max(maxC, d.c);
+                if (k < textData.length - 1) {
+                  var nextD = textData[k + 1];
+                  var dx = Math.abs(nextD.x - d.x);
+                  var dy = Math.abs(nextD.y - d.y);
+                  if (dx) minW = Math.min(minW, dx);
+                  if (dy) minH = Math.min(minH, dy);
+                }
+              }
+              if (!isFinite(minW) || !isFinite(minH)) {
+                fontSize = globalFontSize;
+              } else {
+                minW -= xGap;
+                minH -= yGap;
+                minW /= maxC;
+                minH /= maxL;
+                minW /= LINE_SPACING / 2;
+                minH /= LINE_SPACING;
+                fontSize = Math.min(
+                  Math.floor(minW),
+                  Math.floor(minH),
+                  globalFontSize
+                );
+              }
+            }
+            if (fontSize <= 0 || !isFinite(fontSize)) return;
+            var xFn = function(d2) {
+              return d2.x;
+            };
+            var yFn = function(d2) {
+              return d2.y - fontSize * (d2.l * LINE_SPACING / 2 - 1);
+            };
+            var labels = selectLabels(plotGroup).data(textData);
+            labels.enter().append("g").classed(labelClass, 1).append("text").attr("text-anchor", "middle").each(function(d2) {
+              var thisLabel = d3.select(this);
+              var fontColor = font.color;
+              if (!fontColor || fontColor === "auto") {
+                fontColor = Color.contrast(
+                  d2.z === void 0 ? gd._fullLayout.plot_bgcolor : "rgba(" + sclFunc(d2.z).join() + ")"
+                );
+              }
+              thisLabel.attr("data-notex", 1).call(svgTextUtils.positionText, xFn(d2), yFn(d2)).call(Drawing.font, {
+                family: font.family,
+                size: fontSize,
+                color: fontColor,
+                weight: font.weight,
+                style: font.style,
+                variant: font.variant,
+                textcase: font.textcase,
+                lineposition: font.lineposition,
+                shadow: font.shadow
+              }).text(d2.t).call(svgTextUtils.convertToTspans, gd);
+            });
+          }
+        });
+      };
+      function findInterp(pixel, pixArray) {
+        var maxBin = pixArray.length - 2;
+        var bin = Lib.constrain(Lib.findBin(pixel, pixArray), 0, maxBin);
+        var pix0 = pixArray[bin];
+        var pix1 = pixArray[bin + 1];
+        var interp = Lib.constrain(bin + (pixel - pix0) / (pix1 - pix0) - 0.5, 0, maxBin);
+        var bin0 = Math.round(interp);
+        var frac = Math.abs(interp - bin0);
+        if (!interp || interp === maxBin || !frac) {
+          return {
+            bin0,
+            bin1: bin0,
+            frac: 0
+          };
+        }
+        return {
+          bin0,
+          frac,
+          bin1: Math.round(bin0 + frac / (interp - bin0))
+        };
+      }
+      function findInterpFromCenters(pixel, centerPixArray) {
+        var maxBin = centerPixArray.length - 1;
+        var bin = Lib.constrain(Lib.findBin(pixel, centerPixArray), 0, maxBin);
+        var pix0 = centerPixArray[bin];
+        var pix1 = centerPixArray[bin + 1];
+        var frac = (pixel - pix0) / (pix1 - pix0) || 0;
+        if (frac <= 0) {
+          return {
+            bin0: bin,
+            bin1: bin,
+            frac: 0
+          };
+        }
+        if (frac < 0.5) {
+          return {
+            bin0: bin,
+            bin1: bin + 1,
+            frac
+          };
+        }
+        return {
+          bin0: bin + 1,
+          bin1: bin,
+          frac: 1 - frac
+        };
+      }
+      function putColor(pixels, pxIndex, c) {
+        pixels[pxIndex] = c[0];
+        pixels[pxIndex + 1] = c[1];
+        pixels[pxIndex + 2] = c[2];
+        pixels[pxIndex + 3] = Math.round(c[3] * 255);
+      }
+    }
+  });
+
+  // src/traces/contour/constants.js
+  var require_constants16 = __commonJS({
+    "src/traces/contour/constants.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // some constants to help with marching squares algorithm
+        // where does the path start for each index?
+        BOTTOMSTART: [1, 9, 13, 104, 713],
+        TOPSTART: [4, 6, 7, 104, 713],
+        LEFTSTART: [8, 12, 14, 208, 1114],
+        RIGHTSTART: [2, 3, 11, 208, 1114],
+        // which way [dx,dy] do we leave a given index?
+        // saddles are already disambiguated
+        NEWDELTA: [
+          null,
+          [-1, 0],
+          [0, -1],
+          [-1, 0],
+          [1, 0],
+          null,
+          [0, -1],
+          [-1, 0],
+          [0, 1],
+          [0, 1],
+          null,
+          [0, 1],
+          [1, 0],
+          [1, 0],
+          [0, -1]
+        ],
+        // for each saddle, the first index here is used
+        // for dx||dy<0, the second for dx||dy>0
+        CHOOSESADDLE: {
+          104: [4, 1],
+          208: [2, 8],
+          713: [7, 13],
+          1114: [11, 14]
+        },
+        // after one index has been used for a saddle, which do we
+        // substitute to be used up later?
+        SADDLEREMAINDER: { 1: 4, 2: 8, 4: 1, 7: 13, 8: 2, 11: 14, 13: 7, 14: 11 },
+        // length of a contour, as a multiple of the plot area diagonal, per label
+        LABELDISTANCE: 2,
+        // number of contour levels after which we start increasing the number of
+        // labels we draw. Many contours means they will generally be close
+        // together, so it will be harder to follow a long way to find a label
+        LABELINCREASE: 10,
+        // minimum length of a contour line, as a multiple of the label length,
+        // at which we draw *any* labels
+        LABELMIN: 3,
+        // max number of labels to draw on a single contour path, no matter how long
+        LABELMAX: 10,
+        // constants for the label position cost function
+        LABELOPTIMIZER: {
+          // weight given to edge proximity
+          EDGECOST: 1,
+          // weight given to the angle off horizontal
+          ANGLECOST: 1,
+          // weight given to distance from already-placed labels
+          NEIGHBORCOST: 5,
+          // cost multiplier for labels on the same level
+          SAMELEVELFACTOR: 10,
+          // minimum distance (as a multiple of the label length)
+          // for labels on the same level
+          SAMELEVELDISTANCE: 5,
+          // maximum cost before we won't even place the label
+          MAXCOST: 100,
+          // number of evenly spaced points to look at in the first
+          // iteration of the search
+          INITIALSEARCHPOINTS: 10,
+          // number of binary search iterations after the initial wide search
+          ITERATIONS: 5
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/make_crossings.js
+  var require_make_crossings = __commonJS({
+    "src/traces/contour/make_crossings.js"(exports, module) {
+      "use strict";
+      var constants = require_constants16();
+      module.exports = function makeCrossings(pathinfo) {
+        var z = pathinfo[0].z;
+        var m = z.length;
+        var n = z[0].length;
+        var twoWide = m === 2 || n === 2;
+        var xi;
+        var yi;
+        var startIndices;
+        var ystartIndices;
+        var label;
+        var corners;
+        var mi;
+        var pi;
+        var i;
+        for (yi = 0; yi < m - 1; yi++) {
+          ystartIndices = [];
+          if (yi === 0) ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
+          if (yi === m - 2) ystartIndices = ystartIndices.concat(constants.TOPSTART);
+          for (xi = 0; xi < n - 1; xi++) {
+            startIndices = ystartIndices.slice();
+            if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
+            if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
+            label = xi + "," + yi;
+            corners = [
+              [z[yi][xi], z[yi][xi + 1]],
+              [z[yi + 1][xi], z[yi + 1][xi + 1]]
+            ];
+            for (i = 0; i < pathinfo.length; i++) {
+              pi = pathinfo[i];
+              mi = getMarchingIndex(pi.level, corners);
+              if (!mi) continue;
+              pi.crossings[label] = mi;
+              if (startIndices.indexOf(mi) !== -1) {
+                pi.starts.push([xi, yi]);
+                if (twoWide && startIndices.indexOf(
+                  mi,
+                  startIndices.indexOf(mi) + 1
+                ) !== -1) {
+                  pi.starts.push([xi, yi]);
+                }
+              }
+            }
+          }
+        }
+      };
+      function getMarchingIndex(val, corners) {
+        var mi = (corners[0][0] > val ? 0 : 1) + (corners[0][1] > val ? 0 : 2) + (corners[1][1] > val ? 0 : 4) + (corners[1][0] > val ? 0 : 8);
+        if (mi === 5 || mi === 10) {
+          var avg = (corners[0][0] + corners[0][1] + corners[1][0] + corners[1][1]) / 4;
+          if (val > avg) return mi === 5 ? 713 : 1114;
+          return mi === 5 ? 104 : 208;
+        }
+        return mi === 15 ? 0 : mi;
+      }
+    }
+  });
+
+  // src/traces/contour/find_all_paths.js
+  var require_find_all_paths = __commonJS({
+    "src/traces/contour/find_all_paths.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constants = require_constants16();
+      module.exports = function findAllPaths(pathinfo, xtol, ytol) {
+        var cnt, startLoc, i, pi, j;
+        xtol = xtol || 0.01;
+        ytol = ytol || 0.01;
+        for (i = 0; i < pathinfo.length; i++) {
+          pi = pathinfo[i];
+          for (j = 0; j < pi.starts.length; j++) {
+            startLoc = pi.starts[j];
+            makePath(pi, startLoc, "edge", xtol, ytol);
+          }
+          cnt = 0;
+          while (Object.keys(pi.crossings).length && cnt < 1e4) {
+            cnt++;
+            startLoc = Object.keys(pi.crossings)[0].split(",").map(Number);
+            makePath(pi, startLoc, void 0, xtol, ytol);
+          }
+          if (cnt === 1e4) Lib.log("Infinite loop in contour?");
+        }
+      };
+      function equalPts(pt1, pt2, xtol, ytol) {
+        return Math.abs(pt1[0] - pt2[0]) < xtol && Math.abs(pt1[1] - pt2[1]) < ytol;
+      }
+      function ptDist(pt1, pt2) {
+        var dx = pt1[2] - pt2[2];
+        var dy = pt1[3] - pt2[3];
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      function makePath(pi, loc, edgeflag, xtol, ytol) {
+        var locStr = loc.join(",");
+        var mi = pi.crossings[locStr];
+        var marchStep = getStartStep(mi, edgeflag, loc);
+        var pts = [getInterpPx(pi, loc, [-marchStep[0], -marchStep[1]])];
+        var m = pi.z.length;
+        var n = pi.z[0].length;
+        var startLoc = loc.slice();
+        var startStep = marchStep.slice();
+        var cnt;
+        for (cnt = 0; cnt < 1e4; cnt++) {
+          if (mi > 20) {
+            mi = constants.CHOOSESADDLE[mi][(marchStep[0] || marchStep[1]) < 0 ? 0 : 1];
+            pi.crossings[locStr] = constants.SADDLEREMAINDER[mi];
+          } else {
+            delete pi.crossings[locStr];
+          }
+          marchStep = constants.NEWDELTA[mi];
+          if (!marchStep) {
+            Lib.log("Found bad marching index:", mi, loc, pi.level);
+            break;
+          }
+          pts.push(getInterpPx(pi, loc, marchStep));
+          loc[0] += marchStep[0];
+          loc[1] += marchStep[1];
+          locStr = loc.join(",");
+          if (equalPts(pts[pts.length - 1], pts[pts.length - 2], xtol, ytol)) pts.pop();
+          var atEdge = marchStep[0] && (loc[0] < 0 || loc[0] > n - 2) || marchStep[1] && (loc[1] < 0 || loc[1] > m - 2);
+          var closedLoop = loc[0] === startLoc[0] && loc[1] === startLoc[1] && marchStep[0] === startStep[0] && marchStep[1] === startStep[1];
+          if (closedLoop || edgeflag && atEdge) break;
+          mi = pi.crossings[locStr];
+        }
+        if (cnt === 1e4) {
+          Lib.log("Infinite loop in contour?");
+        }
+        var closedpath = equalPts(pts[0], pts[pts.length - 1], xtol, ytol);
+        var totaldist = 0;
+        var distThresholdFactor = 0.2 * pi.smoothing;
+        var alldists = [];
+        var cropstart = 0;
+        var distgroup, cnt2, cnt3, newpt, ptcnt, ptavg, thisdist, i, j, edgepathi, edgepathj;
+        for (cnt = 1; cnt < pts.length; cnt++) {
+          thisdist = ptDist(pts[cnt], pts[cnt - 1]);
+          totaldist += thisdist;
+          alldists.push(thisdist);
+        }
+        var distThreshold = totaldist / alldists.length * distThresholdFactor;
+        function getpt(i2) {
+          return pts[i2 % pts.length];
+        }
+        for (cnt = pts.length - 2; cnt >= cropstart; cnt--) {
+          distgroup = alldists[cnt];
+          if (distgroup < distThreshold) {
+            cnt3 = 0;
+            for (cnt2 = cnt - 1; cnt2 >= cropstart; cnt2--) {
+              if (distgroup + alldists[cnt2] < distThreshold) {
+                distgroup += alldists[cnt2];
+              } else break;
+            }
+            if (closedpath && cnt === pts.length - 2) {
+              for (cnt3 = 0; cnt3 < cnt2; cnt3++) {
+                if (distgroup + alldists[cnt3] < distThreshold) {
+                  distgroup += alldists[cnt3];
+                } else break;
+              }
+            }
+            ptcnt = cnt - cnt2 + cnt3 + 1;
+            ptavg = Math.floor((cnt + cnt2 + cnt3 + 2) / 2);
+            if (!closedpath && cnt === pts.length - 2) newpt = pts[pts.length - 1];
+            else if (!closedpath && cnt2 === -1) newpt = pts[0];
+            else if (ptcnt % 2) newpt = getpt(ptavg);
+            else {
+              newpt = [
+                (getpt(ptavg)[0] + getpt(ptavg + 1)[0]) / 2,
+                (getpt(ptavg)[1] + getpt(ptavg + 1)[1]) / 2
+              ];
+            }
+            pts.splice(cnt2 + 1, cnt - cnt2 + 1, newpt);
+            cnt = cnt2 + 1;
+            if (cnt3) cropstart = cnt3;
+            if (closedpath) {
+              if (cnt === pts.length - 2) pts[cnt3] = pts[pts.length - 1];
+              else if (cnt === 0) pts[pts.length - 1] = pts[0];
+            }
+          }
+        }
+        pts.splice(0, cropstart);
+        for (cnt = 0; cnt < pts.length; cnt++) pts[cnt].length = 2;
+        if (pts.length < 2) return;
+        else if (closedpath) {
+          pts.pop();
+          pi.paths.push(pts);
+        } else {
+          if (!edgeflag) {
+            Lib.log(
+              "Unclosed interior contour?",
+              pi.level,
+              startLoc.join(","),
+              pts.join("L")
+            );
+          }
+          var merged = false;
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            edgepathi = pi.edgepaths[i];
+            if (!merged && equalPts(edgepathi[0], pts[pts.length - 1], xtol, ytol)) {
+              pts.pop();
+              merged = true;
+              var doublemerged = false;
+              for (j = 0; j < pi.edgepaths.length; j++) {
+                edgepathj = pi.edgepaths[j];
+                if (equalPts(edgepathj[edgepathj.length - 1], pts[0], xtol, ytol)) {
+                  doublemerged = true;
+                  pts.shift();
+                  pi.edgepaths.splice(i, 1);
+                  if (j === i) {
+                    pi.paths.push(pts.concat(edgepathj));
+                  } else {
+                    if (j > i) j--;
+                    pi.edgepaths[j] = edgepathj.concat(pts, edgepathi);
+                  }
+                  break;
+                }
+              }
+              if (!doublemerged) {
+                pi.edgepaths[i] = pts.concat(edgepathi);
+              }
+            }
+          }
+          for (i = 0; i < pi.edgepaths.length; i++) {
+            if (merged) break;
+            edgepathi = pi.edgepaths[i];
+            if (equalPts(edgepathi[edgepathi.length - 1], pts[0], xtol, ytol)) {
+              pts.shift();
+              pi.edgepaths[i] = edgepathi.concat(pts);
+              merged = true;
+            }
+          }
+          if (!merged) pi.edgepaths.push(pts);
+        }
+      }
+      function getStartStep(mi, edgeflag, loc) {
+        var dx = 0;
+        var dy = 0;
+        if (mi > 20 && edgeflag) {
+          if (mi === 208 || mi === 1114) {
+            dx = loc[0] === 0 ? 1 : -1;
+          } else {
+            dy = loc[1] === 0 ? 1 : -1;
+          }
+        } else if (constants.BOTTOMSTART.indexOf(mi) !== -1) dy = 1;
+        else if (constants.LEFTSTART.indexOf(mi) !== -1) dx = 1;
+        else if (constants.TOPSTART.indexOf(mi) !== -1) dy = -1;
+        else dx = -1;
+        return [dx, dy];
+      }
+      function getInterpPx(pi, loc, step) {
+        var locx = loc[0] + Math.max(step[0], 0);
+        var locy = loc[1] + Math.max(step[1], 0);
+        var zxy = pi.z[locy][locx];
+        var xa = pi.xaxis;
+        var ya = pi.yaxis;
+        if (step[1]) {
+          var dx = (pi.level - zxy) / (pi.z[locy][locx + 1] - zxy);
+          var dxl = (dx !== 1 ? (1 - dx) * xa.c2l(pi.x[locx]) : 0) + (dx !== 0 ? dx * xa.c2l(pi.x[locx + 1]) : 0);
+          return [
+            xa.c2p(xa.l2c(dxl), true),
+            ya.c2p(pi.y[locy], true),
+            locx + dx,
+            locy
+          ];
+        } else {
+          var dy = (pi.level - zxy) / (pi.z[locy + 1][locx] - zxy);
+          var dyl = (dy !== 1 ? (1 - dy) * ya.c2l(pi.y[locy]) : 0) + (dy !== 0 ? dy * ya.c2l(pi.y[locy + 1]) : 0);
+          return [
+            xa.c2p(pi.x[locx], true),
+            ya.c2p(ya.l2c(dyl), true),
+            locx,
+            locy + dy
+          ];
+        }
+      }
+    }
+  });
+
+  // src/traces/contour/constraint_mapping.js
+  var require_constraint_mapping = __commonJS({
+    "src/traces/contour/constraint_mapping.js"(exports, module) {
+      "use strict";
+      var filterOps = require_filter_ops();
+      var isNumeric = require_fast_isnumeric();
+      module.exports = {
+        "[]": makeRangeSettings("[]"),
+        "][": makeRangeSettings("]["),
+        ">": makeInequalitySettings(">"),
+        "<": makeInequalitySettings("<"),
+        "=": makeInequalitySettings("=")
+      };
+      function coerceValue(operation, value) {
+        var hasArrayValue = Array.isArray(value);
+        var coercedValue;
+        function coerce(value2) {
+          return isNumeric(value2) ? +value2 : null;
+        }
+        if (filterOps.COMPARISON_OPS2.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? coerce(value[0]) : coerce(value);
+        } else if (filterOps.INTERVAL_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? [coerce(value[0]), coerce(value[1])] : [coerce(value), coerce(value)];
+        } else if (filterOps.SET_OPS.indexOf(operation) !== -1) {
+          coercedValue = hasArrayValue ? value.map(coerce) : [coerce(value)];
+        }
+        return coercedValue;
+      }
+      function makeRangeSettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          var min = Math.min(value[0], value[1]);
+          var max = Math.max(value[0], value[1]);
+          return {
+            start: min,
+            end: max,
+            size: max - min
+          };
+        };
+      }
+      function makeInequalitySettings(operation) {
+        return function(value) {
+          value = coerceValue(operation, value);
+          return {
+            start: value,
+            end: Infinity,
+            size: Infinity
+          };
+        };
+      }
+    }
+  });
+
+  // src/traces/contour/empty_pathinfo.js
+  var require_empty_pathinfo = __commonJS({
+    "src/traces/contour/empty_pathinfo.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      var constraintMapping = require_constraint_mapping();
+      var endPlus = require_end_plus();
+      module.exports = function emptyPathinfo(contours, plotinfo, cd0) {
+        var contoursFinal = contours.type === "constraint" ? constraintMapping[contours._operation](contours.value) : contours;
+        var cs = contoursFinal.size;
+        var pathinfo = [];
+        var end = endPlus(contoursFinal);
+        var carpet = cd0.trace._carpetTrace;
+        var basePathinfo = carpet ? {
+          // store axes so we can convert to px
+          xaxis: carpet.aaxis,
+          yaxis: carpet.baxis,
+          // full data arrays to use for interpolation
+          x: cd0.a,
+          y: cd0.b
+        } : {
+          xaxis: plotinfo.xaxis,
+          yaxis: plotinfo.yaxis,
+          x: cd0.x,
+          y: cd0.y
+        };
+        if (contoursFinal._levels && contoursFinal._levels.length > 0) {
+          var levels = contoursFinal._levels;
+          if (typeof console !== "undefined" && console.log) {
+            console.log("Processing custom levels in pathinfo:", levels);
+          }
+          for (var i = 0; i < levels.length; i++) {
+            pathinfo.push(Lib.extendFlat({
+              level: levels[i],
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        } else {
+          for (var ci = contoursFinal.start; ci < end; ci += cs) {
+            pathinfo.push(Lib.extendFlat({
+              level: ci,
+              // all the cells with nontrivial marching index
+              crossings: {},
+              // starting points on the edges of the lattice for each contour
+              starts: [],
+              // all unclosed paths (may have less items than starts,
+              // if a path is closed by rounding)
+              edgepaths: [],
+              // all closed paths
+              paths: [],
+              z: cd0.z,
+              smoothing: cd0.trace.line.smoothing
+            }, basePathinfo));
+            if (pathinfo.length > 1e3) {
+              Lib.warn("Too many contours, clipping at 1000", contours);
+              break;
+            }
+          }
+        }
+        return pathinfo;
+      };
+    }
+  });
+
+  // src/traces/contour/convert_to_constraints.js
+  var require_convert_to_constraints = __commonJS({
+    "src/traces/contour/convert_to_constraints.js"(exports, module) {
+      "use strict";
+      var Lib = require_lib();
+      module.exports = function(pathinfo, operation) {
+        var i, pi0, pi1;
+        var op0 = function(arr) {
+          return arr.reverse();
+        };
+        var op1 = function(arr) {
+          return arr;
+        };
+        switch (operation) {
+          case "=":
+          case "<":
+            return pathinfo;
+          case ">":
+            if (pathinfo.length !== 1) {
+              Lib.warn("Contour data invalid for the specified inequality operation.");
+            }
+            pi0 = pathinfo[0];
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            return pathinfo;
+          case "][":
+            var tmp = op0;
+            op0 = op1;
+            op1 = tmp;
+          // It's a nice rule, except this definitely *is* what's intended here.
+          /* eslint-disable: no-fallthrough */
+          case "[]":
+            if (pathinfo.length !== 2) {
+              Lib.warn("Contour data invalid for the specified inequality range operation.");
+            }
+            pi0 = copyPathinfo(pathinfo[0]);
+            pi1 = copyPathinfo(pathinfo[1]);
+            for (i = 0; i < pi0.edgepaths.length; i++) {
+              pi0.edgepaths[i] = op0(pi0.edgepaths[i]);
+            }
+            for (i = 0; i < pi0.paths.length; i++) {
+              pi0.paths[i] = op0(pi0.paths[i]);
+            }
+            for (i = 0; i < pi0.starts.length; i++) {
+              pi0.starts[i] = op0(pi0.starts[i]);
+            }
+            while (pi1.edgepaths.length) {
+              pi0.edgepaths.push(op1(pi1.edgepaths.shift()));
+            }
+            while (pi1.paths.length) {
+              pi0.paths.push(op1(pi1.paths.shift()));
+            }
+            while (pi1.starts.length) {
+              pi0.starts.push(op1(pi1.starts.shift()));
+            }
+            return [pi0];
+        }
+      };
+      function copyPathinfo(pi) {
+        return Lib.extendFlat({}, pi, {
+          edgepaths: Lib.extendDeep([], pi.edgepaths),
+          paths: Lib.extendDeep([], pi.paths),
+          starts: Lib.extendDeep([], pi.starts)
+        });
+      }
+    }
+  });
+
+  // src/traces/contour/close_boundaries.js
+  var require_close_boundaries = __commonJS({
+    "src/traces/contour/close_boundaries.js"(exports, module) {
+      "use strict";
+      module.exports = function(pathinfo, contours) {
+        var pi0 = pathinfo[0];
+        var z = pi0.z;
+        var i;
+        switch (contours.type) {
+          case "levels":
+            var edgeVal2 = Math.min(z[0][0], z[0][1]);
+            for (i = 0; i < pathinfo.length; i++) {
+              var pi = pathinfo[i];
+              pi.prefixBoundary = !pi.edgepaths.length && (edgeVal2 > pi.level || pi.starts.length && edgeVal2 === pi.level);
+            }
+            break;
+          case "constraint":
+            pi0.prefixBoundary = false;
+            if (pi0.edgepaths.length) return;
+            var na = pi0.x.length;
+            var nb = pi0.y.length;
+            var boundaryMax = -Infinity;
+            var boundaryMin = Infinity;
+            for (i = 0; i < nb; i++) {
+              boundaryMin = Math.min(boundaryMin, z[i][0]);
+              boundaryMin = Math.min(boundaryMin, z[i][na - 1]);
+              boundaryMax = Math.max(boundaryMax, z[i][0]);
+              boundaryMax = Math.max(boundaryMax, z[i][na - 1]);
+            }
+            for (i = 1; i < na - 1; i++) {
+              boundaryMin = Math.min(boundaryMin, z[0][i]);
+              boundaryMin = Math.min(boundaryMin, z[nb - 1][i]);
+              boundaryMax = Math.max(boundaryMax, z[0][i]);
+              boundaryMax = Math.max(boundaryMax, z[nb - 1][i]);
+            }
+            var contoursValue = contours.value;
+            var v1, v2;
+            switch (contours._operation) {
+              case ">":
+                if (contoursValue > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "<":
+                if (contoursValue < boundaryMin || pi0.starts.length && contoursValue === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "[]":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v2 < boundaryMin || v1 > boundaryMax || pi0.starts.length && v2 === boundaryMin) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+              case "][":
+                v1 = Math.min(contoursValue[0], contoursValue[1]);
+                v2 = Math.max(contoursValue[0], contoursValue[1]);
+                if (v1 < boundaryMin && v2 > boundaryMax) {
+                  pi0.prefixBoundary = true;
+                }
+                break;
+            }
+            break;
+        }
+      };
+    }
+  });
+
+  // src/traces/contour/plot.js
   var require_plot4 = __commonJS({
-    "src/traces/choropleth/plot.js"(exports, module) {
+    "src/traces/contour/plot.js"(exports) {
       "use strict";
       var d3 = require_d3();
       var Lib = require_lib();
-      var geoUtils = require_geo_location_utils();
-      var getTopojsonFeatures = require_topojson_utils().getTopojsonFeatures;
-      var findExtremes = require_autorange().findExtremes;
-      var style = require_style5().style;
-      function plot(gd, geo, calcData) {
-        var choroplethLayer = geo.layers.backplot.select(".choroplethlayer");
-        Lib.makeTraceGroups(choroplethLayer, calcData, "trace choropleth").each(function(calcTrace) {
-          var sel = d3.select(this);
-          var paths = sel.selectAll("path.choroplethlocation").data(Lib.identity);
-          paths.enter().append("path").classed("choroplethlocation", true);
-          paths.exit().remove();
-          style(gd, calcTrace);
+      var Drawing = require_drawing();
+      var Colorscale = require_colorscale();
+      var svgTextUtils = require_svg_text_utils();
+      var Axes = require_axes();
+      var setConvert = require_set_convert();
+      var heatmapPlot = require_plot3();
+      var makeCrossings = require_make_crossings();
+      var findAllPaths = require_find_all_paths();
+      var emptyPathinfo = require_empty_pathinfo();
+      var convertToConstraints = require_convert_to_constraints();
+      var closeBoundaries = require_close_boundaries();
+      var constants = require_constants16();
+      var costConstants = constants.LABELOPTIMIZER;
+      exports.plot = function plot(gd, plotinfo, cdcontours, contourLayer) {
+        var xa = plotinfo.xaxis;
+        var ya = plotinfo.yaxis;
+        Lib.makeTraceGroups(contourLayer, cdcontours, "contour").each(function(cd) {
+          var plotGroup = d3.select(this);
+          var cd0 = cd[0];
+          var trace = cd0.trace;
+          var x = cd0.x;
+          var y = cd0.y;
+          var contours = trace.contours;
+          var pathinfo = emptyPathinfo(contours, plotinfo, cd0);
+          var heatmapColoringLayer = Lib.ensureSingle(plotGroup, "g", "heatmapcoloring");
+          var cdheatmaps = [];
+          if (contours.coloring === "heatmap") {
+            cdheatmaps = [cd];
+          }
+          heatmapPlot(gd, plotinfo, cdheatmaps, heatmapColoringLayer);
+          makeCrossings(pathinfo);
+          findAllPaths(pathinfo);
+          var leftedge = xa.c2p(x[0], true);
+          var rightedge = xa.c2p(x[x.length - 1], true);
+          var bottomedge = ya.c2p(y[0], true);
+          var topedge = ya.c2p(y[y.length - 1], true);
+          var perimeter = [
+            [leftedge, topedge],
+            [rightedge, topedge],
+            [rightedge, bottomedge],
+            [leftedge, bottomedge]
+          ];
+          var fillPathinfo = pathinfo;
+          if (contours.type === "constraint") {
+            fillPathinfo = convertToConstraints(pathinfo, contours._operation);
+          }
+          makeBackground(plotGroup, perimeter, contours);
+          makeFills(plotGroup, fillPathinfo, perimeter, contours);
+          makeLinesAndLabels(plotGroup, pathinfo, gd, cd0, contours);
+          clipGaps(plotGroup, plotinfo, gd, cd0, perimeter);
+        });
+      };
+      function makeBackground(plotgroup, perimeter, contours) {
+        var bggroup = Lib.ensureSingle(plotgroup, "g", "contourbg");
+        var bgfill = bggroup.selectAll("path").data(contours.coloring === "fill" ? [0] : []);
+        bgfill.enter().append("path");
+        bgfill.exit().remove();
+        bgfill.attr("d", "M" + perimeter.join("L") + "Z").style("stroke", "none");
+      }
+      function makeFills(plotgroup, pathinfo, perimeter, contours) {
+        var hasFills = contours.coloring === "fill" || contours.type === "constraint" && contours._operation !== "=";
+        var boundaryPath = "M" + perimeter.join("L") + "Z";
+        if (hasFills) {
+          closeBoundaries(pathinfo, contours);
+        }
+        var fillgroup = Lib.ensureSingle(plotgroup, "g", "contourfill");
+        var fillitems = fillgroup.selectAll("path").data(hasFills ? pathinfo : []);
+        fillitems.enter().append("path");
+        fillitems.exit().remove();
+        fillitems.each(function(pi) {
+          var fullpath = (pi.prefixBoundary ? boundaryPath : "") + joinAllPaths(pi, perimeter);
+          if (!fullpath) {
+            d3.select(this).remove();
+          } else {
+            d3.select(this).attr("d", fullpath).style("stroke", "none");
+          }
         });
       }
-      function calcGeoJSON(calcTrace, fullLayout) {
-        var trace = calcTrace[0].trace;
-        var geoLayout = fullLayout[trace.geo];
-        var geo = geoLayout._subplot;
-        var locationmode = trace.locationmode;
-        var len = trace._length;
-        var features = locationmode === "geojson-id" ? geoUtils.extractTraceFeature(calcTrace) : getTopojsonFeatures(trace, geo.topojson);
-        var lonArray = [];
-        var latArray = [];
-        for (var i = 0; i < len; i++) {
-          var calcPt = calcTrace[i];
-          var feature = locationmode === "geojson-id" ? calcPt.fOut : geoUtils.locationToFeature(locationmode, calcPt.loc, features);
-          if (feature) {
-            calcPt.geojson = feature;
-            calcPt.ct = feature.properties.ct;
-            calcPt._polygons = geoUtils.feature2polygons(feature);
-            var bboxFeature = geoUtils.computeBbox(feature);
-            lonArray.push(bboxFeature[0], bboxFeature[2]);
-            latArray.push(bboxFeature[1], bboxFeature[3]);
+      function joinAllPaths(pi, perimeter) {
+        var fullpath = "";
+        var i = 0;
+        var startsleft = pi.edgepaths.map(function(v, i2) {
+          return i2;
+        });
+        var newloop = true;
+        var endpt;
+        var newendpt;
+        var cnt;
+        var nexti;
+        var possiblei;
+        var addpath;
+        function istop(pt) {
+          return Math.abs(pt[1] - perimeter[0][1]) < 0.01;
+        }
+        function isbottom(pt) {
+          return Math.abs(pt[1] - perimeter[2][1]) < 0.01;
+        }
+        function isleft(pt) {
+          return Math.abs(pt[0] - perimeter[0][0]) < 0.01;
+        }
+        function isright(pt) {
+          return Math.abs(pt[0] - perimeter[2][0]) < 0.01;
+        }
+        while (startsleft.length) {
+          addpath = Drawing.smoothopen(pi.edgepaths[i], pi.smoothing);
+          fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+          startsleft.splice(startsleft.indexOf(i), 1);
+          endpt = pi.edgepaths[i][pi.edgepaths[i].length - 1];
+          nexti = -1;
+          for (cnt = 0; cnt < 4; cnt++) {
+            if (!endpt) {
+              Lib.log("Missing end?", i, pi);
+              break;
+            }
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+            else if (isleft(endpt)) newendpt = perimeter[0];
+            else if (isbottom(endpt)) newendpt = perimeter[3];
+            else if (isright(endpt)) newendpt = perimeter[2];
+            for (possiblei = 0; possiblei < pi.edgepaths.length; possiblei++) {
+              var ptNew = pi.edgepaths[possiblei][0];
+              if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
+                if (Math.abs(endpt[0] - ptNew[0]) < 0.01 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
+                if (Math.abs(endpt[1] - ptNew[1]) < 0.01 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else {
+                Lib.log(
+                  "endpt to newendpt is not vert. or horz.",
+                  endpt,
+                  newendpt,
+                  ptNew
+                );
+              }
+            }
+            endpt = newendpt;
+            if (nexti >= 0) break;
+            fullpath += "L" + newendpt;
+          }
+          if (nexti === pi.edgepaths.length) {
+            Lib.log("unclosed perimeter path");
+            break;
+          }
+          i = nexti;
+          newloop = startsleft.indexOf(i) === -1;
+          if (newloop) {
+            i = startsleft[0];
+            fullpath += "Z";
+          }
+        }
+        for (i = 0; i < pi.paths.length; i++) {
+          fullpath += Drawing.smoothclosed(pi.paths[i], pi.smoothing);
+        }
+        return fullpath;
+      }
+      function makeLinesAndLabels(plotgroup, pathinfo, gd, cd0, contours) {
+        var isStatic = gd._context.staticPlot;
+        var lineContainer = Lib.ensureSingle(plotgroup, "g", "contourlines");
+        var showLines = contours.showlines !== false;
+        var showLabels = contours.showlabels;
+        var clipLinesForLabels = showLines && showLabels;
+        var linegroup = exports.createLines(lineContainer, showLines || showLabels, pathinfo, isStatic);
+        var lineClip = exports.createLineClip(lineContainer, clipLinesForLabels, gd, cd0.trace.uid);
+        var labelGroup = plotgroup.selectAll("g.contourlabels").data(showLabels ? [0] : []);
+        labelGroup.exit().remove();
+        labelGroup.enter().append("g").classed("contourlabels", true);
+        if (showLabels) {
+          var labelClipPathData = [];
+          var labelData = [];
+          Lib.clearLocationCache();
+          var contourFormat = exports.labelFormatter(gd, cd0);
+          var dummyText = Drawing.tester.append("text").attr("data-notex", 1).call(Drawing.font, contours.labelfont);
+          var xa = pathinfo[0].xaxis;
+          var ya = pathinfo[0].yaxis;
+          var xLen = xa._length;
+          var yLen = ya._length;
+          var xRng = xa.range;
+          var yRng = ya.range;
+          var xMin = Lib.aggNums(Math.min, null, cd0.x);
+          var xMax = Lib.aggNums(Math.max, null, cd0.x);
+          var yMin = Lib.aggNums(Math.min, null, cd0.y);
+          var yMax = Lib.aggNums(Math.max, null, cd0.y);
+          var x0 = Math.max(xa.c2p(xMin, true), 0);
+          var x1 = Math.min(xa.c2p(xMax, true), xLen);
+          var y0 = Math.max(ya.c2p(yMax, true), 0);
+          var y1 = Math.min(ya.c2p(yMin, true), yLen);
+          var bounds = {};
+          if (xRng[0] < xRng[1]) {
+            bounds.left = x0;
+            bounds.right = x1;
           } else {
-            calcPt.geojson = null;
+            bounds.left = x1;
+            bounds.right = x0;
           }
-        }
-        if (geoLayout.fitbounds === "geojson" && locationmode === "geojson-id") {
-          var bboxGeojson = geoUtils.computeBbox(geoUtils.getTraceGeojson(trace));
-          lonArray = [bboxGeojson[0], bboxGeojson[2]];
-          latArray = [bboxGeojson[1], bboxGeojson[3]];
-        }
-        var opts = { padded: true };
-        trace._extremes.lon = findExtremes(geoLayout.lonaxis._ax, lonArray, opts);
-        trace._extremes.lat = findExtremes(geoLayout.lataxis._ax, latArray, opts);
-      }
-      module.exports = {
-        calcGeoJSON,
-        plot
-      };
-    }
-  });
-
-  // src/traces/choropleth/hover.js
-  var require_hover4 = __commonJS({
-    "src/traces/choropleth/hover.js"(exports, module) {
-      "use strict";
-      var Axes = require_axes();
-      var attributes = require_attributes24();
-      var fillText = require_lib().fillText;
-      module.exports = function hoverPoints(pointData, xval, yval) {
-        var cd = pointData.cd;
-        var trace = cd[0].trace;
-        var geo = pointData.subplot;
-        var pt, i, j, isInside;
-        var xy = [xval, yval];
-        var altXy = [xval + 360, yval];
-        for (i = 0; i < cd.length; i++) {
-          pt = cd[i];
-          isInside = false;
-          if (pt._polygons) {
-            for (j = 0; j < pt._polygons.length; j++) {
-              if (pt._polygons[j].contains(xy)) {
-                isInside = !isInside;
+          if (yRng[0] < yRng[1]) {
+            bounds.top = y0;
+            bounds.bottom = y1;
+          } else {
+            bounds.top = y1;
+            bounds.bottom = y0;
+          }
+          bounds.middle = (bounds.top + bounds.bottom) / 2;
+          bounds.center = (bounds.left + bounds.right) / 2;
+          labelClipPathData.push([
+            [bounds.left, bounds.top],
+            [bounds.right, bounds.top],
+            [bounds.right, bounds.bottom],
+            [bounds.left, bounds.bottom]
+          ]);
+          var plotDiagonal = Math.sqrt(xLen * xLen + yLen * yLen);
+          var normLength = constants.LABELDISTANCE * plotDiagonal / Math.max(1, pathinfo.length / constants.LABELINCREASE);
+          linegroup.each(function(d) {
+            var textOpts = exports.calcTextOpts(d.level, contourFormat, dummyText, gd);
+            d3.select(this).selectAll("path").each(function() {
+              var path = this;
+              var pathBounds = Lib.getVisibleSegment(path, bounds, textOpts.height / 2);
+              if (!pathBounds) return;
+              if (pathBounds.len < (textOpts.width + textOpts.height) * constants.LABELMIN) return;
+              var maxLabels = Math.min(
+                Math.ceil(pathBounds.len / normLength),
+                constants.LABELMAX
+              );
+              for (var i = 0; i < maxLabels; i++) {
+                var loc = exports.findBestTextLocation(
+                  path,
+                  pathBounds,
+                  textOpts,
+                  labelData,
+                  bounds
+                );
+                if (!loc) break;
+                exports.addLabelData(loc, textOpts, labelData, labelClipPathData);
               }
-              if (pt._polygons[j].contains(altXy)) {
-                isInside = !isInside;
-              }
-            }
-            if (isInside) break;
-          }
+            });
+          });
+          dummyText.remove();
+          exports.drawLabels(
+            labelGroup,
+            labelData,
+            gd,
+            lineClip,
+            clipLinesForLabels ? labelClipPathData : null
+          );
         }
-        if (!isInside || !pt) return;
-        pointData.x0 = pointData.x1 = pointData.xa.c2p(pt.ct);
-        pointData.y0 = pointData.y1 = pointData.ya.c2p(pt.ct);
-        pointData.index = pt.index;
-        pointData.location = pt.loc;
-        pointData.z = pt.z;
-        pointData.zLabel = Axes.tickText(geo.mockAxis, geo.mockAxis.c2l(pt.z), "hover").text;
-        pointData.hovertemplate = pt.hovertemplate;
-        makeHoverInfo(pointData, trace, pt);
-        return [pointData];
-      };
-      function makeHoverInfo(pointData, trace, pt) {
-        if (trace.hovertemplate) return;
-        var hoverinfo = pt.hi || trace.hoverinfo;
-        var loc = String(pt.loc);
-        var parts = hoverinfo === "all" ? attributes.hoverinfo.flags : hoverinfo.split("+");
-        var hasName = parts.indexOf("name") !== -1;
-        var hasLocation = parts.indexOf("location") !== -1;
-        var hasZ = parts.indexOf("z") !== -1;
-        var hasText = parts.indexOf("text") !== -1;
-        var hasIdAsNameLabel = !hasName && hasLocation;
-        var text = [];
-        if (hasIdAsNameLabel) {
-          pointData.nameOverride = loc;
-        } else {
-          if (hasName) pointData.nameOverride = trace.name;
-          if (hasLocation) text.push(loc);
-        }
-        if (hasZ) {
-          text.push(pointData.zLabel);
-        }
-        if (hasText) {
-          fillText(pt, trace, text);
-        }
-        pointData.extraText = text.join("<br>");
+        if (showLabels && !showLines) linegroup.remove();
       }
-    }
-  });
-
-  // src/traces/choropleth/event_data.js
-  var require_event_data2 = __commonJS({
-    "src/traces/choropleth/event_data.js"(exports, module) {
-      "use strict";
-      module.exports = function eventData(out, pt, trace, cd, pointNumber) {
-        out.location = pt.location;
-        out.z = pt.z;
-        var cdi = cd[pointNumber];
-        if (cdi.fIn && cdi.fIn.properties) {
-          out.properties = cdi.fIn.properties;
+      exports.createLines = function(lineContainer, makeLines, pathinfo, isStatic) {
+        var smoothing = pathinfo[0].smoothing;
+        var linegroup = lineContainer.selectAll("g.contourlevel").data(makeLines ? pathinfo : []);
+        linegroup.exit().remove();
+        linegroup.enter().append("g").classed("contourlevel", true);
+        if (makeLines) {
+          var opencontourlines = linegroup.selectAll("path.openline").data(function(d) {
+            return d.pedgepaths || d.edgepaths;
+          });
+          opencontourlines.exit().remove();
+          opencontourlines.enter().append("path").classed("openline", true);
+          opencontourlines.attr("d", function(d) {
+            return Drawing.smoothopen(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
+          var closedcontourlines = linegroup.selectAll("path.closedline").data(function(d) {
+            return d.ppaths || d.paths;
+          });
+          closedcontourlines.exit().remove();
+          closedcontourlines.enter().append("path").classed("closedline", true);
+          closedcontourlines.attr("d", function(d) {
+            return Drawing.smoothclosed(d, smoothing);
+          }).style("stroke-miterlimit", 1).style("vector-effect", isStatic ? "none" : "non-scaling-stroke");
         }
-        out.ct = cdi.ct;
-        return out;
+        return linegroup;
       };
-    }
-  });
-
-  // src/traces/choropleth/select.js
-  var require_select4 = __commonJS({
-    "src/traces/choropleth/select.js"(exports, module) {
-      "use strict";
-      module.exports = function selectPoints(searchInfo, selectionTester) {
-        var cd = searchInfo.cd;
-        var xa = searchInfo.xaxis;
-        var ya = searchInfo.yaxis;
-        var selection = [];
-        var i, di, ct, x, y;
-        if (selectionTester === false) {
-          for (i = 0; i < cd.length; i++) {
-            cd[i].selected = 0;
-          }
+      exports.createLineClip = function(lineContainer, clipLinesForLabels, gd, uid) {
+        var clips = gd._fullLayout._clips;
+        var clipId = clipLinesForLabels ? "clipline" + uid : null;
+        var lineClip = clips.selectAll("#" + clipId).data(clipLinesForLabels ? [0] : []);
+        lineClip.exit().remove();
+        lineClip.enter().append("clipPath").classed("contourlineclip", true).attr("id", clipId);
+        Drawing.setClipUrl(lineContainer, clipId, gd);
+        return lineClip;
+      };
+      exports.labelFormatter = function(gd, cd0) {
+        var fullLayout = gd._fullLayout;
+        var trace = cd0.trace;
+        var contours = trace.contours;
+        var formatAxis = {
+          type: "linear",
+          _id: "ycontour",
+          showexponent: "all",
+          exponentformat: "B"
+        };
+        if (contours.labelformat) {
+          formatAxis.tickformat = contours.labelformat;
+          setConvert(formatAxis, fullLayout);
         } else {
-          for (i = 0; i < cd.length; i++) {
-            di = cd[i];
-            ct = di.ct;
-            if (!ct) continue;
-            x = xa.c2p(ct);
-            y = ya.c2p(ct);
-            if (selectionTester.contains([x, y], null, i, searchInfo)) {
-              selection.push({
-                pointNumber: i,
-                lon: ct[0],
-                lat: ct[1]
-              });
-              di.selected = 1;
+          var cOpts = Colorscale.extractOpts(trace);
+          if (cOpts && cOpts.colorbar && cOpts.colorbar._axis) {
+            formatAxis = cOpts.colorbar._axis;
+          } else {
+            if (contours.type === "constraint") {
+              var value = contours.value;
+              if (Lib.isArrayOrTypedArray(value)) {
+                formatAxis.range = [value[0], value[value.length - 1]];
+              } else formatAxis.range = [value, value];
             } else {
-              di.selected = 0;
+              formatAxis.range = [contours.start, contours.end];
+              formatAxis.nticks = (contours.end - contours.start) / contours.size;
             }
+            if (formatAxis.range[0] === formatAxis.range[1]) {
+              formatAxis.range[1] += formatAxis.range[0] || 1;
+            }
+            if (!formatAxis.nticks) formatAxis.nticks = 1e3;
+            setConvert(formatAxis, fullLayout);
+            Axes.prepTicks(formatAxis);
+            formatAxis._tmin = null;
+            formatAxis._tmax = null;
           }
         }
-        return selection;
+        return function(v) {
+          return Axes.tickText(formatAxis, v).text;
+        };
+      };
+      exports.calcTextOpts = function(level, contourFormat, dummyText, gd) {
+        var text = contourFormat(level);
+        dummyText.text(text).call(svgTextUtils.convertToTspans, gd);
+        var el = dummyText.node();
+        var bBox = Drawing.bBox(el, true);
+        return {
+          text,
+          width: bBox.width,
+          height: bBox.height,
+          fontSize: +el.style["font-size"].replace("px", ""),
+          level,
+          dy: (bBox.top + bBox.bottom) / 2
+        };
+      };
+      exports.findBestTextLocation = function(path, pathBounds, textOpts, labelData, plotBounds) {
+        var textWidth = textOpts.width;
+        var p0, dp, pMax, pMin, loc;
+        if (pathBounds.isClosed) {
+          dp = pathBounds.len / costConstants.INITIALSEARCHPOINTS;
+          p0 = pathBounds.min + dp / 2;
+          pMax = pathBounds.max;
+        } else {
+          dp = (pathBounds.len - textWidth) / (costConstants.INITIALSEARCHPOINTS + 1);
+          p0 = pathBounds.min + dp + textWidth / 2;
+          pMax = pathBounds.max - (dp + textWidth) / 2;
+        }
+        var cost = Infinity;
+        for (var j = 0; j < costConstants.ITERATIONS; j++) {
+          for (var p = p0; p < pMax; p += dp) {
+            var newLocation = Lib.getTextLocation(path, pathBounds.total, p, textWidth);
+            var newCost = locationCost(newLocation, textOpts, labelData, plotBounds);
+            if (newCost < cost) {
+              cost = newCost;
+              loc = newLocation;
+              pMin = p;
+            }
+          }
+          if (cost > costConstants.MAXCOST * 2) break;
+          if (j) dp /= 2;
+          p0 = pMin - dp / 2;
+          pMax = p0 + dp * 1.5;
+        }
+        if (cost <= costConstants.MAXCOST) return loc;
+      };
+      function locationCost(loc, textOpts, labelData, bounds) {
+        var halfWidth = textOpts.width / 2;
+        var halfHeight = textOpts.height / 2;
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var dx = Math.cos(theta) * halfWidth;
+        var dy = Math.sin(theta) * halfWidth;
+        var normX = (x > bounds.center ? bounds.right - x : x - bounds.left) / (dx + Math.abs(Math.sin(theta) * halfHeight));
+        var normY = (y > bounds.middle ? bounds.bottom - y : y - bounds.top) / (Math.abs(dy) + Math.cos(theta) * halfHeight);
+        if (normX < 1 || normY < 1) return Infinity;
+        var cost = costConstants.EDGECOST * (1 / (normX - 1) + 1 / (normY - 1));
+        cost += costConstants.ANGLECOST * theta * theta;
+        var x1 = x - dx;
+        var y1 = y - dy;
+        var x2 = x + dx;
+        var y2 = y + dy;
+        for (var i = 0; i < labelData.length; i++) {
+          var labeli = labelData[i];
+          var dxd = Math.cos(labeli.theta) * labeli.width / 2;
+          var dyd = Math.sin(labeli.theta) * labeli.width / 2;
+          var dist = Lib.segmentDistance(
+            x1,
+            y1,
+            x2,
+            y2,
+            labeli.x - dxd,
+            labeli.y - dyd,
+            labeli.x + dxd,
+            labeli.y + dyd
+          ) * 2 / (textOpts.height + labeli.height);
+          var sameLevel = labeli.level === textOpts.level;
+          var distOffset = sameLevel ? costConstants.SAMELEVELDISTANCE : 1;
+          if (dist <= distOffset) return Infinity;
+          var distFactor = costConstants.NEIGHBORCOST * (sameLevel ? costConstants.SAMELEVELFACTOR : 1);
+          cost += distFactor / (dist - distOffset);
+        }
+        return cost;
+      }
+      exports.addLabelData = function(loc, textOpts, labelData, labelClipPathData) {
+        var fontSize = textOpts.fontSize;
+        var w = textOpts.width + fontSize / 3;
+        var h = Math.max(0, textOpts.height - fontSize / 3);
+        var x = loc.x;
+        var y = loc.y;
+        var theta = loc.theta;
+        var sin = Math.sin(theta);
+        var cos = Math.cos(theta);
+        var rotateXY = function(dx, dy) {
+          return [
+            x + dx * cos - dy * sin,
+            y + dx * sin + dy * cos
+          ];
+        };
+        var bBoxPts = [
+          rotateXY(-w / 2, -h / 2),
+          rotateXY(-w / 2, h / 2),
+          rotateXY(w / 2, h / 2),
+          rotateXY(w / 2, -h / 2)
+        ];
+        labelData.push({
+          text: textOpts.text,
+          x,
+          y,
+          dy: textOpts.dy,
+          theta,
+          level: textOpts.level,
+          width: w,
+          height: h
+        });
+        labelClipPathData.push(bBoxPts);
+      };
+      exports.drawLabels = function(labelGroup, labelData, gd, lineClip, labelClipPathData) {
+        var labels = labelGroup.selectAll("text").data(labelData, function(d) {
+          return d.text + "," + d.x + "," + d.y + "," + d.theta;
+        });
+        labels.exit().remove();
+        labels.enter().append("text").attr({
+          "data-notex": 1,
+          "text-anchor": "middle"
+        }).each(function(d) {
+          var x = d.x + Math.sin(d.theta) * d.dy;
+          var y = d.y - Math.cos(d.theta) * d.dy;
+          d3.select(this).text(d.text).attr({
+            x,
+            y,
+            transform: "rotate(" + 180 * d.theta / Math.PI + " " + x + " " + y + ")"
+          }).call(svgTextUtils.convertToTspans, gd);
+        });
+        if (labelClipPathData) {
+          var clipPath = "";
+          for (var i = 0; i < labelClipPathData.length; i++) {
+            clipPath += "M" + labelClipPathData[i].join("L") + "Z";
+          }
+          var lineClipPath = Lib.ensureSingle(lineClip, "path", "");
+          lineClipPath.attr("d", clipPath);
+        }
+      };
+      function clipGaps(plotGroup, plotinfo, gd, cd0, perimeter) {
+        var trace = cd0.trace;
+        var clips = gd._fullLayout._clips;
+        var clipId = "clip" + trace.uid;
+        var clipPath = clips.selectAll("#" + clipId).data(trace.connectgaps ? [] : [0]);
+        clipPath.enter().append("clipPath").classed("contourclip", true).attr("id", clipId);
+        clipPath.exit().remove();
+        if (trace.connectgaps === false) {
+          var clipPathInfo = {
+            // fraction of the way from missing to present point
+            // to draw the boundary.
+            // if you make this 1 (or 1-epsilon) then a point in
+            // a sea of missing data will disappear entirely.
+            level: 0.9,
+            crossings: {},
+            starts: [],
+            edgepaths: [],
+            paths: [],
+            xaxis: plotinfo.xaxis,
+            yaxis: plotinfo.yaxis,
+            x: cd0.x,
+            y: cd0.y,
+            // 0 = no data, 1 = data
+            z: makeClipMask(cd0),
+            smoothing: 0
+          };
+          makeCrossings([clipPathInfo]);
+          findAllPaths([clipPathInfo]);
+          closeBoundaries([clipPathInfo], { type: "levels" });
+          var path = Lib.ensureSingle(clipPath, "path", "");
+          path.attr(
+            "d",
+            (clipPathInfo.prefixBoundary ? "M" + perimeter.join("L") + "Z" : "") + joinAllPaths(clipPathInfo, perimeter)
+          );
+        } else clipId = null;
+        Drawing.setClipUrl(plotGroup, clipId, gd);
+      }
+      function makeClipMask(cd0) {
+        var empties = cd0.trace._emptypoints;
+        var z = [];
+        var m = cd0.z.length;
+        var n = cd0.z[0].length;
+        var i;
+        var row = [];
+        var emptyPoint;
+        for (i = 0; i < n; i++) row.push(1);
+        for (i = 0; i < m; i++) z.push(row.slice());
+        for (i = 0; i < empties.length; i++) {
+          emptyPoint = empties[i];
+          z[emptyPoint[0]][emptyPoint[1]] = 0;
+        }
+        cd0.zmask = z;
+        return z;
+      }
+    }
+  });
+
+  // src/traces/heatmap/style.js
+  var require_style4 = __commonJS({
+    "src/traces/heatmap/style.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      module.exports = function style(gd) {
+        d3.select(gd).selectAll(".hm image").style("opacity", function(d) {
+          return d.trace.opacity;
+        });
       };
     }
   });
 
-  // src/traces/choropleth/index.js
-  var require_choropleth = __commonJS({
-    "src/traces/choropleth/index.js"(exports, module) {
+  // src/traces/contour/make_color_map.js
+  var require_make_color_map = __commonJS({
+    "src/traces/contour/make_color_map.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var Colorscale = require_colorscale();
+      var endPlus = require_end_plus();
+      module.exports = function makeColorMap(trace) {
+        var contours = trace.contours;
+        var start = contours.start;
+        var end = endPlus(contours);
+        var cs = contours.size || 1;
+        var nc = Math.floor((end - start) / cs) + 1;
+        var extra = contours.coloring === "lines" ? 0 : 1;
+        var cOpts = Colorscale.extractOpts(trace);
+        if (typeof console !== "undefined" && console.log) {
+          console.log("=== makeColorMap called ===");
+          console.log("Has custom levels:", !!(contours._levels && contours._levels.length > 0));
+          console.log("Contours._levels:", contours._levels);
+          console.log("Contours coloring:", contours.coloring);
+          console.log("Contours start/end/size:", contours.start, contours.end, contours.size);
+          console.log("Trace zmin/zmax:", trace.zmin, trace.zmax);
+          console.log("Trace input thresholds:", trace._input && trace._input.contours && trace._input.contours.thresholds);
+        }
+        if (!isFinite(cs)) {
+          cs = 1;
+          nc = 1;
+        }
+        var scl = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+        var len = scl.length;
+        var domain = new Array(len);
+        var range = new Array(len);
+        var si, i;
+        var zmin0 = cOpts.min;
+        var zmax0 = cOpts.max;
+        if (contours.coloring === "heatmap") {
+          for (i = 0; i < len; i++) {
+            si = scl[i];
+            domain[i] = si[0] * (zmax0 - zmin0) + zmin0;
+            range[i] = si[1];
+          }
+          var zRange = d3.extent([
+            zmin0,
+            zmax0,
+            contours.start,
+            contours.start + cs * (nc - 1)
+          ]);
+          var zmin = zRange[zmin0 < zmax0 ? 0 : 1];
+          var zmax = zRange[zmin0 < zmax0 ? 1 : 0];
+          if (zmin !== zmin0) {
+            domain.splice(0, 0, zmin);
+            range.splice(0, 0, range[0]);
+          }
+          if (zmax !== zmax0) {
+            domain.push(zmax);
+            range.push(range[range.length - 1]);
+          }
+        } else {
+          var zRangeInput = trace._input && (typeof trace._input.zmin === "number" && typeof trace._input.zmax === "number");
+          var customLevels = contours._levels;
+          var inputThresholds = trace._input && trace._input.contours && trace._input.contours.thresholds;
+          if (!customLevels && inputThresholds && inputThresholds.length > 0) {
+            customLevels = inputThresholds.slice().sort(function(a, b) {
+              return a - b;
+            });
+            console.log("makeColorMap: Using fallback to input thresholds:", customLevels);
+          }
+          if (customLevels && customLevels.length > 0) {
+            var levels = customLevels;
+            var nLevels = levels.length;
+            var minLevel = levels[0];
+            var maxLevel = levels[nLevels - 1];
+            var effectiveMin = zmin0 !== void 0 && zmin0 !== null ? Math.min(zmin0, minLevel) : minLevel;
+            var effectiveMax = zmax0 !== void 0 && zmax0 !== null ? Math.max(zmax0, maxLevel) : maxLevel;
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = effectiveMin + si[0] * (effectiveMax - effectiveMin);
+              range[i] = si[1];
+            }
+            if (typeof console !== "undefined" && console.log) {
+              console.log("=== Custom Thresholds Color Mapping (including restyle) ===");
+              console.log("- Levels:", levels);
+              console.log("- zmin/zmax from colorscale:", zmin0, zmax0);
+              console.log("- Effective range:", effectiveMin, "to", effectiveMax);
+              console.log("- Colorscale length:", len);
+              console.log("- Domain values:", domain);
+              console.log("- Color mapping details:");
+              for (var j = 0; j < len; j++) {
+                console.log("  Position " + scl[j][0].toFixed(4) + " -> Value " + domain[j].toFixed(2) + " -> Color " + range[j]);
+              }
+              console.log("=== End Color Mapping ===");
+            }
+          } else {
+            if (zRangeInput && (start <= zmin0 || end >= zmax0)) {
+              if (start <= zmin0) start = zmin0;
+              if (end >= zmax0) end = zmax0;
+              nc = Math.floor((end - start) / cs) + 1;
+              extra = 0;
+            }
+            for (i = 0; i < len; i++) {
+              si = scl[i];
+              domain[i] = (si[0] * (nc + extra - 1) - extra / 2) * cs + start;
+              range[i] = si[1];
+            }
+          }
+          if (!contours._levels && (zRangeInput || trace.autocontour)) {
+            if (domain[0] > zmin0) {
+              domain.unshift(zmin0);
+              range.unshift(range[0]);
+            }
+            if (domain[domain.length - 1] < zmax0) {
+              domain.push(zmax0);
+              range.push(range[range.length - 1]);
+            }
+          }
+        }
+        return Colorscale.makeColorScaleFunc(
+          { domain, range },
+          { noNumericCheck: true }
+        );
+      };
+    }
+  });
+
+  // src/traces/contour/style.js
+  var require_style5 = __commonJS({
+    "src/traces/contour/style.js"(exports, module) {
+      "use strict";
+      var d3 = require_d3();
+      var Drawing = require_drawing();
+      var heatmapStyle = require_style4();
+      var makeColorMap = require_make_color_map();
+      module.exports = function style(gd) {
+        var contours = d3.select(gd).selectAll("g.contour");
+        contours.style("opacity", function(d) {
+          return d[0].trace.opacity;
+        });
+        contours.each(function(d) {
+          var c = d3.select(this);
+          var trace = d[0].trace;
+          var contours2 = trace.contours;
+          var line = trace.line;
+          var cs = contours2.size || 1;
+          var start = contours2.start;
+          var hasCustomLevels = !!(contours2._levels && contours2._levels.length > 0);
+          var isConstraintType = contours2.type === "constraint";
+          var colorLines = !isConstraintType && contours2.coloring === "lines";
+          var colorFills = !isConstraintType && contours2.coloring === "fill";
+          var colorMap = colorLines || colorFills ? makeColorMap(trace) : null;
+          if (typeof console !== "undefined" && console.log && colorMap) {
+            console.log("=== Contour styling ===");
+            console.log("Has custom levels:", hasCustomLevels);
+            console.log("cs (contour size):", cs);
+            console.log("Custom levels:", contours2._levels);
+          }
+          c.selectAll("g.contourlevel").each(function(d2) {
+            d3.select(this).selectAll("path").call(
+              Drawing.lineGroupStyle,
+              line.width,
+              colorLines ? colorMap(d2.level) : line.color,
+              line.dash
+            );
+          });
+          var labelFont = contours2.labelfont;
+          c.selectAll("g.contourlabels text").each(function(d2) {
+            Drawing.font(d3.select(this), {
+              weight: labelFont.weight,
+              style: labelFont.style,
+              variant: labelFont.variant,
+              textcase: labelFont.textcase,
+              lineposition: labelFont.lineposition,
+              shadow: labelFont.shadow,
+              family: labelFont.family,
+              size: labelFont.size,
+              color: labelFont.color || (colorLines ? colorMap(d2.level) : line.color)
+            });
+          });
+          if (isConstraintType) {
+            c.selectAll("g.contourfill path").style("fill", trace.fillcolor);
+          } else if (colorFills) {
+            var firstFill;
+            c.selectAll("g.contourfill path").style("fill", function(d2) {
+              if (firstFill === void 0) firstFill = d2.level;
+              if (hasCustomLevels) {
+                return colorMap(d2.level);
+              } else {
+                return colorMap(d2.level + 0.5 * cs);
+              }
+            });
+            if (firstFill === void 0) firstFill = start;
+            c.selectAll("g.contourbg path").style("fill", function() {
+              if (hasCustomLevels && contours2._levels && contours2._levels.length > 0) {
+                return colorMap(contours2._levels[0]);
+              } else {
+                return colorMap(firstFill - 0.5 * cs);
+              }
+            });
+          }
+        });
+        heatmapStyle(gd);
+      };
+    }
+  });
+
+  // src/traces/contour/colorbar.js
+  var require_colorbar2 = __commonJS({
+    "src/traces/contour/colorbar.js"(exports, module) {
+      "use strict";
+      var Colorscale = require_colorscale();
+      var makeColorMap = require_make_color_map();
+      var endPlus = require_end_plus();
+      function calc(gd, trace, opts) {
+        var contours = trace.contours;
+        var line = trace.line;
+        var cs = contours.size || 1;
+        var coloring = contours.coloring;
+        var colorMap = makeColorMap(trace, { isColorbar: true });
+        if (coloring === "heatmap") {
+          var cOpts = Colorscale.extractOpts(trace);
+          opts._fillgradient = cOpts.reversescale ? Colorscale.flipScale(cOpts.colorscale) : cOpts.colorscale;
+          opts._zrange = [cOpts.min, cOpts.max];
+        } else if (coloring === "fill") {
+          opts._fillcolor = colorMap;
+        }
+        opts._line = {
+          color: coloring === "lines" ? colorMap : line.color,
+          width: contours.showlines !== false ? line.width : 0,
+          dash: line.dash
+        };
+        opts._levels = {
+          start: contours.start,
+          end: endPlus(contours),
+          size: cs
+        };
+      }
+      module.exports = {
+        min: "zmin",
+        max: "zmax",
+        calc
+      };
+    }
+  });
+
+  // src/traces/heatmap/hover.js
+  var require_hover3 = __commonJS({
+    "src/traces/heatmap/hover.js"(exports, module) {
+      "use strict";
+      var Fx = require_fx();
+      var Lib = require_lib();
+      var isArrayOrTypedArray = Lib.isArrayOrTypedArray;
+      var Axes = require_axes();
+      var extractOpts = require_colorscale().extractOpts;
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        var isContour = opts.isContour;
+        var cd0 = pointData.cd[0];
+        var trace = cd0.trace;
+        var xa = pointData.xa;
+        var ya = pointData.ya;
+        var x = cd0.x;
+        var y = cd0.y;
+        var z = cd0.z;
+        var xc = cd0.xCenter;
+        var yc = cd0.yCenter;
+        var zmask = cd0.zmask;
+        var zhoverformat = trace.zhoverformat;
+        var x2 = x;
+        var y2 = y;
+        var xl, yl, nx, ny;
+        if (pointData.index !== false) {
+          try {
+            nx = Math.round(pointData.index[1]);
+            ny = Math.round(pointData.index[0]);
+          } catch (e) {
+            Lib.error("Error hovering on heatmap, pointNumber must be [row,col], found:", pointData.index);
+            return;
+          }
+          if (nx < 0 || nx >= z[0].length || ny < 0 || ny > z.length) {
+            return;
+          }
+        } else if (Fx.inbox(xval - x[0], xval - x[x.length - 1], 0) > 0 || Fx.inbox(yval - y[0], yval - y[y.length - 1], 0) > 0) {
+          return;
+        } else {
+          if (isContour) {
+            var i2;
+            x2 = [2 * x[0] - x[1]];
+            for (i2 = 1; i2 < x.length; i2++) {
+              x2.push((x[i2] + x[i2 - 1]) / 2);
+            }
+            x2.push([2 * x[x.length - 1] - x[x.length - 2]]);
+            y2 = [2 * y[0] - y[1]];
+            for (i2 = 1; i2 < y.length; i2++) {
+              y2.push((y[i2] + y[i2 - 1]) / 2);
+            }
+            y2.push([2 * y[y.length - 1] - y[y.length - 2]]);
+          }
+          nx = Math.max(0, Math.min(x2.length - 2, Lib.findBin(xval, x2)));
+          ny = Math.max(0, Math.min(y2.length - 2, Lib.findBin(yval, y2)));
+        }
+        var x0 = xa.c2p(x[nx]);
+        var x1 = xa.c2p(x[nx + 1]);
+        var y0 = ya.c2p(y[ny]);
+        var y1 = ya.c2p(y[ny + 1]);
+        var _x, _y;
+        if (isContour) {
+          _x = cd0.orig_x || x;
+          _y = cd0.orig_y || y;
+          x1 = x0;
+          xl = _x[nx];
+          y1 = y0;
+          yl = _y[ny];
+        } else {
+          _x = cd0.orig_x || xc || x;
+          _y = cd0.orig_y || yc || y;
+          xl = xc ? _x[nx] : (_x[nx] + _x[nx + 1]) / 2;
+          yl = yc ? _y[ny] : (_y[ny] + _y[ny + 1]) / 2;
+          if (xa && xa.type === "category") xl = x[nx];
+          if (ya && ya.type === "category") yl = y[ny];
+          if (trace.zsmooth) {
+            x0 = x1 = xa.c2p(xl);
+            y0 = y1 = ya.c2p(yl);
+          }
+        }
+        var zVal = z[ny][nx];
+        if (zmask && !zmask[ny][nx]) zVal = void 0;
+        if (zVal === void 0 && !trace.hoverongaps) return;
+        var text;
+        if (isArrayOrTypedArray(cd0.hovertext) && isArrayOrTypedArray(cd0.hovertext[ny])) {
+          text = cd0.hovertext[ny][nx];
+        } else if (isArrayOrTypedArray(cd0.text) && isArrayOrTypedArray(cd0.text[ny])) {
+          text = cd0.text[ny][nx];
+        }
+        var cOpts = extractOpts(trace);
+        var dummyAx = {
+          type: "linear",
+          range: [cOpts.min, cOpts.max],
+          hoverformat: zhoverformat,
+          _separators: xa._separators,
+          _numFormat: xa._numFormat
+        };
+        var zLabel = Axes.tickText(dummyAx, zVal, "hover").text;
+        return [Lib.extendFlat(pointData, {
+          index: trace._after2before ? trace._after2before[ny][nx] : [ny, nx],
+          // never let a 2D override 1D type as closest point
+          distance: pointData.maxHoverDistance,
+          spikeDistance: pointData.maxSpikeDistance,
+          x0,
+          x1,
+          y0,
+          y1,
+          xLabelVal: xl,
+          yLabelVal: yl,
+          zLabelVal: zVal,
+          zLabel,
+          text
+        })];
+      };
+    }
+  });
+
+  // src/traces/contour/hover.js
+  var require_hover4 = __commonJS({
+    "src/traces/contour/hover.js"(exports, module) {
+      "use strict";
+      var Color = require_color();
+      var heatmapHoverPoints = require_hover3();
+      module.exports = function hoverPoints(pointData, xval, yval, hovermode, opts) {
+        if (!opts) opts = {};
+        opts.isContour = true;
+        var hoverData = heatmapHoverPoints(pointData, xval, yval, hovermode, opts);
+        if (hoverData) {
+          hoverData.forEach(function(hoverPt) {
+            var trace = hoverPt.trace;
+            if (trace.contours.type === "constraint") {
+              if (trace.fillcolor && Color.opacity(trace.fillcolor)) {
+                hoverPt.color = Color.addOpacity(trace.fillcolor, 1);
+              } else if (trace.contours.showlines && Color.opacity(trace.line.color)) {
+                hoverPt.color = Color.addOpacity(trace.line.color, 1);
+              }
+            }
+          });
+        }
+        return hoverData;
+      };
+    }
+  });
+
+  // src/traces/histogram2dcontour/index.js
+  var require_histogram2dcontour = __commonJS({
+    "src/traces/histogram2dcontour/index.js"(exports, module) {
       "use strict";
       module.exports = {
-        attributes: require_attributes24(),
-        supplyDefaults: require_defaults20(),
-        colorbar: require_colorbar2(),
-        calc: require_calc6(),
-        calcGeoJSON: require_plot4().calcGeoJSON,
+        attributes: require_attributes28(),
+        supplyDefaults: require_defaults19(),
+        crossTraceDefaults: require_cross_trace_defaults3(),
+        calc: require_calc8(),
         plot: require_plot4().plot,
-        style: require_style5().style,
-        styleOnSelect: require_style5().styleOnSelect,
+        layerName: "contourlayer",
+        style: require_style5(),
+        colorbar: require_colorbar2(),
         hoverPoints: require_hover4(),
-        eventData: require_event_data2(),
-        selectPoints: require_select4(),
         moduleType: "trace",
-        name: "choropleth",
-        basePlotModule: require_geo2(),
-        categories: ["geo", "noOpacity", "showLegend"],
+        name: "histogram2dcontour",
+        basePlotModule: require_cartesian(),
+        categories: ["cartesian", "svg", "2dMap", "contour", "histogram", "showLegend"],
         meta: {}
       };
     }
   });
 
-  // lib/choropleth.js
-  var require_choropleth2 = __commonJS({
-    "lib/choropleth.js"(exports, module) {
+  // lib/histogram2dcontour.js
+  var require_histogram2dcontour2 = __commonJS({
+    "lib/histogram2dcontour.js"(exports, module) {
       "use strict";
-      module.exports = require_choropleth();
-    }
-  });
-
-  // node_modules/object-assign/index.js
-  var require_object_assign = __commonJS({
-    "node_modules/object-assign/index.js"(exports, module) {
-      "use strict";
-      var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-      var hasOwnProperty = Object.prototype.hasOwnProperty;
-      var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-      function toObject(val) {
-        if (val === null || val === void 0) {
-          throw new TypeError("Object.assign cannot be called with null or undefined");
-        }
-        return Object(val);
-      }
-      function shouldUseNative() {
-        try {
-          if (!Object.assign) {
-            return false;
-          }
-          var test1 = new String("abc");
-          test1[5] = "de";
-          if (Object.getOwnPropertyNames(test1)[0] === "5") {
-            return false;
-          }
-          var test2 = {};
-          for (var i = 0; i < 10; i++) {
-            test2["_" + String.fromCharCode(i)] = i;
-          }
-          var order2 = Object.getOwnPropertyNames(test2).map(function(n) {
-            return test2[n];
-          });
-          if (order2.join("") !== "0123456789") {
-            return false;
-          }
-          var test3 = {};
-          "abcdefghijklmnopqrst".split("").forEach(function(letter) {
-            test3[letter] = letter;
-          });
-          if (Object.keys(Object.assign({}, test3)).join("") !== "abcdefghijklmnopqrst") {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return false;
-        }
-      }
-      module.exports = shouldUseNative() ? Object.assign : function(target, source) {
-        var from;
-        var to = toObject(target);
-        var symbols;
-        for (var s = 1; s < arguments.length; s++) {
-          from = Object(arguments[s]);
-          for (var key in from) {
-            if (hasOwnProperty.call(from, key)) {
-              to[key] = from[key];
-            }
-          }
-          if (getOwnPropertySymbols) {
-            symbols = getOwnPropertySymbols(from);
-            for (var i = 0; i < symbols.length; i++) {
-              if (propIsEnumerable.call(from, symbols[i])) {
-                to[symbols[i]] = from[symbols[i]];
-              }
-            }
-          }
-        }
-        return to;
-      };
-    }
-  });
-
-  // node_modules/world-calendars/dist/main.js
-  var require_main = __commonJS({
-    "node_modules/world-calendars/dist/main.js"(exports, module) {
-      var assign = require_object_assign();
-      function Calendars() {
-        this.regionalOptions = [];
-        this.regionalOptions[""] = {
-          invalidCalendar: "Calendar {0} not found",
-          invalidDate: "Invalid {0} date",
-          invalidMonth: "Invalid {0} month",
-          invalidYear: "Invalid {0} year",
-          differentCalendars: "Cannot mix {0} and {1} dates"
-        };
-        this.local = this.regionalOptions[""];
-        this.calendars = {};
-        this._localCals = {};
-      }
-      assign(Calendars.prototype, {
-        /** Obtain a calendar implementation and localisation.
-            @memberof Calendars
-            @param [name='gregorian'] {string} The name of the calendar, e.g. 'gregorian', 'persian', 'islamic'.
-            @param [language=''] {string} The language code to use for localisation (default is English).
-            @return {Calendar} The calendar and localisation.
-            @throws Error if calendar not found. */
-        instance: function(name, language) {
-          name = (name || "gregorian").toLowerCase();
-          language = language || "";
-          var cal = this._localCals[name + "-" + language];
-          if (!cal && this.calendars[name]) {
-            cal = new this.calendars[name](language);
-            this._localCals[name + "-" + language] = cal;
-          }
-          if (!cal) {
-            throw (this.local.invalidCalendar || this.regionalOptions[""].invalidCalendar).replace(/\{0\}/, name);
-          }
-          return cal;
-        },
-        /** Create a new date - for today if no other parameters given.
-            @memberof Calendars
-            @param year {CDate|number} The date to copy or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @param [calendar='gregorian'] {BaseCalendar|string} The underlying calendar or the name of the calendar.
-            @param [language=''] {string} The language to use for localisation (default English).
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day, calendar, language) {
-          calendar = (year != null && year.year ? year.calendar() : typeof calendar === "string" ? this.instance(calendar, language) : calendar) || this.instance();
-          return calendar.newDate(year, month, day);
-        },
-        /** A simple digit substitution function for localising numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @return {function} The substitution function. */
-        substituteDigits: function(digits) {
-          return function(value) {
-            return (value + "").replace(/[0-9]/g, function(digit) {
-              return digits[digit];
-            });
-          };
-        },
-        /** Digit substitution function for localising Chinese style numbers via the Calendar digits option.
-            @member Calendars
-            @param digits {string[]} The substitute digits, for 0 through 9.
-            @param powers {string[]} The characters denoting powers of 10, i.e. 1, 10, 100, 1000.
-            @return {function} The substitution function. */
-        substituteChineseDigits: function(digits, powers) {
-          return function(value) {
-            var localNumber = "";
-            var power = 0;
-            while (value > 0) {
-              var units = value % 10;
-              localNumber = (units === 0 ? "" : digits[units] + powers[power]) + localNumber;
-              power++;
-              value = Math.floor(value / 10);
-            }
-            if (localNumber.indexOf(digits[1] + powers[1]) === 0) {
-              localNumber = localNumber.substr(1);
-            }
-            return localNumber || digits[0];
-          };
-        }
-      });
-      function CDate(calendar, year, month, day) {
-        this._calendar = calendar;
-        this._year = year;
-        this._month = month;
-        this._day = day;
-        if (this._calendar._validateLevel === 0 && !this._calendar.isValid(this._year, this._month, this._day)) {
-          throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-        }
-      }
-      function pad(value, length) {
-        value = "" + value;
-        return "000000".substring(0, length - value.length) + value;
-      }
-      assign(CDate.prototype, {
-        /** Create a new date.
-            @memberof CDate
-            @param [year] {CDate|number} The date to copy or the year for the date (default this date).
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        newDate: function(year, month, day) {
-          return this._calendar.newDate(year == null ? this : year, month, day);
-        },
-        /** Set or retrieve the year for this date.
-            @memberof CDate
-            @param [year] {number} The year for the date.
-            @return {number|CDate} The date's year (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        year: function(year) {
-          return arguments.length === 0 ? this._year : this.set(year, "y");
-        },
-        /** Set or retrieve the month for this date.
-            @memberof CDate
-            @param [month] {number} The month for the date.
-            @return {number|CDate} The date's month (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        month: function(month) {
-          return arguments.length === 0 ? this._month : this.set(month, "m");
-        },
-        /** Set or retrieve the day for this date.
-            @memberof CDate
-            @param [day] {number} The day for the date.
-            @return {number|CData} The date's day (if no parameter) or the updated date.
-            @throws Error if an invalid date. */
-        day: function(day) {
-          return arguments.length === 0 ? this._day : this.set(day, "d");
-        },
-        /** Set new values for this date.
-            @memberof CDate
-            @param year {number} The year for the date.
-            @param month {number} The month for the date.
-            @param day {number} The day for the date.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date. */
-        date: function(year, month, day) {
-          if (!this._calendar.isValid(year, month, day)) {
-            throw (_exports.local.invalidDate || _exports.regionalOptions[""].invalidDate).replace(/\{0\}/, this._calendar.local.name);
-          }
-          this._year = year;
-          this._month = month;
-          this._day = day;
-          return this;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CDate
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not. */
-        leapYear: function() {
-          return this._calendar.leapYear(this);
-        },
-        /** Retrieve the epoch designator for this date, e.g. BCE or CE.
-            @memberof CDate
-            @return {string} The current epoch. */
-        epoch: function() {
-          return this._calendar.epoch(this);
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof CDate
-            @return {string} The formatted year. */
-        formatYear: function() {
-          return this._calendar.formatYear(this);
-        },
-        /** Retrieve the month of the year for this date,
-            i.e. the month's position within a numbered year.
-            @memberof CDate
-            @return {number} The month of the year: <code>minMonth</code> to months per year. */
-        monthOfYear: function() {
-          return this._calendar.monthOfYear(this);
-        },
-        /** Retrieve the week of the year for this date.
-            @memberof CDate
-            @return {number} The week of the year: 1 to weeks per year. */
-        weekOfYear: function() {
-          return this._calendar.weekOfYear(this);
-        },
-        /** Retrieve the number of days in the year for this date.
-            @memberof CDate
-            @return {number} The number of days in this year. */
-        daysInYear: function() {
-          return this._calendar.daysInYear(this);
-        },
-        /** Retrieve the day of the year for this date.
-            @memberof CDate
-            @return {number} The day of the year: 1 to days per year. */
-        dayOfYear: function() {
-          return this._calendar.dayOfYear(this);
-        },
-        /** Retrieve the number of days in the month for this date.
-            @memberof CDate
-            @return {number} The number of days. */
-        daysInMonth: function() {
-          return this._calendar.daysInMonth(this);
-        },
-        /** Retrieve the day of the week for this date.
-            @memberof CDate
-            @return {number} The day of the week: 0 to number of days - 1. */
-        dayOfWeek: function() {
-          return this._calendar.dayOfWeek(this);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CDate
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not. */
-        weekDay: function() {
-          return this._calendar.weekDay(this);
-        },
-        /** Retrieve additional information about this date.
-            @memberof CDate
-            @return {object} Additional information - contents depends on calendar. */
-        extraInfo: function() {
-          return this._calendar.extraInfo(this);
-        },
-        /** Add period(s) to a date.
-            @memberof CDate
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        add: function(offset, period) {
-          return this._calendar.add(this, offset, period);
-        },
-        /** Set a portion of the date.
-            @memberof CDate
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if not a valid date. */
-        set: function(value, period) {
-          return this._calendar.set(this, value, period);
-        },
-        /** Compare this date to another date.
-            @memberof CDate
-            @param date {CDate} The other date.
-            @return {number} -1 if this date is before the other date,
-                    0 if they are equal, or +1 if this date is after the other date. */
-        compareTo: function(date) {
-          if (this._calendar.name !== date._calendar.name) {
-            throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this._calendar.local.name).replace(/\{1\}/, date._calendar.local.name);
-          }
-          var c = this._year !== date._year ? this._year - date._year : this._month !== date._month ? this.monthOfYear() - date.monthOfYear() : this._day - date._day;
-          return c === 0 ? 0 : c < 0 ? -1 : 1;
-        },
-        /** Retrieve the calendar backing this date.
-            @memberof CDate
-            @return {BaseCalendar} The calendar implementation. */
-        calendar: function() {
-          return this._calendar;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CDate
-            @return {number} The equivalent Julian date. */
-        toJD: function() {
-          return this._calendar.toJD(this);
-        },
-        /** Create a new date from a Julian date.
-            @memberof CDate
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          return this._calendar.fromJD(jd);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @return {Date} The equivalent JavaScript date. */
-        toJSDate: function() {
-          return this._calendar.toJSDate(this);
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof CDate
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this._calendar.fromJSDate(jsd);
-        },
-        /** Convert to a string for display.
-            @memberof CDate
-            @return {string} This date as a string. */
-        toString: function() {
-          return (this.year() < 0 ? "-" : "") + pad(Math.abs(this.year()), 4) + "-" + pad(this.month(), 2) + "-" + pad(this.day(), 2);
-        }
-      });
-      function BaseCalendar() {
-        this.shortYearCutoff = "+10";
-      }
-      assign(BaseCalendar.prototype, {
-        _validateLevel: 0,
-        // "Stack" to turn validation on/off
-        /** Create a new date within this calendar - today if no parameters given.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to duplicate or the year for the date.
-            @param [month] {number} The month for the date.
-            @param [day] {number} The day for the date.
-            @return {CDate} The new date.
-            @throws Error if not a valid date or a different calendar used. */
-        newDate: function(year, month, day) {
-          if (year == null) {
-            return this.today();
-          }
-          if (year.year) {
-            this._validate(
-              year,
-              month,
-              day,
-              _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-            );
-            day = year.day();
-            month = year.month();
-            year = year.year();
-          }
-          return new CDate(this, year, month, day);
-        },
-        /** Create a new date for today.
-            @memberof BaseCalendar
-            @return {CDate} Today's date. */
-        today: function() {
-          return this.fromJSDate(/* @__PURE__ */ new Date());
-        },
-        /** Retrieve the epoch designator for this date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {string} The current epoch.
-            @throws Error if an invalid year or a different calendar used. */
-        epoch: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return date.year() < 0 ? this.local.epochs[0] : this.local.epochs[1];
-        },
-        /** Format the year, if not a simple sequential number
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return (date.year() < 0 ? "-" : "") + pad(Math.abs(date.year()), 4);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return 12;
-        },
-        /** Calculate the month's ordinal position within the year -
-            for those calendars that don't start at month 1!
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @return {number} The ordinal position, starting from <code>minMonth</code>.
-            @throws Error if an invalid year/month or a different calendar used. */
-        monthOfYear: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return (date.month() + this.monthsInYear(date) - this.firstMonth) % this.monthsInYear(date) + this.minMonth;
-        },
-        /** Calculate actual month from ordinal position, starting from minMonth.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param ord {number} The month's ordinal position.
-            @return {number} The month's number.
-            @throws Error if an invalid year/month. */
-        fromMonthOfYear: function(year, ord) {
-          var m = (ord + this.firstMonth - 2 * this.minMonth) % this.monthsInYear(year) + this.minMonth;
-          this._validate(
-            year,
-            m,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return m;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          return this.leapYear(date) ? 366 : 365;
-        },
-        /** Retrieve the day of the year for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The day of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfYear: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return date.toJD() - this.newDate(
-            date.year(),
-            this.fromMonthOfYear(date.year(), this.minMonth),
-            this.minDay
-          ).toJD() + 1;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof BaseCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 7;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return (Math.floor(this.toJD(date)) + 2) % this.daysInWeek();
-        },
-        /** Retrieve additional information about a date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return {};
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return this._correctAdd(date, this._add(date, offset, period), offset, period);
-        },
-        /** Add period(s) to a date.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _add: function(date, offset, period) {
-          this._validateLevel++;
-          if (period === "d" || period === "w") {
-            var jd = date.toJD() + offset * (period === "w" ? this.daysInWeek() : 1);
-            var d = date.calendar().fromJD(jd);
-            this._validateLevel--;
-            return [d.year(), d.month(), d.day()];
-          }
-          try {
-            var y = date.year() + (period === "y" ? offset : 0);
-            var m = date.monthOfYear() + (period === "m" ? offset : 0);
-            var d = date.day();
-            var resyncYearMonth = function(calendar) {
-              while (m < calendar.minMonth) {
-                y--;
-                m += calendar.monthsInYear(y);
-              }
-              var yearMonths = calendar.monthsInYear(y);
-              while (m > yearMonths - 1 + calendar.minMonth) {
-                y++;
-                m -= yearMonths;
-                yearMonths = calendar.monthsInYear(y);
-              }
-            };
-            if (period === "y") {
-              if (date.month() !== this.fromMonthOfYear(y, m)) {
-                m = this.newDate(y, date.month(), this.minDay).monthOfYear();
-              }
-              m = Math.min(m, this.monthsInYear(y));
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            } else if (period === "m") {
-              resyncYearMonth(this);
-              d = Math.min(d, this.daysInMonth(y, this.fromMonthOfYear(y, m)));
-            }
-            var ymd = [y, this.fromMonthOfYear(y, m), d];
-            this._validateLevel--;
-            return ymd;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        },
-        /** Correct a candidate date after adding period(s) to a date.
-            Handle no year zero if necessary.
-            @memberof BaseCalendar
-            @private
-            @param date {CDate} The starting date.
-            @param ymd {number[]} The added date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date. */
-        _correctAdd: function(date, ymd, offset, period) {
-          if (!this.hasYearZero && (period === "y" || period === "m")) {
-            if (ymd[0] === 0 || // In year zero
-            date.year() > 0 !== ymd[0] > 0) {
-              var adj = {
-                y: [1, 1, "y"],
-                m: [1, this.monthsInYear(-1), "m"],
-                w: [this.daysInWeek(), this.daysInYear(-1), "d"],
-                d: [1, this.daysInYear(-1), "d"]
-              }[period];
-              var dir = offset < 0 ? -1 : 1;
-              ymd = this._add(date, offset * adj[0] + dir * adj[1], adj[2]);
-            }
-          }
-          return date.date(ymd[0], ymd[1], ymd[2]);
-        },
-        /** Set a portion of the date.
-            @memberof BaseCalendar
-            @param date {CDate} The starting date.
-            @param value {number} The new value for the period.
-            @param period {string} One of 'y' for year, 'm' for month, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if an invalid date or a different calendar used. */
-        set: function(date, value, period) {
-          this._validate(
-            date,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var y = period === "y" ? value : date.year();
-          var m = period === "m" ? value : date.month();
-          var d = period === "d" ? value : date.day();
-          if (period === "y" || period === "m") {
-            d = Math.min(d, this.daysInMonth(y, m));
-          }
-          return date.date(y, m, d);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof BaseCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          this._validateLevel++;
-          var valid = this.hasYearZero || year !== 0;
-          if (valid) {
-            var date = this.newDate(year, month, this.minDay);
-            valid = month >= this.minMonth && month - this.minMonth < this.monthsInYear(date) && (day >= this.minDay && day - this.minDay < this.daysInMonth(date));
-          }
-          this._validateLevel--;
-          return valid;
-        },
-        /** Convert the date to a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          return _exports.instance().fromJD(this.toJD(date)).toJSDate();
-        },
-        /** Convert the date from a standard (Gregorian) JavaScript Date.
-            @memberof BaseCalendar
-            @param jsd {Date} The JavaScript date.
-            @return {CDate} The equivalent calendar date. */
-        fromJSDate: function(jsd) {
-          return this.fromJD(_exports.instance().fromJSDate(jsd).toJD());
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param [month] {number} The month to validate.
-            @param [day] {number} The day to validate.
-            @param error {string} Rrror message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          if (year.year) {
-            if (this._validateLevel === 0 && this.name !== year.calendar().name) {
-              throw (_exports.local.differentCalendars || _exports.regionalOptions[""].differentCalendars).replace(/\{0\}/, this.local.name).replace(/\{1\}/, year.calendar().local.name);
-            }
-            return year;
-          }
-          try {
-            this._validateLevel++;
-            if (this._validateLevel === 1 && !this.isValid(year, month, day)) {
-              throw error.replace(/\{0\}/, this.local.name);
-            }
-            var date = this.newDate(year, month, day);
-            this._validateLevel--;
-            return date;
-          } catch (e) {
-            this._validateLevel--;
-            throw e;
-          }
-        }
-      });
-      function GregorianCalendar(language) {
-        this.local = this.regionalOptions[language] || this.regionalOptions[""];
-      }
-      GregorianCalendar.prototype = new BaseCalendar();
-      assign(GregorianCalendar.prototype, {
-        /** The calendar name.
-            @memberof GregorianCalendar */
-        name: "Gregorian",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-           @memberof GregorianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-           @memberof GregorianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof GregorianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof GregorianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-           @memberof GregorianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof GregorianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Gregorian",
-            epochs: ["BCE", "CE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            _exports.local.invalidYear || _exports.regionalOptions[""].invalidYear
-          );
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year, starting from 1.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(
-            year,
-            month,
-            this.minDay,
-            _exports.local.invalidMonth || _exports.regionalOptions[""].invalidMonth
-          );
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month < 3) {
-            month += 12;
-            year--;
-          }
-          var a = Math.floor(year / 100);
-          var b = 2 - a + Math.floor(a / 4);
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof GregorianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var z = Math.floor(jd + 0.5);
-          var a = Math.floor((z - 186721625e-2) / 36524.25);
-          a = z + 1 + a - Math.floor(a / 4);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var day = b - d - Math.floor(e * 30.6001);
-          var month = e - (e > 13.5 ? 13 : 1);
-          var year = c - (month > 2.5 ? 4716 : 4715);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        },
-        /** Convert this date to a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {Date} The equivalent JavaScript date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJSDate: function(year, month, day) {
-          var date = this._validate(
-            year,
-            month,
-            day,
-            _exports.local.invalidDate || _exports.regionalOptions[""].invalidDate
-          );
-          var jsd = new Date(date.year(), date.month() - 1, date.day());
-          jsd.setHours(0);
-          jsd.setMinutes(0);
-          jsd.setSeconds(0);
-          jsd.setMilliseconds(0);
-          jsd.setHours(jsd.getHours() > 12 ? jsd.getHours() + 2 : 0);
-          return jsd;
-        },
-        /** Create a new date from a standard (Gregorian) JavaScript Date.
-            @memberof GregorianCalendar
-            @param jsd {Date} The JavaScript date to convert.
-            @return {CDate} The equivalent date. */
-        fromJSDate: function(jsd) {
-          return this.newDate(jsd.getFullYear(), jsd.getMonth() + 1, jsd.getDate());
-        }
-      });
-      var _exports = module.exports = new Calendars();
-      _exports.cdate = CDate;
-      _exports.baseCalendar = BaseCalendar;
-      _exports.calendars.gregorian = GregorianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/plus.js
-  var require_plus = __commonJS({
-    "node_modules/world-calendars/dist/plus.js"() {
-      var assign = require_object_assign();
-      var main = require_main();
-      assign(main.regionalOptions[""], {
-        invalidArguments: "Invalid arguments",
-        invalidFormat: "Cannot format a date from another calendar",
-        missingNumberAt: "Missing number at position {0}",
-        unknownNameAt: "Unknown name at position {0}",
-        unexpectedLiteralAt: "Unexpected literal at position {0}",
-        unexpectedText: "Additional text found at end"
-      });
-      main.local = main.regionalOptions[""];
-      assign(main.cdate.prototype, {
-        /** Format this date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof CDate
-            @param [format] {string} The date format to use (see <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a>).
-            @param [settings] {object} Options for the <code>formatDate</code> function.
-            @return {string} The formatted date. */
-        formatDate: function(format, settings) {
-          if (typeof format !== "string") {
-            settings = format;
-            format = "";
-          }
-          return this._calendar.formatDate(format || "", this, settings);
-        }
-      });
-      assign(main.baseCalendar.prototype, {
-        UNIX_EPOCH: main.instance().newDate(1970, 1, 1).toJD(),
-        SECS_PER_DAY: 24 * 60 * 60,
-        TICKS_EPOCH: main.instance().jdEpoch,
-        // 1 January 0001 CE
-        TICKS_PER_DAY: 24 * 60 * 60 * 1e7,
-        /** Date form for ATOM (RFC 3339/ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ATOM: "yyyy-mm-dd",
-        /** Date form for cookies.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        COOKIE: "D, dd M yyyy",
-        /** Date form for full date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        FULL: "DD, MM d, yyyy",
-        /** Date form for ISO 8601.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        ISO_8601: "yyyy-mm-dd",
-        /** Date form for Julian date.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        JULIAN: "J",
-        /** Date form for RFC 822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_822: "D, d M yy",
-        /** Date form for RFC 850.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_850: "DD, dd-M-yy",
-        /** Date form for RFC 1036.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1036: "D, d M yy",
-        /** Date form for RFC 1123.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_1123: "D, d M yyyy",
-        /** Date form for RFC 2822.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RFC_2822: "D, d M yyyy",
-        /** Date form for RSS (RFC 822).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        RSS: "D, d M yy",
-        /** Date form for Windows ticks.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TICKS: "!",
-        /** Date form for Unix timestamp.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        TIMESTAMP: "@",
-        /** Date form for W3c (ISO 8601).
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar */
-        W3C: "yyyy-mm-dd",
-        /** Format a date object into a string value.
-            The format can be combinations of the following:
-            <ul>
-            <li>d  - day of month (no leading zero)</li>
-            <li>dd - day of month (two digit)</li>
-            <li>o  - day of year (no leading zeros)</li>
-            <li>oo - day of year (three digit)</li>
-            <li>D  - day name short</li>
-            <li>DD - day name long</li>
-            <li>w  - week of year (no leading zero)</li>
-            <li>ww - week of year (two digit)</li>
-            <li>m  - month of year (no leading zero)</li>
-            <li>mm - month of year (two digit)</li>
-            <li>M  - month name short</li>
-            <li>MM - month name long</li>
-            <li>yy - year (two digit)</li>
-            <li>yyyy - year (four digit)</li>
-            <li>YYYY - formatted year</li>
-            <li>J  - Julian date (days since January 1, 4713 BCE Greenwich noon)</li>
-            <li>@  - Unix timestamp (s since 01/01/1970)</li>
-            <li>!  - Windows ticks (100ns since 01/01/0001)</li>
-            <li>'...' - literal text</li>
-            <li>'' - single quote</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param [format] {string} The desired format of the date (defaults to calendar format).
-            @param date {CDate} The date value to format.
-            @param [settings] {object} Addition options, whose attributes include:
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @property [calculateWeek] {CalendarsPickerCalculateWeek} Function that determines week of the year.
-            @property [localNumbers=false] {boolean} <code>true</code> to localise numbers (if available),
-                      <code>false</code> to use normal Arabic numerals.
-            @return {string} The date in the above format.
-            @throws Errors if the date is from a different calendar. */
-        formatDate: function(format, date, settings) {
-          if (typeof format !== "string") {
-            settings = date;
-            date = format;
-            format = "";
-          }
-          if (!date) {
-            return "";
-          }
-          if (date.calendar() !== this) {
-            throw main.local.invalidFormat || main.regionalOptions[""].invalidFormat;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var calculateWeek = settings.calculateWeek || this.local.calculateWeek;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var formatNumber = function(match, value, len, step) {
-            var num = "" + value;
-            if (doubled(match, step)) {
-              while (num.length < len) {
-                num = "0" + num;
-              }
-            }
-            return num;
-          };
-          var formatName = function(match, value, shortNames, longNames) {
-            return doubled(match) ? longNames[value] : shortNames[value];
-          };
-          var calendar = this;
-          var formatMonth = function(date2) {
-            return typeof monthNumbers === "function" ? monthNumbers.call(calendar, date2, doubled("m")) : localiseNumbers(formatNumber("m", date2.month(), 2));
-          };
-          var formatMonthName = function(date2, useLongName) {
-            if (useLongName) {
-              return typeof monthNames === "function" ? monthNames.call(calendar, date2) : monthNames[date2.month() - calendar.minMonth];
-            } else {
-              return typeof monthNamesShort === "function" ? monthNamesShort.call(calendar, date2) : monthNamesShort[date2.month() - calendar.minMonth];
-            }
-          };
-          var digits = this.local.digits;
-          var localiseNumbers = function(value) {
-            return settings.localNumbers && digits ? digits(value) : value;
-          };
-          var output = "";
-          var literal = false;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                output += format.charAt(iFormat);
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  output += localiseNumbers(formatNumber("d", date.day(), 2));
-                  break;
-                case "D":
-                  output += formatName(
-                    "D",
-                    date.dayOfWeek(),
-                    dayNamesShort,
-                    dayNames
-                  );
-                  break;
-                case "o":
-                  output += formatNumber("o", date.dayOfYear(), 3);
-                  break;
-                case "w":
-                  output += formatNumber("w", date.weekOfYear(), 2);
-                  break;
-                case "m":
-                  output += formatMonth(date);
-                  break;
-                case "M":
-                  output += formatMonthName(date, doubled("M"));
-                  break;
-                case "y":
-                  output += doubled("y", 2) ? date.year() : (date.year() % 100 < 10 ? "0" : "") + date.year() % 100;
-                  break;
-                case "Y":
-                  doubled("Y", 2);
-                  output += date.formatYear();
-                  break;
-                case "J":
-                  output += date.toJD();
-                  break;
-                case "@":
-                  output += (date.toJD() - this.UNIX_EPOCH) * this.SECS_PER_DAY;
-                  break;
-                case "!":
-                  output += (date.toJD() - this.TICKS_EPOCH) * this.TICKS_PER_DAY;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    output += "'";
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  output += format.charAt(iFormat);
-              }
-            }
-          }
-          return output;
-        },
-        /** Parse a string value into a date object.
-            See <a href="#formatDate"><code>formatDate</code></a> for the possible formats, plus:
-            <ul>
-            <li>* - ignore rest of string</li>
-            </ul>
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param format {string} The expected format of the date ('' for default calendar format).
-            @param value {string} The date in the above format.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The extracted date value or <code>null</code> if value is blank.
-            @throws Errors if the format and/or value are missing,
-                    if the value doesn't match the format, or if the date is invalid. */
-        parseDate: function(format, value, settings) {
-          if (value == null) {
-            throw main.local.invalidArguments || main.regionalOptions[""].invalidArguments;
-          }
-          value = typeof value === "object" ? value.toString() : value + "";
-          if (value === "") {
-            return null;
-          }
-          format = format || this.local.dateFormat;
-          settings = settings || {};
-          var shortYearCutoff = settings.shortYearCutoff || this.shortYearCutoff;
-          shortYearCutoff = typeof shortYearCutoff !== "string" ? shortYearCutoff : this.today().year() % 100 + parseInt(shortYearCutoff, 10);
-          var dayNamesShort = settings.dayNamesShort || this.local.dayNamesShort;
-          var dayNames = settings.dayNames || this.local.dayNames;
-          var parseMonth = settings.parseMonth || this.local.parseMonth;
-          var monthNumbers = settings.monthNumbers || this.local.monthNumbers;
-          var monthNamesShort = settings.monthNamesShort || this.local.monthNamesShort;
-          var monthNames = settings.monthNames || this.local.monthNames;
-          var jd = -1;
-          var year = -1;
-          var month = -1;
-          var day = -1;
-          var doy = -1;
-          var shortYear = false;
-          var literal = false;
-          var doubled = function(match, step) {
-            var matches = 1;
-            while (iFormat + matches < format.length && format.charAt(iFormat + matches) === match) {
-              matches++;
-            }
-            iFormat += matches - 1;
-            return Math.floor(matches / (step || 1)) > 1;
-          };
-          var getNumber = function(match, step) {
-            var isDoubled = doubled(match, step);
-            var size = [2, 3, isDoubled ? 4 : 2, isDoubled ? 4 : 2, 10, 11, 20]["oyYJ@!".indexOf(match) + 1];
-            var digits = new RegExp("^-?\\d{1," + size + "}");
-            var num = value.substring(iValue).match(digits);
-            if (!num) {
-              throw (main.local.missingNumberAt || main.regionalOptions[""].missingNumberAt).replace(/\{0\}/, iValue);
-            }
-            iValue += num[0].length;
-            return parseInt(num[0], 10);
-          };
-          var calendar = this;
-          var getMonthNumber = function() {
-            if (typeof monthNumbers === "function") {
-              doubled("m");
-              var month2 = monthNumbers.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getNumber("m");
-          };
-          var getName = function(match, shortNames, longNames, step) {
-            var names = doubled(match, step) ? longNames : shortNames;
-            for (var i = 0; i < names.length; i++) {
-              if (value.substr(iValue, names[i].length).toLowerCase() === names[i].toLowerCase()) {
-                iValue += names[i].length;
-                return i + calendar.minMonth;
-              }
-            }
-            throw (main.local.unknownNameAt || main.regionalOptions[""].unknownNameAt).replace(/\{0\}/, iValue);
-          };
-          var getMonthName = function() {
-            if (typeof monthNames === "function") {
-              var month2 = doubled("M") ? monthNames.call(calendar, value.substring(iValue)) : monthNamesShort.call(calendar, value.substring(iValue));
-              iValue += month2.length;
-              return month2;
-            }
-            return getName("M", monthNamesShort, monthNames);
-          };
-          var checkLiteral = function() {
-            if (value.charAt(iValue) !== format.charAt(iFormat)) {
-              throw (main.local.unexpectedLiteralAt || main.regionalOptions[""].unexpectedLiteralAt).replace(/\{0\}/, iValue);
-            }
-            iValue++;
-          };
-          var iValue = 0;
-          for (var iFormat = 0; iFormat < format.length; iFormat++) {
-            if (literal) {
-              if (format.charAt(iFormat) === "'" && !doubled("'")) {
-                literal = false;
-              } else {
-                checkLiteral();
-              }
-            } else {
-              switch (format.charAt(iFormat)) {
-                case "d":
-                  day = getNumber("d");
-                  break;
-                case "D":
-                  getName("D", dayNamesShort, dayNames);
-                  break;
-                case "o":
-                  doy = getNumber("o");
-                  break;
-                case "w":
-                  getNumber("w");
-                  break;
-                case "m":
-                  month = getMonthNumber();
-                  break;
-                case "M":
-                  month = getMonthName();
-                  break;
-                case "y":
-                  var iSave = iFormat;
-                  shortYear = !doubled("y", 2);
-                  iFormat = iSave;
-                  year = getNumber("y", 2);
-                  break;
-                case "Y":
-                  year = getNumber("Y", 2);
-                  break;
-                case "J":
-                  jd = getNumber("J") + 0.5;
-                  if (value.charAt(iValue) === ".") {
-                    iValue++;
-                    getNumber("J");
-                  }
-                  break;
-                case "@":
-                  jd = getNumber("@") / this.SECS_PER_DAY + this.UNIX_EPOCH;
-                  break;
-                case "!":
-                  jd = getNumber("!") / this.TICKS_PER_DAY + this.TICKS_EPOCH;
-                  break;
-                case "*":
-                  iValue = value.length;
-                  break;
-                case "'":
-                  if (doubled("'")) {
-                    checkLiteral();
-                  } else {
-                    literal = true;
-                  }
-                  break;
-                default:
-                  checkLiteral();
-              }
-            }
-          }
-          if (iValue < value.length) {
-            throw main.local.unexpectedText || main.regionalOptions[""].unexpectedText;
-          }
-          if (year === -1) {
-            year = this.today().year();
-          } else if (year < 100 && shortYear) {
-            year += shortYearCutoff === -1 ? 1900 : this.today().year() - this.today().year() % 100 - (year <= shortYearCutoff ? 0 : 100);
-          }
-          if (typeof month === "string") {
-            month = parseMonth.call(this, year, month);
-          }
-          if (doy > -1) {
-            month = 1;
-            day = doy;
-            for (var dim = this.daysInMonth(year, month); day > dim; dim = this.daysInMonth(year, month)) {
-              month++;
-              day -= dim;
-            }
-          }
-          return jd > -1 ? this.fromJD(jd) : this.newDate(year, month, day);
-        },
-        /** A date may be specified as an exact value or a relative one.
-            Found in the <code>jquery.calendars.plus.js</code> module.
-            @memberof BaseCalendar
-            @param dateSpec {CDate|number|string} The date as an object or string in the given format or
-                    an offset - numeric days from today, or string amounts and periods, e.g. '+1m +2w'.
-            @param defaultDate {CDate} The date to use if no other supplied, may be <code>null</code>.
-            @param currentDate {CDate} The current date as a possible basis for relative dates,
-                    if <code>null</code> today is used (optional)
-            @param [dateFormat] {string} The expected date format - see <a href="#formatDate"><code>formatDate</code></a>.
-            @param [settings] {object} Additional options whose attributes include:
-            @property [shortYearCutoff] {number} The cutoff year for determining the century.
-            @property [dayNamesShort] {string[]} Abbreviated names of the days from Sunday.
-            @property [dayNames] {string[]} Names of the days from Sunday.
-            @property [monthNamesShort] {string[]} Abbreviated names of the months.
-            @property [monthNames] {string[]} Names of the months.
-            @return {CDate} The decoded date. */
-        determineDate: function(dateSpec, defaultDate, currentDate, dateFormat, settings) {
-          if (currentDate && typeof currentDate !== "object") {
-            settings = dateFormat;
-            dateFormat = currentDate;
-            currentDate = null;
-          }
-          if (typeof dateFormat !== "string") {
-            settings = dateFormat;
-            dateFormat = "";
-          }
-          var calendar = this;
-          var offsetString = function(offset) {
-            try {
-              return calendar.parseDate(dateFormat, offset, settings);
-            } catch (e) {
-            }
-            offset = offset.toLowerCase();
-            var date = (offset.match(/^c/) && currentDate ? currentDate.newDate() : null) || calendar.today();
-            var pattern = /([+-]?[0-9]+)\s*(d|w|m|y)?/g;
-            var matches = pattern.exec(offset);
-            while (matches) {
-              date.add(parseInt(matches[1], 10), matches[2] || "d");
-              matches = pattern.exec(offset);
-            }
-            return date;
-          };
-          defaultDate = defaultDate ? defaultDate.newDate() : null;
-          dateSpec = dateSpec == null ? defaultDate : typeof dateSpec === "string" ? offsetString(dateSpec) : typeof dateSpec === "number" ? isNaN(dateSpec) || dateSpec === Infinity || dateSpec === -Infinity ? defaultDate : calendar.today().add(dateSpec, "d") : calendar.newDate(dateSpec);
-          return dateSpec;
-        }
-      });
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/chinese.js
-  var require_chinese = __commonJS({
-    "node_modules/world-calendars/dist/calendars/chinese.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ChineseCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ChineseCalendar.prototype = new main.baseCalendar();
-      assign(ChineseCalendar.prototype, {
-        /** The calendar name.
-            @memberof ChineseCalendar */
-        name: "Chinese",
-        /** Julian date of start of Gregorian epoch: 1 January 0001 CE.
-           @memberof GregorianCalendar */
-        jdEpoch: 17214255e-1,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ChineseCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            This calendar uses month indices to account for intercalary months. 
-            @memberof ChineseCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof ChineseCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ChineseCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Chinese",
-            epochs: ["BEC", "EC"],
-            monthNumbers: function(date, padded) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NUMBER_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = "" + this.toChineseMonth(year, monthIndex);
-              if (padded && month.length < 2) {
-                month = "0" + month;
-              }
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                month += "i";
-              }
-              return month;
-            },
-            monthNames: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00\u6708",
-                "\u4E8C\u6708",
-                "\u4E09\u6708",
-                "\u56DB\u6708",
-                "\u4E94\u6708",
-                "\u516D\u6708",
-                "\u4E03\u6708",
-                "\u516B\u6708",
-                "\u4E5D\u6708",
-                "\u5341\u6708",
-                "\u5341\u4E00\u6708",
-                "\u5341\u4E8C\u6708"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            monthNamesShort: function(date) {
-              if (typeof date === "string") {
-                var match = date.match(MONTH_SHORT_NAME_REGEXP);
-                return match ? match[0] : "";
-              }
-              var year = this._validateYear(date);
-              var monthIndex = date.month();
-              var month = this.toChineseMonth(year, monthIndex);
-              var monthName = [
-                "\u4E00",
-                "\u4E8C",
-                "\u4E09",
-                "\u56DB",
-                "\u4E94",
-                "\u516D",
-                "\u4E03",
-                "\u516B",
-                "\u4E5D",
-                "\u5341",
-                "\u5341\u4E00",
-                "\u5341\u4E8C"
-              ][month - 1];
-              if (this.isIntercalaryMonth(year, monthIndex)) {
-                monthName = "\u95F0" + monthName;
-              }
-              return monthName;
-            },
-            parseMonth: function(year, monthString) {
-              year = this._validateYear(year);
-              var month = parseInt(monthString);
-              var isIntercalary;
-              if (!isNaN(month)) {
-                var i = monthString[monthString.length - 1];
-                isIntercalary = i === "i" || i === "I";
-              } else {
-                if (monthString[0] === "\u95F0") {
-                  isIntercalary = true;
-                  monthString = monthString.substring(1);
-                }
-                if (monthString[monthString.length - 1] === "\u6708") {
-                  monthString = monthString.substring(0, monthString.length - 1);
-                }
-                month = 1 + [
-                  "\u4E00",
-                  "\u4E8C",
-                  "\u4E09",
-                  "\u56DB",
-                  "\u4E94",
-                  "\u516D",
-                  "\u4E03",
-                  "\u516B",
-                  "\u4E5D",
-                  "\u5341",
-                  "\u5341\u4E00",
-                  "\u5341\u4E8C"
-                ].indexOf(monthString);
-              }
-              var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-              return monthIndex;
-            },
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof BaseCalendar
-            @private
-            @param year {CDate|number} The date or the year to validate.
-            @param error {string} Error message if invalid.
-            @return {number} The year.
-            @throws Error if year out of range. */
-        _validateYear: function(year, error) {
-          if (year.year) {
-            year = year.year();
-          }
-          if (typeof year !== "number" || year < 1888 || year > 2111) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return year;
-        },
-        /** Retrieve the month index (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {number} The year.
-            @param month {number} The month (1 for first month).
-            @param [isIntercalary=false] {boolean} If month is intercalary.
-            @return {number} The month index (0 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toMonthIndex: function(year, month, isIntercalary) {
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var invalidIntercalaryMonth = isIntercalary && month !== intercalaryMonth;
-          if (invalidIntercalaryMonth || month < 1 || month > 12) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var monthIndex;
-          if (!intercalaryMonth) {
-            monthIndex = month - 1;
-          } else if (!isIntercalary && month <= intercalaryMonth) {
-            monthIndex = month - 1;
-          } else {
-            monthIndex = month;
-          }
-          return monthIndex;
-        },
-        /** Retrieve the month (i.e. accounting for intercalary months).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date or the year to examine.
-            @param monthIndex {number} The month index (0 for first month).
-            @return {number} The month (1 for first month).
-            @throws Error if an invalid month/year or a different calendar used. */
-        toChineseMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex < 0 || monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var month;
-          if (!intercalaryMonth) {
-            month = monthIndex + 1;
-          } else if (monthIndex < intercalaryMonth) {
-            month = monthIndex + 1;
-          } else {
-            month = monthIndex;
-          }
-          return month;
-        },
-        /** Determine the intercalary month of a year (if any).
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The intercalary month number, or 0 if none.
-            @throws Error if an invalid year or a different calendar used. */
-        intercalaryMonth: function(year) {
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          return intercalaryMonth;
-        },
-        /** Determine whether this date is an intercalary month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @return {boolean} <code>true</code> if this is an intercalary month, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        isIntercalaryMonth: function(year, monthIndex) {
-          if (year.year) {
-            year = year.year();
-            monthIndex = year.month();
-          }
-          var intercalaryMonth = this.intercalaryMonth(year);
-          return !!intercalaryMonth && intercalaryMonth === monthIndex;
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.intercalaryMonth(year) !== 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, monthIndex, day) {
-          var validatedYear = this._validateYear(year, main.local.invalidyear);
-          var packedDate = CHINESE_NEW_YEAR[validatedYear - CHINESE_NEW_YEAR[0]];
-          var y = packedDate >> 9 & 4095;
-          var m = packedDate >> 5 & 15;
-          var d = packedDate & 31;
-          var firstThursday;
-          firstThursday = gregorianCalendar.newDate(y, m, d);
-          firstThursday.add(4 - (firstThursday.dayOfWeek() || 7), "d");
-          var offset = this.toJD(year, monthIndex, day) - firstThursday.toJD();
-          return 1 + Math.floor(offset / 7);
-        },
-        /** Retrieve the number of months in a year.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          return this.leapYear(year) ? 13 : 12;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [monthIndex] {number} The month index.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, monthIndex) {
-          if (year.year) {
-            monthIndex = year.month();
-            year = year.year();
-          }
-          year = this._validateYear(year);
-          var monthDaysTable = LUNAR_MONTH_DAYS[year - LUNAR_MONTH_DAYS[0]];
-          var intercalaryMonth = monthDaysTable >> 13;
-          var maxMonthIndex = intercalaryMonth ? 12 : 11;
-          if (monthIndex > maxMonthIndex) {
-            throw main.local.invalidMonth.replace(/\{0\}/, this.local.name);
-          }
-          var daysInMonth = monthDaysTable & 1 << 12 - monthIndex ? 30 : 29;
-          return daysInMonth;
-        },
-        /** Determine whether this date is a week day.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [monthIndex] {number} The month index to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, monthIndex, day) {
-          return (this.dayOfWeek(year, monthIndex, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ChineseCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [monthIndex] {number} The month index to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, monthIndex, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = this._validateYear(date.year());
-          monthIndex = date.month();
-          day = date.day();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var solar = toSolar(year, month, day, isIntercalary);
-          return gregorianCalendar.toJD(solar.year, solar.month, solar.day);
-        },
-        /** Create a new date from a Julian date.
-            @memberof ChineseCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var lunar = toLunar(date.year(), date.month(), date.day());
-          var monthIndex = this.toMonthIndex(
-            lunar.year,
-            lunar.month,
-            lunar.isIntercalary
-          );
-          return this.newDate(lunar.year, monthIndex, lunar.day);
-        },
-        /** Create a new date from a string.
-            @memberof ChineseCalendar
-            @param dateString {string} String representing a Chinese date
-            @return {CDate} The new date.
-            @throws Error if an invalid date. */
-        fromString: function(dateString) {
-          var match = dateString.match(DATE_REGEXP);
-          var year = this._validateYear(+match[1]);
-          var month = +match[2];
-          var isIntercalary = !!match[3];
-          var monthIndex = this.toMonthIndex(year, month, isIntercalary);
-          var day = +match[4];
-          return this.newDate(year, monthIndex, day);
-        },
-        /** Add period(s) to a date.
-            Cater for no year zero.
-            @memberof ChineseCalendar
-            @param date {CDate} The starting date.
-            @param offset {number} The number of periods to adjust by.
-            @param period {string} One of 'y' for year, 'm' for month, 'w' for week, 'd' for day.
-            @return {CDate} The updated date.
-            @throws Error if a different calendar used. */
-        add: function(date, offset, period) {
-          var year = date.year();
-          var monthIndex = date.month();
-          var isIntercalary = this.isIntercalaryMonth(year, monthIndex);
-          var month = this.toChineseMonth(year, monthIndex);
-          var cdate = Object.getPrototypeOf(ChineseCalendar.prototype).add.call(this, date, offset, period);
-          if (period === "y") {
-            var resultYear = cdate.year();
-            var resultMonthIndex = cdate.month();
-            var resultCanBeIntercalaryMonth = this.isIntercalaryMonth(resultYear, month);
-            var correctedMonthIndex = isIntercalary && resultCanBeIntercalaryMonth ? this.toMonthIndex(resultYear, month, true) : this.toMonthIndex(resultYear, month, false);
-            if (correctedMonthIndex !== resultMonthIndex) {
-              cdate.month(correctedMonthIndex);
-            }
-          }
-          return cdate;
-        }
-      });
-      var DATE_REGEXP = /^\s*(-?\d\d\d\d|\d\d)[-/](\d?\d)([iI]?)[-/](\d?\d)/m;
-      var MONTH_NUMBER_REGEXP = /^\d?\d[iI]?/m;
-      var MONTH_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?月/m;
-      var MONTH_SHORT_NAME_REGEXP = /^闰?十?[一二三四五六七八九]?/m;
-      main.calendars.chinese = ChineseCalendar;
-      var LUNAR_MONTH_DAYS = [
-        1887,
-        5780,
-        5802,
-        19157,
-        2742,
-        50359,
-        1198,
-        2646,
-        46378,
-        7466,
-        3412,
-        30122,
-        5482,
-        67949,
-        2396,
-        5294,
-        43597,
-        6732,
-        6954,
-        36181,
-        2772,
-        4954,
-        18781,
-        2396,
-        54427,
-        5274,
-        6730,
-        47781,
-        5800,
-        6868,
-        21210,
-        4790,
-        59703,
-        2350,
-        5270,
-        46667,
-        3402,
-        3496,
-        38325,
-        1388,
-        4782,
-        18735,
-        2350,
-        52374,
-        6804,
-        7498,
-        44457,
-        2906,
-        1388,
-        29294,
-        4700,
-        63789,
-        6442,
-        6804,
-        56138,
-        5802,
-        2772,
-        38235,
-        1210,
-        4698,
-        22827,
-        5418,
-        63125,
-        3476,
-        5802,
-        43701,
-        2484,
-        5302,
-        27223,
-        2646,
-        70954,
-        7466,
-        3412,
-        54698,
-        5482,
-        2412,
-        38062,
-        5294,
-        2636,
-        32038,
-        6954,
-        60245,
-        2772,
-        4826,
-        43357,
-        2394,
-        5274,
-        39501,
-        6730,
-        72357,
-        5800,
-        5844,
-        53978,
-        4790,
-        2358,
-        38039,
-        5270,
-        87627,
-        3402,
-        3496,
-        54708,
-        5484,
-        4782,
-        43311,
-        2350,
-        3222,
-        27978,
-        7498,
-        68965,
-        2904,
-        5484,
-        45677,
-        4700,
-        6444,
-        39573,
-        6804,
-        6986,
-        19285,
-        2772,
-        62811,
-        1210,
-        4698,
-        47403,
-        5418,
-        5780,
-        38570,
-        5546,
-        76469,
-        2420,
-        5302,
-        51799,
-        2646,
-        5414,
-        36501,
-        3412,
-        5546,
-        18869,
-        2412,
-        54446,
-        5276,
-        6732,
-        48422,
-        6822,
-        2900,
-        28010,
-        4826,
-        92509,
-        2394,
-        5274,
-        55883,
-        6730,
-        6820,
-        47956,
-        5812,
-        2778,
-        18779,
-        2358,
-        62615,
-        5270,
-        5450,
-        46757,
-        3492,
-        5556,
-        27318,
-        4718,
-        67887,
-        2350,
-        3222,
-        52554,
-        7498,
-        3428,
-        38252,
-        5468,
-        4700,
-        31022,
-        6444,
-        64149,
-        6804,
-        6986,
-        43861,
-        2772,
-        5338,
-        35421,
-        2650,
-        70955,
-        5418,
-        5780,
-        54954,
-        5546,
-        2740,
-        38074,
-        5302,
-        2646,
-        29991,
-        3366,
-        61011,
-        3412,
-        5546,
-        43445,
-        2412,
-        5294,
-        35406,
-        6732,
-        72998,
-        6820,
-        6996,
-        52586,
-        2778,
-        2396,
-        38045,
-        5274,
-        6698,
-        23333,
-        6820,
-        64338,
-        5812,
-        2746,
-        43355,
-        2358,
-        5270,
-        39499,
-        5450,
-        79525,
-        3492,
-        5548
-      ];
-      var CHINESE_NEW_YEAR = [
-        1887,
-        966732,
-        967231,
-        967733,
-        968265,
-        968766,
-        969297,
-        969798,
-        970298,
-        970829,
-        971330,
-        971830,
-        972362,
-        972863,
-        973395,
-        973896,
-        974397,
-        974928,
-        975428,
-        975929,
-        976461,
-        976962,
-        977462,
-        977994,
-        978494,
-        979026,
-        979526,
-        980026,
-        980558,
-        981059,
-        981559,
-        982091,
-        982593,
-        983124,
-        983624,
-        984124,
-        984656,
-        985157,
-        985656,
-        986189,
-        986690,
-        987191,
-        987722,
-        988222,
-        988753,
-        989254,
-        989754,
-        990286,
-        990788,
-        991288,
-        991819,
-        992319,
-        992851,
-        993352,
-        993851,
-        994383,
-        994885,
-        995385,
-        995917,
-        996418,
-        996918,
-        997450,
-        997949,
-        998481,
-        998982,
-        999483,
-        1000014,
-        1000515,
-        1001016,
-        1001548,
-        1002047,
-        1002578,
-        1003080,
-        1003580,
-        1004111,
-        1004613,
-        1005113,
-        1005645,
-        1006146,
-        1006645,
-        1007177,
-        1007678,
-        1008209,
-        1008710,
-        1009211,
-        1009743,
-        1010243,
-        1010743,
-        1011275,
-        1011775,
-        1012306,
-        1012807,
-        1013308,
-        1013840,
-        1014341,
-        1014841,
-        1015373,
-        1015874,
-        1016404,
-        1016905,
-        1017405,
-        1017937,
-        1018438,
-        1018939,
-        1019471,
-        1019972,
-        1020471,
-        1021002,
-        1021503,
-        1022035,
-        1022535,
-        1023036,
-        1023568,
-        1024069,
-        1024568,
-        1025100,
-        1025601,
-        1026102,
-        1026633,
-        1027133,
-        1027666,
-        1028167,
-        1028666,
-        1029198,
-        1029699,
-        1030199,
-        1030730,
-        1031231,
-        1031763,
-        1032264,
-        1032764,
-        1033296,
-        1033797,
-        1034297,
-        1034828,
-        1035329,
-        1035830,
-        1036362,
-        1036861,
-        1037393,
-        1037894,
-        1038394,
-        1038925,
-        1039427,
-        1039927,
-        1040459,
-        1040959,
-        1041491,
-        1041992,
-        1042492,
-        1043023,
-        1043524,
-        1044024,
-        1044556,
-        1045057,
-        1045558,
-        1046090,
-        1046590,
-        1047121,
-        1047622,
-        1048122,
-        1048654,
-        1049154,
-        1049655,
-        1050187,
-        1050689,
-        1051219,
-        1051720,
-        1052220,
-        1052751,
-        1053252,
-        1053752,
-        1054284,
-        1054786,
-        1055285,
-        1055817,
-        1056317,
-        1056849,
-        1057349,
-        1057850,
-        1058382,
-        1058883,
-        1059383,
-        1059915,
-        1060415,
-        1060947,
-        1061447,
-        1061947,
-        1062479,
-        1062981,
-        1063480,
-        1064012,
-        1064514,
-        1065014,
-        1065545,
-        1066045,
-        1066577,
-        1067078,
-        1067578,
-        1068110,
-        1068611,
-        1069112,
-        1069642,
-        1070142,
-        1070674,
-        1071175,
-        1071675,
-        1072207,
-        1072709,
-        1073209,
-        1073740,
-        1074241,
-        1074741,
-        1075273,
-        1075773,
-        1076305,
-        1076807,
-        1077308,
-        1077839,
-        1078340,
-        1078840,
-        1079372,
-        1079871,
-        1080403,
-        1080904
-      ];
-      function toLunar(yearOrDate, monthOrResult, day, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          solarDate = yearOrDate;
-          lunarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Solar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Solar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 31;
-          if (!isValidDay)
-            throw new Error("Solar day outside range 1 - 31");
-          solarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day
-          };
-          lunarDate = result || {};
-        }
-        var chineseNewYearPackedDate = CHINESE_NEW_YEAR[solarDate.year - CHINESE_NEW_YEAR[0]];
-        var packedDate = solarDate.year << 9 | solarDate.month << 5 | solarDate.day;
-        lunarDate.year = packedDate >= chineseNewYearPackedDate ? solarDate.year : solarDate.year - 1;
-        chineseNewYearPackedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = chineseNewYearPackedDate >> 9 & 4095;
-        var m = chineseNewYearPackedDate >> 5 & 15;
-        var d = chineseNewYearPackedDate & 31;
-        var daysFromNewYear;
-        var chineseNewYearJSDate = new Date(y, m - 1, d);
-        var jsDate = new Date(solarDate.year, solarDate.month - 1, solarDate.day);
-        daysFromNewYear = Math.round(
-          (jsDate - chineseNewYearJSDate) / (24 * 3600 * 1e3)
-        );
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var i;
-        for (i = 0; i < 13; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          if (daysFromNewYear < daysInMonth) {
-            break;
-          }
-          daysFromNewYear -= daysInMonth;
-        }
-        var intercalaryMonth = monthDaysTable >> 13;
-        if (!intercalaryMonth || i < intercalaryMonth) {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = 1 + i;
-        } else if (i === intercalaryMonth) {
-          lunarDate.isIntercalary = true;
-          lunarDate.month = i;
-        } else {
-          lunarDate.isIntercalary = false;
-          lunarDate.month = i;
-        }
-        lunarDate.day = 1 + daysFromNewYear;
-        return lunarDate;
-      }
-      function toSolar(yearOrDate, monthOrResult, day, isIntercalaryOrResult, result) {
-        var solarDate;
-        var lunarDate;
-        if (typeof yearOrDate === "object") {
-          lunarDate = yearOrDate;
-          solarDate = monthOrResult || {};
-        } else {
-          var isValidYear = typeof yearOrDate === "number" && yearOrDate >= 1888 && yearOrDate <= 2111;
-          if (!isValidYear)
-            throw new Error("Lunar year outside range 1888-2111");
-          var isValidMonth = typeof monthOrResult === "number" && monthOrResult >= 1 && monthOrResult <= 12;
-          if (!isValidMonth)
-            throw new Error("Lunar month outside range 1 - 12");
-          var isValidDay = typeof day === "number" && day >= 1 && day <= 30;
-          if (!isValidDay)
-            throw new Error("Lunar day outside range 1 - 30");
-          var isIntercalary;
-          if (typeof isIntercalaryOrResult === "object") {
-            isIntercalary = false;
-            solarDate = isIntercalaryOrResult;
-          } else {
-            isIntercalary = !!isIntercalaryOrResult;
-            solarDate = result || {};
-          }
-          lunarDate = {
-            year: yearOrDate,
-            month: monthOrResult,
-            day,
-            isIntercalary
-          };
-        }
-        var daysFromNewYear;
-        daysFromNewYear = lunarDate.day - 1;
-        var monthDaysTable = LUNAR_MONTH_DAYS[lunarDate.year - LUNAR_MONTH_DAYS[0]];
-        var intercalaryMonth = monthDaysTable >> 13;
-        var monthsFromNewYear;
-        if (!intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month - 1;
-        } else if (lunarDate.month > intercalaryMonth) {
-          monthsFromNewYear = lunarDate.month;
-        } else if (lunarDate.isIntercalary) {
-          monthsFromNewYear = lunarDate.month;
-        } else {
-          monthsFromNewYear = lunarDate.month - 1;
-        }
-        for (var i = 0; i < monthsFromNewYear; i++) {
-          var daysInMonth = monthDaysTable & 1 << 12 - i ? 30 : 29;
-          daysFromNewYear += daysInMonth;
-        }
-        var packedDate = CHINESE_NEW_YEAR[lunarDate.year - CHINESE_NEW_YEAR[0]];
-        var y = packedDate >> 9 & 4095;
-        var m = packedDate >> 5 & 15;
-        var d = packedDate & 31;
-        var jsDate = new Date(y, m - 1, d + daysFromNewYear);
-        solarDate.year = jsDate.getFullYear();
-        solarDate.month = 1 + jsDate.getMonth();
-        solarDate.day = jsDate.getDate();
-        return solarDate;
-      }
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/coptic.js
-  var require_coptic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/coptic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function CopticCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      CopticCalendar.prototype = new main.baseCalendar();
-      assign(CopticCalendar.prototype, {
-        /** The calendar name.
-            @memberof CopticCalendar */
-        name: "Coptic",
-        /** Julian date of start of Coptic epoch: 29 August 284 CE (Gregorian).
-            @memberof CopticCalendar */
-        jdEpoch: 18250295e-1,
-        /** Days per month in a common year.
-            @memberof CopticCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof CopticCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof CopticCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof CopticCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof CopticCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof CopticCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Coptic",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Thout",
-              "Paopi",
-              "Hathor",
-              "Koiak",
-              "Tobi",
-              "Meshir",
-              "Paremhat",
-              "Paremoude",
-              "Pashons",
-              "Paoni",
-              "Epip",
-              "Mesori",
-              "Pi Kogi Enavot"
-            ],
-            monthNamesShort: [
-              "Tho",
-              "Pao",
-              "Hath",
-              "Koi",
-              "Tob",
-              "Mesh",
-              "Pat",
-              "Pad",
-              "Pash",
-              "Pao",
-              "Epi",
-              "Meso",
-              "PiK"
-            ],
-            dayNames: ["Tkyriaka", "Pesnau", "Pshoment", "Peftoou", "Ptiou", "Psoou", "Psabbaton"],
-            dayNamesShort: ["Tky", "Pes", "Psh", "Pef", "Pti", "Pso", "Psa"],
-            dayNamesMin: ["Tk", "Pes", "Psh", "Pef", "Pt", "Pso", "Psa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number) the month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof CopticCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number) the month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof CopticCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.coptic = CopticCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/discworld.js
-  var require_discworld = __commonJS({
-    "node_modules/world-calendars/dist/calendars/discworld.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function DiscworldCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      DiscworldCalendar.prototype = new main.baseCalendar();
-      assign(DiscworldCalendar.prototype, {
-        /** The calendar name.
-            @memberof DiscworldCalendar */
-        name: "Discworld",
-        /** Julian date of start of Discworld epoch: 1 January 0001 CE.
-            @memberof DiscworldCalendar */
-        jdEpoch: 17214255e-1,
-        /** Days per month in a common year.
-            @memberof DiscworldCalendar */
-        daysPerMonth: [16, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof DiscworldCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof DiscworldCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof DiscworldCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof DiscworldCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof DiscworldCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Discworld",
-            epochs: ["BUC", "UC"],
-            monthNames: [
-              "Ick",
-              "Offle",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "Grune",
-              "August",
-              "Spune",
-              "Sektober",
-              "Ember",
-              "December"
-            ],
-            monthNamesShort: ["Ick", "Off", "Feb", "Mar", "Apr", "May", "Jun", "Gru", "Aug", "Spu", "Sek", "Emb", "Dec"],
-            dayNames: ["Sunday", "Octeday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Oct", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Oc", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 2,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 13;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 400;
-        },
-        /** Determine the week of the year for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 8) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1];
-        },
-        /** Retrieve the number of days in a week.
-            @memberof DiscworldCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 8;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return (date.day() + 1) % 8;
-        },
-        /** Determine whether this date is a week day.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          var dow = this.dayOfWeek(year, month, day);
-          return dow >= 2 && dow <= 6;
-        },
-        /** Retrieve additional information about a date.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { century: centuries[Math.floor((date.year() - 1) / 100) + 1] || "" };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof DiscworldCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year() + (date.year() < 0 ? 1 : 0);
-          month = date.month();
-          day = date.day();
-          return day + (month > 1 ? 16 : 0) + (month > 2 ? (month - 2) * 32 : 0) + (year - 1) * 400 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof DiscworldCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5) - Math.floor(this.jdEpoch) - 1;
-          var year = Math.floor(jd / 400) + 1;
-          jd -= (year - 1) * 400;
-          jd += jd > 15 ? 16 : 0;
-          var month = Math.floor(jd / 32) + 1;
-          var day = jd - (month - 1) * 32 + 1;
-          return this.newDate(year <= 0 ? year - 1 : year, month, day);
-        }
-      });
-      var centuries = {
-        20: "Fruitbat",
-        21: "Anchovy"
-      };
-      main.calendars.discworld = DiscworldCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ethiopian.js
-  var require_ethiopian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ethiopian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function EthiopianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      EthiopianCalendar.prototype = new main.baseCalendar();
-      assign(EthiopianCalendar.prototype, {
-        /** The calendar name.
-            @memberof EthiopianCalendar */
-        name: "Ethiopian",
-        /** Julian date of start of Ethiopian epoch: 27 August 8 CE (Gregorian).
-            @memberof EthiopianCalendar */
-        jdEpoch: 17242205e-1,
-        /** Days per month in a common year.
-            @memberof EthiopianCalendar */
-        daysPerMonth: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof EthiopianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof EthiopianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof EthiopianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof EthiopianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof EthiopianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Ethiopian",
-            epochs: ["BEE", "EE"],
-            monthNames: [
-              "Meskerem",
-              "Tikemet",
-              "Hidar",
-              "Tahesas",
-              "Tir",
-              "Yekatit",
-              "Megabit",
-              "Miazia",
-              "Genbot",
-              "Sene",
-              "Hamle",
-              "Nehase",
-              "Pagume"
-            ],
-            monthNamesShort: [
-              "Mes",
-              "Tik",
-              "Hid",
-              "Tah",
-              "Tir",
-              "Yek",
-              "Meg",
-              "Mia",
-              "Gen",
-              "Sen",
-              "Ham",
-              "Neh",
-              "Pag"
-            ],
-            dayNames: ["Ehud", "Segno", "Maksegno", "Irob", "Hamus", "Arb", "Kidame"],
-            dayNamesShort: ["Ehu", "Seg", "Mak", "Iro", "Ham", "Arb", "Kid"],
-            dayNamesMin: ["Eh", "Se", "Ma", "Ir", "Ha", "Ar", "Ki"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() + (date.year() < 0 ? 1 : 0);
-          return year % 4 === 3 || year % 4 === -1;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return 13;
-        },
-        /** Determine the week of the year for a date.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 13 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof EthiopianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          return date.day() + (date.month() - 1) * 30 + (year - 1) * 365 + Math.floor(year / 4) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof EthiopianCalendar
-            @param jd {number} the Julian date to convert.
-            @return {CDate} the equivalent date. */
-        fromJD: function(jd) {
-          var c = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor((c - Math.floor((c + 366) / 1461)) / 365) + 1;
-          if (year <= 0) {
-            year--;
-          }
-          c = Math.floor(jd) + 0.5 - this.newDate(year, 1, 1).toJD();
-          var month = Math.floor(c / 30) + 1;
-          var day = c - (month - 1) * 30 + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.ethiopian = EthiopianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/hebrew.js
-  var require_hebrew = __commonJS({
-    "node_modules/world-calendars/dist/calendars/hebrew.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function HebrewCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      HebrewCalendar.prototype = new main.baseCalendar();
-      assign(HebrewCalendar.prototype, {
-        /** The calendar name.
-            @memberof HebrewCalendar */
-        name: "Hebrew",
-        /** Julian date of start of Hebrew epoch: 7 October 3761 BCE.
-            @memberof HebrewCalendar */
-        jdEpoch: 347995.5,
-        /** Days per month in a common year.
-            @memberof HebrewCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof HebrewCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof HebrewCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof HebrewCalendar */
-        firstMonth: 7,
-        /** The minimum day number.
-            @memberof HebrewCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof HebrewCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Hebrew",
-            epochs: ["BAM", "AM"],
-            monthNames: [
-              "Nisan",
-              "Iyar",
-              "Sivan",
-              "Tammuz",
-              "Av",
-              "Elul",
-              "Tishrei",
-              "Cheshvan",
-              "Kislev",
-              "Tevet",
-              "Shevat",
-              "Adar",
-              "Adar II"
-            ],
-            monthNamesShort: ["Nis", "Iya", "Siv", "Tam", "Av", "Elu", "Tis", "Che", "Kis", "Tev", "She", "Ada", "Ad2"],
-            dayNames: ["Yom Rishon", "Yom Sheni", "Yom Shlishi", "Yom Revi'i", "Yom Chamishi", "Yom Shishi", "Yom Shabbat"],
-            dayNamesShort: ["Ris", "She", "Shl", "Rev", "Cha", "Shi", "Sha"],
-            dayNamesMin: ["Ri", "She", "Shl", "Re", "Ch", "Shi", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(date.year());
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        _leapYear: function(year) {
-          year = year < 0 ? year + 1 : year;
-          return mod(year * 7 + 1, 19) < 7;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this._leapYear(year.year ? year.year() : year) ? 13 : 12;
-        },
-        /** Determine the week of the year for a date.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          return this.toJD(year === -1 ? 1 : year + 1, 7, 1) - this.toJD(year, 7, 1);
-        },
-        /** Retrieve the number of days in a month.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return month === 12 && this.leapYear(year) ? 30 : (
-            // Adar I
-            month === 8 && mod(this.daysInYear(year), 10) === 5 ? 30 : (
-              // Cheshvan in shlemah year
-              month === 9 && mod(this.daysInYear(year), 10) === 3 ? 29 : (
-                // Kislev in chaserah year
-                this.daysPerMonth[month - 1]
-              )
-            )
-          );
-        },
-        /** Determine whether this date is a week day.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve additional information about a date - year type.
-            @memberof HebrewCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return { yearType: (this.leapYear(date) ? "embolismic" : "common") + " " + ["deficient", "regular", "complete"][this.daysInYear(date) % 10 - 3] };
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof HebrewCalendar
-            @param year {CDate)|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var adjYear = year <= 0 ? year + 1 : year;
-          var jd = this.jdEpoch + this._delay1(adjYear) + this._delay2(adjYear) + day + 1;
-          if (month < 7) {
-            for (var m = 7; m <= this.monthsInYear(year); m++) {
-              jd += this.daysInMonth(year, m);
-            }
-            for (var m = 1; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          } else {
-            for (var m = 7; m < month; m++) {
-              jd += this.daysInMonth(year, m);
-            }
-          }
-          return jd;
-        },
-        /** Test for delay of start of new year and to avoid
-            Sunday, Wednesday, or Friday as start of the new year.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay1: function(year) {
-          var months = Math.floor((235 * year - 234) / 19);
-          var parts = 12084 + 13753 * months;
-          var day = months * 29 + Math.floor(parts / 25920);
-          if (mod(3 * (day + 1), 7) < 3) {
-            day++;
-          }
-          return day;
-        },
-        /** Check for delay in start of new year due to length of adjacent years.
-            @memberof HebrewCalendar
-            @private
-            @param year {number} The year to examine.
-            @return {number} The days to offset by. */
-        _delay2: function(year) {
-          var last = this._delay1(year - 1);
-          var present = this._delay1(year);
-          var next = this._delay1(year + 1);
-          return next - present === 356 ? 2 : present - last === 382 ? 1 : 0;
-        },
-        /** Create a new date from a Julian date.
-            @memberof HebrewCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((jd - this.jdEpoch) * 98496 / 35975351) - 1;
-          while (jd >= this.toJD(year === -1 ? 1 : year + 1, 7, 1)) {
-            year++;
-          }
-          var month = jd < this.toJD(year, 1, 1) ? 7 : 1;
-          while (jd > this.toJD(year, month, this.daysInMonth(year, month))) {
-            month++;
-          }
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.hebrew = HebrewCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/islamic.js
-  var require_islamic = __commonJS({
-    "node_modules/world-calendars/dist/calendars/islamic.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function IslamicCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      IslamicCalendar.prototype = new main.baseCalendar();
-      assign(IslamicCalendar.prototype, {
-        /** The calendar name.
-            @memberof IslamicCalendar */
-        name: "Islamic",
-        /** Julian date of start of Islamic epoch: 16 July 622 CE.
-            @memberof IslamicCalendar */
-        jdEpoch: 19484395e-1,
-        /** Days per month in a common year.
-            @memberof IslamicCalendar */
-        daysPerMonth: [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof IslamicCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof IslamicCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof IslamicCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof IslamicCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof IslamicCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Islamic",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' al-thani",
-              "Jumada al-awwal",
-              "Jumada al-thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: [
-              "Yawm al-ahad",
-              "Yawm al-ithnayn",
-              "Yawm ath-thulaathaa'",
-              "Yawm al-arbi'aa'",
-              "Yawm al-kham\u012Bs",
-              "Yawm al-jum'a",
-              "Yawm as-sabt"
-            ],
-            dayNamesShort: ["Aha", "Ith", "Thu", "Arb", "Kha", "Jum", "Sab"],
-            dayNamesMin: ["Ah", "It", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return (date.year() * 11 + 14) % 30 < 11;
-        },
-        /** Determine the week of the year for a date.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          return this.leapYear(year) ? 355 : 354;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof IslamicCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          year = year <= 0 ? year + 1 : year;
-          return day + Math.ceil(29.5 * (month - 1)) + (year - 1) * 354 + Math.floor((3 + 11 * year) / 30) + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof IslamicCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var year = Math.floor((30 * (jd - this.jdEpoch) + 10646) / 10631);
-          year = year <= 0 ? year - 1 : year;
-          var month = Math.min(12, Math.ceil((jd - 29 - this.toJD(year, 1, 1)) / 29.5) + 1);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.islamic = IslamicCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/julian.js
-  var require_julian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/julian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function JulianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      JulianCalendar.prototype = new main.baseCalendar();
-      assign(JulianCalendar.prototype, {
-        /** The calendar name.
-            @memberof JulianCalendar */
-        name: "Julian",
-        /** Julian date of start of Julian epoch: 1 January 0001 AD = 30 December 0001 BCE.
-            @memberof JulianCalendar */
-        jdEpoch: 17214235e-1,
-        /** Days per month in a common year.
-            @memberof JulianCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof JulianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof JulianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof JulianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof JulianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof JulianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Julian",
-            epochs: ["BC", "AD"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "mm/dd/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = date.year() < 0 ? date.year() + 1 : date.year();
-          return year % 4 === 0;
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(4 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} True if a week day, false if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof JulianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          if (year < 0) {
-            year++;
-          }
-          if (month <= 2) {
-            year--;
-            month += 12;
-          }
-          return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day - 1524.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof JulianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var a = Math.floor(jd + 0.5);
-          var b = a + 1524;
-          var c = Math.floor((b - 122.1) / 365.25);
-          var d = Math.floor(365.25 * c);
-          var e = Math.floor((b - d) / 30.6001);
-          var month = e - Math.floor(e < 14 ? 1 : 13);
-          var year = c - Math.floor(month > 2 ? 4716 : 4715);
-          var day = b - d - Math.floor(30.6001 * e);
-          if (year <= 0) {
-            year--;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.julian = JulianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/mayan.js
-  var require_mayan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/mayan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function MayanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      MayanCalendar.prototype = new main.baseCalendar();
-      assign(MayanCalendar.prototype, {
-        /** The calendar name.
-            @memberof MayanCalendar */
-        name: "Mayan",
-        /** Julian date of start of Mayan epoch: 11 August 3114 BCE.
-            @memberof MayanCalendar */
-        jdEpoch: 584282.5,
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof MayanCalendar */
-        hasYearZero: true,
-        /** The minimum month number.
-            @memberof MayanCalendar */
-        minMonth: 0,
-        /** The first month in the year.
-            @memberof MayanCalendar */
-        firstMonth: 0,
-        /** The minimum day number.
-            @memberof MayanCalendar */
-        minDay: 0,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof MayanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left.
-            @property haabMonths {string[]} The names of the Haab months.
-            @property tzolkinMonths {string[]} The names of the Tzolkin months. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Mayan",
-            epochs: ["", ""],
-            monthNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            monthNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17"
-            ],
-            dayNames: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesShort: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            dayNamesMin: [
-              "0",
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19"
-            ],
-            digits: null,
-            dateFormat: "YYYY.m.d",
-            firstDay: 0,
-            isRTL: false,
-            haabMonths: [
-              "Pop",
-              "Uo",
-              "Zip",
-              "Zotz",
-              "Tzec",
-              "Xul",
-              "Yaxkin",
-              "Mol",
-              "Chen",
-              "Yax",
-              "Zac",
-              "Ceh",
-              "Mac",
-              "Kankin",
-              "Muan",
-              "Pax",
-              "Kayab",
-              "Cumku",
-              "Uayeb"
-            ],
-            tzolkinMonths: [
-              "Imix",
-              "Ik",
-              "Akbal",
-              "Kan",
-              "Chicchan",
-              "Cimi",
-              "Manik",
-              "Lamat",
-              "Muluc",
-              "Oc",
-              "Chuen",
-              "Eb",
-              "Ben",
-              "Ix",
-              "Men",
-              "Cib",
-              "Caban",
-              "Etznab",
-              "Cauac",
-              "Ahau"
-            ]
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return false;
-        },
-        /** Format the year, if not a simple sequential number.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to format or the year to format.
-            @return {string} The formatted year.
-            @throws Error if an invalid year or a different calendar used. */
-        formatYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          var baktun = Math.floor(year / 400);
-          year = year % 400;
-          year += year < 0 ? 400 : 0;
-          var katun = Math.floor(year / 20);
-          return baktun + "." + katun + "." + year % 20;
-        },
-        /** Convert from the formatted year back to a single number.
-            @memberof MayanCalendar
-            @param years {string} The year as n.n.n.
-            @return {number} The sequential year.
-            @throws Error if an invalid value is supplied. */
-        forYear: function(years) {
-          years = years.split(".");
-          if (years.length < 3) {
-            throw "Invalid Mayan year";
-          }
-          var year = 0;
-          for (var i = 0; i < years.length; i++) {
-            var y = parseInt(years[i], 10);
-            if (Math.abs(y) > 19 || i > 0 && y < 0) {
-              throw "Invalid Mayan year";
-            }
-            year = year * 20 + y;
-          }
-          return year;
-        },
-        /** Retrieve the number of months in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of months.
-            @throws Error if an invalid year or a different calendar used. */
-        monthsInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 18;
-        },
-        /** Determine the week of the year for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
-          return 0;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return 360;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return 20;
-        },
-        /** Retrieve the number of days in a week.
-            @memberof MayanCalendar
-            @return {number} The number of days. */
-        daysInWeek: function() {
-          return 5;
-        },
-        /** Retrieve the day of the week for a date.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The day of the week: 0 to number of days - 1.
-            @throws Error if an invalid date or a different calendar used. */
-        dayOfWeek: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day();
-        },
-        /** Determine whether this date is a week day.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          this._validate(year, month, day, main.local.invalidDate);
-          return true;
-        },
-        /** Retrieve additional information about a date - Haab and Tzolkin equivalents.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {object} Additional information - contents depends on calendar.
-            @throws Error if an invalid date or a different calendar used. */
-        extraInfo: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var jd = date.toJD();
-          var haab = this._toHaab(jd);
-          var tzolkin = this._toTzolkin(jd);
-          return {
-            haabMonthName: this.local.haabMonths[haab[0] - 1],
-            haabMonth: haab[0],
-            haabDay: haab[1],
-            tzolkinDayName: this.local.tzolkinMonths[tzolkin[0] - 1],
-            tzolkinDay: tzolkin[0],
-            tzolkinTrecena: tzolkin[1]
-          };
-        },
-        /** Retrieve Haab date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd  {number} The Julian date.
-            @return {number[]} Corresponding Haab month and day. */
-        _toHaab: function(jd) {
-          jd -= this.jdEpoch;
-          var day = mod(jd + 8 + (18 - 1) * 20, 365);
-          return [Math.floor(day / 20) + 1, mod(day, 20)];
-        },
-        /** Retrieve Tzolkin date from a Julian date.
-            @memberof MayanCalendar
-            @private
-            @param jd {number} The Julian date.
-            @return {number[]} Corresponding Tzolkin day and trecena. */
-        _toTzolkin: function(jd) {
-          jd -= this.jdEpoch;
-          return [amod(jd + 20, 20), amod(jd + 4, 13)];
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof MayanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          return date.day() + date.month() * 20 + date.year() * 360 + this.jdEpoch;
-        },
-        /** Create a new date from a Julian date.
-            @memberof MayanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5 - this.jdEpoch;
-          var year = Math.floor(jd / 360);
-          jd = jd % 360;
-          jd += jd < 0 ? 360 : 0;
-          var month = Math.floor(jd / 20);
-          var day = jd % 20;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      function amod(a, b) {
-        return mod(a - 1, b) + 1;
-      }
-      main.calendars.mayan = MayanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nanakshahi.js
-  var require_nanakshahi = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nanakshahi.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NanakshahiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NanakshahiCalendar.prototype = new main.baseCalendar();
-      var gregorian = main.instance("gregorian");
-      assign(NanakshahiCalendar.prototype, {
-        /** The calendar name.
-            @memberof NanakshahiCalendar */
-        name: "Nanakshahi",
-        /** Julian date of start of Nanakshahi epoch: 14 March 1469 CE.
-            @memberof NanakshahiCalendar */
-        jdEpoch: 22576735e-1,
-        /** Days per month in a common year.
-            @memberof NanakshahiCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NanakshahiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NanakshahiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NanakshahiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NanakshahiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NanakshahiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nanakshahi",
-            epochs: ["BN", "AN"],
-            monthNames: [
-              "Chet",
-              "Vaisakh",
-              "Jeth",
-              "Harh",
-              "Sawan",
-              "Bhadon",
-              "Assu",
-              "Katak",
-              "Maghar",
-              "Poh",
-              "Magh",
-              "Phagun"
-            ],
-            monthNamesShort: ["Che", "Vai", "Jet", "Har", "Saw", "Bha", "Ass", "Kat", "Mgr", "Poh", "Mgh", "Pha"],
-            dayNames: ["Somvaar", "Mangalvar", "Budhvaar", "Veervaar", "Shukarvaar", "Sanicharvaar", "Etvaar"],
-            dayNamesShort: ["Som", "Mangal", "Budh", "Veer", "Shukar", "Sanichar", "Et"],
-            dayNamesMin: ["So", "Ma", "Bu", "Ve", "Sh", "Sa", "Et"],
-            digits: null,
-            dateFormat: "dd-mm-yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(
-            year,
-            this.minMonth,
-            this.minDay,
-            main.local.invalidYear || main.regionalOptions[""].invalidYear
-          );
-          return gregorian.leapYear(date.year() + (date.year() < 1 ? 1 : 0) + 1469);
-        },
-        /** Determine the week of the year for a date.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(1 - (checkDate.dayOfWeek() || 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NanakshahiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidMonth);
-          var year = date.year();
-          if (year < 0) {
-            year++;
-          }
-          var doy = date.day();
-          for (var m = 1; m < date.month(); m++) {
-            doy += this.daysPerMonth[m - 1];
-          }
-          return doy + gregorian.toJD(year + 1468, 3, 13);
-        },
-        /** Create a new date from a Julian date.
-            @memberof NanakshahiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd + 0.5);
-          var year = Math.floor((jd - (this.jdEpoch - 1)) / 366);
-          while (jd >= this.toJD(year + 1, 1, 1)) {
-            year++;
-          }
-          var day = jd - Math.floor(this.toJD(year, 1, 1) + 0.5) + 1;
-          var month = 1;
-          while (day > this.daysInMonth(year, month)) {
-            day -= this.daysInMonth(year, month);
-            month++;
-          }
-          return this.newDate(year, month, day);
-        }
-      });
-      main.calendars.nanakshahi = NanakshahiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/nepali.js
-  var require_nepali = __commonJS({
-    "node_modules/world-calendars/dist/calendars/nepali.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function NepaliCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      NepaliCalendar.prototype = new main.baseCalendar();
-      assign(NepaliCalendar.prototype, {
-        /** The calendar name.
-            @memberof NepaliCalendar */
-        name: "Nepali",
-        /** Julian date of start of Nepali epoch: 14 April 57 BCE.
-            @memberof NepaliCalendar */
-        jdEpoch: 17007095e-1,
-        /** Days per month in a common year.
-            @memberof NepaliCalendar */
-        daysPerMonth: [31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof NepaliCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof NepaliCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof NepaliCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof NepaliCalendar */
-        minDay: 1,
-        /** The number of days in the year.
-            @memberof NepaliCalendar */
-        daysPerYear: 365,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof NepaliCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Nepali",
-            epochs: ["BBS", "ABS"],
-            monthNames: [
-              "Baisakh",
-              "Jestha",
-              "Ashadh",
-              "Shrawan",
-              "Bhadra",
-              "Ashwin",
-              "Kartik",
-              "Mangsir",
-              "Paush",
-              "Mangh",
-              "Falgun",
-              "Chaitra"
-            ],
-            monthNamesShort: ["Bai", "Je", "As", "Shra", "Bha", "Ash", "Kar", "Mang", "Pau", "Ma", "Fal", "Chai"],
-            dayNames: ["Aaitabaar", "Sombaar", "Manglbaar", "Budhabaar", "Bihibaar", "Shukrabaar", "Shanibaar"],
-            dayNamesShort: ["Aaita", "Som", "Mangl", "Budha", "Bihi", "Shukra", "Shani"],
-            dayNamesMin: ["Aai", "So", "Man", "Bu", "Bi", "Shu", "Sha"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          return this.daysInYear(year) !== this.daysPerYear;
-        },
-        /** Determine the week of the year for a date.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          year = date.year();
-          if (typeof this.NEPALI_CALENDAR_DATA[year] === "undefined") {
-            return this.daysPerYear;
-          }
-          var daysPerYear = 0;
-          for (var month_number = this.minMonth; month_number <= 12; month_number++) {
-            daysPerYear += this.NEPALI_CALENDAR_DATA[year][month_number];
-          }
-          return daysPerYear;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof NepaliCalendar
-            @param year {CDate|number| The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          if (year.year) {
-            month = year.month();
-            year = year.year();
-          }
-          this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return typeof this.NEPALI_CALENDAR_DATA[year] === "undefined" ? this.daysPerMonth[month - 1] : this.NEPALI_CALENDAR_DATA[year][month];
-        },
-        /** Determine whether this date is a week day.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof NepaliCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(nepaliYear, nepaliMonth, nepaliDay) {
-          var date = this._validate(nepaliYear, nepaliMonth, nepaliDay, main.local.invalidDate);
-          nepaliYear = date.year();
-          nepaliMonth = date.month();
-          nepaliDay = date.day();
-          var gregorianCalendar = main.instance();
-          var gregorianDayOfYear = 0;
-          var nepaliMonthToCheck = nepaliMonth;
-          var nepaliYearToCheck = nepaliYear;
-          this._createMissingCalendarData(nepaliYear);
-          var gregorianYear = nepaliYear - (nepaliMonthToCheck > 9 || nepaliMonthToCheck === 9 && nepaliDay >= this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0] ? 56 : 57);
-          if (nepaliMonth !== 9) {
-            gregorianDayOfYear = nepaliDay;
-            nepaliMonthToCheck--;
-          }
-          while (nepaliMonthToCheck !== 9) {
-            if (nepaliMonthToCheck <= 0) {
-              nepaliMonthToCheck = 12;
-              nepaliYearToCheck--;
-            }
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][nepaliMonthToCheck];
-            nepaliMonthToCheck--;
-          }
-          if (nepaliMonth === 9) {
-            gregorianDayOfYear += nepaliDay - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-            if (gregorianDayOfYear < 0) {
-              gregorianDayOfYear += gregorianCalendar.daysInYear(gregorianYear);
-            }
-          } else {
-            gregorianDayOfYear += this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][9] - this.NEPALI_CALENDAR_DATA[nepaliYearToCheck][0];
-          }
-          return gregorianCalendar.newDate(gregorianYear, 1, 1).add(gregorianDayOfYear, "d").toJD();
-        },
-        /** Create a new date from a Julian date.
-            @memberof NepaliCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var gregorianCalendar = main.instance();
-          var gregorianDate = gregorianCalendar.fromJD(jd);
-          var gregorianYear = gregorianDate.year();
-          var gregorianDayOfYear = gregorianDate.dayOfYear();
-          var nepaliYear = gregorianYear + 56;
-          this._createMissingCalendarData(nepaliYear);
-          var nepaliMonth = 9;
-          var dayOfFirstJanInPaush = this.NEPALI_CALENDAR_DATA[nepaliYear][0];
-          var daysSinceJanFirstToEndOfNepaliMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - dayOfFirstJanInPaush + 1;
-          while (gregorianDayOfYear > daysSinceJanFirstToEndOfNepaliMonth) {
-            nepaliMonth++;
-            if (nepaliMonth > 12) {
-              nepaliMonth = 1;
-              nepaliYear++;
-            }
-            daysSinceJanFirstToEndOfNepaliMonth += this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth];
-          }
-          var nepaliDayOfMonth = this.NEPALI_CALENDAR_DATA[nepaliYear][nepaliMonth] - (daysSinceJanFirstToEndOfNepaliMonth - gregorianDayOfYear);
-          return this.newDate(nepaliYear, nepaliMonth, nepaliDayOfMonth);
-        },
-        /** Creates missing data in the NEPALI_CALENDAR_DATA table.
-            This data will not be correct but just give an estimated result. Mostly -/+ 1 day
-            @private
-            @param nepaliYear {number} The missing year number. */
-        _createMissingCalendarData: function(nepaliYear) {
-          var tmp_calendar_data = this.daysPerMonth.slice(0);
-          tmp_calendar_data.unshift(17);
-          for (var nepaliYearToCreate = nepaliYear - 1; nepaliYearToCreate < nepaliYear + 2; nepaliYearToCreate++) {
-            if (typeof this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] === "undefined") {
-              this.NEPALI_CALENDAR_DATA[nepaliYearToCreate] = tmp_calendar_data;
-            }
-          }
-        },
-        NEPALI_CALENDAR_DATA: {
-          // These data are from http://www.ashesh.com.np
-          1970: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1971: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          1972: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1973: [19, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1974: [19, 31, 31, 32, 30, 31, 31, 30, 29, 30, 29, 30, 30],
-          1975: [18, 31, 31, 32, 32, 30, 31, 30, 29, 30, 29, 30, 30],
-          1976: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1977: [18, 31, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          1978: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1979: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1980: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1981: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1982: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1983: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1984: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1985: [18, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          1986: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1987: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          1988: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          1989: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1990: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1991: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          // These data are from http://nepalicalendar.rat32.com/index.php
-          1992: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1993: [18, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          1994: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1995: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          1996: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          1997: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1998: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          1999: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2e3: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2001: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2002: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2003: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2004: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2005: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2006: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2007: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2008: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2009: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2010: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2011: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2012: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2013: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2014: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2015: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2016: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2017: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2018: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2019: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2020: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2021: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2022: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2023: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2024: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2025: [18, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2026: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2027: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2028: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2029: [18, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2030: [17, 31, 32, 31, 32, 31, 30, 30, 30, 30, 30, 30, 31],
-          2031: [17, 31, 32, 31, 32, 31, 31, 31, 31, 31, 31, 31, 31],
-          2032: [17, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32],
-          2033: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2034: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2035: [17, 30, 32, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2036: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2037: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2038: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2039: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2040: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2041: [18, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2042: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2043: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2044: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2045: [18, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2046: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2047: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2048: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2049: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2050: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2051: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2052: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2053: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2054: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2055: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 29, 30],
-          2056: [17, 31, 31, 32, 31, 32, 30, 30, 29, 30, 29, 30, 30],
-          2057: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2058: [17, 30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2059: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2060: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2061: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2062: [17, 30, 32, 31, 32, 31, 31, 29, 30, 29, 30, 29, 31],
-          2063: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2064: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2065: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2066: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 29, 31],
-          2067: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2068: [17, 31, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2069: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2070: [17, 31, 31, 31, 32, 31, 31, 29, 30, 30, 29, 30, 30],
-          2071: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2072: [17, 31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2073: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31],
-          2074: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2075: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2076: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          2077: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
-          2078: [17, 31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30],
-          2079: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-          2080: [16, 31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
-          // These data are from http://www.ashesh.com.np/nepali-calendar/
-          2081: [17, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2082: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2083: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2084: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2085: [17, 31, 32, 31, 32, 31, 31, 30, 30, 29, 30, 30, 30],
-          2086: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2087: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2088: [16, 30, 31, 32, 32, 30, 31, 30, 30, 29, 30, 30, 30],
-          2089: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2090: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2091: [16, 31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 30, 30],
-          2092: [16, 31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2093: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2094: [17, 31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30],
-          2095: [17, 31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
-          2096: [17, 30, 31, 32, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-          2097: [17, 31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
-          2098: [17, 31, 31, 32, 31, 31, 31, 29, 30, 29, 30, 30, 31],
-          2099: [17, 31, 31, 32, 31, 31, 31, 30, 29, 29, 30, 30, 30],
-          2100: [17, 31, 32, 31, 32, 30, 31, 30, 29, 30, 29, 30, 30]
-        }
-      });
-      main.calendars.nepali = NepaliCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/persian.js
-  var require_persian = __commonJS({
-    "node_modules/world-calendars/dist/calendars/persian.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function PersianCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      PersianCalendar.prototype = new main.baseCalendar();
-      assign(PersianCalendar.prototype, {
-        /** The calendar name.
-            @memberof PersianCalendar */
-        name: "Persian",
-        /** Julian date of start of Persian epoch: 19 March 622 CE.
-            @memberof PersianCalendar */
-        jdEpoch: 19483205e-1,
-        /** Days per month in a common year.
-            @memberof PersianCalendar */
-        daysPerMonth: [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof PersianCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof PersianCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof PersianCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof PersianCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof PersianCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Persian",
-            epochs: ["BP", "AP"],
-            monthNames: [
-              "Farvardin",
-              "Ordibehesht",
-              "Khordad",
-              "Tir",
-              "Mordad",
-              "Shahrivar",
-              "Mehr",
-              "Aban",
-              "Azar",
-              "Day",
-              "Bahman",
-              "Esfand"
-            ],
-            monthNamesShort: ["Far", "Ord", "Kho", "Tir", "Mor", "Sha", "Meh", "Aba", "Aza", "Day", "Bah", "Esf"],
-            dayNames: ["Yekshambe", "Doshambe", "Seshambe", "Ch\xE6harshambe", "Panjshambe", "Jom'e", "Shambe"],
-            dayNamesShort: ["Yek", "Do", "Se", "Ch\xE6", "Panj", "Jom", "Sha"],
-            dayNamesMin: ["Ye", "Do", "Se", "Ch", "Pa", "Jo", "Sh"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return ((date.year() - (date.year() > 0 ? 474 : 473)) % 2820 + 474 + 38) * 682 % 2816 < 682;
-        },
-        /** Determine the week of the year for a date.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-((checkDate.dayOfWeek() + 1) % 7), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 12 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof PersianCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          year = date.year();
-          month = date.month();
-          day = date.day();
-          var epBase = year - (year >= 0 ? 474 : 473);
-          var epYear = 474 + mod(epBase, 2820);
-          return day + (month <= 7 ? (month - 1) * 31 : (month - 1) * 30 + 6) + Math.floor((epYear * 682 - 110) / 2816) + (epYear - 1) * 365 + Math.floor(epBase / 2820) * 1029983 + this.jdEpoch - 1;
-        },
-        /** Create a new date from a Julian date.
-            @memberof PersianCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          jd = Math.floor(jd) + 0.5;
-          var depoch = jd - this.toJD(475, 1, 1);
-          var cycle = Math.floor(depoch / 1029983);
-          var cyear = mod(depoch, 1029983);
-          var ycycle = 2820;
-          if (cyear !== 1029982) {
-            var aux1 = Math.floor(cyear / 366);
-            var aux2 = mod(cyear, 366);
-            ycycle = Math.floor((2134 * aux1 + 2816 * aux2 + 2815) / 1028522) + aux1 + 1;
-          }
-          var year = ycycle + 2820 * cycle + 474;
-          year = year <= 0 ? year - 1 : year;
-          var yday = jd - this.toJD(year, 1, 1) + 1;
-          var month = yday <= 186 ? Math.ceil(yday / 31) : Math.ceil((yday - 6) / 30);
-          var day = jd - this.toJD(year, month, 1) + 1;
-          return this.newDate(year, month, day);
-        }
-      });
-      function mod(a, b) {
-        return a - b * Math.floor(a / b);
-      }
-      main.calendars.persian = PersianCalendar;
-      main.calendars.jalali = PersianCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/taiwan.js
-  var require_taiwan = __commonJS({
-    "node_modules/world-calendars/dist/calendars/taiwan.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function TaiwanCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      TaiwanCalendar.prototype = new main.baseCalendar();
-      assign(TaiwanCalendar.prototype, {
-        /** The calendar name.
-            @memberof TaiwanCalendar */
-        name: "Taiwan",
-        /** Julian date of start of Taiwan epoch: 1 January 1912 CE (Gregorian).
-            @memberof TaiwanCalendar */
-        jdEpoch: 24194025e-1,
-        /** Difference in years between Taiwan and Gregorian calendars.
-            @memberof TaiwanCalendar */
-        yearsOffset: 1911,
-        /** Days per month in a common year.
-            @memberof TaiwanCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof TaiwanCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof TaiwanCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof TaiwanCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof TaiwanCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof TaiwanCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Taiwan",
-            epochs: ["BROC", "ROC"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 1,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof TaiwanCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof TaiwanCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Taiwanese to Gregorian year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Taiwanese year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        },
-        /** Convert Gregorian to Taiwanese year.
-            @memberof TaiwanCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Taiwanese year. */
-        _g2tYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        }
-      });
-      main.calendars.taiwan = TaiwanCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/thai.js
-  var require_thai = __commonJS({
-    "node_modules/world-calendars/dist/calendars/thai.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      var gregorianCalendar = main.instance();
-      function ThaiCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      ThaiCalendar.prototype = new main.baseCalendar();
-      assign(ThaiCalendar.prototype, {
-        /** The calendar name.
-            @memberof ThaiCalendar */
-        name: "Thai",
-        /** Julian date of start of Thai epoch: 1 January 543 BCE (Gregorian).
-            @memberof ThaiCalendar */
-        jdEpoch: 15230985e-1,
-        /** Difference in years between Thai and Gregorian calendars.
-            @memberof ThaiCalendar */
-        yearsOffset: 543,
-        /** Days per month in a common year.
-            @memberof ThaiCalendar */
-        daysPerMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof ThaiCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof ThaiCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof ThaiCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof ThaiCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof ThaiCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Thai",
-            epochs: ["BBE", "BE"],
-            monthNames: [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ],
-            monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-            dayNamesShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            dayNamesMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            digits: null,
-            dateFormat: "dd/mm/yyyy",
-            firstDay: 0,
-            isRTL: false
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.leapYear(year);
-        },
-        /** Determine the week of the year for a date - ISO 8601.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.weekOfYear(year, date.month(), date.day());
-        },
-        /** Retrieve the number of days in a month.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          return this.daysPerMonth[date.month() - 1] + (date.month() === 2 && this.leapYear(date.year()) ? 1 : 0);
-        },
-        /** Determine whether this date is a week day.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return (this.dayOfWeek(year, month, day) || 7) < 6;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof ThaiCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var year = this._t2gYear(date.year());
-          return gregorianCalendar.toJD(year, date.month(), date.day());
-        },
-        /** Create a new date from a Julian date.
-            @memberof ThaiCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var date = gregorianCalendar.fromJD(jd);
-          var year = this._g2tYear(date.year());
-          return this.newDate(year, date.month(), date.day());
-        },
-        /** Convert Thai to Gregorian year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Thai year.
-            @return {number} The corresponding Gregorian year. */
-        _t2gYear: function(year) {
-          return year - this.yearsOffset - (year >= 1 && year <= this.yearsOffset ? 1 : 0);
-        },
-        /** Convert Gregorian to Thai year.
-            @memberof ThaiCalendar
-            @private
-            @param year {number} The Gregorian year.
-            @return {number} The corresponding Thai year. */
-        _g2tYear: function(year) {
-          return year + this.yearsOffset + (year >= -this.yearsOffset && year <= -1 ? 1 : 0);
-        }
-      });
-      main.calendars.thai = ThaiCalendar;
-    }
-  });
-
-  // node_modules/world-calendars/dist/calendars/ummalqura.js
-  var require_ummalqura = __commonJS({
-    "node_modules/world-calendars/dist/calendars/ummalqura.js"() {
-      var main = require_main();
-      var assign = require_object_assign();
-      function UmmAlQuraCalendar(language) {
-        this.local = this.regionalOptions[language || ""] || this.regionalOptions[""];
-      }
-      UmmAlQuraCalendar.prototype = new main.baseCalendar();
-      assign(UmmAlQuraCalendar.prototype, {
-        /** The calendar name.
-            @memberof UmmAlQuraCalendar */
-        name: "UmmAlQura",
-        //jdEpoch: 1948440, // Julian date of start of UmmAlQura epoch: 14 March 1937 CE
-        //daysPerMonth: // Days per month in a common year, replaced by a method.
-        /** <code>true</code> if has a year zero, <code>false</code> if not.
-            @memberof UmmAlQuraCalendar */
-        hasYearZero: false,
-        /** The minimum month number.
-            @memberof UmmAlQuraCalendar */
-        minMonth: 1,
-        /** The first month in the year.
-            @memberof UmmAlQuraCalendar */
-        firstMonth: 1,
-        /** The minimum day number.
-            @memberof UmmAlQuraCalendar */
-        minDay: 1,
-        /** Localisations for the plugin.
-            Entries are objects indexed by the language code ('' being the default US/English).
-            Each object has the following attributes.
-            @memberof UmmAlQuraCalendar
-            @property name {string} The calendar name.
-            @property epochs {string[]} The epoch names.
-            @property monthNames {string[]} The long names of the months of the year.
-            @property monthNamesShort {string[]} The short names of the months of the year.
-            @property dayNames {string[]} The long names of the days of the week.
-            @property dayNamesShort {string[]} The short names of the days of the week.
-            @property dayNamesMin {string[]} The minimal names of the days of the week.
-            @property dateFormat {string} The date format for this calendar.
-                    See the options on <a href="BaseCalendar.html#formatDate"><code>formatDate</code></a> for details.
-            @property firstDay {number} The number of the first day of the week, starting at 0.
-            @property isRTL {number} <code>true</code> if this localisation reads right-to-left. */
-        regionalOptions: {
-          // Localisations
-          "": {
-            name: "Umm al-Qura",
-            epochs: ["BH", "AH"],
-            monthNames: [
-              "Al-Muharram",
-              "Safar",
-              "Rabi' al-awwal",
-              "Rabi' Al-Thani",
-              "Jumada Al-Awwal",
-              "Jumada Al-Thani",
-              "Rajab",
-              "Sha'aban",
-              "Ramadan",
-              "Shawwal",
-              "Dhu al-Qi'dah",
-              "Dhu al-Hijjah"
-            ],
-            monthNamesShort: ["Muh", "Saf", "Rab1", "Rab2", "Jum1", "Jum2", "Raj", "Sha'", "Ram", "Shaw", "DhuQ", "DhuH"],
-            dayNames: ["Yawm al-Ahad", "Yawm al-Ithnain", "Yawm al-Thal\u0101th\u0101\u2019", "Yawm al-Arba\u2018\u0101\u2019", "Yawm al-Kham\u012Bs", "Yawm al-Jum\u2018a", "Yawm al-Sabt"],
-            dayNamesMin: ["Ah", "Ith", "Th", "Ar", "Kh", "Ju", "Sa"],
-            digits: null,
-            dateFormat: "yyyy/mm/dd",
-            firstDay: 6,
-            isRTL: true
-          }
-        },
-        /** Determine whether this date is in a leap year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {boolean} <code>true</code> if this is a leap year, <code>false</code> if not.
-            @throws Error if an invalid year or a different calendar used. */
-        leapYear: function(year) {
-          var date = this._validate(year, this.minMonth, this.minDay, main.local.invalidYear);
-          return this.daysInYear(date.year()) === 355;
-        },
-        /** Determine the week of the year for a date.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {number} The week of the year.
-            @throws Error if an invalid date or a different calendar used. */
-        weekOfYear: function(year, month, day) {
-          var checkDate = this.newDate(year, month, day);
-          checkDate.add(-checkDate.dayOfWeek(), "d");
-          return Math.floor((checkDate.dayOfYear() - 1) / 7) + 1;
-        },
-        /** Retrieve the number of days in a year.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @return {number} The number of days.
-            @throws Error if an invalid year or a different calendar used. */
-        daysInYear: function(year) {
-          var daysCount = 0;
-          for (var i = 1; i <= 12; i++) {
-            daysCount += this.daysInMonth(year, i);
-          }
-          return daysCount;
-        },
-        /** Retrieve the number of days in a month.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year of the month.
-            @param [month] {number} The month.
-            @return {number} The number of days in this month.
-            @throws Error if an invalid month/year or a different calendar used. */
-        daysInMonth: function(year, month) {
-          var date = this._validate(year, month, this.minDay, main.local.invalidMonth);
-          var mcjdn = date.toJD() - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) {
-              return ummalqura_dat[index] - ummalqura_dat[index - 1];
-            }
-            index++;
-          }
-          return 30;
-        },
-        /** Determine whether this date is a week day.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to examine or the year to examine.
-            @param [month] {number} The month to examine.
-            @param [day] {number} The day to examine.
-            @return {boolean} <code>true</code> if a week day, <code>false</code> if not.
-            @throws Error if an invalid date or a different calendar used. */
-        weekDay: function(year, month, day) {
-          return this.dayOfWeek(year, month, day) !== 5;
-        },
-        /** Retrieve the Julian date equivalent for this date,
-            i.e. days since January 1, 4713 BCE Greenwich noon.
-            @memberof UmmAlQuraCalendar
-            @param year {CDate|number} The date to convert or the year to convert.
-            @param [month] {number} The month to convert.
-            @param [day] {number} The day to convert.
-            @return {number} The equivalent Julian date.
-            @throws Error if an invalid date or a different calendar used. */
-        toJD: function(year, month, day) {
-          var date = this._validate(year, month, day, main.local.invalidDate);
-          var index = 12 * (date.year() - 1) + date.month() - 15292;
-          var mcjdn = date.day() + ummalqura_dat[index - 1] - 1;
-          return mcjdn + 24e5 - 0.5;
-        },
-        /** Create a new date from a Julian date.
-            @memberof UmmAlQuraCalendar
-            @param jd {number} The Julian date to convert.
-            @return {CDate} The equivalent date. */
-        fromJD: function(jd) {
-          var mcjdn = jd - 24e5 + 0.5;
-          var index = 0;
-          for (var i = 0; i < ummalqura_dat.length; i++) {
-            if (ummalqura_dat[i] > mcjdn) break;
-            index++;
-          }
-          var lunation = index + 15292;
-          var ii = Math.floor((lunation - 1) / 12);
-          var year = ii + 1;
-          var month = lunation - 12 * ii;
-          var day = mcjdn - ummalqura_dat[index - 1] + 1;
-          return this.newDate(year, month, day);
-        },
-        /** Determine whether a date is valid for this calendar.
-            @memberof UmmAlQuraCalendar
-            @param year {number} The year to examine.
-            @param month {number} The month to examine.
-            @param day {number} The day to examine.
-            @return {boolean} <code>true</code> if a valid date, <code>false</code> if not. */
-        isValid: function(year, month, day) {
-          var valid = main.baseCalendar.prototype.isValid.apply(this, arguments);
-          if (valid) {
-            year = year.year != null ? year.year : year;
-            valid = year >= 1276 && year <= 1500;
-          }
-          return valid;
-        },
-        /** Check that a candidate date is from the same calendar and is valid.
-            @memberof UmmAlQuraCalendar
-            @private
-            @param year {CDate|number} The date to validate or the year to validate.
-            @param month {number} The month to validate.
-            @param day {number} The day to validate.
-            @param error {string} Error message if invalid.
-            @throws Error if different calendars used or invalid date. */
-        _validate: function(year, month, day, error) {
-          var date = main.baseCalendar.prototype._validate.apply(this, arguments);
-          if (date.year < 1276 || date.year > 1500) {
-            throw error.replace(/\{0\}/, this.local.name);
-          }
-          return date;
-        }
-      });
-      main.calendars.ummalqura = UmmAlQuraCalendar;
-      var ummalqura_dat = [
-        20,
-        50,
-        79,
-        109,
-        138,
-        168,
-        197,
-        227,
-        256,
-        286,
-        315,
-        345,
-        374,
-        404,
-        433,
-        463,
-        492,
-        522,
-        551,
-        581,
-        611,
-        641,
-        670,
-        700,
-        729,
-        759,
-        788,
-        818,
-        847,
-        877,
-        906,
-        936,
-        965,
-        995,
-        1024,
-        1054,
-        1083,
-        1113,
-        1142,
-        1172,
-        1201,
-        1231,
-        1260,
-        1290,
-        1320,
-        1350,
-        1379,
-        1409,
-        1438,
-        1468,
-        1497,
-        1527,
-        1556,
-        1586,
-        1615,
-        1645,
-        1674,
-        1704,
-        1733,
-        1763,
-        1792,
-        1822,
-        1851,
-        1881,
-        1910,
-        1940,
-        1969,
-        1999,
-        2028,
-        2058,
-        2087,
-        2117,
-        2146,
-        2176,
-        2205,
-        2235,
-        2264,
-        2294,
-        2323,
-        2353,
-        2383,
-        2413,
-        2442,
-        2472,
-        2501,
-        2531,
-        2560,
-        2590,
-        2619,
-        2649,
-        2678,
-        2708,
-        2737,
-        2767,
-        2796,
-        2826,
-        2855,
-        2885,
-        2914,
-        2944,
-        2973,
-        3003,
-        3032,
-        3062,
-        3091,
-        3121,
-        3150,
-        3180,
-        3209,
-        3239,
-        3268,
-        3298,
-        3327,
-        3357,
-        3386,
-        3416,
-        3446,
-        3476,
-        3505,
-        3535,
-        3564,
-        3594,
-        3623,
-        3653,
-        3682,
-        3712,
-        3741,
-        3771,
-        3800,
-        3830,
-        3859,
-        3889,
-        3918,
-        3948,
-        3977,
-        4007,
-        4036,
-        4066,
-        4095,
-        4125,
-        4155,
-        4185,
-        4214,
-        4244,
-        4273,
-        4303,
-        4332,
-        4362,
-        4391,
-        4421,
-        4450,
-        4480,
-        4509,
-        4539,
-        4568,
-        4598,
-        4627,
-        4657,
-        4686,
-        4716,
-        4745,
-        4775,
-        4804,
-        4834,
-        4863,
-        4893,
-        4922,
-        4952,
-        4981,
-        5011,
-        5040,
-        5070,
-        5099,
-        5129,
-        5158,
-        5188,
-        5218,
-        5248,
-        5277,
-        5307,
-        5336,
-        5366,
-        5395,
-        5425,
-        5454,
-        5484,
-        5513,
-        5543,
-        5572,
-        5602,
-        5631,
-        5661,
-        5690,
-        5720,
-        5749,
-        5779,
-        5808,
-        5838,
-        5867,
-        5897,
-        5926,
-        5956,
-        5985,
-        6015,
-        6044,
-        6074,
-        6103,
-        6133,
-        6162,
-        6192,
-        6221,
-        6251,
-        6281,
-        6311,
-        6340,
-        6370,
-        6399,
-        6429,
-        6458,
-        6488,
-        6517,
-        6547,
-        6576,
-        6606,
-        6635,
-        6665,
-        6694,
-        6724,
-        6753,
-        6783,
-        6812,
-        6842,
-        6871,
-        6901,
-        6930,
-        6960,
-        6989,
-        7019,
-        7048,
-        7078,
-        7107,
-        7137,
-        7166,
-        7196,
-        7225,
-        7255,
-        7284,
-        7314,
-        7344,
-        7374,
-        7403,
-        7433,
-        7462,
-        7492,
-        7521,
-        7551,
-        7580,
-        7610,
-        7639,
-        7669,
-        7698,
-        7728,
-        7757,
-        7787,
-        7816,
-        7846,
-        7875,
-        7905,
-        7934,
-        7964,
-        7993,
-        8023,
-        8053,
-        8083,
-        8112,
-        8142,
-        8171,
-        8201,
-        8230,
-        8260,
-        8289,
-        8319,
-        8348,
-        8378,
-        8407,
-        8437,
-        8466,
-        8496,
-        8525,
-        8555,
-        8584,
-        8614,
-        8643,
-        8673,
-        8702,
-        8732,
-        8761,
-        8791,
-        8821,
-        8850,
-        8880,
-        8909,
-        8938,
-        8968,
-        8997,
-        9027,
-        9056,
-        9086,
-        9115,
-        9145,
-        9175,
-        9205,
-        9234,
-        9264,
-        9293,
-        9322,
-        9352,
-        9381,
-        9410,
-        9440,
-        9470,
-        9499,
-        9529,
-        9559,
-        9589,
-        9618,
-        9648,
-        9677,
-        9706,
-        9736,
-        9765,
-        9794,
-        9824,
-        9853,
-        9883,
-        9913,
-        9943,
-        9972,
-        10002,
-        10032,
-        10061,
-        10090,
-        10120,
-        10149,
-        10178,
-        10208,
-        10237,
-        10267,
-        10297,
-        10326,
-        10356,
-        10386,
-        10415,
-        10445,
-        10474,
-        10504,
-        10533,
-        10562,
-        10592,
-        10621,
-        10651,
-        10680,
-        10710,
-        10740,
-        10770,
-        10799,
-        10829,
-        10858,
-        10888,
-        10917,
-        10947,
-        10976,
-        11005,
-        11035,
-        11064,
-        11094,
-        11124,
-        11153,
-        11183,
-        11213,
-        11242,
-        11272,
-        11301,
-        11331,
-        11360,
-        11389,
-        11419,
-        11448,
-        11478,
-        11507,
-        11537,
-        11567,
-        11596,
-        11626,
-        11655,
-        11685,
-        11715,
-        11744,
-        11774,
-        11803,
-        11832,
-        11862,
-        11891,
-        11921,
-        11950,
-        11980,
-        12010,
-        12039,
-        12069,
-        12099,
-        12128,
-        12158,
-        12187,
-        12216,
-        12246,
-        12275,
-        12304,
-        12334,
-        12364,
-        12393,
-        12423,
-        12453,
-        12483,
-        12512,
-        12542,
-        12571,
-        12600,
-        12630,
-        12659,
-        12688,
-        12718,
-        12747,
-        12777,
-        12807,
-        12837,
-        12866,
-        12896,
-        12926,
-        12955,
-        12984,
-        13014,
-        13043,
-        13072,
-        13102,
-        13131,
-        13161,
-        13191,
-        13220,
-        13250,
-        13280,
-        13310,
-        13339,
-        13368,
-        13398,
-        13427,
-        13456,
-        13486,
-        13515,
-        13545,
-        13574,
-        13604,
-        13634,
-        13664,
-        13693,
-        13723,
-        13752,
-        13782,
-        13811,
-        13840,
-        13870,
-        13899,
-        13929,
-        13958,
-        13988,
-        14018,
-        14047,
-        14077,
-        14107,
-        14136,
-        14166,
-        14195,
-        14224,
-        14254,
-        14283,
-        14313,
-        14342,
-        14372,
-        14401,
-        14431,
-        14461,
-        14490,
-        14520,
-        14550,
-        14579,
-        14609,
-        14638,
-        14667,
-        14697,
-        14726,
-        14756,
-        14785,
-        14815,
-        14844,
-        14874,
-        14904,
-        14933,
-        14963,
-        14993,
-        15021,
-        15051,
-        15081,
-        15110,
-        15140,
-        15169,
-        15199,
-        15228,
-        15258,
-        15287,
-        15317,
-        15347,
-        15377,
-        15406,
-        15436,
-        15465,
-        15494,
-        15524,
-        15553,
-        15582,
-        15612,
-        15641,
-        15671,
-        15701,
-        15731,
-        15760,
-        15790,
-        15820,
-        15849,
-        15878,
-        15908,
-        15937,
-        15966,
-        15996,
-        16025,
-        16055,
-        16085,
-        16114,
-        16144,
-        16174,
-        16204,
-        16233,
-        16262,
-        16292,
-        16321,
-        16350,
-        16380,
-        16409,
-        16439,
-        16468,
-        16498,
-        16528,
-        16558,
-        16587,
-        16617,
-        16646,
-        16676,
-        16705,
-        16734,
-        16764,
-        16793,
-        16823,
-        16852,
-        16882,
-        16912,
-        16941,
-        16971,
-        17001,
-        17030,
-        17060,
-        17089,
-        17118,
-        17148,
-        17177,
-        17207,
-        17236,
-        17266,
-        17295,
-        17325,
-        17355,
-        17384,
-        17414,
-        17444,
-        17473,
-        17502,
-        17532,
-        17561,
-        17591,
-        17620,
-        17650,
-        17679,
-        17709,
-        17738,
-        17768,
-        17798,
-        17827,
-        17857,
-        17886,
-        17916,
-        17945,
-        17975,
-        18004,
-        18034,
-        18063,
-        18093,
-        18122,
-        18152,
-        18181,
-        18211,
-        18241,
-        18270,
-        18300,
-        18330,
-        18359,
-        18388,
-        18418,
-        18447,
-        18476,
-        18506,
-        18535,
-        18565,
-        18595,
-        18625,
-        18654,
-        18684,
-        18714,
-        18743,
-        18772,
-        18802,
-        18831,
-        18860,
-        18890,
-        18919,
-        18949,
-        18979,
-        19008,
-        19038,
-        19068,
-        19098,
-        19127,
-        19156,
-        19186,
-        19215,
-        19244,
-        19274,
-        19303,
-        19333,
-        19362,
-        19392,
-        19422,
-        19452,
-        19481,
-        19511,
-        19540,
-        19570,
-        19599,
-        19628,
-        19658,
-        19687,
-        19717,
-        19746,
-        19776,
-        19806,
-        19836,
-        19865,
-        19895,
-        19924,
-        19954,
-        19983,
-        20012,
-        20042,
-        20071,
-        20101,
-        20130,
-        20160,
-        20190,
-        20219,
-        20249,
-        20279,
-        20308,
-        20338,
-        20367,
-        20396,
-        20426,
-        20455,
-        20485,
-        20514,
-        20544,
-        20573,
-        20603,
-        20633,
-        20662,
-        20692,
-        20721,
-        20751,
-        20780,
-        20810,
-        20839,
-        20869,
-        20898,
-        20928,
-        20957,
-        20987,
-        21016,
-        21046,
-        21076,
-        21105,
-        21135,
-        21164,
-        21194,
-        21223,
-        21253,
-        21282,
-        21312,
-        21341,
-        21371,
-        21400,
-        21430,
-        21459,
-        21489,
-        21519,
-        21548,
-        21578,
-        21607,
-        21637,
-        21666,
-        21696,
-        21725,
-        21754,
-        21784,
-        21813,
-        21843,
-        21873,
-        21902,
-        21932,
-        21962,
-        21991,
-        22021,
-        22050,
-        22080,
-        22109,
-        22138,
-        22168,
-        22197,
-        22227,
-        22256,
-        22286,
-        22316,
-        22346,
-        22375,
-        22405,
-        22434,
-        22464,
-        22493,
-        22522,
-        22552,
-        22581,
-        22611,
-        22640,
-        22670,
-        22700,
-        22730,
-        22759,
-        22789,
-        22818,
-        22848,
-        22877,
-        22906,
-        22936,
-        22965,
-        22994,
-        23024,
-        23054,
-        23083,
-        23113,
-        23143,
-        23173,
-        23202,
-        23232,
-        23261,
-        23290,
-        23320,
-        23349,
-        23379,
-        23408,
-        23438,
-        23467,
-        23497,
-        23527,
-        23556,
-        23586,
-        23616,
-        23645,
-        23674,
-        23704,
-        23733,
-        23763,
-        23792,
-        23822,
-        23851,
-        23881,
-        23910,
-        23940,
-        23970,
-        23999,
-        24029,
-        24058,
-        24088,
-        24117,
-        24147,
-        24176,
-        24206,
-        24235,
-        24265,
-        24294,
-        24324,
-        24353,
-        24383,
-        24413,
-        24442,
-        24472,
-        24501,
-        24531,
-        24560,
-        24590,
-        24619,
-        24648,
-        24678,
-        24707,
-        24737,
-        24767,
-        24796,
-        24826,
-        24856,
-        24885,
-        24915,
-        24944,
-        24974,
-        25003,
-        25032,
-        25062,
-        25091,
-        25121,
-        25150,
-        25180,
-        25210,
-        25240,
-        25269,
-        25299,
-        25328,
-        25358,
-        25387,
-        25416,
-        25446,
-        25475,
-        25505,
-        25534,
-        25564,
-        25594,
-        25624,
-        25653,
-        25683,
-        25712,
-        25742,
-        25771,
-        25800,
-        25830,
-        25859,
-        25888,
-        25918,
-        25948,
-        25977,
-        26007,
-        26037,
-        26067,
-        26096,
-        26126,
-        26155,
-        26184,
-        26214,
-        26243,
-        26272,
-        26302,
-        26332,
-        26361,
-        26391,
-        26421,
-        26451,
-        26480,
-        26510,
-        26539,
-        26568,
-        26598,
-        26627,
-        26656,
-        26686,
-        26715,
-        26745,
-        26775,
-        26805,
-        26834,
-        26864,
-        26893,
-        26923,
-        26952,
-        26982,
-        27011,
-        27041,
-        27070,
-        27099,
-        27129,
-        27159,
-        27188,
-        27218,
-        27248,
-        27277,
-        27307,
-        27336,
-        27366,
-        27395,
-        27425,
-        27454,
-        27484,
-        27513,
-        27542,
-        27572,
-        27602,
-        27631,
-        27661,
-        27691,
-        27720,
-        27750,
-        27779,
-        27809,
-        27838,
-        27868,
-        27897,
-        27926,
-        27956,
-        27985,
-        28015,
-        28045,
-        28074,
-        28104,
-        28134,
-        28163,
-        28193,
-        28222,
-        28252,
-        28281,
-        28310,
-        28340,
-        28369,
-        28399,
-        28428,
-        28458,
-        28488,
-        28517,
-        28547,
-        28577,
-        // From 1356
-        28607,
-        28636,
-        28665,
-        28695,
-        28724,
-        28754,
-        28783,
-        28813,
-        28843,
-        28872,
-        28901,
-        28931,
-        28960,
-        28990,
-        29019,
-        29049,
-        29078,
-        29108,
-        29137,
-        29167,
-        29196,
-        29226,
-        29255,
-        29285,
-        29315,
-        29345,
-        29375,
-        29404,
-        29434,
-        29463,
-        29492,
-        29522,
-        29551,
-        29580,
-        29610,
-        29640,
-        29669,
-        29699,
-        29729,
-        29759,
-        29788,
-        29818,
-        29847,
-        29876,
-        29906,
-        29935,
-        29964,
-        29994,
-        30023,
-        30053,
-        30082,
-        30112,
-        30141,
-        30171,
-        30200,
-        30230,
-        30259,
-        30289,
-        30318,
-        30348,
-        30378,
-        30408,
-        30437,
-        30467,
-        30496,
-        30526,
-        30555,
-        30585,
-        30614,
-        30644,
-        30673,
-        30703,
-        30732,
-        30762,
-        30791,
-        30821,
-        30850,
-        30880,
-        30909,
-        30939,
-        30968,
-        30998,
-        31027,
-        31057,
-        31086,
-        31116,
-        31145,
-        31175,
-        31204,
-        31234,
-        31263,
-        31293,
-        31322,
-        31352,
-        31381,
-        31411,
-        31441,
-        31471,
-        31500,
-        31530,
-        31559,
-        31589,
-        31618,
-        31648,
-        31676,
-        31706,
-        31736,
-        31766,
-        31795,
-        31825,
-        31854,
-        31884,
-        31913,
-        31943,
-        31972,
-        32002,
-        32031,
-        32061,
-        32090,
-        32120,
-        32150,
-        32180,
-        32209,
-        32239,
-        32268,
-        32298,
-        32327,
-        32357,
-        32386,
-        32416,
-        32445,
-        32475,
-        32504,
-        32534,
-        32563,
-        32593,
-        32622,
-        32652,
-        32681,
-        32711,
-        32740,
-        32770,
-        32799,
-        32829,
-        32858,
-        32888,
-        32917,
-        32947,
-        32976,
-        33006,
-        33035,
-        33065,
-        33094,
-        33124,
-        33153,
-        33183,
-        33213,
-        33243,
-        33272,
-        33302,
-        33331,
-        33361,
-        33390,
-        33420,
-        33450,
-        33479,
-        33509,
-        33539,
-        33568,
-        33598,
-        33627,
-        33657,
-        33686,
-        33716,
-        33745,
-        33775,
-        33804,
-        33834,
-        33863,
-        33893,
-        33922,
-        33952,
-        33981,
-        34011,
-        34040,
-        34069,
-        34099,
-        34128,
-        34158,
-        34187,
-        34217,
-        34247,
-        34277,
-        34306,
-        34336,
-        34365,
-        34395,
-        34424,
-        34454,
-        34483,
-        34512,
-        34542,
-        34571,
-        34601,
-        34631,
-        34660,
-        34690,
-        34719,
-        34749,
-        34778,
-        34808,
-        34837,
-        34867,
-        34896,
-        34926,
-        34955,
-        34985,
-        35015,
-        35044,
-        35074,
-        35103,
-        35133,
-        35162,
-        35192,
-        35222,
-        35251,
-        35280,
-        35310,
-        35340,
-        35370,
-        35399,
-        35429,
-        35458,
-        35488,
-        35517,
-        35547,
-        35576,
-        35605,
-        35635,
-        35665,
-        35694,
-        35723,
-        35753,
-        35782,
-        35811,
-        35841,
-        35871,
-        35901,
-        35930,
-        35960,
-        35989,
-        36019,
-        36048,
-        36078,
-        36107,
-        36136,
-        36166,
-        36195,
-        36225,
-        36254,
-        36284,
-        36314,
-        36343,
-        36373,
-        36403,
-        36433,
-        36462,
-        36492,
-        36521,
-        36551,
-        36580,
-        36610,
-        36639,
-        36669,
-        36698,
-        36728,
-        36757,
-        36786,
-        36816,
-        36845,
-        36875,
-        36904,
-        36934,
-        36963,
-        36993,
-        37022,
-        37052,
-        37081,
-        37111,
-        37141,
-        37170,
-        37200,
-        37229,
-        37259,
-        37288,
-        37318,
-        37347,
-        37377,
-        37406,
-        37436,
-        37465,
-        37495,
-        37524,
-        37554,
-        37584,
-        37613,
-        37643,
-        37672,
-        37701,
-        37731,
-        37760,
-        37790,
-        37819,
-        37849,
-        37878,
-        37908,
-        37938,
-        37967,
-        37997,
-        38027,
-        38056,
-        38085,
-        38115,
-        38144,
-        38174,
-        38203,
-        38233,
-        38262,
-        38292,
-        38322,
-        38351,
-        38381,
-        38410,
-        38440,
-        38469,
-        38499,
-        38528,
-        38558,
-        38587,
-        38617,
-        38646,
-        38676,
-        38705,
-        38735,
-        38764,
-        38794,
-        38823,
-        38853,
-        38882,
-        38912,
-        38941,
-        38971,
-        39001,
-        39030,
-        39059,
-        39089,
-        39118,
-        39148,
-        39178,
-        39208,
-        39237,
-        39267,
-        39297,
-        39326,
-        39355,
-        39385,
-        39414,
-        39444,
-        39473,
-        39503,
-        39532,
-        39562,
-        39592,
-        39621,
-        39650,
-        39680,
-        39709,
-        39739,
-        39768,
-        39798,
-        39827,
-        39857,
-        39886,
-        39916,
-        39946,
-        39975,
-        40005,
-        40035,
-        40064,
-        40094,
-        40123,
-        40153,
-        40182,
-        40212,
-        40241,
-        40271,
-        40300,
-        40330,
-        40359,
-        40389,
-        40418,
-        40448,
-        40477,
-        40507,
-        40536,
-        40566,
-        40595,
-        40625,
-        40655,
-        40685,
-        40714,
-        40744,
-        40773,
-        40803,
-        40832,
-        40862,
-        40892,
-        40921,
-        40951,
-        40980,
-        41009,
-        41039,
-        41068,
-        41098,
-        41127,
-        41157,
-        41186,
-        41216,
-        41245,
-        41275,
-        41304,
-        41334,
-        41364,
-        41393,
-        41422,
-        41452,
-        41481,
-        41511,
-        41540,
-        41570,
-        41599,
-        41629,
-        41658,
-        41688,
-        41718,
-        41748,
-        41777,
-        41807,
-        41836,
-        41865,
-        41894,
-        41924,
-        41953,
-        41983,
-        42012,
-        42042,
-        42072,
-        42102,
-        42131,
-        42161,
-        42190,
-        42220,
-        42249,
-        42279,
-        42308,
-        42337,
-        42367,
-        42397,
-        42426,
-        42456,
-        42485,
-        42515,
-        42545,
-        42574,
-        42604,
-        42633,
-        42662,
-        42692,
-        42721,
-        42751,
-        42780,
-        42810,
-        42839,
-        42869,
-        42899,
-        42929,
-        42958,
-        42988,
-        43017,
-        43046,
-        43076,
-        43105,
-        43135,
-        43164,
-        43194,
-        43223,
-        43253,
-        43283,
-        43312,
-        43342,
-        43371,
-        43401,
-        43430,
-        43460,
-        43489,
-        43519,
-        43548,
-        43578,
-        43607,
-        43637,
-        43666,
-        43696,
-        43726,
-        43755,
-        43785,
-        43814,
-        43844,
-        43873,
-        43903,
-        43932,
-        43962,
-        43991,
-        44021,
-        44050,
-        44080,
-        44109,
-        44139,
-        44169,
-        44198,
-        44228,
-        44258,
-        44287,
-        44317,
-        44346,
-        44375,
-        44405,
-        44434,
-        44464,
-        44493,
-        44523,
-        44553,
-        44582,
-        44612,
-        44641,
-        44671,
-        44700,
-        44730,
-        44759,
-        44788,
-        44818,
-        44847,
-        44877,
-        44906,
-        44936,
-        44966,
-        44996,
-        45025,
-        45055,
-        45084,
-        45114,
-        45143,
-        45172,
-        45202,
-        45231,
-        45261,
-        45290,
-        45320,
-        45350,
-        45380,
-        45409,
-        45439,
-        45468,
-        45498,
-        45527,
-        45556,
-        45586,
-        45615,
-        45644,
-        45674,
-        45704,
-        45733,
-        45763,
-        45793,
-        45823,
-        45852,
-        45882,
-        45911,
-        45940,
-        45970,
-        45999,
-        46028,
-        46058,
-        46088,
-        46117,
-        46147,
-        46177,
-        46206,
-        46236,
-        46265,
-        46295,
-        46324,
-        46354,
-        46383,
-        46413,
-        46442,
-        46472,
-        46501,
-        46531,
-        46560,
-        46590,
-        46620,
-        46649,
-        46679,
-        46708,
-        46738,
-        46767,
-        46797,
-        46826,
-        46856,
-        46885,
-        46915,
-        46944,
-        46974,
-        47003,
-        47033,
-        47063,
-        47092,
-        47122,
-        47151,
-        47181,
-        47210,
-        47240,
-        47269,
-        47298,
-        47328,
-        47357,
-        47387,
-        47417,
-        47446,
-        47476,
-        47506,
-        47535,
-        47565,
-        47594,
-        47624,
-        47653,
-        47682,
-        47712,
-        47741,
-        47771,
-        47800,
-        47830,
-        47860,
-        47890,
-        47919,
-        47949,
-        47978,
-        48008,
-        48037,
-        48066,
-        48096,
-        48125,
-        48155,
-        48184,
-        48214,
-        48244,
-        48273,
-        48303,
-        48333,
-        48362,
-        48392,
-        48421,
-        48450,
-        48480,
-        48509,
-        48538,
-        48568,
-        48598,
-        48627,
-        48657,
-        48687,
-        48717,
-        48746,
-        48776,
-        48805,
-        48834,
-        48864,
-        48893,
-        48922,
-        48952,
-        48982,
-        49011,
-        49041,
-        49071,
-        49100,
-        49130,
-        49160,
-        49189,
-        49218,
-        49248,
-        49277,
-        49306,
-        49336,
-        49365,
-        49395,
-        49425,
-        49455,
-        49484,
-        49514,
-        49543,
-        49573,
-        49602,
-        49632,
-        49661,
-        49690,
-        49720,
-        49749,
-        49779,
-        49809,
-        49838,
-        49868,
-        49898,
-        49927,
-        49957,
-        49986,
-        50016,
-        50045,
-        50075,
-        50104,
-        50133,
-        50163,
-        50192,
-        50222,
-        50252,
-        50281,
-        50311,
-        50340,
-        50370,
-        50400,
-        50429,
-        50459,
-        50488,
-        50518,
-        50547,
-        50576,
-        50606,
-        50635,
-        50665,
-        50694,
-        50724,
-        50754,
-        50784,
-        50813,
-        50843,
-        50872,
-        50902,
-        50931,
-        50960,
-        50990,
-        51019,
-        51049,
-        51078,
-        51108,
-        51138,
-        51167,
-        51197,
-        51227,
-        51256,
-        51286,
-        51315,
-        51345,
-        51374,
-        51403,
-        51433,
-        51462,
-        51492,
-        51522,
-        51552,
-        51582,
-        51611,
-        51641,
-        51670,
-        51699,
-        51729,
-        51758,
-        51787,
-        51816,
-        51846,
-        51876,
-        51906,
-        51936,
-        51965,
-        51995,
-        52025,
-        52054,
-        52083,
-        52113,
-        52142,
-        52171,
-        52200,
-        52230,
-        52260,
-        52290,
-        52319,
-        52349,
-        52379,
-        52408,
-        52438,
-        52467,
-        52497,
-        52526,
-        52555,
-        52585,
-        52614,
-        52644,
-        52673,
-        52703,
-        52733,
-        52762,
-        52792,
-        52822,
-        52851,
-        52881,
-        52910,
-        52939,
-        52969,
-        52998,
-        53028,
-        53057,
-        53087,
-        53116,
-        53146,
-        53176,
-        53205,
-        53235,
-        53264,
-        53294,
-        53324,
-        53353,
-        53383,
-        53412,
-        53441,
-        53471,
-        53500,
-        53530,
-        53559,
-        53589,
-        53619,
-        53648,
-        53678,
-        53708,
-        53737,
-        53767,
-        53796,
-        53825,
-        53855,
-        53884,
-        53913,
-        53943,
-        53973,
-        54003,
-        54032,
-        54062,
-        54092,
-        54121,
-        54151,
-        54180,
-        54209,
-        54239,
-        54268,
-        54297,
-        54327,
-        54357,
-        54387,
-        54416,
-        54446,
-        54476,
-        54505,
-        54535,
-        54564,
-        54593,
-        54623,
-        54652,
-        54681,
-        54711,
-        54741,
-        54770,
-        54800,
-        54830,
-        54859,
-        54889,
-        54919,
-        54948,
-        54977,
-        55007,
-        55036,
-        55066,
-        55095,
-        55125,
-        55154,
-        55184,
-        55213,
-        55243,
-        55273,
-        55302,
-        55332,
-        55361,
-        55391,
-        55420,
-        55450,
-        55479,
-        55508,
-        55538,
-        55567,
-        55597,
-        55627,
-        55657,
-        55686,
-        55716,
-        55745,
-        55775,
-        55804,
-        55834,
-        55863,
-        55892,
-        55922,
-        55951,
-        55981,
-        56011,
-        56040,
-        56070,
-        56100,
-        56129,
-        56159,
-        56188,
-        56218,
-        56247,
-        56276,
-        56306,
-        56335,
-        56365,
-        56394,
-        56424,
-        56454,
-        56483,
-        56513,
-        56543,
-        56572,
-        56601,
-        56631,
-        56660,
-        56690,
-        56719,
-        56749,
-        56778,
-        56808,
-        56837,
-        56867,
-        56897,
-        56926,
-        56956,
-        56985,
-        57015,
-        57044,
-        57074,
-        57103,
-        57133,
-        57162,
-        57192,
-        57221,
-        57251,
-        57280,
-        57310,
-        57340,
-        57369,
-        57399,
-        57429,
-        57458,
-        57487,
-        57517,
-        57546,
-        57576,
-        57605,
-        57634,
-        57664,
-        57694,
-        57723,
-        57753,
-        57783,
-        57813,
-        57842,
-        57871,
-        57901,
-        57930,
-        57959,
-        57989,
-        58018,
-        58048,
-        58077,
-        58107,
-        58137,
-        58167,
-        58196,
-        58226,
-        58255,
-        58285,
-        58314,
-        58343,
-        58373,
-        58402,
-        58432,
-        58461,
-        58491,
-        58521,
-        58551,
-        58580,
-        58610,
-        58639,
-        58669,
-        58698,
-        58727,
-        58757,
-        58786,
-        58816,
-        58845,
-        58875,
-        58905,
-        58934,
-        58964,
-        58994,
-        59023,
-        59053,
-        59082,
-        59111,
-        59141,
-        59170,
-        59200,
-        59229,
-        59259,
-        59288,
-        59318,
-        59348,
-        59377,
-        59407,
-        59436,
-        59466,
-        59495,
-        59525,
-        59554,
-        59584,
-        59613,
-        59643,
-        59672,
-        59702,
-        59731,
-        59761,
-        59791,
-        59820,
-        59850,
-        59879,
-        59909,
-        59939,
-        59968,
-        59997,
-        60027,
-        60056,
-        60086,
-        60115,
-        60145,
-        60174,
-        60204,
-        60234,
-        60264,
-        60293,
-        60323,
-        60352,
-        60381,
-        60411,
-        60440,
-        60469,
-        60499,
-        60528,
-        60558,
-        60588,
-        60618,
-        60648,
-        60677,
-        60707,
-        60736,
-        60765,
-        60795,
-        60824,
-        60853,
-        60883,
-        60912,
-        60942,
-        60972,
-        61002,
-        61031,
-        61061,
-        61090,
-        61120,
-        61149,
-        61179,
-        61208,
-        61237,
-        61267,
-        61296,
-        61326,
-        61356,
-        61385,
-        61415,
-        61445,
-        61474,
-        61504,
-        61533,
-        61563,
-        61592,
-        61621,
-        61651,
-        61680,
-        61710,
-        61739,
-        61769,
-        61799,
-        61828,
-        61858,
-        61888,
-        61917,
-        61947,
-        61976,
-        62006,
-        62035,
-        62064,
-        62094,
-        62123,
-        62153,
-        62182,
-        62212,
-        62242,
-        62271,
-        62301,
-        62331,
-        62360,
-        62390,
-        62419,
-        62448,
-        62478,
-        62507,
-        62537,
-        62566,
-        62596,
-        62625,
-        62655,
-        62685,
-        62715,
-        62744,
-        62774,
-        62803,
-        62832,
-        62862,
-        62891,
-        62921,
-        62950,
-        62980,
-        63009,
-        63039,
-        63069,
-        63099,
-        63128,
-        63157,
-        63187,
-        63216,
-        63246,
-        63275,
-        63305,
-        63334,
-        63363,
-        63393,
-        63423,
-        63453,
-        63482,
-        63512,
-        63541,
-        63571,
-        63600,
-        63630,
-        63659,
-        63689,
-        63718,
-        63747,
-        63777,
-        63807,
-        63836,
-        63866,
-        63895,
-        63925,
-        63955,
-        63984,
-        64014,
-        64043,
-        64073,
-        64102,
-        64131,
-        64161,
-        64190,
-        64220,
-        64249,
-        64279,
-        64309,
-        64339,
-        64368,
-        64398,
-        64427,
-        64457,
-        64486,
-        64515,
-        64545,
-        64574,
-        64603,
-        64633,
-        64663,
-        64692,
-        64722,
-        64752,
-        64782,
-        64811,
-        64841,
-        64870,
-        64899,
-        64929,
-        64958,
-        64987,
-        65017,
-        65047,
-        65076,
-        65106,
-        65136,
-        65166,
-        65195,
-        65225,
-        65254,
-        65283,
-        65313,
-        65342,
-        65371,
-        65401,
-        65431,
-        65460,
-        65490,
-        65520,
-        65549,
-        65579,
-        65608,
-        65638,
-        65667,
-        65697,
-        65726,
-        65755,
-        65785,
-        65815,
-        65844,
-        65874,
-        65903,
-        65933,
-        65963,
-        65992,
-        66022,
-        66051,
-        66081,
-        66110,
-        66140,
-        66169,
-        66199,
-        66228,
-        66258,
-        66287,
-        66317,
-        66346,
-        66376,
-        66405,
-        66435,
-        66465,
-        66494,
-        66524,
-        66553,
-        66583,
-        66612,
-        66641,
-        66671,
-        66700,
-        66730,
-        66760,
-        66789,
-        66819,
-        66849,
-        66878,
-        66908,
-        66937,
-        66967,
-        66996,
-        67025,
-        67055,
-        67084,
-        67114,
-        67143,
-        67173,
-        67203,
-        67233,
-        67262,
-        67292,
-        67321,
-        67351,
-        67380,
-        67409,
-        67439,
-        67468,
-        67497,
-        67527,
-        67557,
-        67587,
-        67617,
-        67646,
-        67676,
-        67705,
-        67735,
-        67764,
-        67793,
-        67823,
-        67852,
-        67882,
-        67911,
-        67941,
-        67971,
-        68e3,
-        68030,
-        68060,
-        68089,
-        68119,
-        68148,
-        68177,
-        68207,
-        68236,
-        68266,
-        68295,
-        68325,
-        68354,
-        68384,
-        68414,
-        68443,
-        68473,
-        68502,
-        68532,
-        68561,
-        68591,
-        68620,
-        68650,
-        68679,
-        68708,
-        68738,
-        68768,
-        68797,
-        68827,
-        68857,
-        68886,
-        68916,
-        68946,
-        68975,
-        69004,
-        69034,
-        69063,
-        69092,
-        69122,
-        69152,
-        69181,
-        69211,
-        69240,
-        69270,
-        69300,
-        69330,
-        69359,
-        69388,
-        69418,
-        69447,
-        69476,
-        69506,
-        69535,
-        69565,
-        69595,
-        69624,
-        69654,
-        69684,
-        69713,
-        69743,
-        69772,
-        69802,
-        69831,
-        69861,
-        69890,
-        69919,
-        69949,
-        69978,
-        70008,
-        70038,
-        70067,
-        70097,
-        70126,
-        70156,
-        70186,
-        70215,
-        70245,
-        70274,
-        70303,
-        70333,
-        70362,
-        70392,
-        70421,
-        70451,
-        70481,
-        70510,
-        70540,
-        70570,
-        70599,
-        70629,
-        70658,
-        70687,
-        70717,
-        70746,
-        70776,
-        70805,
-        70835,
-        70864,
-        70894,
-        70924,
-        70954,
-        70983,
-        71013,
-        71042,
-        71071,
-        71101,
-        71130,
-        71159,
-        71189,
-        71218,
-        71248,
-        71278,
-        71308,
-        71337,
-        71367,
-        71397,
-        71426,
-        71455,
-        71485,
-        71514,
-        71543,
-        71573,
-        71602,
-        71632,
-        71662,
-        71691,
-        71721,
-        71751,
-        71781,
-        71810,
-        71839,
-        71869,
-        71898,
-        71927,
-        71957,
-        71986,
-        72016,
-        72046,
-        72075,
-        72105,
-        72135,
-        72164,
-        72194,
-        72223,
-        72253,
-        72282,
-        72311,
-        72341,
-        72370,
-        72400,
-        72429,
-        72459,
-        72489,
-        72518,
-        72548,
-        72577,
-        72607,
-        72637,
-        72666,
-        72695,
-        72725,
-        72754,
-        72784,
-        72813,
-        72843,
-        72872,
-        72902,
-        72931,
-        72961,
-        72991,
-        73020,
-        73050,
-        73080,
-        73109,
-        73139,
-        73168,
-        73197,
-        73227,
-        73256,
-        73286,
-        73315,
-        73345,
-        73375,
-        73404,
-        73434,
-        73464,
-        73493,
-        73523,
-        73552,
-        73581,
-        73611,
-        73640,
-        73669,
-        73699,
-        73729,
-        73758,
-        73788,
-        73818,
-        73848,
-        73877,
-        73907,
-        73936,
-        73965,
-        73995,
-        74024,
-        74053,
-        74083,
-        74113,
-        74142,
-        74172,
-        74202,
-        74231,
-        74261,
-        74291,
-        74320,
-        74349,
-        74379,
-        74408,
-        74437,
-        74467,
-        74497,
-        74526,
-        74556,
-        74586,
-        74615,
-        74645,
-        74675,
-        74704,
-        74733,
-        74763,
-        74792,
-        74822,
-        74851,
-        74881,
-        74910,
-        74940,
-        74969,
-        74999,
-        75029,
-        75058,
-        75088,
-        75117,
-        75147,
-        75176,
-        75206,
-        75235,
-        75264,
-        75294,
-        75323,
-        75353,
-        75383,
-        75412,
-        75442,
-        75472,
-        75501,
-        75531,
-        75560,
-        75590,
-        75619,
-        75648,
-        75678,
-        75707,
-        75737,
-        75766,
-        75796,
-        75826,
-        75856,
-        75885,
-        75915,
-        75944,
-        75974,
-        76003,
-        76032,
-        76062,
-        76091,
-        76121,
-        76150,
-        76180,
-        76210,
-        76239,
-        76269,
-        76299,
-        76328,
-        76358,
-        76387,
-        76416,
-        76446,
-        76475,
-        76505,
-        76534,
-        76564,
-        76593,
-        76623,
-        76653,
-        76682,
-        76712,
-        76741,
-        76771,
-        76801,
-        76830,
-        76859,
-        76889,
-        76918,
-        76948,
-        76977,
-        77007,
-        77036,
-        77066,
-        77096,
-        77125,
-        77155,
-        77185,
-        77214,
-        77243,
-        77273,
-        77302,
-        77332,
-        77361,
-        77390,
-        77420,
-        77450,
-        77479,
-        77509,
-        77539,
-        77569,
-        77598,
-        77627,
-        77657,
-        77686,
-        77715,
-        77745,
-        77774,
-        77804,
-        77833,
-        77863,
-        77893,
-        77923,
-        77952,
-        77982,
-        78011,
-        78041,
-        78070,
-        78099,
-        78129,
-        78158,
-        78188,
-        78217,
-        78247,
-        78277,
-        78307,
-        78336,
-        78366,
-        78395,
-        78425,
-        78454,
-        78483,
-        78513,
-        78542,
-        78572,
-        78601,
-        78631,
-        78661,
-        78690,
-        78720,
-        78750,
-        78779,
-        78808,
-        78838,
-        78867,
-        78897,
-        78926,
-        78956,
-        78985,
-        79015,
-        79044,
-        79074,
-        79104,
-        79133,
-        79163,
-        79192,
-        79222,
-        79251,
-        79281,
-        79310,
-        79340,
-        79369,
-        79399,
-        79428,
-        79458,
-        79487,
-        79517,
-        79546,
-        79576,
-        79606,
-        79635,
-        79665,
-        79695,
-        79724,
-        79753,
-        79783,
-        79812,
-        79841,
-        79871,
-        79900,
-        79930,
-        79960,
-        79990
-      ];
-    }
-  });
-
-  // src/components/calendars/calendars.js
-  var require_calendars = __commonJS({
-    "src/components/calendars/calendars.js"(exports, module) {
-      "use strict";
-      module.exports = require_main();
-      require_plus();
-      require_chinese();
-      require_coptic();
-      require_discworld();
-      require_ethiopian();
-      require_hebrew();
-      require_islamic();
-      require_julian();
-      require_mayan();
-      require_nanakshahi();
-      require_nepali();
-      require_persian();
-      require_taiwan();
-      require_thai();
-      require_ummalqura();
-    }
-  });
-
-  // src/components/calendars/index.js
-  var require_calendars2 = __commonJS({
-    "src/components/calendars/index.js"(exports, module) {
-      "use strict";
-      var calendars = require_calendars();
-      var Lib = require_lib();
-      var constants = require_numerical();
-      var EPOCHJD = constants.EPOCHJD;
-      var ONEDAY = constants.ONEDAY;
-      var attributes = {
-        valType: "enumerated",
-        values: Lib.sortObjectKeys(calendars.calendars),
-        editType: "calc",
-        dflt: "gregorian"
-      };
-      var handleDefaults = function(contIn, contOut, attr, dflt) {
-        var attrs = {};
-        attrs[attr] = attributes;
-        return Lib.coerce(contIn, contOut, attrs, attr, dflt);
-      };
-      var handleTraceDefaults = function(traceIn, traceOut, coords, layout) {
-        for (var i = 0; i < coords.length; i++) {
-          handleDefaults(traceIn, traceOut, coords[i] + "calendar", layout.calendar);
-        }
-      };
-      var CANONICAL_TICK = {
-        chinese: "2000-01-01",
-        coptic: "2000-01-01",
-        discworld: "2000-01-01",
-        ethiopian: "2000-01-01",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-01",
-        julian: "2000-01-01",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-01",
-        nepali: "2000-01-01",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-01",
-        thai: "2000-01-01",
-        ummalqura: "1400-01-01"
-      };
-      var CANONICAL_SUNDAY = {
-        chinese: "2000-01-02",
-        coptic: "2000-01-03",
-        discworld: "2000-01-03",
-        ethiopian: "2000-01-05",
-        hebrew: "5000-01-01",
-        islamic: "1000-01-02",
-        julian: "2000-01-03",
-        mayan: "5000-01-01",
-        nanakshahi: "1000-01-05",
-        nepali: "2000-01-05",
-        persian: "1000-01-01",
-        jalali: "1000-01-01",
-        taiwan: "1000-01-04",
-        thai: "2000-01-04",
-        ummalqura: "1400-01-06"
-      };
-      var DFLTRANGE = {
-        chinese: ["2000-01-01", "2001-01-01"],
-        coptic: ["1700-01-01", "1701-01-01"],
-        discworld: ["1800-01-01", "1801-01-01"],
-        ethiopian: ["2000-01-01", "2001-01-01"],
-        hebrew: ["5700-01-01", "5701-01-01"],
-        islamic: ["1400-01-01", "1401-01-01"],
-        julian: ["2000-01-01", "2001-01-01"],
-        mayan: ["5200-01-01", "5201-01-01"],
-        nanakshahi: ["0500-01-01", "0501-01-01"],
-        nepali: ["2000-01-01", "2001-01-01"],
-        persian: ["1400-01-01", "1401-01-01"],
-        jalali: ["1400-01-01", "1401-01-01"],
-        taiwan: ["0100-01-01", "0101-01-01"],
-        thai: ["2500-01-01", "2501-01-01"],
-        ummalqura: ["1400-01-01", "1401-01-01"]
-      };
-      var UNKNOWN = "##";
-      var d3ToWorldCalendars = {
-        d: { 0: "dd", "-": "d" },
-        // 2-digit or unpadded day of month
-        e: { 0: "d", "-": "d" },
-        // alternate, always unpadded day of month
-        a: { 0: "D", "-": "D" },
-        // short weekday name
-        A: { 0: "DD", "-": "DD" },
-        // full weekday name
-        j: { 0: "oo", "-": "o" },
-        // 3-digit or unpadded day of the year
-        W: { 0: "ww", "-": "w" },
-        // 2-digit or unpadded week of the year (Monday first)
-        m: { 0: "mm", "-": "m" },
-        // 2-digit or unpadded month number
-        b: { 0: "M", "-": "M" },
-        // short month name
-        B: { 0: "MM", "-": "MM" },
-        // full month name
-        y: { 0: "yy", "-": "yy" },
-        // 2-digit year (map unpadded to zero-padded)
-        Y: { 0: "yyyy", "-": "yyyy" },
-        // 4-digit year (map unpadded to zero-padded)
-        U: UNKNOWN,
-        // Sunday-first week of the year
-        w: UNKNOWN,
-        // day of the week [0(sunday),6]
-        // combined format, we replace the date part with the world-calendar version
-        // and the %X stays there for d3 to handle with time parts
-        c: { 0: "D M d %X yyyy", "-": "D M d %X yyyy" },
-        x: { 0: "mm/dd/yyyy", "-": "mm/dd/yyyy" }
-      };
-      function worldCalFmt(fmt, x, calendar) {
-        var dateJD = Math.floor((x + 0.05) / ONEDAY) + EPOCHJD;
-        var cDate = getCal(calendar).fromJD(dateJD);
-        var i = 0;
-        var modifier, directive, directiveLen, directiveObj, replacementPart;
-        while ((i = fmt.indexOf("%", i)) !== -1) {
-          modifier = fmt.charAt(i + 1);
-          if (modifier === "0" || modifier === "-" || modifier === "_") {
-            directiveLen = 3;
-            directive = fmt.charAt(i + 2);
-            if (modifier === "_") modifier = "-";
-          } else {
-            directive = modifier;
-            modifier = "0";
-            directiveLen = 2;
-          }
-          directiveObj = d3ToWorldCalendars[directive];
-          if (!directiveObj) {
-            i += directiveLen;
-          } else {
-            if (directiveObj === UNKNOWN) replacementPart = UNKNOWN;
-            else replacementPart = cDate.formatDate(directiveObj[modifier]);
-            fmt = fmt.substr(0, i) + replacementPart + fmt.substr(i + directiveLen);
-            i += replacementPart.length;
-          }
-        }
-        return fmt;
-      }
-      var allCals = {};
-      function getCal(calendar) {
-        var calendarObj = allCals[calendar];
-        if (calendarObj) return calendarObj;
-        calendarObj = allCals[calendar] = calendars.instance(calendar);
-        return calendarObj;
-      }
-      function makeAttrs(description) {
-        return Lib.extendFlat({}, attributes, { description });
-      }
-      function makeTraceAttrsDescription(coord) {
-        return "Sets the calendar system to use with `" + coord + "` date data.";
-      }
-      var xAttrs = {
-        xcalendar: makeAttrs(makeTraceAttrsDescription("x"))
-      };
-      var xyAttrs = Lib.extendFlat({}, xAttrs, {
-        ycalendar: makeAttrs(makeTraceAttrsDescription("y"))
-      });
-      var xyzAttrs = Lib.extendFlat({}, xyAttrs, {
-        zcalendar: makeAttrs(makeTraceAttrsDescription("z"))
-      });
-      var axisAttrs = makeAttrs([
-        "Sets the calendar system to use for `range` and `tick0`",
-        "if this is a date axis. This does not set the calendar for",
-        "interpreting data on this axis, that's specified in the trace",
-        "or via the global `layout.calendar`"
-      ].join(" "));
-      module.exports = {
-        moduleType: "component",
-        name: "calendars",
-        schema: {
-          traces: {
-            scatter: xyAttrs,
-            bar: xyAttrs,
-            box: xyAttrs,
-            heatmap: xyAttrs,
-            contour: xyAttrs,
-            histogram: xyAttrs,
-            histogram2d: xyAttrs,
-            histogram2dcontour: xyAttrs,
-            scatter3d: xyzAttrs,
-            surface: xyzAttrs,
-            mesh3d: xyzAttrs,
-            scattergl: xyAttrs,
-            ohlc: xAttrs,
-            candlestick: xAttrs
-          },
-          layout: {
-            calendar: makeAttrs([
-              "Sets the default calendar system to use for interpreting and",
-              "displaying dates throughout the plot."
-            ].join(" "))
-          },
-          subplots: {
-            xaxis: { calendar: axisAttrs },
-            yaxis: { calendar: axisAttrs },
-            scene: {
-              xaxis: { calendar: axisAttrs },
-              // TODO: it's actually redundant to include yaxis and zaxis here
-              // because in the scene attributes these are the same object so merging
-              // into one merges into them all. However, I left them in for parity with
-              // cartesian, where yaxis is unused until we Plotschema.get() when we
-              // use its presence or absence to determine whether to delete attributes
-              // from yaxis if they only apply to x (rangeselector/rangeslider)
-              yaxis: { calendar: axisAttrs },
-              zaxis: { calendar: axisAttrs }
-            },
-            polar: {
-              radialaxis: { calendar: axisAttrs }
-            }
-          }
-        },
-        layoutAttributes: attributes,
-        handleDefaults,
-        handleTraceDefaults,
-        CANONICAL_SUNDAY,
-        CANONICAL_TICK,
-        DFLTRANGE,
-        getCal,
-        worldCalFmt
-      };
-    }
-  });
-
-  // lib/calendars.js
-  var require_calendars3 = __commonJS({
-    "lib/calendars.js"(exports, module) {
-      "use strict";
-      module.exports = require_calendars2();
+      module.exports = require_histogram2dcontour();
     }
   });
 
@@ -78073,11 +64081,59 @@ var Plotly = (() => {
     "lib/index-geo.js"(exports, module) {
       var Plotly = require_core2();
       Plotly.register([
+        require_scatter2(),
+        require_histogram2dcontour2()
         // traces
-        require_scattergeo2(),
-        require_choropleth2(),
-        // components
-        require_calendars3()
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        // require('./scattergeo'),
+        // require('./choropleth'),
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        //
+        // // components
+        // require('./calendars'),
       ]);
       module.exports = Plotly;
     }
@@ -78098,13 +64154,6 @@ polybooljs/index.js:
    * @license MIT
    * @preserve Project Home: https://github.com/voidqk/polybooljs
    *)
-
-object-assign/index.js:
-  (*
-  object-assign
-  (c) Sindre Sorhus
-  @license MIT
-  *)
 */
 
 window.Plotly = Plotly;

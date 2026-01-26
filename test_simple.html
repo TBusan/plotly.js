@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>Contour-Core v0.2.0 - 简单测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        h1 { color: #fff; text-align: center; }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 1200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .canvas-wrapper {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contour-Core v0.2.0 - 测试页面</h1>
+
+    <div class="container">
+        <h2>数据1: 7x8 矩阵 (带 null 值螺旋图案)</h2>
+        <div class="canvas-wrapper">
+            <canvas id="canvas1a" width="400" height="350"></canvas>
+            <div class="info">Viridis 配色, 填充等值面</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="canvas1b" width="400" height="350"></canvas>
+            <div class="info">Plasma 配色, 等值线模式</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="canvas1c" width="400" height="350"></canvas>
+            <div class="info">Hot 配色, 填充+线条</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>数据2: 5x5 完整矩阵 (双线性分布)</h2>
+        <div class="canvas-wrapper">
+            <canvas id="canvas2a" width="400" height="350"></canvas>
+            <div class="info">Jet 配色, 填充等值面</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="canvas2b" width="400" height="350"></canvas>
+            <div class="info">Earth 配色, 等值线模式</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="canvas2c" width="400" height="350"></canvas>
+            <div class="info">Electric 配色, 填充+线条</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>平滑效果对比</h2>
+        <div class="canvas-wrapper">
+            <canvas id="smooth0" width="300" height="300"></canvas>
+            <div class="info">无平滑 (smoothing=0)</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="smooth5" width="300" height="300"></canvas>
+            <div class="info">中等平滑 (smoothing=0.5)</div>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="smooth10" width="300" height="300"></canvas>
+            <div class="info">高平滑 (smoothing=1.0)</div>
+        </div>
+    </div>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        console.log('=== Contour-Core v0.2.0 Test Page ===');
+        console.log('Available functions:', Object.keys(ContourCore));
+
+        // 数据1: 7x8 矩阵，带 null 值螺旋图案
+        var grid1 = [
+            [null, null, null, 12, 13, 14, 15, 16],
+            [null, 1, null, 11, null, null, null, 17],
+            [null, 2, 6, 7, null, null, null, 18],
+            [null, 3, null, 8, null, null, null, 19],
+            [5, 4, 10, 9, null, null, null, 20],
+            [null, null, null, 27, null, null, null, 21],
+            [null, null, null, 26, 25, 24, 23, 22]
+        ];
+
+        // 数据2: 5x5 完整矩阵 (双线性分布)
+        var grid2 = [
+            [10, 10.625, 12.5, 15.625, 20],
+            [5.625, 6.25, 8.125, 11.25, 15.625],
+            [2.5, 3.125, 5., 8.125, 12.5],
+            [0.625, 1.25, 3.125, 6.25, 10.625],
+            [0, 0.625, 2.5, 5.625, 10]
+        ];
+
+        // 渲染函数
+        function renderContour(canvasId, grid, options) {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error('Canvas not found:', canvasId);
+                return;
+            }
+
+            var config = {
+                z: grid,
+                contours: { type: options.type || 'fill' },
+                colorscale: options.colorscale || 'Viridis',
+                autocontour: true,
+                ncontours: options.ncontours || 8,
+                smoothing: options.smoothing !== undefined ? options.smoothing : 0.5
+            };
+
+            try {
+                var result = ContourCore.render(canvas, config);
+                console.log('Rendered ' + canvasId + ':', result.levels.length + ' levels, ' +
+                    result.paths.length + ' paths, ' + (result.nullCount || 0) + ' nulls');
+            } catch (e) {
+                console.error('Error rendering ' + canvasId + ':', e);
+            }
+        }
+
+        // 渲染数据1 - 不同配色方案
+        renderContour('canvas1a', grid1, { type: 'fill', colorscale: 'Viridis', ncontours: 10 });
+        renderContour('canvas1b', grid1, { type: 'lines', colorscale: 'Plasma', ncontours: 8 });
+        renderContour('canvas1c', grid1, { type: 'fill', colorscale: 'Hot', ncontours: 12 });
+
+        // 渲染数据2 - 不同配色方案
+        renderContour('canvas2a', grid2, { type: 'fill', colorscale: 'Jet', ncontours: 10 });
+        renderContour('canvas2b', grid2, { type: 'lines', colorscale: 'Earth', ncontours: 8 });
+        renderContour('canvas2c', grid2, { type: 'fill', colorscale: 'Electric', ncontours: 12 });
+
+        // 渲染平滑效果对比
+        renderContour('smooth0', grid2, { type: 'fill', colorscale: 'Viridis', smoothing: 0 });
+        renderContour('smooth5', grid2, { type: 'fill', colorscale: 'Viridis', smoothing: 0.5 });
+        renderContour('smooth10', grid2, { type: 'fill', colorscale: 'Viridis', smoothing: 1.0 });
+
+        console.log('All contours rendered successfully!');
+    </script>
+</body>
+</html>
