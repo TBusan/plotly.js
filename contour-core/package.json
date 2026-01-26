@@ -1,17 +1,32 @@
 {
   "name": "contour-core",
-  "version": "1.0.0",
-  "description": "Standalone contour calculation library extracted from Plotly.js",
+  "version": "0.3.0",
+  "description": "Advanced contour calculation library with smart algorithms - Extracted from Plotly.js",
   "main": "index.js",
   "scripts": {
-    "test": "node test_node.js"
+    "test": "node test_node.js",
+    "test:all": "node test_all_optimizations.js",
+    "test:levels": "node test/test_levels.js",
+    "test:ticks": "node test/test_ticks.js",
+    "test:colors": "node test/test_colors.js",
+    "demo": "node scripts/serve.js",
+    "demo:python": "python -m http.server 8080",
+    "demo:open": "start http://localhost:8080/demo.html",
+    "build:browser": "node scripts/build-browser.js",
+    "build": "npm run build:browser",
+    "serve": "node scripts/serve.js",
+    "start": "npm run serve"
   },
   "keywords": [
     "contour",
     "marching-squares",
     "visualization",
     "plotting",
-    "ssr"
+    "ssr",
+    "canvas",
+    "svg",
+    "heatmap",
+    "isoline"
   ],
   "author": "Plotly.js contributors",
   "license": "MIT",

@@ -9,6 +9,7 @@ var drawPaths = require('./paths');
 var drawLabels = require('./labels');
 var drawColorbar = require('./colorbar');
 var drawNulls = require('./nulls');
+var drawHeatmap = require('./heatmap');
 
 /**
  * Draw contours on a canvas context
@@ -31,6 +32,15 @@ function drawContours(ctx, contourResult, style) {
     // Draw null regions first (if present)
     if (contourResult.nullMask && contourResult.nullCount > 0) {
         drawNulls(ctx, contourResult, style);
+    }
+
+    // Draw heatmap background if coloring mode is 'heatmap'
+    if (coloring === 'heatmap') {
+        drawHeatmap.drawInterpolatedHeatmap(ctx, {
+            z: contourResult.pathinfo[0].z,
+            x: contourResult.pathinfo[0].x,
+            y: contourResult.pathinfo[0].y
+        }, style);
     }
 
     // Draw filled contours
@@ -59,5 +69,6 @@ module.exports = {
     drawPaths: drawPaths,
     drawLabels: drawLabels,
     drawColorbar: drawColorbar,
-    drawNulls: drawNulls
+    drawNulls: drawNulls,
+    drawHeatmap: drawHeatmap
 };

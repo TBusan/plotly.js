@@ -10,7 +10,7 @@ import path from 'path';
 
 console.log('=== Packaging contour-core v0.2.0 ===\n');
 
-const contourDir = 'src/contour-core';
+const contourDir = 'contour-core';
 
 /**
  * 清理代码：移除不需要的行，处理 require 语句

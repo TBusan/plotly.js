@@ -146,6 +146,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
 /**
  * Draw filled contour paths
  * Using even-odd fill rule with prefixBoundary
+ * This matches Plotly's original makeFills logic
  */
 function drawFilledPaths(ctx, contourResult, style) {
     var paths = contourResult.paths;
@@ -155,35 +156,49 @@ function drawFilledPaths(ctx, contourResult, style) {
     var smoothing = style.smoothing || 0;
     var perimeter = createPerimeter(style);
 
-    // Get color for this level
-    function getColorForLevel(level) {
+    // Get color for this level (direct mapping, no interpolation)
+    function getColorForLevel(level, levelIndex) {
         if (style.colorScale && Array.isArray(style.colorScale)) {
-            for (var i = 0; i < style.colorScale.length - 1; i++) {
-                var stop1 = style.colorScale[i];
-                var stop2 = style.colorScale[i + 1];
-                if (level >= stop1[0] && level <= stop2[0]) {
-                    return stop2[1];
-                }
-            }
-            return style.colorScale[style.colorScale.length - 1][1];
+            var nColors = style.colorScale.length;
+            var nLevels = levels.length;
+
+            if (nLevels === 0) return style.colorScale[0][1];
+
+            // Map level to color scale directly
+            // Each level gets a corresponding color from the scale
+            var scaleIndex = Math.floor((levelIndex / nLevels) * (nColors - 1));
+            scaleIndex = Math.max(0, Math.min(nColors - 1, scaleIndex));
+
+            return style.colorScale[scaleIndex][1];
         }
         return 'rgba(100, 100, 100, 0.3)';
     }
 
-    // Draw from HIGHEST to LOWEST for proper layering
-    for (var i = paths.length - 1; i >= 0; i--) {
-        var pathInfo = paths[i];
-        var nextLevel = i < paths.length - 1 ? paths[i + 1].level : levels[levels.length - 1] + 1;
-        var midLevel = (pathInfo.level + nextLevel) / 2;
+    // First, draw the entire background with the lowest level color
+    // This ensures the base layer is filled
+    if (paths.length > 0) {
+        ctx.fillStyle = getColorForLevel(levels[0], 0);
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.fill();
+    }
 
-        ctx.fillStyle = getColorForLevel(midLevel);
+    // Draw from LOWEST to HIGHEST (this is critical!)
+    // Each level draws the region ABOVE that contour
+    // Higher levels cover lower levels, creating the proper gradient
+    for (var i = 0; i < paths.length; i++) {
+        var pathInfo = paths[i];
+
+        // Use the color corresponding to this level
+        ctx.fillStyle = getColorForLevel(pathInfo.level, i);
 
         // Build the complete path string
         var boundaryPath = 'M' + perimeter.join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = '';
 
-        // Use prefixBoundary flag
+        // Use prefixBoundary flag to determine if we need to add the boundary
+        // This is set by closeBoundaries() function
         if (pathInfo.prefixBoundary) {
             fullpath = boundaryPath + joinedPaths;
         } else {

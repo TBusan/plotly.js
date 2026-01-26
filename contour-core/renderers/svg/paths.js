@@ -210,6 +210,7 @@ function joinAllPaths(pathInfo, perimeter, options) {
 /**
  * Create SVG filled paths
  * Using even-odd fill rule with prefixBoundary
+ * This matches Plotly's original makeFills logic
  */
 function createFilledPaths(contourResult, options) {
     options = options || {};
@@ -223,29 +224,41 @@ function createFilledPaths(contourResult, options) {
 
     var svgParts = [];
 
-    // Draw from HIGHEST to LOWEST for proper layering
-    for (var i = paths.length - 1; i >= 0; i--) {
+    // First, add the background rectangle with the lowest level color
+    // This ensures the base layer is filled
+    if (paths.length > 0) {
+        var bgColor = getColorForLevel(levels[0], levels, options);
+        svgParts.push('<rect x="0" y="0" width="' + width + '" height="' + height + '" ' +
+                     'fill="' + bgColor + '" stroke="none" />');
+    }
+
+    // Draw from LOWEST to HIGHEST (this is critical!)
+    // Each level draws the region ABOVE that contour
+    // Higher levels cover lower levels, creating the proper gradient
+    for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
-        var nextLevel = i < paths.length - 1 ? paths[i + 1].level : levels[levels.length - 1] + 1;
-        var midLevel = (pathInfo.level + nextLevel) / 2;
-        var color = getColorForLevel(midLevel, levels, options);
+
+        // Use the color corresponding to this level (not midLevel)
+        var color = getColorForLevel(pathInfo.level, levels, options);
 
         // Build the complete path string
         var boundaryPath = 'M' + perimeter.join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, options);
         var fullpath = '';
 
-        // Use prefixBoundary flag
+        // Use prefixBoundary flag to determine if we need to add the boundary
+        // This is set by closeBoundaries() function
         if (pathInfo.prefixBoundary) {
             fullpath = boundaryPath + joinedPaths;
         } else {
             fullpath = joinedPaths;
         }
 
-        // Draw the path
+        // Draw the path with even-odd fill rule
         if (fullpath) {
             svgParts.push(svgPathElement(fullpath, {
                 fill: color,
+                'fill-rule': 'evenodd',
                 stroke: 'none',
                 'stroke-width': 0
             }));

@@ -9,7 +9,8 @@
 
 var api = require('./api');
 
-module.exports = {
+// Export object
+var contourCore = {
     // ============================================
     // Core computation
     // ============================================
@@ -44,3 +45,8 @@ module.exports = {
     // ============================================
     COLOR_SCALES: api.COLOR_SCALES
 };
+
+// CommonJS export for Node.js and browsers (via bundler)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = contourCore;
+}

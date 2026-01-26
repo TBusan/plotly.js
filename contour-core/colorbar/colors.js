@@ -2,6 +2,7 @@
 
 /**
  * Color mapping utilities for colorbar
+ * Enhanced version with support for custom thresholds and heatmap mode
  */
 
 // Preset color scales
@@ -33,18 +34,20 @@ const COLOR_SCALES = {
 };
 
 /**
- * Map a value to a color from a color scale
- * @param {number} value - Value to map
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @param {string|Array} colorscale - Color scale name or array of colors
- * @param {boolean} reverse - Reverse the color scale
- * @returns {string} Hex color code
+ * Parse colorscale into normalized format
+ * Handles both simple color arrays and Plotly-style [[position, color], ...] format
+ *
+ * @param {string|Array} colorscale - Color scale name or array
+ * @returns {Array} Normalized colorscale as [[position, color], ...]
  */
-function mapColors(value, min, max, colorscale, reverse) {
+function parseColorscale(colorscale) {
     let colors;
 
     if (Array.isArray(colorscale)) {
+        // Check if it's already in [[position, color], ...] format
+        if (colorscale.length > 0 && Array.isArray(colorscale[0]) && colorscale[0].length === 2) {
+            return colorscale; // Already in correct format
+        }
         colors = colorscale;
     } else if (typeof colorscale === 'string') {
         const name = colorscale.charAt(0).toUpperCase() + colorscale.slice(1).toLowerCase();
@@ -53,46 +56,238 @@ function mapColors(value, min, max, colorscale, reverse) {
         colors = COLOR_SCALES.Viridis;
     }
 
-    if (reverse) {
-        colors = colors.slice().reverse();
+    // Convert simple color array to [[position, color], ...] format
+    return colors.map((color, i) => [i / (colors.length - 1), color]);
+}
+
+/**
+ * Interpolate between two colors
+ *
+ * @param {string} color1 - Start color (hex)
+ * @param {string} color2 - End color (hex)
+ * @param {number} t - Interpolation factor (0-1)
+ * @returns {string} Interpolated color (hex)
+ */
+function interpolateColor(color1, color2, t) {
+    // Parse hex colors
+    const r1 = parseInt(color1.slice(1, 3), 16);
+    const g1 = parseInt(color1.slice(3, 5), 16);
+    const b1 = parseInt(color1.slice(5, 7), 16);
+
+    const r2 = parseInt(color2.slice(1, 3), 16);
+    const g2 = parseInt(color2.slice(3, 5), 16);
+    const b2 = parseInt(color2.slice(5, 7), 16);
+
+    // Interpolate
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+
+    // Convert back to hex
+    return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+/**
+ * Get color at a specific position from a colorscale
+ *
+ * @param {Array} colorscale - Normalized colorscale [[position, color], ...]
+ * @param {number} position - Position (0-1)
+ * @returns {string} Color at position
+ */
+function getColorAtPosition(colorscale, position) {
+    // Clamp position to [0, 1]
+    const t = Math.max(0, Math.min(1, position));
+
+    // Find the two colors to interpolate between
+    let i = 0;
+    while (i < colorscale.length - 1 && colorscale[i + 1][0] < t) {
+        i++;
+    }
+
+    if (i >= colorscale.length - 1) {
+        return colorscale[colorscale.length - 1][1];
+    }
+
+    const pos1 = colorscale[i][0];
+    const pos2 = colorscale[i + 1][0];
+    const color1 = colorscale[i][1];
+    const color2 = colorscale[i + 1][1];
+
+    // Interpolate between the two colors
+    const localT = (t - pos1) / (pos2 - pos1);
+    return interpolateColor(color1, color2, localT);
+}
+
+/**
+ * Map a value to a color from a color scale
+ * Enhanced version with support for custom thresholds and data range extension
+ *
+ * @param {number} value - Value to map
+ * @param {number} min - Minimum value (can be extended with dataMin)
+ * @param {number} max - Maximum value (can be extended with dataMax)
+ * @param {string|Array} colorscale - Color scale name or array
+ * @param {Object} options - Optional parameters
+ * @param {number} options.dataMin - Actual data minimum (for heatmap mode extension)
+ * @param {number} options.dataMax - Actual data maximum (for heatmap mode extension)
+ * @param {boolean} options.reverse - Reverse the color scale
+ * @returns {string} Hex color code
+ */
+function mapColors(value, min, max, colorscale, options) {
+    options = options || {};
+
+    // Parse colorscale
+    let scale = parseColorscale(colorscale);
+
+    // Reverse if needed
+    if (options.reverse) {
+        scale = scale.slice().reverse();
+        // Re-normalize positions
+        scale = scale.map(([pos, color]) => [1 - pos, color]).sort((a, b) => a[0] - b[0]);
+    }
+
+    // Extend colorscale for heatmap mode if data range is larger
+    if (options.dataMin !== undefined && options.dataMin < min) {
+        const firstColor = scale[0][1];
+        scale.unshift([options.dataMin, firstColor]);
+        min = options.dataMin;
+    }
+    if (options.dataMax !== undefined && options.dataMax > max) {
+        const lastColor = scale[scale.length - 1][1];
+        scale.push([options.dataMax, lastColor]);
+        max = options.dataMax;
     }
 
     // Normalize value to 0-1 range
     const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
 
-    // Find color index
-    const idx = Math.floor(t * (colors.length - 1));
-    const colorIdx = Math.max(0, Math.min(colors.length - 1, idx));
-
-    return colors[colorIdx];
+    return getColorAtPosition(scale, t);
 }
 
 /**
  * Build color stop array for rendering
- * @param {Array} levels - Contour levels
+ * Enhanced version with support for custom thresholds
+ *
+ * @param {Array} levels - Contour levels (custom thresholds allowed)
  * @param {string|Array} colorscale - Color scale
+ * @param {Object} options - Optional parameters
+ * @param {number} options.dataMin - Actual data minimum
+ * @param {number} options.dataMax - Actual data maximum
+ * @param {boolean} options.extend - Extend colorscale to data range (heatmap mode)
  * @returns {Array} Array of [value, color] pairs
  */
-function buildColorScale(levels, colorscale) {
-    const colors = Array.isArray(colorscale) ? colorscale :
-                  (COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis);
+function buildColorScale(levels, colorscale, options) {
+    options = options || {};
 
-    const scale = [];
-    const min = levels[0];
-    const max = levels[levels.length - 1];
-
-    for (let i = 0; i < levels.length; i++) {
-        const t = levels.length > 1 ? (i / (levels.length - 1)) : 0;
-        const colorIdx = Math.floor(t * (colors.length - 1));
-        const finalColorIdx = Math.max(0, Math.min(colors.length - 1, colorIdx));
-        scale.push([levels[i], colors[finalColorIdx]]);
+    if (levels.length === 0) {
+        return [];
     }
 
-    return scale;
+    // Parse colorscale
+    let scale = parseColorscale(colorscale);
+
+    // Reverse if needed
+    if (options.reverse) {
+        scale = scale.slice().reverse();
+        scale = scale.map(([pos, color]) => [1 - pos, color]).sort((a, b) => a[0] - b[0]);
+    }
+
+    const levelMin = levels[0];
+    const levelMax = levels[levels.length - 1];
+
+    // For custom thresholds, map colors directly to threshold values
+    // This ensures each threshold gets a distinct color
+    const colorStops = [];
+
+    for (let i = 0; i < levels.length; i++) {
+        const level = levels[i];
+
+        // Map level to colorscale position
+        let t;
+        if (levels.length === 1) {
+            t = 0.5;
+        } else {
+            t = (level - levelMin) / (levelMax - levelMin);
+        }
+
+        const color = getColorAtPosition(scale, t);
+        colorStops.push([level, color]);
+    }
+
+    // Extend colorscale for heatmap mode if requested
+    if (options.extend && options.dataMin !== undefined && options.dataMin < levelMin) {
+        const firstColor = colorStops[0][1];
+        colorStops.unshift([options.dataMin, firstColor]);
+    }
+    if (options.extend && options.dataMax !== undefined && options.dataMax > levelMax) {
+        const lastColor = colorStops[colorStops.length - 1][1];
+        colorStops.push([options.dataMax, lastColor]);
+    }
+
+    return colorStops;
+}
+
+/**
+ * Create a color mapping function from a colorscale
+ * Useful for efficient repeated color lookups
+ *
+ * @param {Array} levels - Contour levels
+ * @param {string|Array} colorscale - Color scale
+ * @param {Object} options - Optional parameters
+ * @returns {Function} Function that takes a value and returns a color
+ */
+function createColorMapper(levels, colorscale, options) {
+    const colorStops = buildColorScale(levels, colorscale, options);
+
+    return function(value) {
+        // Find the color stop that contains this value
+        for (let i = 0; i < colorStops.length - 1; i++) {
+            const stop1 = colorStops[i];
+            const stop2 = colorStops[i + 1];
+
+            if (value >= stop1[0] && value <= stop2[0]) {
+                // Interpolate between stops
+                const t = (value - stop1[0]) / (stop2[0] - stop1[0]);
+                return interpolateColor(stop1[1], stop2[1], t);
+            }
+        }
+
+        // Value is outside the range, use closest color
+        if (value < colorStops[0][0]) {
+            return colorStops[0][1];
+        }
+        return colorStops[colorStops.length - 1][1];
+    };
+}
+
+/**
+ * Get a gradient definition for Canvas/SVG rendering
+ *
+ * @param {Array} levels - Contour levels
+ * @param {string|Array} colorscale - Color scale
+ * @param {boolean} horizontal - Horizontal gradient (default: vertical)
+ * @returns {Array} Array of {offset, color} objects
+ */
+function getGradientStops(levels, colorscale, horizontal) {
+    const colorStops = buildColorScale(levels, colorscale);
+    const min = colorStops[0][0];
+    const max = colorStops[colorStops.length - 1][0];
+
+    return colorStops.map(([value, color]) => ({
+        offset: (value - min) / (max - min),
+        color: color
+    }));
 }
 
 module.exports = {
     mapColors: mapColors,
     buildColorScale: buildColorScale,
+    createColorMapper: createColorMapper,
+    getGradientStops: getGradientStops,
+    parseColorscale: parseColorscale,
+    getColorAtPosition: getColorAtPosition,
+    interpolateColor: interpolateColor,
     COLOR_SCALES: COLOR_SCALES
 };

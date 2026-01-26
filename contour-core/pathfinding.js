@@ -303,36 +303,71 @@ function getStartStep(mi, edgeflag, loc) {
 
 /**
  * Find the pixel coordinates of a particular crossing
+ * Enhanced version with support for data space interpolation
  *
  * @param {Object} pi - Path info object at this level
  * @param {Array} loc - Grid index [x, y] of the crossing
  * @param {Array} step - Direction [dx, dy] we're moving on the grid
- * @returns {Array} [xpx, ypx, xi, yi] - pixel location + interpolated grid indices
+ * @param {Object} scaleFunctions - Optional scale functions {xa, ya, x, y}
+ * @returns {Array} [xpx, ypx, xi, yi] - interpolated location + grid indices
  */
-function getInterpPx(pi, loc, step) {
+function getInterpPx(pi, loc, step, scaleFunctions) {
     var locx = loc[0] + Math.max(step[0], 0);
     var locy = loc[1] + Math.max(step[1], 0);
     var zxy = pi.z[locy][locx];
 
-    // This is a simplified version that works in grid index space
-    // For proper pixel coordinates, you'll need to provide scale functions
+    // Default to grid index space if no scale functions provided
+    var x = scaleFunctions && scaleFunctions.x ? scaleFunctions.x : pi.x;
+    var y = scaleFunctions && scaleFunctions.y ? scaleFunctions.y : pi.y;
+
     if (step[1]) {
-        // Vertical interpolation
+        // Horizontal edge - interpolate in X direction
         var dx = (pi.level - zxy) / (pi.z[locy][locx + 1] - zxy);
+
+        // Protect against division by zero or invalid values
+        if (!isFinite(dx)) dx = 0.5;
+
+        // Interpolate in data space (supports non-uniform grids)
+        var dataX;
+        if (dx !== 1 && dx !== 0) {
+            dataX = (1 - dx) * x[locx] + dx * x[locx + 1];
+        } else if (dx === 1) {
+            dataX = x[locx + 1];
+        } else {
+            dataX = x[locx];
+        }
+
+        var dataY = y[locy];
+
         return [
-            locx + dx,
-            locy,
-            locx + dx,
-            locy
+            dataX,      // X in data space
+            dataY,      // Y in data space
+            locx + dx,  // Interpolated grid index X
+            locy        // Grid index Y
         ];
     } else {
-        // Horizontal interpolation
+        // Vertical edge - interpolate in Y direction
         var dy = (pi.level - zxy) / (pi.z[locy + 1][locx] - zxy);
+
+        // Protect against division by zero or invalid values
+        if (!isFinite(dy)) dy = 0.5;
+
+        // Interpolate in data space (supports non-uniform grids)
+        var dataX = x[locx];
+        var dataY;
+        if (dy !== 1 && dy !== 0) {
+            dataY = (1 - dy) * y[locy] + dy * y[locy + 1];
+        } else if (dy === 1) {
+            dataY = y[locy + 1];
+        } else {
+            dataY = y[locy];
+        }
+
         return [
-            locx,
-            locy + dy,
-            locx,
-            locy + dy
+            dataX,      // X in data space
+            dataY,      // Y in data space
+            locx,       // Grid index X
+            locy + dy   // Interpolated grid index Y
         ];
     }
 }

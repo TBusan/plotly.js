@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contour Fill Mode Test - Fixed Version</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .canvas-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-width: 100%;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .control-group select,
+        .control-group input[type="range"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .control-group input[type="range"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 0.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .info strong {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 Contour Fill Mode Test</h1>
+        <p>Testing Fixed Fill Mode - Correct Layer Order and Color Mapping</p>
+    </div>
+
+    <div class="container">
+        <!-- Card 1: Simple Gradient Test -->
+        <div class="card">
+            <h2>📊 Simple Gradient Test</h2>
+            <div class="canvas-container">
+                <canvas id="canvas1" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Color Scale</label>
+                    <select id="colorScale1">
+                        <option value="Viridis">Viridis</option>
+                        <option value="Plasma">Plasma</option>
+                        <option value="Hot">Hot</option>
+                        <option value="Jet">Jet</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Contours: <span class="value-display" id="ncontours1Val">10</span></label>
+                    <input type="range" id="ncontours1" min="5" max="30" value="10">
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas1()">🔄 Redraw</button>
+            <div class="info">
+                <strong>Expected:</strong> Smooth gradient from blue (low) to yellow (high)
+            </div>
+        </div>
+
+        <!-- Card 2: Multi-Peak Test -->
+        <div class="card">
+            <h2>🏔️ Multi-Peak Test</h2>
+            <div class="canvas-container">
+                <canvas id="canvas2" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Color Scale</label>
+                    <select id="colorScale2">
+                        <option value="Viridis">Viridis</option>
+                        <option value="Plasma" selected>Plasma</option>
+                        <option value="Hot">Hot</option>
+                        <option value="Jet">Jet</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Contours: <span class="value-display" id="ncontours2Val">15</span></label>
+                    <input type="range" id="ncontours2" min="5" max="30" value="15">
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas2()">🔄 Redraw</button>
+            <div class="info">
+                <strong>Expected:</strong> Multiple peaks with correct color zoning
+            </div>
+        </div>
+
+        <!-- Card 3: With Labels -->
+        <div class="card">
+            <h2>🏷️ Fill with Labels</h2>
+            <div class="canvas-container">
+                <canvas id="canvas3" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Show Labels</label>
+                    <select id="showLabels">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Show Lines</label>
+                    <select id="showLines">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas3()">🔄 Redraw</button>
+            <div class="info">
+                <strong>Expected:</strong> Filled regions with contour lines and labels
+            </div>
+        </div>
+
+        <!-- Card 4: Comparison Lines vs Fill -->
+        <div class="card">
+            <h2>🔄 Lines vs Fill Comparison</h2>
+            <div class="canvas-container">
+                <canvas id="canvas4" width="500" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Mode</label>
+                    <select id="renderMode">
+                        <option value="fill">Fill Only</option>
+                        <option value="lines" selected>Lines Only</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Contours: <span class="value-display" id="ncontours4Val">12</span></label>
+                    <input type="range" id="ncontours4" min="5" max="30" value="12">
+                </div>
+            </div>
+            <button class="btn" onclick="renderCanvas4()">🔄 Redraw</button>
+            <div class="info">
+                <strong>Expected:</strong> Clear distinction between lines and fill modes
+            </div>
+        </div>
+    </div>
+
+    <script src="dist/contour-core.umd.js"></script>
+    <script>
+        // ============================================
+        // Test Data Generation Functions
+        // ============================================
+
+        function generateSimpleGradient(m, n) {
+            const grid = [];
+            for (let i = 0; i < m; i++) {
+                grid[i] = [];
+                for (let j = 0; j < n; j++) {
+                    // Simple diagonal gradient from 0 to 10
+                    grid[i][j] = (i + j) / (m + n) * 10;
+                }
+            }
+            return grid;
+        }
+
+        function generateMultiPeak(m, n) {
+            const grid = [];
+            for (let i = 0; i < m; i++) {
+                grid[i] = [];
+                for (let j = 0; j < n; j++) {
+                    const x = j / n * 4 - 2;
+                    const y = i / m * 4 - 2;
+
+                    // Multiple Gaussian peaks
+                    let z = 5 * Math.exp(-(x * x + y * y) / 0.5);  // Center peak
+                    z += 3 * Math.exp(-((x - 1.5) * (x - 1.5) + (y - 1) * (y - 1)) / 0.3);  // Offset peak 1
+                    z += 2 * Math.exp(-((x + 1) * (x + 1) + (y + 1.5) * (y + 1.5)) / 0.4);  // Offset peak 2
+                    z += Math.sin(x * 2) * Math.cos(y * 2);  // Add some waves
+
+                    grid[i][j] = Math.max(0, z);
+                }
+            }
+            return grid;
+        }
+
+        function generateWavePattern(m, n) {
+            const grid = [];
+            for (let i = 0; i < m; i++) {
+                grid[i] = [];
+                for (let j = 0; j < n; j++) {
+                    const x = j / n * Math.PI * 2;
+                    const y = i / m * Math.PI * 2;
+                    grid[i][j] = (Math.sin(x) * Math.cos(y) + 1) * 5;  // Range: 0-10
+                }
+            }
+            return grid;
+        }
+
+        // ============================================
+        // Canvas 1: Simple Gradient
+        // ============================================
+
+        function renderCanvas1() {
+            const canvas = document.getElementById('canvas1');
+            const colorScale = document.getElementById('colorScale1').value;
+            const ncontours = parseInt(document.getElementById('ncontours1').value);
+
+            const grid = generateSimpleGradient(30, 40);
+
+            ContourCore.render(canvas, {
+                z: grid,
+                contours: { type: 'fill' },
+                autocontour: true,
+                ncontours: ncontours,
+                colorscale: colorScale,
+                showLabels: false
+            });
+        }
+
+        // ============================================
+        // Canvas 2: Multi-Peak
+        // ============================================
+
+        function renderCanvas2() {
+            const canvas = document.getElementById('canvas2');
+            const colorScale = document.getElementById('colorScale2').value;
+            const ncontours = parseInt(document.getElementById('ncontours2').value);
+
+            const grid = generateMultiPeak(30, 40);
+
+            ContourCore.render(canvas, {
+                z: grid,
+                contours: { type: 'fill' },
+                autocontour: true,
+                ncontours: ncontours,
+                colorscale: colorScale,
+                showLabels: false
+            });
+        }
+
+        // ============================================
+        // Canvas 3: Fill with Labels
+        // ============================================
+
+        function renderCanvas3() {
+            const canvas = document.getElementById('canvas3');
+            const showLabels = document.getElementById('showLabels').value === 'yes';
+            const showLines = document.getElementById('showLines').value === 'yes';
+
+            const grid = generateWavePattern(25, 30);
+
+            ContourCore.render(canvas, {
+                z: grid,
+                contours: { type: 'fill' },
+                autocontour: true,
+                ncontours: 10,
+                colorscale: 'Viridis',
+                showLabels: showLabels,
+                showLines: showLines,
+                labelFont: 'Arial',
+                labelSize: 11,
+                labelColor: '#000'
+            });
+        }
+
+        // ============================================
+        // Canvas 4: Lines vs Fill Comparison
+        // ============================================
+
+        function renderCanvas4() {
+            const canvas = document.getElementById('canvas4');
+            const mode = document.getElementById('renderMode').value;
+            const ncontours = parseInt(document.getElementById('ncontours4').value);
+
+            const grid = generateMultiPeak(30, 40);
+
+            const options = {
+                z: grid,
+                autocontour: true,
+                ncontours: ncontours,
+                colorscale: 'Plasma'
+            };
+
+            if (mode === 'fill') {
+                options.contours = { type: 'fill' };
+                options.showLines = false;
+                options.showLabels = false;
+            } else if (mode === 'lines') {
+                options.contours = { type: 'lines' };
+                options.showLines = true;
+                options.showLabels = false;
+            } else {
+                options.contours = { type: 'fill' };
+                options.showLines = true;
+                options.showLabels = false;
+            }
+
+            ContourCore.render(canvas, options);
+        }
+
+        // ============================================
+        // Event Listeners
+        // ============================================
+
+        document.getElementById('ncontours1').addEventListener('input', function() {
+            document.getElementById('ncontours1Val').textContent = this.value;
+        });
+
+        document.getElementById('ncontours2').addEventListener('input', function() {
+            document.getElementById('ncontours2Val').textContent = this.value;
+        });
+
+        document.getElementById('ncontours4').addEventListener('input', function() {
+            document.getElementById('ncontours4Val').textContent = this.value;
+        });
+
+        // ============================================
+        // Initial Render
+        // ============================================
+
+        window.addEventListener('load', function() {
+            renderCanvas1();
+            renderCanvas2();
+            renderCanvas3();
+            renderCanvas4();
+        });
+    </script>
+</body>
+</html>
