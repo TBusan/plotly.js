@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据示例 - Contour-Core</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .data-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .data-section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .canvas-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .canvas-container {
+            flex: 1;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .canvas-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← 返回 Demo 列表</a>
+
+    <h1>数据示例 - 等值线渲染</h1>
+    <p class="subtitle">展示不同类型数据的等值线生成效果</p>
+
+    <div class="controls">
+        <h3>控制面板</h3>
+        <div class="control-group">
+            <label for="renderMode">渲染模式</label>
+            <select id="renderMode">
+                <option value="fill">填充模式</option>
+                <option value="lines">线条模式</option>
+                <option value="heatmap">热力图模式</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="colorscale">颜色方案</label>
+            <select id="colorscale">
+                <option value="Viridis">Viridis</option>
+                <option value="Plasma">Plasma</option>
+                <option value="Hot">Hot</option>
+                <option value="Jet">Jet</option>
+                <option value="Earth">Earth</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="ncontours">等值线数量</label>
+            <select id="ncontours">
+                <option value="5">稀疏 (5)</option>
+                <option value="10" selected>中等 (10)</option>
+                <option value="15">密集 (15)</option>
+            </select>
+        </div>
+        <button onclick="updateAll()">更新所有图表</button>
+    </div>
+
+    <!-- 数据1 -->
+    <div class="data-section">
+        <h2>数据 1: 递增梯度数据</h2>
+        <div class="info">
+            <strong>特点：</strong>5×5 网格，数值从左下角到右上角递增（0 → 20），展示经典的梯度分布。
+        </div>
+        <div class="data-display" id="data1Display"></div>
+        <div class="canvas-row">
+            <div class="canvas-container">
+                <canvas id="data1Canvas" width="450" height="400"></canvas>
+                <div class="canvas-label">等值线渲染</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="data1Matrix" width="450" height="400"></canvas>
+                <div class="canvas-label">原始数据矩阵</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据2 -->
+    <div class="data-section">
+        <h2>数据 2: 包含空值的复杂数据</h2>
+        <div class="info">
+            <strong>特点：</strong>7×8 网格，包含大量 null 值（表示无效数据），中间凹陷四周隆起，展示空值处理能力。
+            <br><strong>
+            空值区域：</strong>白色方块显示（默认）或可自定义颜色。
+        </div>
+        <div class="data-display" id="data2Display"></div>
+        <div class="canvas-row">
+            <div class="canvas-container">
+                <canvas id="data2Canvas" width="600" height="450"></canvas>
+                <div class="canvas-label">等值线渲染</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887']
+        };
+
+        // 数据1: 递增梯度
+        var data1 = [[2, 4, 7, 12, 13, 14, 15, 16],
+   [3, 1, 6, 11, 12, 13, 16, 17],
+   [4, 2, 7, 7, 11, 14, 17, 18],
+   [5, 3, 8, 8, 13, 15, 18, 19],
+   [7, 4, 10, 9, 16, 18, 20, 19],
+   [9, 10, 5, 27, 23, 21, 21, 21],
+   [11, 14, 17, 26, 25, 24, 23, 22]];
+
+        // 数据2: 包含null值
+        var data2 = [
+            [null, null, null, 12, 13, 14, 15, 16],
+            [null, 1, null, 11, null, null, null, 17],
+            [null, 2, 6, 7, null, null, null, 18],
+            [null, 3, null, 8, null, null, null, 19],
+            [5, 4, 10, 9, null, null, null, 20],
+            [null, null, null, 27, null, null, null, 21],
+            [null, null, null, 26, 25, 24, 23, 22]
+        ];
+
+        // 解析颜色方案
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        // 构建颜色映射
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 创建网格对象
+        function createGrid(zData) {
+            var m = zData.length;
+            var n = zData[0].length;
+            var grid = {
+                z: zData,
+                x: [],
+                y: []
+            };
+            for (var i = 0; i < n; i++) grid.x.push(i);
+            for (var j = 0; j < m; j++) grid.y.push(j);
+            return grid;
+        }
+
+        // 显示数据矩阵
+        function displayData() {
+            document.getElementById('data1Display').textContent = '数据1 (5×5):\n' + JSON.stringify(data1).replace(/],/g, '],\n');
+            document.getElementById('data2Display').textContent = '数据2 (7×8):\n' + JSON.stringify(data2).replace(/],/g, '],\n');
+        }
+
+        // 绘制数据矩阵（热力图风格）
+        function drawDataMatrix(canvas, zData) {
+            var ctx = canvas.getContext('2d');
+            var width = canvas.width;
+            var height = canvas.height;
+            var padding = 40;
+            var m = zData.length;
+            var n = zData[0].length;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 找到最小最大值
+            var flatData = zData.flat().filter(function(v) { return v !== null && !isNaN(v); });
+            var minVal = Math.min.apply(Math, flatData);
+            var maxVal = Math.max.apply(Math, flatData);
+
+            var cellWidth = (width - 2 * padding) / n;
+            var cellHeight = (height - 2 * padding) / m;
+
+            for (var i = 0; i < m; i++) {
+                for (var j = 0; j < n; j++) {
+                    var val = zData[i][j];
+                    var x = padding + j * cellWidth;
+                    var y = padding + (m - 1 - i) * cellHeight;
+
+                    if (val === null || isNaN(val)) {
+                        // 空值 - 灰色
+                        ctx.fillStyle = '#e0e0e0';
+                    } else {
+                        // 根据值着色
+                        var t = (val - minVal) / (maxVal - minVal);
+                        var r = Math.floor(t * 255);
+                        var b = Math.floor((1 - t) * 255);
+                        ctx.fillStyle = 'rgb(' + r + ', 0, ' + b + ')';
+                    }
+                    ctx.fillRect(x, y, cellWidth, cellHeight);
+                    ctx.strokeStyle = '#fff';
+                    ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+                    // 显示数值
+                    ctx.fillStyle = '#000';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    var text = val === null ? 'null' : val.toFixed(1);
+                    ctx.fillText(text, x + cellWidth / 2, y + cellHeight / 2);
+                }
+            }
+        }
+
+        // 绘制等值线
+        function drawContours(canvasId, grid, options, width, height) {
+            var canvas = document.getElementById(canvasId);
+            var ctx = canvas.getContext('2d');
+
+            var result = contourCore.computeContours(grid, options);
+
+            var colorScale = parseColorScale(options.colorscale || 'Viridis');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            var style = {
+                width: width,
+                height: height,
+                padding: 40,
+                coloring: options.mode,
+                colorScale: mappedColors,
+                smoothing: options.smoothing || 0,
+                showLines: options.mode !== 'fill',
+                lineWidth: 1.5,
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            ctx.clearRect(0, 0, width, height);
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+        }
+
+        // 更新所有图表
+        function updateAll() {
+            var mode = document.getElementById('renderMode').value;
+            var colorscale = document.getElementById('colorscale').value;
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: 0.3,
+                mode: mode,
+                colorscale: colorscale
+            };
+
+            // 绘制数据1
+            var grid1 = createGrid(data1);
+            drawContours('data1Canvas', grid1, options, 450, 400);
+
+            // 绘制数据1矩阵
+            drawDataMatrix(document.getElementById('data1Matrix'), data1);
+
+            // 绘制数据2
+            var grid2 = createGrid(data2);
+            drawContours('data2Canvas', grid2, options, 600, 450);
+        }
+
+        // 初始化
+        displayData();
+        updateAll();
+    </script>
+</body>
+</html>
