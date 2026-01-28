@@ -763,39 +763,26 @@ var require_compute = __commonJS({
       }
       var z = grid.z;
       var m = z.length;
-      if (m < 2) {
-        throw new Error("Invalid grid: must have at least 2 rows");
-      }
       var n = z[0].length;
-      if (n < 2) {
-        throw new Error("Invalid grid: must have at least 2 columns");
+      if (m < 2 || n < 2) {
+        throw new Error("Invalid grid: must have at least 2x2 data points");
       }
       var normalization = nullHandling.normalizeNullValues(z);
       var cleanedZ = normalization.cleanedGrid;
       var nullMask = normalization.nullMask;
-      var x = grid.x || [];
-      var y = grid.y || [];
-      if (x.length === 0) {
-        for (var i = 0; i < n; i++) x.push(i);
-      }
-      if (y.length === 0) {
-        for (var j = 0; j < m; j++) y.push(j);
-      }
+      var x = grid.x || createIndexArray(n);
+      var y = grid.y || createIndexArray(m);
       var contourLevels = levels.setContours(options, cleanedZ);
       if (contourLevels.length === 0) {
-        return {
-          levels: [],
-          paths: []
-        };
+        return { levels: [], paths: [] };
       }
       if (contourLevels.length > 1e3) {
         console.warn("Too many contours (" + contourLevels.length + "), clipping at 1000");
         contourLevels = contourLevels.slice(0, 1e3);
       }
-      var pathinfo = [];
-      for (var i = 0; i < contourLevels.length; i++) {
-        pathinfo.push({
-          level: contourLevels[i],
+      var pathinfo = contourLevels.map(function(level) {
+        return {
+          level,
           crossings: {},
           starts: [],
           edgepaths: [],
@@ -805,8 +792,8 @@ var require_compute = __commonJS({
           y,
           nullMask,
           smoothing: options.smoothing || 0
-        });
-      }
+        };
+      });
       marchingSquares.makeCrossings(pathinfo);
       pathFinding.findAllPaths(pathinfo, 0.01, 0.01);
       var contourOptions = options.contours || {};
@@ -814,7 +801,7 @@ var require_compute = __commonJS({
         contourOptions.coloring = "fill";
       }
       closeBoundaries(pathinfo, contourOptions);
-      var result = {
+      return {
         levels: contourLevels,
         paths: pathinfo.map(function(pi) {
           return {
@@ -822,28 +809,21 @@ var require_compute = __commonJS({
             edgepaths: pi.edgepaths,
             paths: pi.paths,
             prefixBoundary: pi.prefixBoundary,
-            // Added for correct fill logic
             smoothing: pi.smoothing
-            // Include smoothing parameter for rendering
           };
         }),
-        // Include raw pathinfo for advanced rendering
         pathinfo,
-        // Include null mask and statistics for rendering layer
         nullMask,
         nullCount: normalization.nullCount,
         validCount: normalization.validCount
       };
-      return result;
     }
     function scalePathsToData(result, x, y) {
       var n = x.length;
       var m = y.length;
       function scalePointToData(pt) {
-        var ix = Math.round(pt[0]);
-        var iy = Math.round(pt[1]);
-        ix = Math.max(0, Math.min(n - 1, ix));
-        iy = Math.max(0, Math.min(m - 1, iy));
+        var ix = Math.max(0, Math.min(n - 1, Math.round(pt[0])));
+        var iy = Math.max(0, Math.min(m - 1, Math.round(pt[1])));
         return [x[ix], y[iy]];
       }
       result.paths.forEach(function(pathInfo) {
@@ -855,6 +835,13 @@ var require_compute = __commonJS({
         });
       });
       return result;
+    }
+    function createIndexArray(n) {
+      var arr = [];
+      for (var i = 0; i < n; i++) {
+        arr.push(i);
+      }
+      return arr;
     }
     module.exports = {
       computeContours,
@@ -1307,6 +1294,30 @@ var require_paths = __commonJS({
       return colorScale[Math.floor(n / 2)][1];
     }
     function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize) {
+      if (!colorScale || colorScale.length === 0) {
+        return "rgba(100, 100, 100, 0.5)";
+      }
+      if (!levels || levels.length === 0) {
+        return colorScale[0][1] || "rgba(100, 100, 100, 0.5)";
+      }
+      var firstVal = colorScale[0][0];
+      if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
+        for (var i = 0; i < colorScale.length; i++) {
+          if (Math.abs(colorScale[i][0] - level) < 0.01) {
+            return colorScale[i][1];
+          }
+        }
+        var closestIdx = 0;
+        var closestDist = Math.abs(colorScale[0][0] - level);
+        for (var j = 1; j < colorScale.length; j++) {
+          var dist = Math.abs(colorScale[j][0] - level);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIdx = j;
+          }
+        }
+        return colorScale[closestIdx][1];
+      }
       var value;
       if (hasCustomLevels) {
         if (levelIndex < levels.length - 1) {
@@ -1321,7 +1332,9 @@ var require_paths = __commonJS({
       var minVal = levels[0];
       var maxVal = levels[levels.length - 1];
       var range = maxVal - minVal;
-      if (range === 0) return colorScale[0][1];
+      if (range === 0) {
+        return colorScale[0][1] || "rgba(100, 100, 100, 0.5)";
+      }
       var normalizedValue = (value - minVal) / range;
       normalizedValue = Math.max(0, Math.min(1, normalizedValue));
       return getColorForValue(normalizedValue, colorScale);
@@ -1338,19 +1351,15 @@ var require_paths = __commonJS({
       var lineWidth = style.lineWidth || 1.5;
       if (paths.length === 0) return;
       var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
-      var stepSize = 0;
-      if (!hasCustomLevels && levels.length > 1) {
-        stepSize = levels[1] - levels[0];
-      }
-      var colorScale;
-      if (style.colorScale && Array.isArray(style.colorScale)) {
-        colorScale = style.colorScale;
-      } else if (typeof style.colorscale === "string") {
-        var colors = require_colors();
-        var parsed = colors.parseColorscale(style.colorscale);
-        colorScale = parsed;
-      } else {
-        colorScale = [[0, "blue"], [1, "red"]];
+      var stepSize = !hasCustomLevels && levels.length > 1 ? levels[1] - levels[0] : 0;
+      var colorScale = style.colorScale;
+      if (!colorScale) {
+        if (typeof style.colorscale === "string") {
+          var colors = require_colors();
+          colorScale = colors.parseColorscale(style.colorscale);
+        } else {
+          colorScale = [[0, "blue"], [1, "red"]];
+        }
       }
       var bgColor;
       if (hasCustomLevels) {
@@ -1385,12 +1394,7 @@ var require_paths = __commonJS({
         ctx.fillStyle = fillColor;
         var boundaryPath = "M" + perimeter.join("L") + "Z";
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
-        var fullpath = "";
-        if (pathInfo.prefixBoundary) {
-          fullpath = boundaryPath + joinedPaths;
-        } else {
-          fullpath = joinedPaths;
-        }
+        var fullpath = pathInfo.prefixBoundary ? boundaryPath + joinedPaths : joinedPaths;
         if (fullpath) {
           ctx.beginPath();
           drawSVGPath(ctx, fullpath);
@@ -1407,18 +1411,33 @@ var require_paths = __commonJS({
     }
     function drawStrokePaths(ctx, contourResult, style) {
       var paths = contourResult.paths;
+      var levels = contourResult.levels;
       var smoothing = style.smoothing || 0;
-      ctx.strokeStyle = style.lineColor || "#333";
+      var colorScale = style.colorScale;
+      var useColorScale = colorScale && Array.isArray(colorScale) && colorScale.length > 0;
       ctx.lineWidth = style.lineWidth || 1.5;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
-        for (var j = 0; j < pathInfo.paths.length; j++) {
-          drawPathStroke(ctx, pathInfo.paths[j], smoothing, true, style);
+        if (useColorScale) {
+          var level = pathInfo.level;
+          var color = "#333";
+          for (var j = 0; j < colorScale.length; j++) {
+            if (Math.abs(colorScale[j][0] - level) < 0.01) {
+              color = colorScale[j][1];
+              break;
+            }
+          }
+          ctx.strokeStyle = color;
+        } else {
+          ctx.strokeStyle = style.lineColor || "#333";
         }
-        for (j = 0; j < pathInfo.edgepaths.length; j++) {
-          drawPathStroke(ctx, pathInfo.edgepaths[j], smoothing, false, style);
+        for (var k = 0; k < pathInfo.paths.length; k++) {
+          drawPathStroke(ctx, pathInfo.paths[k], smoothing, true, style);
+        }
+        for (k = 0; k < pathInfo.edgepaths.length; k++) {
+          drawPathStroke(ctx, pathInfo.edgepaths[k], smoothing, false, style);
         }
       }
     }

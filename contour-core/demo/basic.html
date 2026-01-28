@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基本等值线示例 - Contour-Core</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ddd;
+            display: block;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 300px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>基本等值线示例</h1>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="canvas1" width="500" height="400"></canvas>
+            <p style="text-align: center; margin-top: 10px; color: #666;">线条模式</p>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas2" width="500" height="400"></canvas>
+            <p style="text-align: center; margin-top: 10px; color: #666;">填充模式</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <h3>控制面板</h3>
+            <div class="control-group">
+                <label for="ncontours">等值线数量: <span id="ncontoursVal">10</span></label>
+                <input type="range" id="ncontours" min="3" max="30" value="10">
+            </div>
+            <div class="control-group">
+                <label for="smoothing">平滑度: <span id="smoothingVal">0.3</span></label>
+                <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.3">
+            </div>
+            <div class="control-group">
+                <label for="colorscale">颜色方案</label>
+                <select id="colorscale">
+                    <option value="Viridis">Viridis</option>
+                    <option value="Plasma">Plasma</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Jet">Jet</option>
+                    <option value="Earth">Earth</option>
+                    <option value="Electric">Electric</option>
+                </select>
+            </div>
+            <button onclick="updateContours()">更新等值线</button>
+            <div class="info">
+                <strong>数据范围:</strong> <span id="dataRange">-</span><br>
+                <strong>等值线级别:</strong> <span id="levelsCount">-</span><br>
+                <strong>计算时间:</strong> <span id="computeTime">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义（与库中保持一致）
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        // 解析颜色方案
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        // 构建颜色映射（为每个等值线级别分配颜色）
+        function buildColorScale(levels, colorScale) {
+            // 返回 [[level, color], ...] 格式
+            return levels.map(function(level, i) {
+                // 计算当前级别在所有级别中的位置 (0-1)
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+
+                // 找到对应的颜色索引
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+
+                // 返回 [level, color]
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 生成测试数据（高斯分布）
+        function generateGrid(size, centerX, centerY, sigma) {
+            var grid = {
+                z: [],
+                x: [],
+                y: []
+            };
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    var dx = j - centerX;
+                    var dy = i - centerY;
+                    grid.z[i][j] = 100 * Math.exp(-(dx * dx + dy * dy) / sigma);
+                }
+            }
+
+            return grid;
+        }
+
+        // 绘制等值线
+        function drawContours(canvasId, coloring, grid, options) {
+            var canvas = document.getElementById(canvasId);
+            var ctx = canvas.getContext('2d');
+
+            // 计算等值线
+            var startTime = performance.now();
+            var result = contourCore.computeContours(grid, options);
+            var endTime = performance.now();
+
+            // 更新信息显示
+            document.getElementById('dataRange').textContent =
+                Math.min.apply(Math, grid.z.flat()).toFixed(1) + ' ~ ' +
+                Math.max.apply(Math, grid.z.flat()).toFixed(1);
+            document.getElementById('levelsCount').textContent = result.levels.length;
+            document.getElementById('computeTime').textContent = (endTime - startTime).toFixed(2) + ' ms';
+
+            // 解析并构建颜色映射
+            var colorScale = parseColorScale(options.colorscale || 'Viridis');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            // 绘制
+            var style = {
+                width: canvas.width,
+                height: canvas.height,
+                padding: 40,
+                coloring: coloring,
+                colorScale: mappedColors,
+                smoothing: options.smoothing || 0,
+                showLines: coloring === 'lines',
+                lineWidth: 1.5,
+                // 添加必要的数据用于渲染
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+        }
+
+        // 更新等值线
+        function updateContours() {
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+            var smoothing = parseFloat(document.getElementById('smoothing').value);
+            var colorscale = document.getElementById('colorscale').value;
+
+            var grid = generateGrid(20, 10, 10, 50);
+
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: smoothing,
+                colorscale: colorscale
+            };
+
+            drawContours('canvas1', 'lines', grid, options);
+            drawContours('canvas2', 'fill', grid, options);
+        }
+
+        // 更新滑块显示值
+        document.getElementById('ncontours').addEventListener('input', function() {
+            document.getElementById('ncontoursVal').textContent = this.value;
+        });
+        document.getElementById('smoothing').addEventListener('input', function() {
+            document.getElementById('smoothingVal').textContent = this.value;
+        });
+
+        // 初始化
+        updateContours();
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速入门 - Contour-Core</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .string { color: #ce9178; }
+        .code-block .number { color: #b5cea8; }
+        .section {
+            margin: 30px 0;
+        }
+        .section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: #48bb78;
+        }
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Contour-Core 快速入门</h1>
+        <p class="subtitle">纯 JavaScript 实现的高性能等值线生成库</p>
+
+        <div class="section">
+            <h2>核心特性</h2>
+            <ul class="feature-list">
+                <li>零依赖 - 纯 JavaScript 实现，无需任何外部库</li>
+                <li>跨平台 - 支持 Node.js 和浏览器环境</li>
+                <li>高性能 - 每秒可处理 280+ 个数据点</li>
+                <li>SSR 就绪 - 完美支持服务端渲染</li>
+                <li>灵活配置 - 支持自定义阈值、颜色映射和平滑算法</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>示例输出</h2>
+            <div class="canvas-wrapper">
+                <canvas id="demoCanvas" width="600" height="400"></canvas>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn" onclick="updateDemo('fill')">填充模式</button>
+                <button class="btn" onclick="updateDemo('lines')">线条模式</button>
+                <button class="btn btn-secondary" onclick="updateDemo('heatmap')">热力图模式</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>使用示例</h2>
+            <div class="code-block">
+<span class="comment">// 1. 引入库</span>
+<span class="keyword">const</span> contourCore = <span class="keyword">require</span>(<span class="string">'./contour-core'</span>);
+
+<span class="comment">// 2. 准备数据</span>
+<span class="keyword">const</span> grid = {
+    z: [[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>],
+        [<span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>],
+        [<span class="number">30</span>, <span class="number">40</span>, <span class="number">50</span>]],
+    x: [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>],
+    y: [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>]
+};
+
+<span class="comment">// 3. 计算等值线</span>
+<span class="keyword">const</span> result = contourCore.computeContours(grid, {
+    autocontour: <span class="keyword">true</span>,
+    ncontours: <span class="number">10</span>,
+    smoothing: <span class="number">0.3</span>
+});
+
+<span class="comment">// 4. 渲染到 Canvas</span>
+<span class="keyword">const</span> canvas = document.getElementById(<span class="string">'canvas'</span>);
+<span class="keyword">const</span> ctx = canvas.getContext(<span class="string">'2d'</span>);
+
+contourCore.renderers.canvas.drawContours(ctx, result, {
+    width: <span class="number">600</span>,
+    height: <span class="number">400</span>,
+    coloring: <span class="string">'fill'</span>,
+    colorscale: <span class="string">'Viridis'</span>
+});
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>API 参数说明</h2>
+            <div class="info-box">
+                <strong>computeContours(grid, options)</strong><br><br>
+                <strong>grid:</strong> 输入数据对象<br>
+                &nbsp;&nbsp;• z: 二维数组，Z 值（必需）<br>
+                &nbsp;&nbsp;• x: X 坐标数组（可选）<br>
+                &nbsp;&nbsp;• y: Y 坐标数组（可选）<br><br>
+                <strong>options:</strong> 配置选项<br>
+                &nbsp;&nbsp;• autocontour: 自动生成级别（默认: true）<br>
+                &nbsp;&nbsp;• ncontours: 级别数量（默认: 15）<br>
+                &nbsp;&nbsp;• thresholds: 自定义阈值数组<br>
+                &nbsp;&nbsp;• smoothing: 平滑系数（0-1，默认: 0）
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>更多示例</h2>
+            <div style="text-align: center;">
+                <button class="btn" onclick="location.href='basic.html'">基本等值线</button>
+                <button class="btn" onclick="location.href='custom-thresholds.html'">自定义阈值</button>
+                <button class="btn" onclick="location.href='heatmap.html'">热力图</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>性能数据</h2>
+            <div class="info-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <th style="text-align: left; padding: 10px;">网格大小</th>
+                        <th style="text-align: left; padding: 10px;">单元数</th>
+                        <th style="text-align: left; padding: 10px;">计算时间</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">20×20</td>
+                        <td style="padding: 10px;">400</td>
+                        <td style="padding: 10px;">~3ms</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">50×50</td>
+                        <td style="padding: 10px;">2,500</td>
+                        <td style="padding: 10px;">~8ms</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px;">100×100</td>
+                        <td style="padding: 10px;">10,000</td>
+                        <td style="padding: 10px;">~10ms</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 生成演示数据
+        function generateDemoGrid() {
+            var size = 25;
+            var grid = { z: [], x: [], y: [] };
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    var dx = j - size / 2;
+                    var dy = i - size / 2;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    grid.z[i][j] = 100 * Math.exp(-dist * dist / 50) +
+                                   20 * Math.sin(i * 0.5) * Math.cos(j * 0.5);
+                }
+            }
+            return grid;
+        }
+
+        // 更新演示
+        function updateDemo(mode) {
+            var canvas = document.getElementById('demoCanvas');
+            var ctx = canvas.getContext('2d');
+            var grid = generateDemoGrid();
+
+            var options = {
+                autocontour: true,
+                ncontours: 15,
+                smoothing: 0.5
+            };
+
+            var result = contourCore.computeContours(grid, options);
+
+            var colorScale = parseColorScale('Viridis');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            var style = {
+                width: canvas.width,
+                height: canvas.height,
+                padding: 40,
+                coloring: mode,
+                colorScale: mappedColors,
+                smoothing: 0.5,
+                showLines: true,
+                lineWidth: 1.5,
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+        }
+
+        // 初始化
+        updateDemo('fill');
+    </script>
+</body>
+</html>

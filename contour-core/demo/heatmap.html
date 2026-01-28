@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>热力图示例 - Contour-Core</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ddd;
+            display: block;
+            margin: 0 auto;
+        }
+        .title {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>热力图示例</h1>
+
+    <div class="controls">
+        <h3>控制面板</h3>
+        <div class="control-group">
+            <label for="colorscale">颜色方案</label>
+            <select id="colorscale">
+                <option value="Hot">Hot</option>
+                <option value="Jet">Jet</option>
+                <option value="Viridis">Viridis</option>
+                <option value="Plasma">Plasma</option>
+                <option value="Electric">Electric</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="ncontours">等值线密度</label>
+            <select id="ncontours">
+                <option value="10">稀疏 (10)</option>
+                <option value="20" selected>中等 (20)</option>
+                <option value="40">密集 (40)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="smoothing">平滑度</label>
+            <select id="smoothing">
+                <option value="0">无</option>
+                <option value="0.3" selected>低</option>
+                <option value="0.6">中</option>
+                <option value="1">高</option>
+            </select>
+        </div>
+        <button onclick="updateAll()">更新所有图表</button>
+        <div class="info">
+            <strong>热力图模式说明:</strong> 热力图模式结合了颜色填充和等值线，提供了更好的数据可视化效果。
+            适用于温度分布、密度分析、科学数据可视化等场景。
+        </div>
+    </div>
+
+    <div class="canvas-grid">
+        <div class="canvas-container">
+            <canvas id="canvas1" width="500" height="400"></canvas>
+            <div class="title">单峰高斯分布</div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas2" width="500" height="400"></canvas>
+            <div class="title">双峰分布</div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas3" width="500" height="400"></canvas>
+            <div class="title">波浪形分布</div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas4" width="500" height="400"></canvas>
+            <div class="title">带噪声的复杂分布</div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义
+        var COLOR_SCALES = {
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Hot;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 生成单峰高斯分布
+        function generateSinglePeak(size) {
+            var grid = { z: [], x: [], y: [] };
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    var dx = j - size / 2;
+                    var dy = i - size / 2;
+                    grid.z[i][j] = 100 * Math.exp(-(dx * dx + dy * dy) / 100);
+                }
+            }
+            return grid;
+        }
+
+        // 生成双峰分布
+        function generateDoublePeak(size) {
+            var grid = { z: [], x: [], y: [] };
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    var dx1 = j - size / 3;
+                    var dy1 = i - size / 3;
+                    var dx2 = j - 2 * size / 3;
+                    var dy2 = i - 2 * size / 3;
+                    grid.z[i][j] = 80 * Math.exp(-(dx1 * dx1 + dy1 * dy1) / 50) +
+                                   60 * Math.exp(-(dx2 * dx2 + dy2 * dy2) / 80);
+                }
+            }
+            return grid;
+        }
+
+        // 生成波浪形分布
+        function generateWave(size) {
+            var grid = { z: [], x: [], y: [] };
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    grid.z[i][j] = 50 + 30 * Math.sin(i * 0.3) * Math.cos(j * 0.3);
+                }
+            }
+            return grid;
+        }
+
+        // 生成带噪声的复杂分布
+        function generateComplex(size) {
+            var grid = { z: [], x: [], y: [] };
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+                    var dx = j - size / 2;
+                    var dy = i - size / 2;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    grid.z[i][j] = 80 * Math.exp(-dist * dist / 150) +
+                                   20 * Math.sin(i * 0.5) * Math.cos(j * 0.5) +
+                                   Math.random() * 10;
+                }
+            }
+            return grid;
+        }
+
+        // 绘制等值线
+        function drawContours(canvasId, grid, options) {
+            var canvas = document.getElementById(canvasId);
+            var ctx = canvas.getContext('2d');
+            var result = contourCore.computeContours(grid, options);
+
+            var colorScale = parseColorScale(options.colorscale || 'Hot');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            var style = {
+                width: canvas.width,
+                height: canvas.height,
+                padding: 40,
+                coloring: 'heatmap',
+                colorScale: mappedColors,
+                smoothing: options.smoothing || 0,
+                showLines: true,
+                lineWidth: 1,
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+        }
+
+        // 更新所有图表
+        function updateAll() {
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+            var smoothing = parseFloat(document.getElementById('smoothing').value);
+            var colorscale = document.getElementById('colorscale').value;
+
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: smoothing,
+                colorscale: colorscale
+            };
+
+            drawContours('canvas1', generateSinglePeak(30), options);
+            drawContours('canvas2', generateDoublePeak(30), options);
+            drawContours('canvas3', generateWave(30), options);
+            drawContours('canvas4', generateComplex(30), options);
+        }
+
+        // 初始化
+        updateAll();
+    </script>
+</body>
+</html>

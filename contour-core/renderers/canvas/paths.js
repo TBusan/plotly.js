@@ -2,15 +2,12 @@
 
 /**
  * Canvas path drawing for contours
- * Based on Plotly's contour filling algorithm
  */
 
 var smooth = require('../../smooth');
 
 /**
  * Create perimeter path for boundary closing
- * @param {Object} style - Style options
- * @returns {Array} Array of [x, y] perimeter points
  */
 function createPerimeter(style) {
     var m = style.z ? style.z.length : 10;
@@ -35,24 +32,13 @@ function createPerimeter(style) {
 
 /**
  * Join all edge paths into a single path with proper boundary connections
- * Based on Plotly's joinAllPaths function
- *
- * CRITICAL: This function works on SCALED coordinates (canvas space)
- * because we're generating SVG path strings for Canvas rendering.
- * The key difference from Plotly.js is that we need to scale paths here
- * since Canvas doesn't have automatic coordinate transforms like SVG.
- *
- * @param {Object} pathInfo - Path info object
- * @param {Array} perimeter - Perimeter points (already scaled to canvas space)
- * @param {Object} style - Style options
- * @returns {String} SVG path string
+ * Works on SCALED coordinates (canvas space)
  */
 function joinAllPaths(pathInfo, perimeter, style) {
     var fullpath = '';
     var edgepaths = pathInfo.edgepaths;
 
     if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
-        // No paths at all
         return '';
     }
 
@@ -71,13 +57,11 @@ function joinAllPaths(pathInfo, perimeter, style) {
     function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
     function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
 
-    // Process edge paths (open paths that touch the boundary)
+    // Process edge paths
     while (startsleft.length > 0) {
-        // CRITICAL FIX: Keep the original path points for endpt calculation
-        // Scale and smooth ONLY for the SVG path string
         var currentPath = edgepaths[i];
 
-        // Safety check: skip invalid or empty paths
+        // Skip invalid paths
         if (!currentPath || !Array.isArray(currentPath) || currentPath.length === 0) {
             startsleft.splice(startsleft.indexOf(i), 1);
             if (startsleft.length > 0) {
@@ -87,7 +71,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
             continue;
         }
 
-        // Generate smooth SVG path string (scaled)
+        // Generate smooth SVG path string
         var scaledPath = currentPath.map(function(pt) {
             return scalePoint(style, pt);
         });
@@ -95,8 +79,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
         fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
         startsleft.splice(startsleft.indexOf(i), 1);
 
-        // CRITICAL: Use the ORIGINAL path's last point (before smoothing!)
-        // but SCALED to canvas space for comparison with perimeter
+        // Use original path point for endpt (scaled)
         endpt = scalePoint(style, currentPath[currentPath.length - 1]);
         nexti = -1;
 
@@ -104,24 +87,21 @@ function joinAllPaths(pathInfo, perimeter, style) {
         for (cnt = 0; cnt < 4; cnt++) {
             if (!endpt) break;
 
-            // Determine which corner to move to
-            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1]; // right top
-            else if (isleft(endpt)) newendpt = perimeter[0]; // left top
-            else if (isbottom(endpt)) newendpt = perimeter[3]; // right bottom
-            else if (isright(endpt)) newendpt = perimeter[2]; // left bottom
+            // Determine corner to move to
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+            else if (isleft(endpt)) newendpt = perimeter[0];
+            else if (isbottom(endpt)) newendpt = perimeter[3];
+            else if (isright(endpt)) newendpt = perimeter[2];
 
-            // Find next path that starts on this edge
+            // Find next path starting on this edge
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
-                // CRITICAL: Use the ORIGINAL path's first point (before smoothing!)
-                // but SCALED to canvas space
-                // Safety check: skip invalid paths
                 if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) ||
                     edgepaths[possiblei].length === 0) {
                     continue;
                 }
                 var ptNew = scalePoint(style, edgepaths[possiblei][0]);
 
-                // Check if ptNew is on the segment from endpt to newendpt
+                // Check if ptNew is on the segment
                 if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
                     // Vertical edge
                     if (Math.abs(endpt[0] - ptNew[0]) < 0.1 &&
@@ -147,9 +127,6 @@ function joinAllPaths(pathInfo, perimeter, style) {
         if (nexti === edgepaths.length || nexti < 0) break;
 
         i = nexti;
-
-        // if we closed back on a loop we already included,
-        // close it and start a new loop
         newloop = (startsleft.indexOf(i) === -1);
         if (newloop) {
             if (startsleft.length > 0) {
@@ -159,9 +136,8 @@ function joinAllPaths(pathInfo, perimeter, style) {
         }
     }
 
-    // Finally add the interior closed paths
+    // Add interior closed paths
     for (i = 0; i < pathInfo.paths.length; i++) {
-        // Safety check: skip invalid paths
         if (!pathInfo.paths[i] || !Array.isArray(pathInfo.paths[i]) ||
             pathInfo.paths[i].length === 0) {
             continue;
@@ -177,10 +153,6 @@ function joinAllPaths(pathInfo, perimeter, style) {
 
 /**
  * Interpolate between two hex colors
- * @param {string} color1 - Start color (hex)
- * @param {string} color2 - End color (hex)
- * @param {number} t - Interpolation factor (0-1)
- * @returns {string} Interpolated color (hex)
  */
 function interpolateColor(color1, color2, t) {
     // Parse hex colors
@@ -209,21 +181,17 @@ function interpolateColor(color1, color2, t) {
 
 /**
  * Get color for a value from color scale
- * Maps value to color using the color scale array
  */
 function getColorForValue(value, colorScale) {
     if (!colorScale || !Array.isArray(colorScale)) {
         return 'rgba(100, 100, 100, 0.5)';
     }
 
-    // colorScale is in format [[position, color], ...]
-    // position is 0-1, color is hex string
     var n = colorScale.length;
-
     if (n === 0) return 'rgba(100, 100, 100, 0.5)';
     if (n === 1) return colorScale[0][1];
 
-    // Find the two colors to interpolate between
+    // Find interpolation interval
     for (var i = 0; i < n - 1; i++) {
         if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
             var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
@@ -231,46 +199,73 @@ function getColorForValue(value, colorScale) {
         }
     }
 
-    // If value is outside the range, clamp it
+    // Clamp to range
     if (value < colorScale[0][0]) return colorScale[0][1];
     if (value > colorScale[n - 1][0]) return colorScale[n - 1][1];
-
     return colorScale[Math.floor(n / 2)][1];
 }
 
 /**
  * Get color for a contour level
- * This implements the Plotly logic:
- * - For auto-generated levels: use midpoint between levels (level + 0.5 * step)
- * - For custom thresholds: use midpoint between consecutive thresholds
- * - Colors are normalized to the full threshold range
+ * Supports both [[0, color], ...] and [[level, color], ...] formats
  */
 function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize) {
+    // Validate inputs
+    if (!colorScale || colorScale.length === 0) {
+        return 'rgba(100, 100, 100, 0.5)';
+    }
+
+    if (!levels || levels.length === 0) {
+        return colorScale[0][1] || 'rgba(100, 100, 100, 0.5)';
+    }
+
+    // Check if colorScale is in [[level, color], ...] format
+    var firstVal = colorScale[0][0];
+
+    // If first value is close to the first level, assume [[level, color], ...] format
+    if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
+        // Find exact level match
+        for (var i = 0; i < colorScale.length; i++) {
+            if (Math.abs(colorScale[i][0] - level) < 0.01) {
+                return colorScale[i][1];
+            }
+        }
+
+        // If no exact match, find closest
+        var closestIdx = 0;
+        var closestDist = Math.abs(colorScale[0][0] - level);
+        for (var j = 1; j < colorScale.length; j++) {
+            var dist = Math.abs(colorScale[j][0] - level);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestIdx = j;
+            }
+        }
+        return colorScale[closestIdx][1];
+    }
+
+    // Original logic for [[0, color], ...] format
     var value;
 
     if (hasCustomLevels) {
-        // For custom thresholds, use the midpoint between this level and the next
         if (levelIndex < levels.length - 1) {
-            // Midpoint between this threshold and the next one
             value = (levels[levelIndex] + levels[levelIndex + 1]) / 2;
         } else {
-            // For the highest threshold, use a value above it
             var lastStep = levels.length > 1 ? (levels[levels.length - 1] - levels[levels.length - 2]) : 1;
             value = levels[levelIndex] + lastStep / 2;
         }
     } else {
-        // For auto-generated levels, add half the step size
         value = level + 0.5 * stepSize;
     }
 
-    // Normalize value to 0-1 range for color scale
     var minVal = levels[0];
     var maxVal = levels[levels.length - 1];
     var range = maxVal - minVal;
 
-    if (range === 0) return colorScale[0][1];
+    if (range === 0) {
+        return colorScale[0][1] || 'rgba(100, 100, 100, 0.5)';
+    }
 
-    // Clamp normalized value to [0, 1] to handle edge cases
     var normalizedValue = (value - minVal) / range;
     normalizedValue = Math.max(0, Math.min(1, normalizedValue));
 
@@ -279,15 +274,7 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
 
 /**
  * Draw filled contour paths
- * This matches Plotly's original makeFills logic
- *
- * Key points from Plotly implementation:
- * 1. Background layer uses colorMap(firstFill - 0.5 * cs)
- * 2. Each fill layer uses colorMap(level + 0.5 * cs)
- * 3. Uses default (nonzero) fill rule, NOT even-odd
- * 4. Draws from lowest to highest level
- *
- * CRITICAL FIX: Also draw stroke lines here to avoid double-smoothing
+ * Matches Plotly's fill logic with stroke lines to avoid double-smoothing
  */
 function drawFilledPaths(ctx, contourResult, style) {
     var paths = contourResult.paths;
@@ -302,39 +289,25 @@ function drawFilledPaths(ctx, contourResult, style) {
 
     if (paths.length === 0) return;
 
-    // Determine if we have custom thresholds
+    // Determine thresholds and color scale
     var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
-    var stepSize = 0;
-
-    if (!hasCustomLevels && levels.length > 1) {
-        stepSize = levels[1] - levels[0];
+    var stepSize = (!hasCustomLevels && levels.length > 1) ? levels[1] - levels[0] : 0;
+    var colorScale = style.colorScale;
+    if (!colorScale) {
+        if (typeof style.colorscale === 'string') {
+            var colors = require('../../colorbar/colors');
+            colorScale = colors.parseColorscale(style.colorscale);
+        } else {
+            colorScale = [[0, 'blue'], [1, 'red']];
+        }
     }
 
-    // Prepare color scale from style
-    var colorScale;
-    if (style.colorScale && Array.isArray(style.colorScale)) {
-        colorScale = style.colorScale;
-    } else if (typeof style.colorscale === 'string') {
-        // Use preset color scale name
-        var colors = require('../../colorbar/colors');
-        var parsed = colors.parseColorscale(style.colorscale);
-        colorScale = parsed;
-    } else {
-        // Default to a simple gradient
-        colorScale = [[0, 'blue'], [1, 'red']];
-    }
-
-    // Step 1: Draw background layer
-    // This fills the entire area with the color below the first contour
+    // Draw background layer
     var bgColor;
     if (hasCustomLevels) {
-        // For custom thresholds, use a value below the first threshold
-        // We estimate this as: firstThreshold - (firstThreshold - minDataValue) / 2
-        // But since we don't have minDataValue here, we use a fraction of the first interval
         if (levels.length > 1) {
             var firstInterval = levels[1] - levels[0];
             var bgValue = levels[0] - firstInterval / 2;
-            // Normalize and clamp
             var minVal = levels[0];
             var maxVal = levels[levels.length - 1];
             var range = maxVal - minVal;
@@ -342,11 +315,9 @@ function drawFilledPaths(ctx, contourResult, style) {
             normalizedBg = Math.max(0, Math.min(1, normalizedBg));
             bgColor = getColorForValue(normalizedBg, colorScale);
         } else {
-            // Only one threshold - use a default color below it
             bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize);
         }
     } else {
-        // For auto-generated levels, use firstLevel - 0.5 * step
         var bgValue = levels[0] - 0.5 * stepSize;
         var minVal = levels[0];
         var maxVal = levels[levels.length - 1];
@@ -359,39 +330,26 @@ function drawFilledPaths(ctx, contourResult, style) {
     ctx.fillStyle = bgColor;
     ctx.beginPath();
     ctx.rect(0, 0, width, height);
-    ctx.fill();  // Use default (nonzero) fill rule
+    ctx.fill();
 
-    // Step 2: Draw each contour fill layer
-    // Draw from LOWEST to HIGHEST (critical!)
-    // Each layer draws the region ABOVE that contour level
+    // Draw each contour fill layer (LOWEST to HIGHEST)
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
 
-        // Get color for this level
+        // Get color and build path
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize);
         ctx.fillStyle = fillColor;
 
-        // Build the complete path string
         var boundaryPath = 'M' + perimeter.join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
-        var fullpath = '';
+        var fullpath = pathInfo.prefixBoundary ? (boundaryPath + joinedPaths) : joinedPaths;
 
-        // Use prefixBoundary flag to determine if we need to add the boundary
-        if (pathInfo.prefixBoundary) {
-            fullpath = boundaryPath + joinedPaths;
-        } else {
-            fullpath = joinedPaths;
-        }
-
-        // Draw the path using default (nonzero) fill rule
-        // This is key - nonzero handles nested contours correctly for fill mode
+        // Draw path with fill and optional stroke
         if (fullpath) {
             ctx.beginPath();
             drawSVGPath(ctx, fullpath);
-            ctx.fill();  // Use default fill rule, NOT even-odd
+            ctx.fill();
 
-            // CRITICAL FIX: Draw stroke lines here using the SAME path
-            // This ensures lines and fills match exactly (no double-smoothing)
             if (showLines) {
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = lineWidth;
@@ -408,9 +366,11 @@ function drawFilledPaths(ctx, contourResult, style) {
  */
 function drawStrokePaths(ctx, contourResult, style) {
     var paths = contourResult.paths;
+    var levels = contourResult.levels;
     var smoothing = style.smoothing || 0;
+    var colorScale = style.colorScale;
+    var useColorScale = colorScale && Array.isArray(colorScale) && colorScale.length > 0;
 
-    ctx.strokeStyle = style.lineColor || '#333';
     ctx.lineWidth = style.lineWidth || 1.5;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
@@ -418,14 +378,31 @@ function drawStrokePaths(ctx, contourResult, style) {
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
 
+        // Set color for this level
+        if (useColorScale) {
+            // Find color for this level
+            var level = pathInfo.level;
+            var color = '#333'; // default
+
+            for (var j = 0; j < colorScale.length; j++) {
+                if (Math.abs(colorScale[j][0] - level) < 0.01) {
+                    color = colorScale[j][1];
+                    break;
+                }
+            }
+            ctx.strokeStyle = color;
+        } else {
+            ctx.strokeStyle = style.lineColor || '#333';
+        }
+
         // Draw closed paths
-        for (var j = 0; j < pathInfo.paths.length; j++) {
-            drawPathStroke(ctx, pathInfo.paths[j], smoothing, true, style);
+        for (var k = 0; k < pathInfo.paths.length; k++) {
+            drawPathStroke(ctx, pathInfo.paths[k], smoothing, true, style);
         }
 
         // Draw edge paths
-        for (j = 0; j < pathInfo.edgepaths.length; j++) {
-            drawPathStroke(ctx, pathInfo.edgepaths[j], smoothing, false, style);
+        for (k = 0; k < pathInfo.edgepaths.length; k++) {
+            drawPathStroke(ctx, pathInfo.edgepaths[k], smoothing, false, style);
         }
     }
 }
@@ -499,14 +476,7 @@ function drawPathStroke(ctx, path, smoothing, isClosed, style) {
 }
 
 /**
- * Scale point to canvas coordinates
- *
- * IMPORTANT: Points from pathfinding are in DATA SPACE (actual x/y values from the grid),
- * not grid index space. We need to normalize them to [0, 1] first, then scale to canvas.
- *
- * @param {Object} style - Style options containing x, y arrays for data range
- * @param {Array} pt - Point [x, y] in DATA SPACE
- * @returns {Array} Scaled point [canvasX, canvasY]
+ * Scale point from DATA SPACE to canvas coordinates
  */
 function scalePoint(style, pt) {
     var x = style.x || [];
@@ -529,7 +499,7 @@ function scalePoint(style, pt) {
     var canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
     var canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
 
-    // Flip Y axis (canvas Y increases downward, data Y increases upward)
+    // Flip Y axis (canvas Y increases downward)
     canvasY = height - padding - (canvasY - padding);
 
     return [canvasX, canvasY];
