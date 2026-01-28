@@ -12,7 +12,7 @@ if (typeof module !== 'undefined' && module.exports) {
         computeContours: require('./compute').computeContours,
         scalePathsToData: require('./compute').scalePathsToData,
         canvas: require('./canvas'),
-        smooth: require('./smooth'),
+        smooth: require('./renderers/smooth'),
         constants: require('./constants')
     };
 } else {

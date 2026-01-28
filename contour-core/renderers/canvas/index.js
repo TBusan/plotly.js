@@ -44,12 +44,15 @@ function drawContours(ctx, contourResult, style) {
     }
 
     // Draw filled contours
+    // NOTE: drawFilledPaths now also draws stroke lines when showLines is true
+    // This avoids double-smoothing and ensures lines match fills exactly
     if (coloring === 'fill' || coloring === 'heatmap') {
         drawPaths.drawFilledPaths(ctx, contourResult, style);
     }
 
-    // Draw contour lines
-    if (showLines && coloring !== 'heatmap') {
+    // Draw contour lines (ONLY for lines mode, NOT for fill mode)
+    // For fill mode, lines are already drawn in drawFilledPaths
+    if (showLines && coloring === 'lines') {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
     }
 

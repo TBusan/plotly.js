@@ -177,9 +177,38 @@ npm run test:ticks
 npm run test:colors
 
 # View demo
-python -m http.server 8080
+npm run demo
 # Visit: http://localhost:8080/demo.html
 ```
+
+## 🔧 Building
+
+This project uses **esbuild** for fast, reliable browser bundles.
+
+```bash
+# Build all formats (IIFE + ESM)
+npm run build
+
+# Build browser IIFE only (108KB)
+npm run build:browser
+
+# Build ESM module only (102KB)
+npm run build:esm
+
+# Build minified version (40KB)
+npm run build:min
+```
+
+**Build Outputs:**
+- `dist/contour-core.browser.js` - IIFE format for browsers (108KB)
+- `dist/contour-core.browser.min.js` - Minified IIFE (40KB)
+- `dist/contour-core.esm.mjs` - ES Module format (102KB)
+
+**Why esbuild?**
+- ⚡ Blazing fast (~7ms build time)
+- 📦 Tree-shaking and dead code elimination
+- 🎯 Zero configuration needed
+- 🔧 Handles CommonJS → ESM conversion automatically
 
 ## 📊 Performance
 

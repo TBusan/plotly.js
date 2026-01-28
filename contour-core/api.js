@@ -6,7 +6,7 @@
  */
 
 var compute = require('./compute');
-var canvasRenderer = require('./canvas');
+var canvasRenderer = require('./renderers/canvas');
 
 // Preset color scales
 var COLOR_SCALES = {

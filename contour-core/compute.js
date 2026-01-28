@@ -128,7 +128,8 @@ function computeContours(grid, options) {
                 level: pi.level,
                 edgepaths: pi.edgepaths,
                 paths: pi.paths,
-                prefixBoundary: pi.prefixBoundary  // Added for correct fill logic
+                prefixBoundary: pi.prefixBoundary,  // Added for correct fill logic
+                smoothing: pi.smoothing  // Include smoothing parameter for rendering
             };
         }),
         // Include raw pathinfo for advanced rendering
@@ -154,7 +155,7 @@ function scalePathsToData(result, x, y) {
     var n = x.length;
     var m = y.length;
 
-    function scalePoint(pt) {
+    function scalePointToData(pt) {
         var ix = Math.round(pt[0]);
         var iy = Math.round(pt[1]);
         // Clamp to valid range
@@ -165,10 +166,10 @@ function scalePathsToData(result, x, y) {
 
     result.paths.forEach(function(pathInfo) {
         pathInfo.edgepaths = pathInfo.edgepaths.map(function(path) {
-            return path.map(scalePoint);
+            return path.map(scalePointToData);
         });
         pathInfo.paths = pathInfo.paths.map(function(path) {
-            return path.map(scalePoint);
+            return path.map(scalePointToData);
         });
     });
 

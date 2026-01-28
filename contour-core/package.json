@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Advanced contour calculation library with smart algorithms - Extracted from Plotly.js",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "test": "node test_node.js",
     "test:all": "node test_all_optimizations.js",
@@ -12,8 +13,10 @@
     "demo": "node scripts/serve.js",
     "demo:python": "python -m http.server 8080",
     "demo:open": "start http://localhost:8080/demo.html",
-    "build:browser": "node scripts/build-browser.js",
-    "build": "npm run build:browser",
+    "build": "npm run build:browser && npm run build:esm",
+    "build:browser": "esbuild index.js --bundle --format=iife --global-name=contourCore --outfile=dist/contour-core.browser.js",
+    "build:esm": "esbuild index.js --bundle --format=esm --outfile=dist/contour-core.esm.mjs",
+    "build:min": "esbuild index.js --bundle --format=iife --global-name=contourCore --minify --outfile=dist/contour-core.browser.min.js",
     "serve": "node scripts/serve.js",
     "start": "npm run serve"
   },
@@ -32,5 +35,31 @@
   "license": "MIT",
   "engines": {
     "node": ">=12.0.0"
-  }
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  },
+  "exports": {
+    ".": {
+      "browser": "./dist/contour-core.browser.js",
+      "import": "./dist/contour-core.esm.mjs",
+      "require": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "compute.js",
+    "api.js",
+    "levels.js",
+    "marchingsquares.js",
+    "pathfinding.js",
+    "smooth.js",
+    "constants.js",
+    "close_boundaries.js",
+    "null_handling/**",
+    "labels/**",
+    "colorbar/**",
+    "renderers/**",
+    "dist/"
+  ]
 }
