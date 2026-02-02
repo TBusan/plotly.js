@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 数据示例 - Contour-Core</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 150px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: #718096;
+        }
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+        .data-section {
+            margin: 30px 0;
+        }
+        .data-section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .svg-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        .svg-wrapper {
+            display: inline-block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .data-display {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+        #copyStatus {
+            display: none;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← 返回 Demo 列表</a>
+
+        <h1>SVG 数据示例</h1>
+        <p class="subtitle">使用 SVG 渲染真实数据集的等值线图</p>
+
+        <div class="controls">
+            <h3 style="margin-top: 0; color: #333;">控制面板</h3>
+            <div class="control-group">
+                <label for="renderMode">渲染模式</label>
+                <select id="renderMode">
+                    <option value="fill">填充模式</option>
+                    <option value="lines">线条模式</option>
+                    <option value="heatmap">热力图模式</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="colorscale">颜色方案</label>
+                <select id="colorscale">
+                    <option value="Viridis">Viridis</option>
+                    <option value="Plasma">Plasma</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Jet">Jet</option>
+                    <option value="Earth">Earth</option>
+                    <option value="Electric">Electric</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="ncontours">等值线数量</label>
+                <select id="ncontours">
+                    <option value="5">稀疏 (5)</option>
+                    <option value="10" selected>中等 (10)</option>
+                    <option value="15">密集 (15)</option>
+                    <option value="20">很密集 (20)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="connectgaps">空值处理 (仅数据2)</label>
+                <select id="connectgaps">
+                    <option value="true" selected>连接空值 (connectgaps=true)</option>
+                    <option value="false">遮罩空值 (connectgaps=false)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="smoothing">平滑系数</label>
+                <select id="smoothing">
+                    <option value="0">无平滑 (0)</option>
+                    <option value="0.3" selected>轻微 (0.3)</option>
+                    <option value="0.5">中等 (0.5)</option>
+                    <option value="0.7">强烈 (0.7)</option>
+                </select>
+            </div>
+            <button class="btn" onclick="updateAll()">更新所有图表</button>
+        </div>
+
+        <!-- 数据1 -->
+        <div class="data-section">
+            <div class="section-header">
+                <h2>数据 1: 递增梯度数据</h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="copySVG(1)">复制 SVG</button>
+                    <button class="btn btn-secondary" onclick="downloadSVG(1)">下载 SVG</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>特点：</strong>7×8 网格，数值从左下角到右上角递增（2 → 27），展示经典的梯度分布。
+            </div>
+            <div class="data-display" id="data1Display"></div>
+            <div class="svg-container">
+                <div class="svg-wrapper" id="svgOutput1"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="pathCount1">0</div>
+                    <div class="stat-label">路径数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="svgSize1">0 KB</div>
+                    <div class="stat-label">SVG 大小</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="levelRange1">-</div>
+                    <div class="stat-label">级别范围</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据2 -->
+        <div class="data-section">
+            <div class="section-header">
+                <h2>数据 2: 包含空值的数据</h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="copySVG(2)">复制 SVG</button>
+                    <button class="btn btn-secondary" onclick="downloadSVG(2)">下载 SVG</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>特点：</strong>7×8 网格，包含部分 null 值（约 30%），null 值主要分布在左下角区域。<br>
+                <strong>connectgaps=true：</strong>空值区域会被插值填充，等值线连续通过。<br>
+                <strong>connectgaps=false：</strong>空值区域会被白色遮罩，等值线不穿过该区域。
+            </div>
+            <div class="data-display" id="data2Display"></div>
+            <div class="svg-container">
+                <div class="svg-wrapper" id="svgOutput2"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="pathCount2">0</div>
+                    <div class="stat-label">路径数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="svgSize2">0 KB</div>
+                    <div class="stat-label">SVG 大小</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="nullCount2">0</div>
+                    <div class="stat-label">空值数量</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="copyStatus"></div>
+
+        <div class="data-section">
+            <h2>SVG 优势说明</h2>
+            <div class="info-box">
+                <strong>矢量图形：</strong>无限缩放不失真，适合打印和高清显示<br>
+                <strong>可交互：</strong>每条路径都是独立的 DOM 元素，可添加 CSS 样式和事件监听<br>
+                <strong>文件体积小：</strong>纯文本格式，易于压缩和传输<br>
+                <strong>SSR 友好：</strong>可以在服务端生成完整的 SVG 字符串
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn" onclick="location.href='simple.html'">快速入门</button>
+            <button class="btn" onclick="location.href='svg-render.html'">SVG 演示</button>
+            <button class="btn" onclick="location.href='index.html'">返回首页</button>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        // 数据1: 递增梯度 (7x8)
+        var data1 = [[2, 4, 7, 12, 13, 14, 15, 16],
+                     [3, 1, 6, 11, 12, 13, 16, 17],
+                     [4, 2, 7, 7, 11, 14, 17, 18],
+                     [5, 3, 8, 8, 13, 15, 18, 19],
+                     [7, 4, 10, 9, 16, 18, 20, 19],
+                     [9, 10, 5, 27, 23, 21, 21, 21],
+                     [11, 14, 17, 26, 25, 24, 23, 22]];
+
+        // 数据2: 包含null值
+        var data2 = [[null, null, null, 12, 13, 14, 15, 16],
+                     [null, 1, null, 11, null, null, null, 17],
+                     [null, 2, 6, 7, null, null, null, 18],
+                     [null, 3, null, 8, null, null, null, 19],
+                     [5, 4, 10, 9, null, null, null, 20],
+                     [null, null, null, 27, null, null, null, 21],
+                     [null, null, null, 26, 25, 24, 23, 22]];
+
+        var svg1 = '';
+        var svg2 = '';
+        var result1 = null;
+        var result2 = null;
+
+        // 解析颜色方案
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        // 构建颜色映射
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 创建网格对象
+        function createGrid(zData) {
+            var m = zData.length;
+            var n = zData[0].length;
+            var grid = {
+                z: zData,
+                x: [],
+                y: []
+            };
+            for (var i = 0; i < n; i++) grid.x.push(i);
+            for (var j = 0; j < m; j++) grid.y.push(j);
+            return grid;
+        }
+
+        // 计算空值数量
+        function countNulls(zData) {
+            var count = 0;
+            for (var i = 0; i < zData.length; i++) {
+                for (var j = 0; j < zData[i].length; j++) {
+                    if (zData[i][j] === null || zData[i][j] === undefined || isNaN(zData[i][j])) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        // 显示数据
+        function displayData() {
+            document.getElementById('data1Display').textContent = '数据1 (7×8):\n' + JSON.stringify(data1).replace(/],/g, '],\n');
+            document.getElementById('data2Display').textContent = '数据2 (7×8):\n' + JSON.stringify(data2).replace(/],/g, '],\n');
+        }
+
+        // 渲染 SVG
+        function renderSVG(containerId, grid, options, width, height) {
+            var startTime = performance.now();
+
+            var result = contourCore.computeContours(grid, options);
+
+            var colorScale = parseColorScale(options.colorscale || 'Viridis');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            var renderOptions = {
+                width: width,
+                height: height,
+                padding: 40,
+                coloring: options.mode,
+                colorScale: mappedColors,
+                colorscale: options.colorscale,
+                lineWidth: 1.5,
+                showLines: options.mode !== 'heatmap',
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            var svg = contourCore.renderers.svg.renderSVG(result, renderOptions);
+
+            document.getElementById(containerId).innerHTML = svg;
+
+            var endTime = performance.now();
+
+            return {
+                svg: svg,
+                result: result,
+                time: endTime - startTime
+            };
+        }
+
+        // 更新所有图表
+        function updateAll() {
+            var mode = document.getElementById('renderMode').value;
+            var colorscale = document.getElementById('colorscale').value;
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+            var connectGaps = document.getElementById('connectgaps').value === 'true';
+            var smoothing = parseFloat(document.getElementById('smoothing').value);
+
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: smoothing,
+                mode: mode,
+                colorscale: colorscale,
+                connectgaps: connectGaps
+            };
+
+            // 渲染数据1
+            var grid1 = createGrid(data1);
+            var ret1 = renderSVG('svgOutput1', grid1, options, 500, 450);
+            svg1 = ret1.svg;
+            result1 = ret1.result;
+
+            // 更新统计1
+            var pathCount1 = 0;
+            result1.paths.forEach(function(p) {
+                pathCount1 += p.paths.length + p.edgepaths.length;
+            });
+            document.getElementById('pathCount1').textContent = pathCount1;
+            document.getElementById('svgSize1').textContent = (new Blob([svg1]).size / 1024).toFixed(2) + ' KB';
+            document.getElementById('levelRange1').textContent =
+                result1.levels[0].toFixed(1) + ' ~ ' + result1.levels[result1.levels.length - 1].toFixed(1);
+
+            // 渲染数据2
+            var grid2 = createGrid(data2);
+            var ret2 = renderSVG('svgOutput2', grid2, options, 500, 450);
+            svg2 = ret2.svg;
+            result2 = ret2.result;
+
+            // 更新统计2
+            var pathCount2 = 0;
+            result2.paths.forEach(function(p) {
+                pathCount2 += p.paths.length + p.edgepaths.length;
+            });
+            document.getElementById('pathCount2').textContent = pathCount2;
+            document.getElementById('svgSize2').textContent = (new Blob([svg2]).size / 1024).toFixed(2) + ' KB';
+            document.getElementById('nullCount2').textContent = countNulls(data2);
+        }
+
+        // 复制 SVG
+        function copySVG(dataNum) {
+            var svg = dataNum === 1 ? svg1 : svg2;
+            var statusEl = document.getElementById('copyStatus');
+            statusEl.style.display = 'block';
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(svg).then(function() {
+                    statusEl.textContent = '✓ SVG 代码已复制到剪贴板！';
+                    statusEl.style.background = '#d4edda';
+                    statusEl.style.borderLeft = '4px solid #28a745';
+                    setTimeout(function() {
+                        statusEl.style.display = 'none';
+                    }, 2000);
+                }).catch(function() {
+                    statusEl.textContent = '✗ 复制失败，请手动复制';
+                    statusEl.style.background = '#f8d7da';
+                    statusEl.style.borderLeft = '4px solid #dc3545';
+                });
+            } else {
+                var textarea = document.createElement('textarea');
+                textarea.value = svg;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                statusEl.textContent = '✓ SVG 代码已复制到剪贴板！';
+                statusEl.style.background = '#d4edda';
+                statusEl.style.borderLeft = '4px solid #28a745';
+                setTimeout(function() {
+                    statusEl.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // 下载 SVG
+        function downloadSVG(dataNum) {
+            var svg = dataNum === 1 ? svg1 : svg2;
+            var mode = document.getElementById('renderMode').value;
+            var blob = new Blob([svg], { type: 'image/svg+xml' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'contour-data' + dataNum + '-' + mode + '-' + Date.now() + '.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 初始化
+        displayData();
+        updateAll();
+    </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
     "demo": "node scripts/serve.js",
     "demo:python": "python -m http.server 8080",
     "demo:open": "start http://localhost:8080/demo.html",
-    "build": "npm run build:browser && npm run build:esm",
+    "build": "npm run build:browser && npm run build:esm && npm run build:min",
     "build:browser": "esbuild index.js --bundle --format=iife --global-name=contourCore --outfile=dist/contour-core.browser.js",
     "build:esm": "esbuild index.js --bundle --format=esm --outfile=dist/contour-core.esm.mjs",
     "build:min": "esbuild index.js --bundle --format=iife --global-name=contourCore --minify --outfile=dist/contour-core.browser.min.js",

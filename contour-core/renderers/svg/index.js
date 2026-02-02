@@ -9,6 +9,7 @@ var createPaths = require('./paths');
 var createLabels = require('./labels');
 var createColorbar = require('./colorbar');
 var createNulls = require('./nulls');
+var nullHandling = require('../../null_handling');
 
 /**
  * Render contours as SVG
@@ -23,8 +24,10 @@ function renderSVG(contourResult, options) {
     var height = options.height || 400;
     var coloring = options.coloring || 'fill';
     var showLines = options.showLines !== false;
+    var useClipMask = options.useClipMask !== false; // Enable clipPath by default for smoother null masking
 
     var svgParts = [];
+    var clipId = 'clip' + Date.now() + Math.floor(Math.random() * 10000);
 
     // SVG opening
     svgParts.push(
@@ -33,7 +36,27 @@ function renderSVG(contourResult, options) {
         'viewBox="0 0 ' + width + ' ' + height + '">'
     );
 
-    // NOTE: Null regions will be drawn AFTER contours to mask them out
+    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
+    var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
+
+    // Create clipPath if needed (using marching squares for smooth boundary)
+    if (needsClip && useClipMask) {
+        var clipPathData = nullHandling.generateClipPath(contourResult, options);
+        if (clipPathData) {
+            svgParts.push(
+                '<defs>' +
+                '<clipPath id="' + clipId + '">' +
+                '<path d="' + clipPathData + '" fill="none" stroke="none"/>' +
+                '</clipPath>' +
+                '</defs>'
+            );
+        }
+    }
+
+    // Start a group for contours (with clip-path if needed)
+    if (needsClip && useClipMask) {
+        svgParts.push('<g clip-path="url(#' + clipId + ')">');
+    }
 
     // Draw filled contours
     if (coloring === 'fill' || coloring === 'heatmap') {
@@ -43,6 +66,11 @@ function renderSVG(contourResult, options) {
     // Draw contour lines
     if (showLines && coloring !== 'heatmap') {
         svgParts.push(createPaths.createStrokePaths(contourResult, options));
+    }
+
+    // Close the clipped group
+    if (needsClip && useClipMask) {
+        svgParts.push('</g>');
     }
 
     // Draw labels (if enabled)
@@ -55,11 +83,9 @@ function renderSVG(contourResult, options) {
         svgParts.push(createColorbar.createColorbar(contourResult, options));
     }
 
-    // Draw null regions LAST to mask out contours in null areas
-    // This ensures contours don't cross into null regions
+    // Draw null regions as fallback (rectangles) when clipPath is not used
     // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
-    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
-    if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+    if (needsClip && !useClipMask) {
         svgParts.push(createNulls.createNullRegions(contourResult, options));
     }
 

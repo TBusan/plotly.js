@@ -10,5 +10,7 @@ module.exports = {
     generateNullMask: require('./mask'),
     isValidValue: require('./validate'),
     findEmpties: require('./find_empties'),
-    interp2d: require('./interp2d')
+    interp2d: require('./interp2d'),
+    generateClipPath: require('./clip_mask').generateClipPath,
+    makeBinaryMask: require('./clip_mask').makeBinaryMask
 };

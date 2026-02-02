@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 渲染示例 - Contour-Core</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .demo-section {
+            margin: 30px 0;
+        }
+        .demo-section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .render-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        #svgOutput {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn.active {
+            background: #48bb78;
+        }
+        .btn-secondary {
+            background: #718096;
+        }
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .string { color: #ce9178; }
+        .code-block .number { color: #b5cea8; }
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .option-item label {
+            font-size: 14px;
+            color: #555;
+        }
+        .option-item input[type="range"] {
+            width: 120px;
+        }
+        .option-item select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SVG 渲染示例</h1>
+        <p class="subtitle">使用 contour-core 生成 SVG 格式的等值线图</p>
+
+        <div class="demo-section">
+            <h2>渲染模式</h2>
+            <div class="controls">
+                <button class="btn active" onclick="setMode('fill')">填充模式</button>
+                <button class="btn" onclick="setMode('lines')">线条模式</button>
+                <button class="btn" onclick="setMode('heatmap')">热力图模式</button>
+            </div>
+
+            <div class="option-group">
+                <div class="option-item">
+                    <label>颜色方案:</label>
+                    <select id="colorscale" onchange="updateRender()">
+                        <option value="Viridis">Viridis</option>
+                        <option value="Plasma">Plasma</option>
+                        <option value="Hot">Hot</option>
+                        <option value="Jet">Jet</option>
+                        <option value="Earth">Earth</option>
+                        <option value="Electric">Electric</option>
+                    </select>
+                </div>
+                <div class="option-item">
+                    <label>等值线数量:</label>
+                    <select id="ncontours" onchange="updateRender()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15" selected>15</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                    </select>
+                </div>
+                <div class="option-item">
+                    <label>平滑系数:</label>
+                    <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.5" oninput="updateRender()">
+                    <span id="smoothingValue">0.5</span>
+                </div>
+                <div class="option-item">
+                    <label>线条宽度:</label>
+                    <input type="range" id="lineWidth" min="0.5" max="3" step="0.5" value="1.5" oninput="updateRender()">
+                    <span id="lineWidthValue">1.5</span>
+                </div>
+            </div>
+
+            <div class="render-container">
+                <div id="svgOutput"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="pathCount">0</div>
+                    <div class="stat-label">路径数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="svgSize">0 KB</div>
+                    <div class="stat-label">SVG 大小</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="renderTime">0 ms</div>
+                    <div class="stat-label">渲染时间</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>使用方法</h2>
+            <div class="code-block">
+<span class="comment">// 1. 引入库</span>
+<span class="keyword">const</span> contourCore = <span class="keyword">require</span>(<span class="string">'./contour-core'</span>);
+
+<span class="comment">// 2. 计算等值线</span>
+<span class="keyword">const</span> result = contourCore.computeContours(grid, {
+    autocontour: <span class="keyword">true</span>,
+    ncontours: <span class="number">15</span>,
+    smoothing: <span class="number">0.5</span>
+});
+
+<span class="comment">// 3. 生成 SVG 字符串</span>
+<span class="keyword">const</span> svgString = contourCore.renderers.svg.renderSVG(result, {
+    width: <span class="number">600</span>,
+    height: <span class="number">400</span>,
+    coloring: <span class="string">'fill'</span>,
+    colorscale: <span class="string">'Viridis'</span>,
+    lineWidth: <span class="number">1.5</span>
+});
+
+<span class="comment">// 4. 插入 DOM</span>
+document.getElementById(<span class="string">'container'</span>).innerHTML = svgString;
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>SVG 优势</h2>
+            <div class="info-box">
+                <strong>矢量图形</strong> - 无限缩放不失真，适合打印和高清显示<br>
+                <strong>可交互</strong> - 每条路径都是独立的 DOM 元素，可添加事件监听<br>
+                <strong>可编辑</strong> - 可以使用 CSS 样式控制外观<br>
+                <strong>文件体积小</strong> - 纯文本格式，易于压缩和传输<br>
+                <strong>SSR 友好</strong> - 可以在服务端生成完整的 SVG 字符串
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>导出 SVG</h2>
+            <div class="controls">
+                <button class="btn btn-secondary" onclick="copySVG()">复制 SVG 代码</button>
+                <button class="btn btn-secondary" onclick="downloadSVG()">下载 SVG 文件</button>
+            </div>
+            <div class="info-box" id="copyStatus" style="display: none;"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>更多示例</h2>
+            <div style="text-align: center;">
+                <button class="btn" onclick="location.href='simple.html'">快速入门</button>
+                <button class="btn" onclick="location.href='basic.html'">基本等值线</button>
+                <button class="btn" onclick="location.href='heatmap.html'">热力图</button>
+                <button class="btn" onclick="location.href='index.html'">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色定义
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        var currentMode = 'fill';
+        var currentSVG = '';
+        var contourResult = null;
+
+        // 生成演示数据 - 多峰高斯分布
+        function generateDemoGrid() {
+            var size = 30;
+            var grid = { z: [], x: [], y: [] };
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    // 主峰 (偏左上)
+                    var dx1 = j - size * 0.3;
+                    var dy1 = i - size * 0.3;
+                    var peak1 = 100 * Math.exp(-(dx1 * dx1 + dy1 * dy1) / 50);
+
+                    // 次峰 (偏右下)
+                    var dx2 = j - size * 0.7;
+                    var dy2 = i - size * 0.7;
+                    var peak2 = 60 * Math.exp(-(dx2 * dx2 + dy2 * dy2) / 30);
+
+                    // 小峰 (右上)
+                    var dx3 = j - size * 0.8;
+                    var dy3 = i - size * 0.2;
+                    var peak3 = 40 * Math.exp(-(dx3 * dx3 + dy3 * dy3) / 20);
+
+                    // 添加一些波动
+                    var wave = 10 * Math.sin(i * 0.3) * Math.cos(j * 0.3);
+
+                    grid.z[i][j] = peak1 + peak2 + peak3 + wave;
+                }
+            }
+            return grid;
+        }
+
+        // 解析颜色方案
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        // 构建颜色映射
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // 设置渲染模式
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            updateRender();
+        }
+
+        // 更新渲染
+        function updateRender() {
+            var startTime = performance.now();
+
+            // 获取选项
+            var colorscale = document.getElementById('colorscale').value;
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+            var smoothing = parseFloat(document.getElementById('smoothing').value);
+            var lineWidth = parseFloat(document.getElementById('lineWidth').value);
+
+            // 更新显示值
+            document.getElementById('smoothingValue').textContent = smoothing.toFixed(1);
+            document.getElementById('lineWidthValue').textContent = lineWidth.toFixed(1);
+
+            // 生成数据
+            var grid = generateDemoGrid();
+
+            // 计算等值线
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: smoothing
+            };
+
+            contourResult = contourCore.computeContours(grid, options);
+
+            // 准备颜色映射
+            var colorScale = parseColorScale(colorscale);
+            var mappedColors = buildColorScale(contourResult.levels, colorScale);
+
+            // 生成 SVG
+            var renderOptions = {
+                width: 600,
+                height: 400,
+                padding: 30,
+                coloring: currentMode,
+                colorScale: mappedColors,
+                colorscale: colorscale,
+                lineWidth: lineWidth,
+                showLines: currentMode !== 'heatmap',
+                z: grid.z,
+                x: grid.x,
+                y: grid.y
+            };
+
+            currentSVG = contourCore.renderers.svg.renderSVG(contourResult, renderOptions);
+
+            // 更新显示
+            document.getElementById('svgOutput').innerHTML = currentSVG;
+
+            var endTime = performance.now();
+
+            // 更新统计
+            var pathCount = 0;
+            contourResult.paths.forEach(function(p) {
+                pathCount += p.paths.length + p.edgepaths.length;
+            });
+            document.getElementById('pathCount').textContent = pathCount;
+
+            var svgSize = new Blob([currentSVG]).size;
+            document.getElementById('svgSize').textContent = (svgSize / 1024).toFixed(1) + ' KB';
+
+            document.getElementById('renderTime').textContent = (endTime - startTime).toFixed(1) + ' ms';
+        }
+
+        // 复制 SVG 代码
+        function copySVG() {
+            var statusEl = document.getElementById('copyStatus');
+            statusEl.style.display = 'block';
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(currentSVG).then(function() {
+                    statusEl.textContent = '✓ SVG 代码已复制到剪贴板！';
+                    statusEl.style.background = '#d4edda';
+                    statusEl.style.borderLeftColor = '#28a745';
+                    setTimeout(function() {
+                        statusEl.style.display = 'none';
+                    }, 2000);
+                }).catch(function() {
+                    statusEl.textContent = '✗ 复制失败，请手动复制';
+                    statusEl.style.background = '#f8d7da';
+                    statusEl.style.borderLeftColor = '#dc3545';
+                });
+            } else {
+                // Fallback
+                var textarea = document.createElement('textarea');
+                textarea.value = currentSVG;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                statusEl.textContent = '✓ SVG 代码已复制到剪贴板！';
+                statusEl.style.background = '#d4edda';
+                statusEl.style.borderLeftColor = '#28a745';
+                setTimeout(function() {
+                    statusEl.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // 下载 SVG 文件
+        function downloadSVG() {
+            var blob = new Blob([currentSVG], { type: 'image/svg+xml' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'contour-' + currentMode + '-' + Date.now() + '.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 初始化
+        updateRender();
+    </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ var drawLabels = require('./labels');
 var drawColorbar = require('./colorbar');
 var drawNulls = require('./nulls');
 var drawHeatmap = require('./heatmap');
+var nullHandling = require('../../null_handling');
 
 /**
  * Draw contours on a canvas context
@@ -25,12 +26,21 @@ function drawContours(ctx, contourResult, style) {
     var coloring = style.coloring || 'lines';
     var showLines = style.showLines !== false;
     var smoothing = style.smoothing || 0;
+    var useClipMask = style.useClipMask !== false; // Enable clipPath by default for smoother null masking
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // NOTE: Draw null regions AFTER contours to mask them out
-    // This ensures contours don't appear in null regions
+    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
+    var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
+
+    // Apply clip path if needed (using marching squares for smooth boundary)
+    if (needsClip && useClipMask) {
+        var clipPathData = nullHandling.generateClipPath(contourResult, style);
+        if (clipPathData) {
+            applyCanvasClip(ctx, clipPathData, width, height);
+        }
+    }
 
     // Draw heatmap background if coloring mode is 'heatmap'
     if (coloring === 'heatmap') {
@@ -54,6 +64,11 @@ function drawContours(ctx, contourResult, style) {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
     }
 
+    // Restore context (remove clip)
+    if (needsClip && useClipMask) {
+        ctx.restore();
+    }
+
     // Draw labels (if enabled)
     if (style.showLabels) {
         drawLabels(ctx, contourResult, style);
@@ -64,12 +79,102 @@ function drawContours(ctx, contourResult, style) {
         drawColorbar(ctx, contourResult, style);
     }
 
-    // Draw null regions LAST to mask out contours in null areas
-    // This ensures contours don't cross into null regions
+    // Draw null regions as fallback (rectangles) when clipPath is not used
     // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
-    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
-    if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+    if (needsClip && !useClipMask) {
         drawNulls(ctx, contourResult, style);
+    }
+}
+
+/**
+ * Apply SVG path data as a clipping region to canvas context
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {String} pathData - SVG path data string
+ * @param {Number} width - Canvas width
+ * @param {Number} height - Canvas height
+ */
+function applyCanvasClip(ctx, pathData, width, height) {
+    ctx.save();
+
+    // Parse SVG path data and create canvas path
+    parseSVGPathToCanvas(ctx, pathData);
+
+    // Apply clipping
+    ctx.clip();
+}
+
+/**
+ * Parse SVG path data and draw it on canvas
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+ * @param {String} pathData - SVG path data string
+ */
+function parseSVGPathToCanvas(ctx, pathData) {
+    var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
+    var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
+
+    var currentX = 0, currentY = 0;
+    var startX = 0, startY = 0;
+
+    ctx.beginPath();
+
+    for (var i = 0; i < types.length; i++) {
+        var type = types[i];
+        var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
+
+        switch (type) {
+            case 'M':
+                ctx.moveTo(args[0], args[1]);
+                currentX = args[0];
+                currentY = args[1];
+                startX = args[0];
+                startY = args[1];
+                break;
+            case 'm':
+                ctx.moveTo(currentX + args[0], currentY + args[1]);
+                currentX += args[0];
+                currentY += args[1];
+                startX = currentX;
+                startY = currentY;
+                break;
+            case 'L':
+                ctx.lineTo(args[0], args[1]);
+                currentX = args[0];
+                currentY = args[1];
+                break;
+            case 'l':
+                ctx.lineTo(currentX + args[0], currentY + args[1]);
+                currentX += args[0];
+                currentY += args[1];
+                break;
+            case 'H':
+                ctx.lineTo(args[0], currentY);
+                currentX = args[0];
+                break;
+            case 'h':
+                ctx.lineTo(currentX + args[0], currentY);
+                currentX += args[0];
+                break;
+            case 'V':
+                ctx.lineTo(currentX, args[0]);
+                currentY = args[0];
+                break;
+            case 'v':
+                ctx.lineTo(currentX, currentY + args[0]);
+                currentY += args[0];
+                break;
+            case 'Z':
+            case 'z':
+                ctx.closePath();
+                currentX = startX;
+                currentY = startY;
+                break;
+            default:
+                // For arc and bezier commands, simplify to line to for now
+                if (args.length >= 2) {
+                    ctx.lineTo(args[args.length - 2], args[args.length - 1]);
+                }
+                break;
+        }
     }
 }
 

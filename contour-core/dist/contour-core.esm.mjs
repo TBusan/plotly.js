@@ -821,20 +821,6 @@ var require_interp2d = __commonJS({
   }
 });
 
-// null_handling/index.js
-var require_null_handling = __commonJS({
-  "null_handling/index.js"(exports, module) {
-    "use strict";
-    module.exports = {
-      normalizeNullValues: require_normalize(),
-      generateNullMask: require_mask(),
-      isValidValue: require_validate(),
-      findEmpties: require_find_empties(),
-      interp2d: require_interp2d()
-    };
-  }
-});
-
 // close_boundaries.js
 var require_close_boundaries = __commonJS({
   "close_boundaries.js"(exports, module) {
@@ -903,6 +889,209 @@ var require_close_boundaries = __commonJS({
       }
     }
     module.exports = closeBoundaries;
+  }
+});
+
+// null_handling/clip_mask.js
+var require_clip_mask = __commonJS({
+  "null_handling/clip_mask.js"(exports, module) {
+    "use strict";
+    var marchingSquares = require_marchingsquares();
+    var pathFinding = require_pathfinding();
+    var closeBoundaries = require_close_boundaries();
+    function makeBinaryMask(nullMask) {
+      if (!nullMask) return null;
+      var m = nullMask.length;
+      var n = nullMask[0].length;
+      var binaryMask = [];
+      for (var i = 0; i < m; i++) {
+        var row = [];
+        for (var j = 0; j < n; j++) {
+          row.push(nullMask[i][j] ? 0 : 1);
+        }
+        binaryMask.push(row);
+      }
+      return binaryMask;
+    }
+    function generateClipPath(contourResult, options) {
+      options = options || {};
+      var nullMask = contourResult.nullMask;
+      if (!nullMask || contourResult.nullCount === 0) {
+        return null;
+      }
+      var binaryMask = makeBinaryMask(nullMask);
+      if (!binaryMask) return null;
+      var m = binaryMask.length;
+      var n = binaryMask[0].length;
+      var width = options.width || 500;
+      var height = options.height || 400;
+      var padding = options.padding || 30;
+      var x = [];
+      var y = [];
+      for (var i = 0; i < n; i++) x.push(i);
+      for (var j = 0; j < m; j++) y.push(j);
+      var clipPathInfo = {
+        level: 0.9,
+        crossings: {},
+        starts: [],
+        edgepaths: [],
+        paths: [],
+        z: binaryMask,
+        x,
+        y,
+        smoothing: 0
+      };
+      marchingSquares.makeCrossings([clipPathInfo]);
+      pathFinding.findAllPaths([clipPathInfo], 0.01, 0.01);
+      closeBoundaries([clipPathInfo], { type: "levels" });
+      return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
+    }
+    function pathToSVG(path, isClosed) {
+      if (!path || path.length === 0) return "";
+      var d = "M " + path[0][0] + " " + path[0][1];
+      for (var i = 1; i < path.length; i++) {
+        d += " L " + path[i][0] + " " + path[i][1];
+      }
+      if (isClosed) {
+        d += " Z";
+      }
+      return d;
+    }
+    function createClipPathSVG(clipPathInfo, width, height, padding, m, n) {
+      var perimeter = createPerimeter(width, height, padding);
+      var scaleX = (width - 2 * padding) / (n - 1);
+      var scaleY = (height - 2 * padding) / (m - 1);
+      function scalePath(path) {
+        return path.map(function(pt) {
+          return [
+            padding + pt[0] * scaleX,
+            padding + (m - 1 - pt[1]) * scaleY
+          ];
+        });
+      }
+      var boundaryPath = "M" + perimeter.join("L") + "Z";
+      var joinedPaths = joinAllPaths(clipPathInfo, perimeter, scalePath, pathToSVG);
+      var fullpath = "";
+      if (clipPathInfo.prefixBoundary) {
+        fullpath = boundaryPath + joinedPaths;
+      } else {
+        fullpath = joinedPaths;
+      }
+      return fullpath;
+    }
+    function createPerimeter(width, height, padding) {
+      var xMin = padding;
+      var xMax = width - padding;
+      var yMin = padding;
+      var yMax = height - padding;
+      return [
+        [xMin, yMin],
+        // 0: top-left
+        [xMax, yMin],
+        // 1: top-right
+        [xMax, yMax],
+        // 2: bottom-right
+        [xMin, yMax]
+        // 3: bottom-left
+      ];
+    }
+    function joinAllPaths(pathInfo, perimeter, scalePath, pathToSVGFn) {
+      var fullpath = "";
+      var edgepaths = pathInfo.edgepaths;
+      if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+        return "";
+      }
+      var i = 0;
+      var startsleft = edgepaths.map(function(v, idx) {
+        return idx;
+      });
+      var newloop = true;
+      var endpt;
+      var newendpt;
+      var cnt;
+      var nexti;
+      var possiblei;
+      var addpath;
+      function istop(pt) {
+        return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
+      }
+      function isbottom(pt) {
+        return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
+      }
+      function isleft(pt) {
+        return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
+      }
+      function isright(pt) {
+        return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
+      }
+      while (startsleft.length > 0) {
+        var scaledPath = scalePath(edgepaths[i]);
+        addpath = pathToSVGFn(scaledPath, false);
+        fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+        startsleft.splice(startsleft.indexOf(i), 1);
+        endpt = scaledPath[scaledPath.length - 1];
+        nexti = -1;
+        for (cnt = 0; cnt < 4; cnt++) {
+          if (!endpt) break;
+          if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+          else if (isleft(endpt)) newendpt = perimeter[0];
+          else if (isbottom(endpt)) newendpt = perimeter[3];
+          else if (isright(endpt)) newendpt = perimeter[2];
+          for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
+            var ptNew = scalePath(edgepaths[possiblei])[0];
+            if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
+              if (Math.abs(endpt[0] - ptNew[0]) < 0.1 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                newendpt = ptNew;
+                nexti = possiblei;
+              }
+            } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
+              if (Math.abs(endpt[1] - ptNew[1]) < 0.1 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                newendpt = ptNew;
+                nexti = possiblei;
+              }
+            }
+          }
+          endpt = newendpt;
+          if (nexti >= 0) break;
+          fullpath += "L" + newendpt[0] + " " + newendpt[1];
+        }
+        if (nexti === edgepaths.length || nexti < 0) break;
+        i = nexti;
+        newloop = startsleft.indexOf(i) === -1;
+        if (newloop) {
+          if (startsleft.length > 0) {
+            i = startsleft[0];
+          }
+          fullpath += "Z";
+        }
+      }
+      for (i = 0; i < pathInfo.paths.length; i++) {
+        var scaledPath = scalePath(pathInfo.paths[i]);
+        fullpath += pathToSVGFn(scaledPath, true);
+      }
+      return fullpath;
+    }
+    module.exports = {
+      generateClipPath,
+      makeBinaryMask,
+      createClipPathSVG
+    };
+  }
+});
+
+// null_handling/index.js
+var require_null_handling = __commonJS({
+  "null_handling/index.js"(exports, module) {
+    "use strict";
+    module.exports = {
+      normalizeNullValues: require_normalize(),
+      generateNullMask: require_mask(),
+      isValidValue: require_validate(),
+      findEmpties: require_find_empties(),
+      interp2d: require_interp2d(),
+      generateClipPath: require_clip_mask().generateClipPath,
+      makeBinaryMask: require_clip_mask().makeBinaryMask
+    };
   }
 });
 
@@ -2606,6 +2795,7 @@ var require_canvas = __commonJS({
     var drawColorbar = require_colorbar2();
     var drawNulls = require_nulls();
     var drawHeatmap = require_heatmap();
+    var nullHandling = require_null_handling();
     function drawContours(ctx, contourResult, style) {
       style = style || {};
       var width = style.width || ctx.canvas.width;
@@ -2613,7 +2803,16 @@ var require_canvas = __commonJS({
       var coloring = style.coloring || "lines";
       var showLines = style.showLines !== false;
       var smoothing = style.smoothing || 0;
+      var useClipMask = style.useClipMask !== false;
       ctx.clearRect(0, 0, width, height);
+      var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
+      var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
+      if (needsClip && useClipMask) {
+        var clipPathData = nullHandling.generateClipPath(contourResult, style);
+        if (clipPathData) {
+          applyCanvasClip(ctx, clipPathData, width, height);
+        }
+      }
       if (coloring === "heatmap") {
         drawHeatmap.drawInterpolatedHeatmap(ctx, {
           z: contourResult.pathinfo[0].z,
@@ -2627,15 +2826,86 @@ var require_canvas = __commonJS({
       if (showLines && coloring === "lines") {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
       }
+      if (needsClip && useClipMask) {
+        ctx.restore();
+      }
       if (style.showLabels) {
         drawLabels(ctx, contourResult, style);
       }
       if (style.colorbar !== false && coloring !== "lines") {
         drawColorbar(ctx, contourResult, style);
       }
-      var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
-      if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+      if (needsClip && !useClipMask) {
         drawNulls(ctx, contourResult, style);
+      }
+    }
+    function applyCanvasClip(ctx, pathData, width, height) {
+      ctx.save();
+      parseSVGPathToCanvas(ctx, pathData);
+      ctx.clip();
+    }
+    function parseSVGPathToCanvas(ctx, pathData) {
+      var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
+      var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
+      var currentX = 0, currentY = 0;
+      var startX = 0, startY = 0;
+      ctx.beginPath();
+      for (var i = 0; i < types.length; i++) {
+        var type = types[i];
+        var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
+        switch (type) {
+          case "M":
+            ctx.moveTo(args[0], args[1]);
+            currentX = args[0];
+            currentY = args[1];
+            startX = args[0];
+            startY = args[1];
+            break;
+          case "m":
+            ctx.moveTo(currentX + args[0], currentY + args[1]);
+            currentX += args[0];
+            currentY += args[1];
+            startX = currentX;
+            startY = currentY;
+            break;
+          case "L":
+            ctx.lineTo(args[0], args[1]);
+            currentX = args[0];
+            currentY = args[1];
+            break;
+          case "l":
+            ctx.lineTo(currentX + args[0], currentY + args[1]);
+            currentX += args[0];
+            currentY += args[1];
+            break;
+          case "H":
+            ctx.lineTo(args[0], currentY);
+            currentX = args[0];
+            break;
+          case "h":
+            ctx.lineTo(currentX + args[0], currentY);
+            currentX += args[0];
+            break;
+          case "V":
+            ctx.lineTo(currentX, args[0]);
+            currentY = args[0];
+            break;
+          case "v":
+            ctx.lineTo(currentX, currentY + args[0]);
+            currentY += args[0];
+            break;
+          case "Z":
+          case "z":
+            ctx.closePath();
+            currentX = startX;
+            currentY = startY;
+            break;
+          default:
+            if (args.length >= 2) {
+              ctx.lineTo(args[args.length - 2], args[args.length - 1]);
+            }
+            break;
+        }
       }
     }
     module.exports = {
@@ -3360,21 +3630,40 @@ var require_svg = __commonJS({
     var createLabels = require_labels3();
     var createColorbar = require_colorbar3();
     var createNulls = require_nulls2();
+    var nullHandling = require_null_handling();
     function renderSVG(contourResult, options) {
       options = options || {};
       var width = options.width || 500;
       var height = options.height || 400;
       var coloring = options.coloring || "fill";
       var showLines = options.showLines !== false;
+      var useClipMask = options.useClipMask !== false;
       var svgParts = [];
+      var clipId = "clip" + Date.now() + Math.floor(Math.random() * 1e4);
       svgParts.push(
         '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '">'
       );
+      var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
+      var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
+      if (needsClip && useClipMask) {
+        var clipPathData = nullHandling.generateClipPath(contourResult, options);
+        if (clipPathData) {
+          svgParts.push(
+            '<defs><clipPath id="' + clipId + '"><path d="' + clipPathData + '" fill="none" stroke="none"/></clipPath></defs>'
+          );
+        }
+      }
+      if (needsClip && useClipMask) {
+        svgParts.push('<g clip-path="url(#' + clipId + ')">');
+      }
       if (coloring === "fill" || coloring === "heatmap") {
         svgParts.push(createPaths.createFilledPaths(contourResult, options));
       }
       if (showLines && coloring !== "heatmap") {
         svgParts.push(createPaths.createStrokePaths(contourResult, options));
+      }
+      if (needsClip && useClipMask) {
+        svgParts.push("</g>");
       }
       if (options.showLabels) {
         svgParts.push(createLabels.createLabels(contourResult, options));
@@ -3382,8 +3671,7 @@ var require_svg = __commonJS({
       if (options.colorbar !== false && coloring !== "lines") {
         svgParts.push(createColorbar.createColorbar(contourResult, options));
       }
-      var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
-      if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+      if (needsClip && !useClipMask) {
         svgParts.push(createNulls.createNullRegions(contourResult, options));
       }
       svgParts.push("</svg>");

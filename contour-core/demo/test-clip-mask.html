@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clip Mask 对比测试 - Contour-Core</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #667eea;
+            text-align: center;
+        }
+        .canvas-wrapper, .svg-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .svg-wrapper svg {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .data-display {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Clip Mask 对比测试</h1>
+        <p class="subtitle">对比矩形遮罩 vs. Marching Squares 平滑遮罩</p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>渲染模式</label>
+                <select id="renderMode">
+                    <option value="fill">填充模式</option>
+                    <option value="lines">线条模式</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>connectgaps</label>
+                <select id="connectgaps">
+                    <option value="true" selected>true (显示插值)</option>
+                    <option value="false">false (遮罩插值)</option>
+                </select>
+            </div>
+            <button onclick="updateRender()">更新渲染</button>
+        </div>
+
+        <div class="info-box">
+            <strong>说明：</strong><br>
+            • 左侧：使用新的 marching squares clipPath 遮罩（平滑边界）<br>
+            • 右侧：使用传统矩形遮罩（网格边界）<br>
+            • 设置 connectgaps=false 来观察遮罩效果
+        </div>
+
+        <div class="comparison">
+            <div class="panel">
+                <h3>Canvas (Clip Mask)</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasClip" width="500" height="400"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Canvas (矩形遮罩)</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasRect" width="500" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison">
+            <div class="panel">
+                <h3>SVG (Clip Mask)</h3>
+                <div class="svg-wrapper" id="svgClip"></div>
+            </div>
+            <div class="panel">
+                <h3>SVG (矩形遮罩)</h3>
+                <div class="svg-wrapper" id="svgRect"></div>
+            </div>
+        </div>
+
+        <div class="data-display" id="dataDisplay"></div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725']
+        };
+
+        // 测试数据 - 包含空值的7x8网格
+        var testData = [
+            [null, null, null, 12, 13, 14, 15, 16],
+            [null, 1, null, 11, null, null, null, 17],
+            [null, 2, 6, 7, null, null, null, 18],
+            [null, 3, null, 8, null, null, null, 19],
+            [5, 4, 10, 9, null, null, null, 20],
+            [null, null, null, 27, null, null, null, 21],
+            [null, null, null, 26, 25, 24, 23, 22]
+        ];
+
+        function createGrid(zData) {
+            var m = zData.length;
+            var n = zData[0].length;
+            var grid = { z: zData, x: [], y: [] };
+            for (var i = 0; i < n; i++) grid.x.push(i);
+            for (var j = 0; j < m; j++) grid.y.push(j);
+            return grid;
+        }
+
+        function parseColorScale(colorscale) {
+            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
+            return colors.map(function(color, i) {
+                return [i / (colors.length - 1), color];
+            });
+        }
+
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colorScale.length - 1));
+                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        function updateRender() {
+            var mode = document.getElementById('renderMode').value;
+            var connectGaps = document.getElementById('connectgaps').value === 'true';
+
+            var grid = createGrid(testData);
+            var options = {
+                autocontour: true,
+                ncontours: 10,
+                smoothing: 0.3,
+                connectgaps: connectGaps
+            };
+
+            var result = contourCore.computeContours(grid, options);
+
+            var colorScale = parseColorScale('Viridis');
+            var mappedColors = buildColorScale(result.levels, colorScale);
+
+            var style = {
+                width: 500,
+                height: 400,
+                padding: 40,
+                coloring: mode,
+                colorScale: mappedColors,
+                smoothing: 0.3,
+                showLines: mode === 'lines',
+                lineWidth: 1.5,
+                z: grid.z,
+                x: grid.x,
+                y: grid.y,
+                useClipMask: true  // 启用新的 clip mask
+            };
+
+            // Canvas - 使用 clip mask
+            var ctx1 = document.getElementById('canvasClip').getContext('2d');
+            ctx1.clearRect(0, 0, 500, 400);
+            contourCore.renderers.canvas.drawContours(ctx1, result, style);
+
+            // Canvas - 使用矩形遮罩
+            var ctx2 = document.getElementById('canvasRect').getContext('2d');
+            ctx2.clearRect(0, 0, 500, 400);
+            style.useClipMask = false;
+            contourCore.renderers.canvas.drawContours(ctx2, result, style);
+
+            // SVG - 使用 clip mask
+            style.useClipMask = true;
+            var svg1 = contourCore.renderers.svg.renderSVG(result, style);
+            document.getElementById('svgClip').innerHTML = svg1;
+
+            // SVG - 使用矩形遮罩
+            style.useClipMask = false;
+            var svg2 = contourCore.renderers.svg.renderSVG(result, style);
+            document.getElementById('svgRect').innerHTML = svg2;
+
+            // 显示数据信息
+            document.getElementById('dataDisplay').textContent =
+                '数据: 7×8 网格\n' +
+                '空值数量: ' + result.nullCount + '\n' +
+                '等值线级别: ' + result.levels.length + '\n' +
+                'connectgaps: ' + connectGaps;
+        }
+
+        // 初始化
+        updateRender();
+    </script>
+</body>
+</html>
