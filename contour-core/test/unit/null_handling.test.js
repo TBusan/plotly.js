@@ -18,8 +18,12 @@ var grid = [
 var result = nullHandling.normalizeNullValues(grid);
 console.assert(result.nullCount === 3, 'Should have 3 null values');
 console.assert(result.validCount === 6, 'Should have 6 valid values');
-console.assert(result.cleanedGrid[0][1] !== result.cleanedGrid[0][1], 'null should become NaN');
-console.log('✓ normalizeNullValues works\n');
+// IMPORTANT: After fix, invalid values are now undefined (not NaN) to match plotly.js
+// This allows findEmpties to correctly identify them
+console.assert(result.cleanedGrid[0][1] === undefined, 'null should become undefined');
+console.assert(result.cleanedGrid[1][0] === undefined, 'undefined should stay undefined');
+console.assert(result.cleanedGrid[1][2] === undefined, 'NaN should become undefined');
+console.log('✓ normalizeNullValues works (uses undefined, not NaN)\n');
 
 // Test 2: generateNullMask
 console.log('Test 2: generateNullMask');

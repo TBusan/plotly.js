@@ -224,11 +224,16 @@ function createFilledPaths(contourResult, options) {
 
     var svgParts = [];
 
-    // First, add the background rectangle with the lowest level color
-    // This ensures the base layer is filled
+    // First, add the background rectangle within data area only
+    // This ensures the base layer is filled ONLY within the data bounds (perimeter)
     if (paths.length > 0) {
         var bgColor = getColorForLevel(levels[0], levels, options);
-        svgParts.push('<rect x="0" y="0" width="' + width + '" height="' + height + '" ' +
+        var xMin = perimeter[0][0];
+        var yMin = perimeter[0][1];
+        var bgWidth = perimeter[1][0] - perimeter[0][0];
+        var bgHeight = perimeter[2][1] - perimeter[0][1];
+        svgParts.push('<rect x="' + xMin + '" y="' + yMin + '" ' +
+                     'width="' + bgWidth + '" height="' + bgHeight + '" ' +
                      'fill="' + bgColor + '" stroke="none" />');
     }
 

@@ -16,7 +16,6 @@ var constants = require('./constants');
  */
 function makeCrossings(pathinfo) {
     var z = pathinfo[0].z;
-    var nullMask = pathinfo[0].nullMask;
     var m = z.length;
     var n = z[0].length;
     var twoWide = m === 2 || n === 2;
@@ -32,27 +31,9 @@ function makeCrossings(pathinfo) {
             if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
             if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
 
-            // Check if any corner has a null value
-            var hasNull = false;
-            if (nullMask) {
-                if (nullMask[yi][xi] || nullMask[yi][xi + 1] ||
-                    nullMask[yi + 1][xi] || nullMask[yi + 1][xi + 1]) {
-                    hasNull = true;
-                }
-            }
-
-            // Also check for NaN values in z
+            // Get corner values for this cell
             corners = [[z[yi][xi], z[yi][xi + 1]],
                        [z[yi + 1][xi], z[yi + 1][xi + 1]]];
-            if (!hasNull) {
-                if (isNaN(corners[0][0]) || isNaN(corners[0][1]) ||
-                    isNaN(corners[1][0]) || isNaN(corners[1][1])) {
-                    hasNull = true;
-                }
-            }
-
-            // Skip this cell if it has null values
-            if (hasNull) continue;
 
             label = xi + ',' + yi;
 

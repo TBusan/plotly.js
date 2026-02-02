@@ -4,12 +4,14 @@ var isValidValue = require('./validate');
 
 /**
  * Normalize null values in a grid
- * Converts all invalid values (null, undefined, NaN) to NaN
- * and generates statistics about the null values
+ * Converts all invalid values (null, undefined, NaN) to undefined
+ * to match plotly.js behavior where findEmpties checks for === undefined
+ *
+ * Based on plotly.js src/traces/heatmap/clean_2d_array.js
  *
  * @param {Array} grid - 2D array of values (may contain null/undefined/NaN)
  * @returns {Object} Normalization result containing:
- *   - cleanedGrid: 2D array with all invalid values converted to NaN
+ *   - cleanedGrid: 2D array with all invalid values converted to undefined
  *   - nullMask: 2D boolean array (true = null position)
  *   - nullCount: Total number of null values
  *   - validCount: Total number of valid values
@@ -37,9 +39,14 @@ function normalizeNullValues(grid) {
         var maskRow = [];
 
         if (!row || !Array.isArray(row)) {
-            // Handle missing rows
-            cleanedGrid.push(new Array(n).fill(NaN));
-            nullMask.push(new Array(n).fill(true));
+            // Handle missing rows - fill with undefined (not NaN)
+            cleanedRow.length = n;
+            for (var j = 0; j < n; j++) {
+                cleanedRow[j] = undefined;
+                maskRow[j] = true;
+            }
+            cleanedGrid.push(cleanedRow);
+            nullMask.push(maskRow);
             nullCount += n;
             continue;
         }
@@ -52,7 +59,9 @@ function normalizeNullValues(grid) {
                 maskRow.push(false);
                 validCount++;
             } else {
-                cleanedRow.push(NaN);
+                // IMPORTANT: Use undefined (not NaN) to match plotly.js
+                // findEmpties checks specifically for === undefined
+                cleanedRow.push(undefined);
                 maskRow.push(true);
                 nullCount++;
             }

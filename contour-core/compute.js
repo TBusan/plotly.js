@@ -10,6 +10,8 @@ var marchingSquares = require('./marchingsquares');
 var pathFinding = require('./pathfinding');
 var nullHandling = require('./null_handling');
 var closeBoundaries = require('./close_boundaries');
+var findEmpties = require('./null_handling/find_empties');
+var interp2d = require('./null_handling/interp2d');
 
 /**
  * Compute contours from a 2D grid of values
@@ -40,6 +42,17 @@ function computeContours(grid, options) {
     var x = grid.x || createIndexArray(n);
     var y = grid.y || createIndexArray(m);
 
+    // Interpolate to fill in null values (like plotly.js does)
+    // IMPORTANT: In plotly.js, contours ALWAYS interpolate, regardless of connectgaps setting
+    // The connectgaps option only controls whether to MASK the interpolated regions in rendering
+    var connectGaps = options.connectgaps !== undefined ? options.connectgaps : true;
+
+    // Always interpolate for contours (matching plotly.js behavior)
+    var emptyPoints = findEmpties(cleanedZ);
+    if (emptyPoints.length > 0) {
+        cleanedZ = interp2d(cleanedZ, emptyPoints);
+    }
+
     // Compute contour levels
     var contourLevels = levels.setContours(options, cleanedZ);
 
@@ -64,7 +77,7 @@ function computeContours(grid, options) {
             z: cleanedZ,
             x: x,
             y: y,
-            nullMask: nullMask,
+            nullMask: nullMask,  // Always include nullMask for renderer reference
             smoothing: options.smoothing || 0
         };
     });
@@ -81,6 +94,7 @@ function computeContours(grid, options) {
     closeBoundaries(pathinfo, contourOptions);
 
     // Build result object
+    // Always include nullMask so renderer can decide whether to mask based on connectgaps
     return {
         levels: contourLevels,
         paths: pathinfo.map(function(pi) {
@@ -93,9 +107,10 @@ function computeContours(grid, options) {
             };
         }),
         pathinfo: pathinfo,
-        nullMask: nullMask,
+        nullMask: nullMask,  // Always include nullMask for renderer to use
         nullCount: normalization.nullCount,
-        validCount: normalization.validCount
+        validCount: normalization.validCount,
+        connectgaps: connectGaps  // Include connectgaps flag for renderer reference
     };
 }
 

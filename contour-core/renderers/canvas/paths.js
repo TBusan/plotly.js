@@ -11,7 +11,7 @@ var smooth = require('../../smooth');
  */
 function createPerimeter(style) {
     var m = style.z ? style.z.length : 10;
-    var n = style.z && style.z[0] ? style.z[0].length : 10;
+    var n = (style.z && style.z[0]) ? style.z[0].length : 10;
     var width = style.width || 500;
     var height = style.height || 400;
     var padding = style.padding || 30;
@@ -327,9 +327,13 @@ function drawFilledPaths(ctx, contourResult, style) {
         bgColor = getColorForValue(normalizedBg, colorScale);
     }
 
+    // Draw background layer only within data area (perimeter)
+    // This prevents filling outside the data bounds
     ctx.fillStyle = bgColor;
     ctx.beginPath();
-    ctx.rect(0, 0, width, height);
+    ctx.rect(perimeter[0][0], perimeter[0][1],
+             perimeter[1][0] - perimeter[0][0],
+             perimeter[2][1] - perimeter[0][1]);
     ctx.fill();
 
     // Draw each contour fill layer (LOWEST to HIGHEST)
@@ -479,6 +483,17 @@ function drawPathStroke(ctx, path, smoothing, isClosed, style) {
  * Scale point from DATA SPACE to canvas coordinates
  */
 function scalePoint(style, pt) {
+    // Validate inputs
+    if (!pt || !Array.isArray(pt) || pt.length < 2) {
+        console.warn('scalePoint: Invalid point', pt);
+        return [0, 0];
+    }
+
+    if (isNaN(pt[0]) || isNaN(pt[1])) {
+        console.warn('scalePoint: Point contains NaN', pt);
+        return [0, 0];
+    }
+
     var x = style.x || [];
     var y = style.y || [];
     var width = style.width || 500;

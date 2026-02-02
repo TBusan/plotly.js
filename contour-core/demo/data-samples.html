@@ -153,6 +153,13 @@
                 <option value="15">密集 (15)</option>
             </select>
         </div>
+        <div class="control-group">
+            <label for="connectgaps">空值处理 (仅数据2)</label>
+            <select id="connectgaps">
+                <option value="true" selected>连接空值 (connectgaps=true)</option>
+                <option value="false">遮罩空值 (connectgaps=false)</option>
+            </select>
+        </div>
         <button onclick="updateAll()">更新所有图表</button>
     </div>
 
@@ -213,15 +220,13 @@
    [11, 14, 17, 26, 25, 24, 23, 22]];
 
         // 数据2: 包含null值
-        var data2 = [
-            [null, null, null, 12, 13, 14, 15, 16],
-            [null, 1, null, 11, null, null, null, 17],
-            [null, 2, 6, 7, null, null, null, 18],
-            [null, 3, null, 8, null, null, null, 19],
-            [5, 4, 10, 9, null, null, null, 20],
-            [null, null, null, 27, null, null, null, 21],
-            [null, null, null, 26, 25, 24, 23, 22]
-        ];
+        var data2 = [[null, null, null, 12, 13, 14, 15, 16],
+      [null, 1, null, 11, null, null, null, 17],
+      [null, 2, 6, 7, null, null, null, 18],
+      [null, 3, null, 8, null, null, null, 19],
+      [5, 4, 10, 9, null, null, null, 20],
+      [null, null, null, 27, null, null, null, 21],
+      [null, null, null, 26, 25, 24, 23, 22]];
 
         // 解析颜色方案
         function parseColorScale(colorscale) {
@@ -330,6 +335,13 @@
                 smoothing: options.smoothing || 0,
                 showLines: options.mode !== 'fill',
                 lineWidth: 1.5,
+                nullRegion: {
+                    visible: true,
+                    fill: '#ffffff',
+                    stroke: '#dddddd',
+                    strokeWidth: 1,
+                    showStroke: true
+                },
                 z: grid.z,
                 x: grid.x,
                 y: grid.y
@@ -344,13 +356,15 @@
             var mode = document.getElementById('renderMode').value;
             var colorscale = document.getElementById('colorscale').value;
             var ncontours = parseInt(document.getElementById('ncontours').value);
+            var connectGaps = document.getElementById('connectgaps').value === 'true';
 
             var options = {
                 autocontour: true,
                 ncontours: ncontours,
                 smoothing: 0.3,
                 mode: mode,
-                colorscale: colorscale
+                colorscale: colorscale,
+                connectgaps: connectGaps
             };
 
             // 绘制数据1

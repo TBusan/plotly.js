@@ -242,7 +242,6 @@ var contourCore = (() => {
       var constants = require_constants();
       function makeCrossings(pathinfo) {
         var z = pathinfo[0].z;
-        var nullMask = pathinfo[0].nullMask;
         var m = z.length;
         var n = z[0].length;
         var twoWide = m === 2 || n === 2;
@@ -255,22 +254,10 @@ var contourCore = (() => {
             startIndices = ystartIndices.slice();
             if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
             if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
-            var hasNull = false;
-            if (nullMask) {
-              if (nullMask[yi][xi] || nullMask[yi][xi + 1] || nullMask[yi + 1][xi] || nullMask[yi + 1][xi + 1]) {
-                hasNull = true;
-              }
-            }
             corners = [
               [z[yi][xi], z[yi][xi + 1]],
               [z[yi + 1][xi], z[yi + 1][xi + 1]]
             ];
-            if (!hasNull) {
-              if (isNaN(corners[0][0]) || isNaN(corners[0][1]) || isNaN(corners[1][0]) || isNaN(corners[1][1])) {
-                hasNull = true;
-              }
-            }
-            if (hasNull) continue;
             label = xi + "," + yi;
             for (i = 0; i < pathinfo.length; i++) {
               pi = pathinfo[i];
@@ -605,8 +592,13 @@ var contourCore = (() => {
           var cleanedRow = [];
           var maskRow = [];
           if (!row || !Array.isArray(row)) {
-            cleanedGrid.push(new Array(n).fill(NaN));
-            nullMask.push(new Array(n).fill(true));
+            cleanedRow.length = n;
+            for (var j = 0; j < n; j++) {
+              cleanedRow[j] = void 0;
+              maskRow[j] = true;
+            }
+            cleanedGrid.push(cleanedRow);
+            nullMask.push(maskRow);
             nullCount += n;
             continue;
           }
@@ -617,7 +609,7 @@ var contourCore = (() => {
               maskRow.push(false);
               validCount++;
             } else {
-              cleanedRow.push(NaN);
+              cleanedRow.push(void 0);
               maskRow.push(true);
               nullCount++;
             }
@@ -666,6 +658,171 @@ var contourCore = (() => {
     }
   });
 
+  // null_handling/find_empties.js
+  var require_find_empties = __commonJS({
+    "null_handling/find_empties.js"(exports, module) {
+      "use strict";
+      function findEmpties(z) {
+        if (!z || z.length === 0) {
+          return [];
+        }
+        var empties = [];
+        var neighborHash = {};
+        var noNeighborList = [];
+        var rowLength = 0;
+        for (var i = 0; i < z.length; i++) {
+          if (z[i] && z[i].length > rowLength) {
+            rowLength = z[i].length;
+          }
+        }
+        var blank = [0, 0, 0];
+        var prevRow, row, nextRow;
+        for (var i = 0; i < z.length; i++) {
+          prevRow = row;
+          row = z[i];
+          nextRow = z[i + 1] || [];
+          for (var j = 0; j < rowLength; j++) {
+            if (row[j] === void 0) {
+              var neighborCount = (row[j - 1] !== void 0 ? 1 : 0) + (row[j + 1] !== void 0 ? 1 : 0) + (prevRow && prevRow[j] !== void 0 ? 1 : 0) + (nextRow && nextRow[j] !== void 0 ? 1 : 0);
+              if (neighborCount) {
+                if (i === 0) neighborCount++;
+                if (j === 0) neighborCount++;
+                if (i === z.length - 1) neighborCount++;
+                if (row && j === row.length - 1) neighborCount++;
+                if (neighborCount < 4) {
+                  neighborHash[[i, j]] = [i, j, neighborCount];
+                }
+                empties.push([i, j, neighborCount]);
+              } else {
+                noNeighborList.push([i, j]);
+              }
+            }
+          }
+        }
+        var newNeighborHash, foundNewNeighbors, thisPt, neighborCount;
+        while (noNeighborList.length) {
+          newNeighborHash = {};
+          foundNewNeighbors = false;
+          for (var p = noNeighborList.length - 1; p >= 0; p--) {
+            thisPt = noNeighborList[p];
+            var i = thisPt[0];
+            var j = thisPt[1];
+            neighborCount = ((neighborHash[[i - 1, j]] || blank)[2] + (neighborHash[[i + 1, j]] || blank)[2] + (neighborHash[[i, j - 1]] || blank)[2] + (neighborHash[[i, j + 1]] || blank)[2]) / 20;
+            if (neighborCount) {
+              newNeighborHash[thisPt] = [i, j, neighborCount];
+              noNeighborList.splice(p, 1);
+              foundNewNeighbors = true;
+            }
+          }
+          if (!foundNewNeighbors) {
+            throw new Error("findEmpties: Iterated with no new neighbors - cannot interpolate all empty points");
+          }
+          for (var key in newNeighborHash) {
+            neighborHash[key] = newNeighborHash[key];
+            empties.push(newNeighborHash[key]);
+          }
+        }
+        return empties.sort(function(a, b) {
+          return b[2] - a[2];
+        });
+      }
+      module.exports = findEmpties;
+    }
+  });
+
+  // null_handling/interp2d.js
+  var require_interp2d = __commonJS({
+    "null_handling/interp2d.js"(exports, module) {
+      "use strict";
+      var INTERPTHRESHOLD = 0.01;
+      var NEIGHBORSHIFTS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      function correctionOvershoot(maxFractionalChange) {
+        return 0.5 - 0.25 * Math.min(1, maxFractionalChange * 0.5);
+      }
+      function interp2d(z, emptyPoints) {
+        var maxFractionalChange = 1;
+        var i;
+        iterateInterp2d(z, emptyPoints);
+        for (i = 0; i < emptyPoints.length; i++) {
+          if (emptyPoints[i][2] < 4) break;
+        }
+        emptyPoints = emptyPoints.slice(i);
+        for (i = 0; i < 100 && maxFractionalChange > INTERPTHRESHOLD; i++) {
+          maxFractionalChange = iterateInterp2d(
+            z,
+            emptyPoints,
+            correctionOvershoot(maxFractionalChange)
+          );
+        }
+        if (maxFractionalChange > INTERPTHRESHOLD) {
+          console.warn("interp2d: Did not converge quickly, maxChange =", maxFractionalChange);
+        }
+        return z;
+      }
+      function iterateInterp2d(z, emptyPoints, overshoot) {
+        var maxFractionalChange = 0;
+        var thisPt;
+        var i;
+        var j;
+        var p;
+        var q;
+        var neighborShift;
+        var neighborRow;
+        var neighborVal;
+        var neighborCount;
+        var neighborSum;
+        var initialVal;
+        var minNeighbor;
+        var maxNeighbor;
+        for (p = 0; p < emptyPoints.length; p++) {
+          thisPt = emptyPoints[p];
+          i = thisPt[0];
+          j = thisPt[1];
+          initialVal = z[i][j];
+          neighborSum = 0;
+          neighborCount = 0;
+          for (q = 0; q < 4; q++) {
+            neighborShift = NEIGHBORSHIFTS[q];
+            neighborRow = z[i + neighborShift[0]];
+            if (!neighborRow) continue;
+            neighborVal = neighborRow[j + neighborShift[1]];
+            if (neighborVal !== void 0) {
+              if (neighborSum === 0) {
+                minNeighbor = maxNeighbor = neighborVal;
+              } else {
+                minNeighbor = Math.min(minNeighbor, neighborVal);
+                maxNeighbor = Math.max(maxNeighbor, neighborVal);
+              }
+              neighborCount++;
+              neighborSum += neighborVal;
+            }
+          }
+          if (neighborCount === 0) {
+            throw new Error("iterateInterp2d order is wrong: no defined neighbors for point [" + i + "," + j + "]");
+          }
+          z[i][j] = neighborSum / neighborCount;
+          if (initialVal === void 0) {
+            if (neighborCount < 4) maxFractionalChange = 1;
+          } else {
+            if (overshoot !== void 0 && overshoot !== 0) {
+              z[i][j] = (1 + overshoot) * z[i][j] - overshoot * initialVal;
+            }
+            if (maxNeighbor > minNeighbor) {
+              maxFractionalChange = Math.max(
+                maxFractionalChange,
+                Math.abs(z[i][j] - initialVal) / (maxNeighbor - minNeighbor)
+              );
+            }
+          }
+        }
+        return maxFractionalChange;
+      }
+      module.exports = interp2d;
+      module.exports.iterateInterp2d = iterateInterp2d;
+      module.exports.correctionOvershoot = correctionOvershoot;
+    }
+  });
+
   // null_handling/index.js
   var require_null_handling = __commonJS({
     "null_handling/index.js"(exports, module) {
@@ -673,7 +830,9 @@ var contourCore = (() => {
       module.exports = {
         normalizeNullValues: require_normalize(),
         generateNullMask: require_mask(),
-        isValidValue: require_validate()
+        isValidValue: require_validate(),
+        findEmpties: require_find_empties(),
+        interp2d: require_interp2d()
       };
     }
   });
@@ -758,6 +917,8 @@ var contourCore = (() => {
       var pathFinding = require_pathfinding();
       var nullHandling = require_null_handling();
       var closeBoundaries = require_close_boundaries();
+      var findEmpties = require_find_empties();
+      var interp2d = require_interp2d();
       function computeContours(grid, options) {
         options = options || {};
         if (!grid || !grid.z || !Array.isArray(grid.z)) {
@@ -774,6 +935,11 @@ var contourCore = (() => {
         var nullMask = normalization.nullMask;
         var x = grid.x || createIndexArray(n);
         var y = grid.y || createIndexArray(m);
+        var connectGaps = options.connectgaps !== void 0 ? options.connectgaps : true;
+        var emptyPoints = findEmpties(cleanedZ);
+        if (emptyPoints.length > 0) {
+          cleanedZ = interp2d(cleanedZ, emptyPoints);
+        }
         var contourLevels = levels.setContours(options, cleanedZ);
         if (contourLevels.length === 0) {
           return { levels: [], paths: [] };
@@ -793,6 +959,7 @@ var contourCore = (() => {
             x,
             y,
             nullMask,
+            // Always include nullMask for renderer reference
             smoothing: options.smoothing || 0
           };
         });
@@ -816,8 +983,11 @@ var contourCore = (() => {
           }),
           pathinfo,
           nullMask,
+          // Always include nullMask for renderer to use
           nullCount: normalization.nullCount,
-          validCount: normalization.validCount
+          validCount: normalization.validCount,
+          connectgaps: connectGaps
+          // Include connectgaps flag for renderer reference
         };
       }
       function scalePathsToData(result, x, y) {
@@ -1388,7 +1558,12 @@ var contourCore = (() => {
         }
         ctx.fillStyle = bgColor;
         ctx.beginPath();
-        ctx.rect(0, 0, width, height);
+        ctx.rect(
+          perimeter[0][0],
+          perimeter[0][1],
+          perimeter[1][0] - perimeter[0][0],
+          perimeter[2][1] - perimeter[0][1]
+        );
         ctx.fill();
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
@@ -1465,6 +1640,14 @@ var contourCore = (() => {
         ctx.stroke();
       }
       function scalePoint(style, pt) {
+        if (!pt || !Array.isArray(pt) || pt.length < 2) {
+          console.warn("scalePoint: Invalid point", pt);
+          return [0, 0];
+        }
+        if (isNaN(pt[0]) || isNaN(pt[1])) {
+          console.warn("scalePoint: Point contains NaN", pt);
+          return [0, 0];
+        }
         var x = style.x || [];
         var y = style.y || [];
         var width = style.width || 500;
@@ -2162,21 +2345,56 @@ var contourCore = (() => {
         var padding = style.padding || 30;
         var scaleX = (width - 2 * padding) / (n - 1);
         var scaleY = (height - 2 * padding) / (m - 1);
-        ctx.fillStyle = nullRegion.fill || "#ffffff";
-        ctx.strokeStyle = nullRegion.stroke || "#cccccc";
-        ctx.lineWidth = nullRegion.strokeWidth !== void 0 ? nullRegion.strokeWidth : 1;
-        for (var i = 0; i < m; i++) {
-          for (var j = 0; j < n; j++) {
-            if (nullMask[i][j]) {
-              var x = padding + j * scaleX;
-              var y = padding + (m - 1 - i) * scaleY;
-              var sizeX = scaleX + 1;
-              var sizeY = scaleY + 1;
-              ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
-              ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+        ctx.save();
+        var fillColor = nullRegion.fill || nullRegion.bgColor || "#ffffff";
+        if (fillColor !== "transparent") {
+          ctx.fillStyle = fillColor;
+          for (var i = 0; i < m; i++) {
+            for (var j = 0; j < n; j++) {
+              if (nullMask[i][j]) {
+                var x = padding + j * scaleX;
+                var y = padding + (m - 1 - i) * scaleY;
+                var sizeX = scaleX + 1;
+                var sizeY = scaleY + 1;
+                ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+              }
             }
           }
+        } else {
+          ctx.globalCompositeOperation = "destination-out";
+          for (var i = 0; i < m; i++) {
+            for (var j = 0; j < n; j++) {
+              if (nullMask[i][j]) {
+                var x = padding + j * scaleX;
+                var y = padding + (m - 1 - i) * scaleY;
+                var sizeX = scaleX + 1;
+                var sizeY = scaleY + 1;
+                ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+              }
+            }
+          }
+          ctx.globalCompositeOperation = "source-over";
         }
+        var strokeColor = nullRegion.stroke;
+        var showStroke = nullRegion.showStroke !== void 0 ? nullRegion.showStroke : true;
+        if (strokeColor && showStroke) {
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = nullRegion.strokeWidth !== void 0 ? nullRegion.strokeWidth : 1;
+          ctx.setLineDash(nullRegion.strokeDash || []);
+          for (var i = 0; i < m; i++) {
+            for (var j = 0; j < n; j++) {
+              if (nullMask[i][j]) {
+                var x = padding + j * scaleX;
+                var y = padding + (m - 1 - i) * scaleY;
+                var sizeX = scaleX + 1;
+                var sizeY = scaleY + 1;
+                ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+              }
+            }
+          }
+          ctx.setLineDash([]);
+        }
+        ctx.restore();
       }
       module.exports = drawNulls;
     }
@@ -2398,9 +2616,6 @@ var contourCore = (() => {
         var showLines = style.showLines !== false;
         var smoothing = style.smoothing || 0;
         ctx.clearRect(0, 0, width, height);
-        if (contourResult.nullMask && contourResult.nullCount > 0) {
-          drawNulls(ctx, contourResult, style);
-        }
         if (coloring === "heatmap") {
           drawHeatmap.drawInterpolatedHeatmap(ctx, {
             z: contourResult.pathinfo[0].z,
@@ -2419,6 +2634,10 @@ var contourCore = (() => {
         }
         if (style.colorbar !== false && coloring !== "lines") {
           drawColorbar(ctx, contourResult, style);
+        }
+        var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
+        if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+          drawNulls(ctx, contourResult, style);
         }
       }
       module.exports = {
@@ -2865,7 +3084,11 @@ var contourCore = (() => {
         var svgParts = [];
         if (paths.length > 0) {
           var bgColor = getColorForLevel(levels[0], levels, options);
-          svgParts.push('<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="' + bgColor + '" stroke="none" />');
+          var xMin = perimeter[0][0];
+          var yMin = perimeter[0][1];
+          var bgWidth = perimeter[1][0] - perimeter[0][0];
+          var bgHeight = perimeter[2][1] - perimeter[0][1];
+          svgParts.push('<rect x="' + xMin + '" y="' + yMin + '" width="' + bgWidth + '" height="' + bgHeight + '" fill="' + bgColor + '" stroke="none" />');
         }
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
@@ -3149,9 +3372,6 @@ var contourCore = (() => {
         svgParts.push(
           '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '">'
         );
-        if (contourResult.nullMask && contourResult.nullCount > 0) {
-          svgParts.push(createNulls.createNullRegions(contourResult, options));
-        }
         if (coloring === "fill" || coloring === "heatmap") {
           svgParts.push(createPaths.createFilledPaths(contourResult, options));
         }
@@ -3163,6 +3383,10 @@ var contourCore = (() => {
         }
         if (options.colorbar !== false && coloring !== "lines") {
           svgParts.push(createColorbar.createColorbar(contourResult, options));
+        }
+        var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
+        if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+          svgParts.push(createNulls.createNullRegions(contourResult, options));
         }
         svgParts.push("</svg>");
         return svgParts.join("\n");

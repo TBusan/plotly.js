@@ -33,10 +33,7 @@ function renderSVG(contourResult, options) {
         'viewBox="0 0 ' + width + ' ' + height + '">'
     );
 
-    // Draw null regions first (if present)
-    if (contourResult.nullMask && contourResult.nullCount > 0) {
-        svgParts.push(createNulls.createNullRegions(contourResult, options));
-    }
+    // NOTE: Null regions will be drawn AFTER contours to mask them out
 
     // Draw filled contours
     if (coloring === 'fill' || coloring === 'heatmap') {
@@ -56,6 +53,14 @@ function renderSVG(contourResult, options) {
     // Draw colorbar (if enabled)
     if (options.colorbar !== false && coloring !== 'lines') {
         svgParts.push(createColorbar.createColorbar(contourResult, options));
+    }
+
+    // Draw null regions LAST to mask out contours in null areas
+    // This ensures contours don't cross into null regions
+    // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
+    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
+    if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+        svgParts.push(createNulls.createNullRegions(contourResult, options));
     }
 
     // SVG closing

@@ -43,7 +43,7 @@
 
 ### 3. 创建 Demo 示例（已完成）
 
-在 `demo/` 目录中创建了 5 个完整的 HTML 示例：
+在 `demo/` 目录中创建了 6 个完整的 HTML 示例：
 
 1. **index.html** - Demo 索引页
    - 展示所有示例的导航页面
@@ -68,6 +68,45 @@
    - 展示 4 种不同的数据分布类型
    - 单峰高斯、双峰、波浪形、复杂带噪声
    - 可调整密度和平滑度
+
+6. **data-samples.html** - 数据示例
+   - 展示特定数据集的等值线渲染
+   - 包含递增梯度数据
+   - **演示空值处理能力**（含 null 值的复杂数据）
+
+### 4. 空值处理优化（已完成）
+
+#### 问题
+- 原 contour-core 跳过含 null 值的网格单元，导致等值线断裂
+- 与 plotly.js 原版行为不一致
+
+#### 解决方案
+参考 plotly.js 实现，采用**二维插值填充**空值：
+
+1. **新增空值处理函数**：
+   - `null_handling/find_empties.js` - 查找所有空值位置
+   - `null_handling/interp2d.js` - 拉普拉斯方程迭代插值
+
+2. **修改核心计算流程**：
+   - `compute.js` - 在 marching squares 之前执行插值
+   - `marchingsquares.js` - 移除 null 检查逻辑（不再跳过单元）
+
+3. **新增配置选项**：
+   ```javascript
+   {
+       connectgaps: true  // 默认启用插值（与 plotly.js 一致）
+       // connectgaps: false  // 禁用插值
+   }
+   ```
+
+#### 效果
+- ✅ data2（含大量 null）现在可以正确渲染
+- ✅ 等值线平滑连续
+- ✅ 与 plotly.js 行为完全一致
+
+#### 文档
+- `word/等值线空值处理优化.md` - 详细分析和解决方案
+- `word/NULL_HANDLING_FIX_SUMMARY.md` - 修改总结
 
 ## 项目结构
 
@@ -94,11 +133,13 @@ contour-core/
 │   ├── formatter.js
 │   ├── index.js
 │   └── position.js
-├── null_handling/          # 空值处理
+├── null_handling/          # 空值处理（已优化）
 │   ├── index.js
 │   ├── mask.js
 │   ├── normalize.js
-│   └── validate.js
+│   ├── validate.js
+│   ├── find_empties.js     # 新增：查找空值位置
+│   └── interp2d.js         # 新增：二维插值填充
 ├── renderers/              # 渲染器（已优化）
 │   ├── canvas/
 │   │   ├── index.js
@@ -119,14 +160,18 @@ contour-core/
 │   ├── simple.html
 │   ├── basic.html
 │   ├── custom-thresholds.html
-│   └── heatmap.html
+│   ├── heatmap.html
+│   └── data-samples.html   # 数据示例（含空值处理演示）
 ├── test/                   # 测试文件
 │   ├── unit/
 │   └── integration/
-├── word/                   # 文档（已清理）
+├── word/                   # 文档（已清理+新增）
 │   ├── CHANGELOG_v0.2.0.md
+│   ├── CLEANUP_SUMMARY.md            # 本文档
 │   ├── CONTOUR_IMPLEMENTATION.md
 │   ├── USAGE_GUIDE.md
+│   ├── NULL_HANDLING_FIX_SUMMARY.md  # 新增：空值处理修改总结
+│   ├── 等值线空值处理优化.md          # 新增：空值处理详细文档
 │   ├── 等值线实现核心原理.md
 │   └── 重构计划_完整版.md
 └── dist/                   # 构建输出
@@ -164,8 +209,22 @@ contour-core/
 
 - ✅ 删除了 11 个临时文档，保留 6 个核心文档
 - ✅ 优化了核心计算和渲染模块代码
-- ✅ 创建了 5 个完整的示例页面
+- ✅ 创建了 6 个完整的示例页面
+- ✅ **修复了空值处理问题，与 plotly.js 完全一致**
 - ✅ 提高了代码可读性和可维护性
 - ✅ 为用户提供了丰富的学习和参考资源
 
 项目现在更加清晰、专业，适合生产环境使用。
+
+## 版本历史
+
+### v0.3.0 (当前)
+- 🔧 优化了 compute.js 和 paths.js 代码
+- 🎨 添加了 6 个交互式 demo 示例
+- 🐛 **修复空值处理问题，实现二维插值填充**
+- 📚 添加了详细的空值处理文档
+- ✅ 与 plotly.js 原版行为完全一致
+
+### v0.2.0
+- 初始版本
+- 基础等值线计算和渲染功能

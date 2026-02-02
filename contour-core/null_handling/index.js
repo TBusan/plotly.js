@@ -8,5 +8,7 @@
 module.exports = {
     normalizeNullValues: require('./normalize'),
     generateNullMask: require('./mask'),
-    isValidValue: require('./validate')
+    isValidValue: require('./validate'),
+    findEmpties: require('./find_empties'),
+    interp2d: require('./interp2d')
 };

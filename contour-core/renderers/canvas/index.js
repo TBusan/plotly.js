@@ -29,10 +29,8 @@ function drawContours(ctx, contourResult, style) {
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Draw null regions first (if present)
-    if (contourResult.nullMask && contourResult.nullCount > 0) {
-        drawNulls(ctx, contourResult, style);
-    }
+    // NOTE: Draw null regions AFTER contours to mask them out
+    // This ensures contours don't appear in null regions
 
     // Draw heatmap background if coloring mode is 'heatmap'
     if (coloring === 'heatmap') {
@@ -64,6 +62,14 @@ function drawContours(ctx, contourResult, style) {
     // Draw colorbar (if enabled)
     if (style.colorbar !== false && coloring !== 'lines') {
         drawColorbar(ctx, contourResult, style);
+    }
+
+    // Draw null regions LAST to mask out contours in null areas
+    // This ensures contours don't cross into null regions
+    // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
+    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
+    if (!connectGaps && contourResult.nullMask && contourResult.nullCount > 0) {
+        drawNulls(ctx, contourResult, style);
     }
 }
 
