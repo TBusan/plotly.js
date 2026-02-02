@@ -24,6 +24,13 @@ var contourCore = {
     drawTo: api.drawTo,
 
     // ============================================
+    // GeoJSON export (NEW)
+    // ============================================
+    toGeoJSON: require('./geojson').toGeoJSON,
+    toFilledGeoJSON: require('./geojson').toFilledGeoJSON,
+    geojsonStringify: require('./geojson').stringify,
+
+    // ============================================
     // Low-level modules
     // ============================================
     marchingSquares: require('./marchingsquares'),

@@ -50,6 +50,7 @@
     "index.js",
     "compute.js",
     "api.js",
+    "geojson.js",
     "levels.js",
     "marchingsquares.js",
     "pathfinding.js",
