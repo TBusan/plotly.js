@@ -184,11 +184,12 @@
 
     <!-- 数据2 -->
     <div class="data-section">
-        <h2>数据 2: 包含空值的复杂数据</h2>
+        <h2>数据 2: 包含空值的数据</h2>
         <div class="info">
-            <strong>特点：</strong>7×8 网格，包含大量 null 值（表示无效数据），中间凹陷四周隆起，展示空值处理能力。
-            <br><strong>
-            空值区域：</strong>白色方块显示（默认）或可自定义颜色。
+            <strong>特点：</strong>7×8 网格，包含部分 null 值（约 20%），null 值主要分布在左下角区域。
+            <br><strong>connectgaps=true：</strong>空值区域会被插值填充，等值线连续通过。由于有效值与数据1一致，
+            插值后的等值线形状与数据1非常相似。
+            <br><strong>connectgaps=false：</strong>空值区域会被白色方块遮罩，等值线不穿过该区域。
         </div>
         <div class="data-display" id="data2Display"></div>
         <div class="canvas-row">
@@ -220,6 +221,8 @@
    [11, 14, 17, 26, 25, 24, 23, 22]];
 
         // 数据2: 包含null值
+        // 注意：这个版本的有效值与data1对应位置一致
+        // 这样当connectgaps=true时，插值后的等值线应该与data1相似
         var data2 = [[null, null, null, 12, 13, 14, 15, 16],
       [null, 1, null, 11, null, null, null, 17],
       [null, 2, 6, 7, null, null, null, 18],
@@ -227,6 +230,15 @@
       [5, 4, 10, 9, null, null, null, 20],
       [null, null, null, 27, null, null, null, 21],
       [null, null, null, 26, 25, 24, 23, 22]];
+
+        // 原始的data2版本（大量null值，插值效果差异大）
+        // var data2 = [[null, null, null, 12, 13, 14, 15, 16],
+        //     [null, 1, null, 11, null, null, null, 17],
+        //     [null, 2, 6, 7, null, null, null, 18],
+        //     [null, 3, null, 8, null, null, null, 19],
+        //     [5, 4, 10, 9, null, null, null, 20],
+        //     [null, null, null, 27, null, null, null, 21],
+        //     [null, null, null, 26, 25, 24, 23, 22]];
 
         // 解析颜色方案
         function parseColorScale(colorscale) {
