@@ -197,6 +197,14 @@
                 <input type="number" id="smoothing" value="0.5" min="0" max="1" step="0.1">
             </div>
 
+            <div class="control-group">
+                <label>Clip Polygons (No Overlap)</label>
+                <select id="clipMode">
+                    <option value="false">No (Original - Overlapping)</option>
+                    <option value="true">Yes (Clipped - Non-overlapping)</option>
+                </select>
+            </div>
+
             <button id="renderBtn">Render & Export</button>
             <button id="downloadBtn" class="download">Download GeoJSON</button>
         </div>
@@ -286,6 +294,7 @@
             var contourType = document.getElementById('contourType').value;
             var numLevels = parseInt(document.getElementById('numLevels').value);
             var smoothing = parseFloat(document.getElementById('smoothing').value);
+            var clipMode = document.getElementById('clipMode').value === 'true';
 
             var data = generateTestData(50, 50);
 
@@ -311,7 +320,10 @@
                 // Export to GeoJSON
                 var geojson;
                 if (contourType === 'fill') {
-                    geojson = contourCore.toFilledGeoJSON(result);
+                    geojson = contourCore.toFilledGeoJSON(result, {
+                        clip: clipMode,
+                        propertyName: 'value'
+                    });
                 } else {
                     geojson = contourCore.toGeoJSON(result, {
                         type: 'lines',
@@ -385,7 +397,10 @@
                 '<div class="stat-item"><span class="stat-label">Value Range:</span> <span class="stat-value">' +
                     (valueRange.min !== Infinity ? valueRange.min.toFixed(1) + ' to ' + valueRange.max.toFixed(1) : 'N/A') +
                 '</span></div>' +
-                '<div class="stat-item"><span class="stat-label">Levels:</span> <span class="stat-value">' + levels.length + '</span></div>';
+                '<div class="stat-item"><span class="stat-label">Levels:</span> <span class="stat-value">' + levels.length + '</span></div>' +
+                '<div class="stat-item"><span class="stat-label">Clipped:</span> <span class="stat-value">' +
+                    (geojson.features.length > 0 && geojson.features[0].properties.clipped ? 'Yes' : 'No') +
+                '</span></div>';
         }
 
         function renderGeoJSONOnMap(geojson, levels, contourType) {

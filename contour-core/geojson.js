@@ -7,6 +7,7 @@
  * Supports:
  * - LineString for line contours (lines mode)
  * - Polygon for filled contours (fill mode)
+ * - Clipped polygons (no overlap between levels) when clip=true
  */
 
 /**
@@ -121,10 +122,11 @@ function toGeoJSON(result, options) {
 
 /**
  * Export filled contours as GeoJSON
- * This creates polygons that match the fill rendering in drawFilledPaths
  *
  * @param {Object} result - Result from computeContours()
  * @param {Object} options - Export options
+ * @param {String} options.propertyName - Property name for the level value (default: 'value')
+ * @param {Boolean} options.clip - If true, clip contours to eliminate overlaps (default: false)
  * @returns {Object} GeoJSON FeatureCollection with filled polygons
  */
 function toFilledGeoJSON(result, options) {
@@ -134,6 +136,7 @@ function toFilledGeoJSON(result, options) {
 
     options = options || {};
     var propertyName = options.propertyName || 'value';
+    var clip = options.clip || false;  // clip: true = no overlaps, clip: false = original logic
 
     var features = [];
     var levels = result.levels;
@@ -148,31 +151,50 @@ function toFilledGeoJSON(result, options) {
     // Create perimeter (boundary rectangle)
     var perimeter = createPerimeter(dataBounds);
 
-    // Process each level from LOWEST to HIGHEST (matching drawFilledPaths order)
-    for (var i = 0; i < paths.length; i++) {
+    // Determine number of levels to process
+    var numLevels = clip ? (paths.length - 1) : paths.length;
+
+    // Process each level
+    for (var i = 0; i < numLevels; i++) {
         var pathInfo = paths[i];
         var level = levels[i];
 
-        // Build complete polygon(s) for this level
-        var polygons = buildLevelPolygons(pathInfo, perimeter, dataBounds, options);
+        // Build boundary for current level
+        var currentBoundary = buildLevelBoundary(pathInfo, perimeter, dataBounds, options);
+
+        // Build boundary for next level (for clipping/holes)
+        var nextBoundary = null;
+        if (i + 1 < paths.length) {
+            var nextPathInfo = paths[i + 1];
+            nextBoundary = buildLevelBoundary(nextPathInfo, perimeter, dataBounds, options);
+        }
+
+        // Create polygons from boundaries
+        var polygons = buildClippedPolygons(currentBoundary, nextBoundary, perimeter);
 
         // Create feature for each polygon
         for (var j = 0; j < polygons.length; j++) {
             var poly = polygons[j];
-
-            // Determine if this polygon has holes
-            // (interior paths that should be holes)
             var hasHoles = poly.length > 1;
+
+            // For clip mode, set value to the midpoint between current and next level
+            var value = level;
+            if (clip && i + 1 < levels.length) {
+                value = (level + levels[i + 1]) / 2;
+            }
 
             features.push({
                 type: 'Feature',
                 properties: {
-                    value: level,
+                    value: value,
                     level: level,
                     levelIndex: i,
+                    minValue: level,
+                    maxValue: clip ? (levels[i + 1] || level) : level,
                     type: 'filled_contour',
                     hasHoles: hasHoles,
-                    polygonIndex: j
+                    polygonIndex: j,
+                    clipped: clip
                 },
                 geometry: {
                     type: 'Polygon',
@@ -189,17 +211,17 @@ function toFilledGeoJSON(result, options) {
 }
 
 /**
- * Build polygons for a single contour level
- * Matches the logic in drawFilledPaths -> joinAllPaths
+ * Build the boundary line(s) for a single contour level
+ * Returns an array of closed coordinate arrays (each representing a boundary loop)
  *
  * @param {Object} pathInfo - Path info for a single level
- * @param {Array} perimeter - Boundary rectangle [[x0,y0], [x1,y0], [x1,y1], [x0,y1]]
- * @param {Object} bounds - Data bounds {minX, maxX, minY, maxY}
+ * @param {Array} perimeter - Boundary rectangle
+ * @param {Object} bounds - Data bounds
  * @param {Object} options - Export options
- * @returns {Array} Array of polygon coordinate arrays
+ * @returns {Array} Array of closed boundary coordinate arrays
  */
-function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
-    var polygons = [];
+function buildLevelBoundary(pathInfo, perimeter, bounds, options) {
+    var boundaries = [];
     var edgepaths = pathInfo.edgepaths || [];
     var closedPaths = pathInfo.paths || [];
 
@@ -217,7 +239,7 @@ function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
         return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
     }
 
-    // Collect all paths to process
+    // Collect all edge paths to process
     var startIndices = [];
     for (var i = 0; i < edgepaths.length; i++) {
         if (edgepaths[i] && edgepaths[i].length > 0) {
@@ -226,13 +248,11 @@ function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
     }
 
     // Join edge paths together with boundary connections
-    var currentPoly = null;
-    var startIdx = 0;
-    var newLoop = true;
+    var currentBoundary = null;
 
     if (pathInfo.prefixBoundary) {
         // Start with the full perimeter
-        currentPoly = [
+        currentBoundary = [
             [perimeter[0][0], perimeter[0][1]],
             [perimeter[1][0], perimeter[1][1]],
             [perimeter[2][0], perimeter[2][1]],
@@ -252,17 +272,17 @@ function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
         // Convert edge path to coordinates
         var edgeCoords = convertPathCoordinates(edgePath, options);
 
-        // Add edge path to current polygon
-        if (!currentPoly) {
-            currentPoly = edgeCoords.slice();
+        // Add edge path to current boundary
+        if (!currentBoundary) {
+            currentBoundary = edgeCoords.slice();
         } else {
             // Find connection point and add boundary segment
-            var lastPt = currentPoly[currentPoly.length - 1];
+            var lastPt = currentBoundary[currentBoundary.length - 1];
             var firstEdgePt = edgeCoords[0];
 
             // Add boundary corner(s) to connect
-            addBoundaryConnection(currentPoly, lastPt, firstEdgePt, perimeter, isTop, isBottom, isLeft, isRight);
-            currentPoly = currentPoly.concat(edgeCoords);
+            addBoundaryConnection(currentBoundary, lastPt, firstEdgePt, perimeter, isTop, isBottom, isLeft, isRight);
+            currentBoundary = currentBoundary.concat(edgeCoords);
         }
 
         // Remove processed path
@@ -292,33 +312,30 @@ function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
                 }
 
                 if (nextStartIdx >= 0) {
-                    // Add corner to polygon
-                    currentPoly.push([nextCorner[0], nextCorner[1]]);
+                    // Add corner to boundary
+                    currentBoundary.push([nextCorner[0], nextCorner[1]]);
                     endPt = nextCorner;
                     startIndices.splice(startIndices.indexOf(nextStartIdx), 1);
                     foundNext = true;
                 } else {
                     // Add corner and continue around boundary
-                    currentPoly.push([nextCorner[0], nextCorner[1]]);
+                    currentBoundary.push([nextCorner[0], nextCorner[1]]);
                     endPt = nextCorner;
                 }
             }
         }
     }
 
-    // Close the polygon if needed
-    if (currentPoly && currentPoly.length > 2) {
-        if (pathInfo.prefixBoundary) {
-            // Already closed at perimeter start
-        } else {
+    // Close the boundary if needed and add to result
+    if (currentBoundary && currentBoundary.length > 2) {
+        if (!pathInfo.prefixBoundary) {
             // Close back to start
-            currentPoly.push([currentPoly[0][0], currentPoly[0][1]]);
+            currentBoundary.push([currentBoundary[0][0], currentBoundary[0][1]]);
         }
-        polygons.push([currentPoly]);
+        boundaries.push(currentBoundary);
     }
 
-    // Add interior closed paths as separate polygons or holes
-    // For GeoJSON, we treat them as separate polygons
+    // Add interior closed paths as separate boundaries
     for (var k = 0; k < closedPaths.length; k++) {
         if (!closedPaths[k] || closedPaths[k].length < 3) continue;
 
@@ -326,10 +343,82 @@ function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
         // Close the polygon
         closedCoords.push([closedCoords[0][0], closedCoords[0][1]]);
 
-        polygons.push([closedCoords]);
+        boundaries.push(closedCoords);
+    }
+
+    return boundaries;
+}
+
+/**
+ * Build clipped polygons from current and next level boundaries
+ * Each polygon consists of an exterior ring and optional interior rings (holes)
+ *
+ * @param {Array} currentBoundary - Boundary lines for current level
+ * @param {Array} nextBoundary - Boundary lines for next level (to be used as holes)
+ * @param {Array} perimeter - Data bounds perimeter
+ * @returns {Array} Array of polygon coordinate arrays [exteriorRing, hole1, hole2, ...]
+ */
+function buildClippedPolygons(currentBoundary, nextBoundary, perimeter) {
+    var polygons = [];
+
+    if (!currentBoundary || currentBoundary.length === 0) {
+        return polygons;
+    }
+
+    // If no next boundary, return current boundaries as simple polygons
+    if (!nextBoundary || nextBoundary.length === 0) {
+        for (var i = 0; i < currentBoundary.length; i++) {
+            polygons.push([currentBoundary[i]]);
+        }
+        return polygons;
+    }
+
+    // Match each current boundary with appropriate next-level holes
+    for (i = 0; i < currentBoundary.length; i++) {
+        var exteriorRing = currentBoundary[i];
+        var rings = [exteriorRing];
+
+        // Check which next-level boundaries are inside this exterior ring
+        for (var j = 0; j < nextBoundary.length; j++) {
+            var innerRing = nextBoundary[j];
+
+            // Test if the first point of inner ring is inside the exterior ring
+            // (simplified - assumes proper nesting)
+            if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
+                rings.push(innerRing);
+            }
+        }
+
+        polygons.push(rings);
     }
 
     return polygons;
+}
+
+/**
+ * Check if a point is inside a polygon (ray casting algorithm)
+ * Assumes polygon is closed
+ */
+function isPointInPolygon(point, polygon) {
+    if (!polygon || polygon.length < 3) return false;
+
+    var x = point[0];
+    var y = point[1];
+    var inside = false;
+
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        var xi = polygon[i][0];
+        var yi = polygon[i][1];
+        var xj = polygon[j][0];
+        var yj = polygon[j][1];
+
+        var intersect = ((yi > y) !== (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
 }
 
 /**

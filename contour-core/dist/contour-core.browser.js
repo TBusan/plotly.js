@@ -4122,6 +4122,7 @@ var contourCore = (() => {
         }
         options = options || {};
         var propertyName = options.propertyName || "value";
+        var clip = options.clip || false;
         var features = [];
         var levels = result.levels;
         var paths = result.paths;
@@ -4130,22 +4131,36 @@ var contourCore = (() => {
           dataBounds = { minX: 0, maxX: 100, minY: 0, maxY: 100 };
         }
         var perimeter = createPerimeter(dataBounds);
-        for (var i = 0; i < paths.length; i++) {
+        var numLevels = clip ? paths.length - 1 : paths.length;
+        for (var i = 0; i < numLevels; i++) {
           var pathInfo = paths[i];
           var level = levels[i];
-          var polygons = buildLevelPolygons(pathInfo, perimeter, dataBounds, options);
+          var currentBoundary = buildLevelBoundary(pathInfo, perimeter, dataBounds, options);
+          var nextBoundary = null;
+          if (i + 1 < paths.length) {
+            var nextPathInfo = paths[i + 1];
+            nextBoundary = buildLevelBoundary(nextPathInfo, perimeter, dataBounds, options);
+          }
+          var polygons = buildClippedPolygons(currentBoundary, nextBoundary, perimeter);
           for (var j = 0; j < polygons.length; j++) {
             var poly = polygons[j];
             var hasHoles = poly.length > 1;
+            var value = level;
+            if (clip && i + 1 < levels.length) {
+              value = (level + levels[i + 1]) / 2;
+            }
             features.push({
               type: "Feature",
               properties: {
-                value: level,
+                value,
                 level,
                 levelIndex: i,
+                minValue: level,
+                maxValue: clip ? levels[i + 1] || level : level,
                 type: "filled_contour",
                 hasHoles,
-                polygonIndex: j
+                polygonIndex: j,
+                clipped: clip
               },
               geometry: {
                 type: "Polygon",
@@ -4159,8 +4174,8 @@ var contourCore = (() => {
           features
         };
       }
-      function buildLevelPolygons(pathInfo, perimeter, bounds, options) {
-        var polygons = [];
+      function buildLevelBoundary(pathInfo, perimeter, bounds, options) {
+        var boundaries = [];
         var edgepaths = pathInfo.edgepaths || [];
         var closedPaths = pathInfo.paths || [];
         function isTop(pt) {
@@ -4181,11 +4196,9 @@ var contourCore = (() => {
             startIndices.push(i);
           }
         }
-        var currentPoly = null;
-        var startIdx = 0;
-        var newLoop = true;
+        var currentBoundary = null;
         if (pathInfo.prefixBoundary) {
-          currentPoly = [
+          currentBoundary = [
             [perimeter[0][0], perimeter[0][1]],
             [perimeter[1][0], perimeter[1][1]],
             [perimeter[2][0], perimeter[2][1]],
@@ -4201,13 +4214,13 @@ var contourCore = (() => {
             continue;
           }
           var edgeCoords = convertPathCoordinates(edgePath, options);
-          if (!currentPoly) {
-            currentPoly = edgeCoords.slice();
+          if (!currentBoundary) {
+            currentBoundary = edgeCoords.slice();
           } else {
-            var lastPt = currentPoly[currentPoly.length - 1];
+            var lastPt = currentBoundary[currentBoundary.length - 1];
             var firstEdgePt = edgeCoords[0];
-            addBoundaryConnection(currentPoly, lastPt, firstEdgePt, perimeter, isTop, isBottom, isLeft, isRight);
-            currentPoly = currentPoly.concat(edgeCoords);
+            addBoundaryConnection(currentBoundary, lastPt, firstEdgePt, perimeter, isTop, isBottom, isLeft, isRight);
+            currentBoundary = currentBoundary.concat(edgeCoords);
           }
           startIndices.shift();
           if (edgeCoords.length > 0) {
@@ -4227,31 +4240,69 @@ var contourCore = (() => {
                 }
               }
               if (nextStartIdx >= 0) {
-                currentPoly.push([nextCorner[0], nextCorner[1]]);
+                currentBoundary.push([nextCorner[0], nextCorner[1]]);
                 endPt = nextCorner;
                 startIndices.splice(startIndices.indexOf(nextStartIdx), 1);
                 foundNext = true;
               } else {
-                currentPoly.push([nextCorner[0], nextCorner[1]]);
+                currentBoundary.push([nextCorner[0], nextCorner[1]]);
                 endPt = nextCorner;
               }
             }
           }
         }
-        if (currentPoly && currentPoly.length > 2) {
-          if (pathInfo.prefixBoundary) {
-          } else {
-            currentPoly.push([currentPoly[0][0], currentPoly[0][1]]);
+        if (currentBoundary && currentBoundary.length > 2) {
+          if (!pathInfo.prefixBoundary) {
+            currentBoundary.push([currentBoundary[0][0], currentBoundary[0][1]]);
           }
-          polygons.push([currentPoly]);
+          boundaries.push(currentBoundary);
         }
         for (var k = 0; k < closedPaths.length; k++) {
           if (!closedPaths[k] || closedPaths[k].length < 3) continue;
           var closedCoords = convertPathCoordinates(closedPaths[k], options);
           closedCoords.push([closedCoords[0][0], closedCoords[0][1]]);
-          polygons.push([closedCoords]);
+          boundaries.push(closedCoords);
+        }
+        return boundaries;
+      }
+      function buildClippedPolygons(currentBoundary, nextBoundary, perimeter) {
+        var polygons = [];
+        if (!currentBoundary || currentBoundary.length === 0) {
+          return polygons;
+        }
+        if (!nextBoundary || nextBoundary.length === 0) {
+          for (var i = 0; i < currentBoundary.length; i++) {
+            polygons.push([currentBoundary[i]]);
+          }
+          return polygons;
+        }
+        for (i = 0; i < currentBoundary.length; i++) {
+          var exteriorRing = currentBoundary[i];
+          var rings = [exteriorRing];
+          for (var j = 0; j < nextBoundary.length; j++) {
+            var innerRing = nextBoundary[j];
+            if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
+              rings.push(innerRing);
+            }
+          }
+          polygons.push(rings);
         }
         return polygons;
+      }
+      function isPointInPolygon(point, polygon) {
+        if (!polygon || polygon.length < 3) return false;
+        var x = point[0];
+        var y = point[1];
+        var inside = false;
+        for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          var xi = polygon[i][0];
+          var yi = polygon[i][1];
+          var xj = polygon[j][0];
+          var yj = polygon[j][1];
+          var intersect = yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi;
+          if (intersect) inside = !inside;
+        }
+        return inside;
       }
       function getNextCorner(pt, perimeter, isTop, isBottom, isLeft, isRight) {
         if (isTop(pt) && !isRight(pt)) return perimeter[1];
