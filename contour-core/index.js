@@ -39,6 +39,7 @@ var contourCore = {
     labels: require('./labels'),
     colorbar: require('./colorbar'),
     renderers: require('./renderers'),
+    axes: require('./axes'),
 
     // ============================================
     // Utilities
@@ -49,4 +50,10 @@ var contourCore = {
 // CommonJS export for Node.js and browsers (via bundler)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = contourCore;
+}
+
+// Browser global - use both 'contourCore' and 'contour' as aliases
+if (typeof window !== 'undefined') {
+    window.contourCore = contourCore;
+    window.contour = contourCore;
 }

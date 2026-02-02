@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contour-Core - 坐标轴卡尺演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 20px;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .demo-card h3 {
+            margin-bottom: 15px;
+            color: #444;
+            font-size: 16px;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        canvas {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+
+        button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Contour-Core 坐标轴卡尺演示</h1>
+        <p class="subtitle">展示 X/Y 坐标轴刻度、标签、标题和网格线的绘制</p>
+
+        <div class="demo-grid">
+            <!-- Demo 1: 基本坐标轴 -->
+            <div class="demo-card">
+                <h3>Demo 1: 基本坐标轴（自动刻度）</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas1" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    自动计算刻度间隔，X轴范围 0-10，Y轴范围 0-8
+                </div>
+            </div>
+
+            <!-- Demo 2: 带网格线 -->
+            <div class="demo-card">
+                <h3>Demo 2: 带网格线</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas2" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    启用 <code>showgrid: true</code> 显示网格线
+                </div>
+            </div>
+
+            <!-- Demo 3: 手动刻度间隔 -->
+            <div class="demo-card">
+                <h3>Demo 3: 手动刻度间隔</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas3" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    使用 <code>tickmode: 'linear'</code> 和 <code>dtick: 0.5</code>
+                </div>
+            </div>
+
+            <!-- Demo 4: 自定义刻度值 -->
+            <div class="demo-card">
+                <h3>Demo 4: 自定义刻度值</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas4" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    使用 <code>tickmode: 'array'</code> 自定义刻度位置和标签
+                </div>
+            </div>
+
+            <!-- Demo 5: 带轴标题 -->
+            <div class="demo-card">
+                <h3>Demo 5: 带轴标题</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas5" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    设置 <code>title</code> 属性显示轴标题
+                </div>
+            </div>
+
+            <!-- Demo 6: 等值线图 + 坐标轴 -->
+            <div class="demo-card">
+                <h3>Demo 6: 等值线图 + 坐标轴</h3>
+                <div class="canvas-container">
+                    <canvas id="canvas6" width="400" height="350"></canvas>
+                </div>
+                <div class="description">
+                    完整的等值线图渲染，带坐标轴和网格线
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用构建后的版本 -->
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        // 生成测试数据
+        function generateGridData(rows, cols) {
+            var data = [];
+            for (var i = 0; i < rows; i++) {
+                var row = [];
+                for (var j = 0; j < cols; j++) {
+                    var x = j / cols * 4 - 2;
+                    var y = i / rows * 4 - 2;
+                    var z = Math.sin(x * 2) * Math.cos(y * 2) + Math.random() * 0.2;
+                    row.push(z);
+                }
+                data.push(row);
+            }
+            return data;
+        }
+
+        // X 和 Y 坐标数组
+        var xCoords = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        var yCoords = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+        // Demo 1: 基本坐标轴
+        function demo1() {
+            var canvas = document.getElementById('canvas1');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            contourCore.render(canvas, {
+                z: generateGridData(9, 11),
+                x: xCoords,
+                y: yCoords,
+                contours: { type: 'fill' },
+                axes: {
+                    x: {
+                        show: true,
+                        title: 'X 轴'
+                    },
+                    y: {
+                        show: true,
+                        title: 'Y 轴'
+                    }
+                }
+            });
+        }
+
+        // Demo 2: 带网格线
+        function demo2() {
+            var canvas = document.getElementById('canvas2');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            contourCore.render(canvas, {
+                z: generateGridData(9, 11),
+                x: xCoords,
+                y: yCoords,
+                contours: { type: 'fill' },
+                axes: {
+                    x: {
+                        show: true,
+                        showgrid: true,
+                        gridcolor: '#e0e0e0',
+                        title: 'X (m)'
+                    },
+                    y: {
+                        show: true,
+                        showgrid: true,
+                        gridcolor: '#e0e0e0',
+                        title: 'Y (m)'
+                    }
+                }
+            });
+        }
+
+        // Demo 3: 手动刻度间隔
+        function demo3() {
+            var canvas = document.getElementById('canvas3');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            contourCore.render(canvas, {
+                z: generateGridData(9, 11),
+                x: xCoords,
+                y: yCoords,
+                contours: { type: 'fill' },
+                axes: {
+                    x: {
+                        show: true,
+                        tickmode: 'linear',
+                        dtick: 2,
+                        title: 'X 轴 (dtick=2)'
+                    },
+                    y: {
+                        show: true,
+                        tickmode: 'linear',
+                        dtick: 1,
+                        title: 'Y 轴 (dtick=1)'
+                    }
+                }
+            });
+        }
+
+        // Demo 4: 自定义刻度值
+        function demo4() {
+            var canvas = document.getElementById('canvas4');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            contourCore.render(canvas, {
+                z: generateGridData(9, 11),
+                x: xCoords,
+                y: yCoords,
+                contours: { type: 'fill' },
+                axes: {
+                    x: {
+                        show: true,
+                        tickmode: 'array',
+                        tickvals: [0, 2.5, 5, 7.5, 10],
+                        ticktext: ['0', '2.5', '5', '7.5', '10'],
+                        title: 'X 轴'
+                    },
+                    y: {
+                        show: true,
+                        tickmode: 'array',
+                        tickvals: [0, 2, 4, 6, 8],
+                        ticktext: ['低', '中低', '中', '中高', '高'],
+                        title: 'Y 轴'
+                    }
+                }
+            });
+        }
+
+        // Demo 5: 带轴标题
+        function demo5() {
+            var canvas = document.getElementById('canvas5');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            contourCore.render(canvas, {
+                z: generateGridData(9, 11),
+                x: xCoords,
+                y: yCoords,
+                contours: { type: 'fill' },
+                axes: {
+                    x: {
+                        show: true,
+                        title: '距离 (km)',
+                        showgrid: true,
+                        gridcolor: '#f0f0f0'
+                    },
+                    y: {
+                        show: true,
+                        title: '高度 (km)',
+                        showgrid: true,
+                        gridcolor: '#f0f0f0'
+                    }
+                }
+            });
+        }
+
+        // Demo 6: 等值线图 + 坐标轴
+        function demo6() {
+            var canvas = document.getElementById('canvas6');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 创建更复杂的数据
+            var data = [];
+            for (var i = 0; i < 20; i++) {
+                var row = [];
+                for (var j = 0; j < 25; j++) {
+                    var x = j / 24 * 6 - 3;
+                    var y = i / 19 * 6 - 3;
+                    var z = Math.sin(x) * Math.cos(y) * 2 + (x*x + y*y) / 10;
+                    row.push(z);
+                }
+                data.push(row);
+            }
+
+            var xData = [];
+            var yData = [];
+            for (var i = 0; i < 25; i++) xData.push((i / 24 * 6 - 3).toFixed(1));
+            for (var i = 0; i < 20; i++) yData.push((i / 19 * 6 - 3).toFixed(1));
+
+            contourCore.render(canvas, {
+                z: data,
+                x: xData.map(Number),
+                y: yData.map(Number),
+                contours: { type: 'fill' },
+                ncontours: 12,
+                colorscale: 'Viridis',
+                axes: {
+                    x: {
+                        show: true,
+                        title: 'X 坐标',
+                        showgrid: true,
+                        gridcolor: 'rgba(255,255,255,0.3)'
+                    },
+                    y: {
+                        show: true,
+                        title: 'Y 坐标',
+                        showgrid: true,
+                        gridcolor: 'rgba(255,255,255,0.3)'
+                    }
+                }
+            });
+        }
+
+        // 运行所有 demo
+        window.onload = function() {
+            demo1();
+            demo2();
+            demo3();
+            demo4();
+            demo5();
+            demo6();
+        };
+    </script>
+</body>
+</html>

@@ -1840,10 +1840,10 @@ var require_paths = __commonJS({
       var width = style.width || 500;
       var height = style.height || 400;
       var padding = style.padding || 30;
-      var xMin = x.length > 0 ? Math.min.apply(Math, x) : 0;
-      var xMax = x.length > 0 ? Math.max.apply(Math, x) : 1;
-      var yMin = y.length > 0 ? Math.min.apply(Math, y) : 0;
-      var yMax = y.length > 0 ? Math.max.apply(Math, y) : 1;
+      var xMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
+      var xMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
+      var yMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
+      var yMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
       var xRange = xMax - xMin || 1;
       var yRange = yMax - yMin || 1;
       var canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
@@ -2786,6 +2786,831 @@ var require_heatmap = __commonJS({
   }
 });
 
+// axes/auto_ticks.js
+var require_auto_ticks = __commonJS({
+  "axes/auto_ticks.js"(exports, module) {
+    "use strict";
+    function calcTickInterval(rangeMin, rangeMax, targetTickCount) {
+      if (targetTickCount === void 0) {
+        targetTickCount = 5;
+      }
+      var range = Math.abs(rangeMax - rangeMin);
+      if (range === 0) {
+        return 1;
+      }
+      var roughDTick = range / targetTickCount;
+      var exponent = Math.floor(Math.log10(roughDTick));
+      var base = Math.pow(10, exponent);
+      var normalized = roughDTick / base;
+      var niceNumbers = [1, 2, 5, 10];
+      var niceNum = niceNumbers[0];
+      var minDiff = Math.abs(normalized - niceNum);
+      for (var i = 1; i < niceNumbers.length; i++) {
+        var diff = Math.abs(normalized - niceNumbers[i]);
+        if (diff < minDiff) {
+          minDiff = diff;
+          niceNum = niceNumbers[i];
+        }
+      }
+      var dtick = niceNum * base;
+      if (dtick <= 0 || !isFinite(dtick)) {
+        dtick = 1;
+      }
+      return dtick;
+    }
+    function calcFirstTick(rangeMin, rangeMax, dtick, tick0) {
+      if (tick0 === void 0) {
+        tick0 = 0;
+      }
+      if (rangeMin >= 0) {
+        var firstTick = Math.ceil((rangeMin - tick0) / dtick) * dtick + tick0;
+        return firstTick;
+      }
+      var firstTick = Math.floor((rangeMin - tick0) / dtick) * dtick + tick0;
+      if (firstTick < rangeMin) {
+        firstTick += dtick;
+      }
+      return firstTick;
+    }
+    function calcLastTick(rangeMax, dtick, tick0) {
+      if (tick0 === void 0) {
+        tick0 = 0;
+      }
+      var lastTick = Math.floor((rangeMax - tick0) / dtick) * dtick + tick0;
+      if (lastTick > rangeMax) {
+        lastTick -= dtick;
+      }
+      return lastTick;
+    }
+    function generateTickValues(firstTick, lastTick, dtick) {
+      var ticks = [];
+      var numTicks = Math.round((lastTick - firstTick) / dtick) + 1;
+      numTicks = Math.min(100, Math.max(2, numTicks));
+      for (var i = 0; i < numTicks; i++) {
+        ticks.push(firstTick + i * dtick);
+      }
+      return ticks;
+    }
+    function autoTicks(rangeMin, rangeMax, targetTickCount, tick0) {
+      var dtick = calcTickInterval(rangeMin, rangeMax, targetTickCount);
+      if (tick0 === void 0) {
+        if (rangeMin >= 0) {
+          tick0 = 0;
+        } else if (rangeMax <= 0) {
+          tick0 = Math.ceil(rangeMin / dtick) * dtick;
+        } else {
+          tick0 = 0;
+        }
+      }
+      var firstTick = calcFirstTick(rangeMin, rangeMax, dtick, tick0);
+      var lastTick = calcLastTick(rangeMax, dtick, tick0);
+      var values = generateTickValues(firstTick, lastTick, dtick);
+      return {
+        dtick,
+        tick0,
+        firstTick,
+        lastTick,
+        values
+      };
+    }
+    module.exports = {
+      calcTickInterval,
+      calcFirstTick,
+      calcLastTick,
+      generateTickValues,
+      autoTicks
+    };
+  }
+});
+
+// axes/tick_format.js
+var require_tick_format = __commonJS({
+  "axes/tick_format.js"(exports, module) {
+    "use strict";
+    function countDecimals(value) {
+      if (Math.floor(value) === value) {
+        return 0;
+      }
+      var str = value.toString();
+      var decimalIndex = str.indexOf(".");
+      if (decimalIndex === -1) {
+        return 0;
+      }
+      return str.length - decimalIndex - 1;
+    }
+    function roundTo(value, decimals) {
+      var factor = Math.pow(10, decimals);
+      return Math.round(value * factor) / factor;
+    }
+    function formatScientific(value, precision) {
+      if (precision === void 0) {
+        precision = 3;
+      }
+      if (value === 0) {
+        return "0";
+      }
+      var exponent = Math.floor(Math.log10(Math.abs(value)));
+      var mantissa = value / Math.pow(10, exponent);
+      mantissa = roundTo(mantissa, precision);
+      return mantissa + "e" + (exponent >= 0 ? "+" : "") + exponent;
+    }
+    function formatFixed(value, decimals) {
+      return value.toFixed(decimals);
+    }
+    function formatTickLabel(value, options) {
+      options = options || {};
+      if (!isFinite(value)) {
+        return String(value);
+      }
+      if (value === 0) {
+        return "0";
+      }
+      var absValue = Math.abs(value);
+      if (options.format) {
+        if (typeof options.format === "function") {
+          return options.format(value);
+        }
+        return String(value);
+      }
+      var useScientific = false;
+      var precision = 2;
+      if (absValue < 1e-3 && absValue > 0) {
+        useScientific = true;
+        precision = 2;
+      } else if (absValue >= 1e4) {
+        useScientific = true;
+        precision = 3;
+      }
+      var decimals;
+      if (useScientific) {
+        if (options.exponentformat === "none") {
+          useScientific = false;
+        }
+      }
+      if (useScientific) {
+        return formatScientific(value, precision);
+      }
+      if (absValue < 0.01) {
+        decimals = 4;
+      } else if (absValue < 1) {
+        decimals = 3;
+      } else if (absValue < 100) {
+        decimals = 2;
+      } else if (absValue < 1e3) {
+        decimals = 1;
+      } else {
+        decimals = 0;
+      }
+      if (options.precision !== void 0) {
+        decimals = options.precision;
+      }
+      var formatted = formatFixed(value, decimals);
+      if (decimals > 0) {
+        formatted = formatted.replace(/\.?0+$/, "");
+      }
+      return formatted;
+    }
+    function formatTickLabels(values, options) {
+      var result = [];
+      for (var i = 0; i < values.length; i++) {
+        result.push(formatTickLabel(values[i], options));
+      }
+      return result;
+    }
+    function calculatePrecision(values, dtick) {
+      var maxDecimals = 0;
+      var dtickDecimals = countDecimals(dtick);
+      if (dtickDecimals > maxDecimals) {
+        maxDecimals = dtickDecimals;
+      }
+      for (var i = 0; i < values.length; i++) {
+        var decimals = countDecimals(values[i]);
+        if (decimals > maxDecimals) {
+          maxDecimals = decimals;
+        }
+      }
+      return Math.min(6, maxDecimals);
+    }
+    function formatTickLabelsUniform(values, dtick, options) {
+      options = options || {};
+      var precision;
+      if (options.precision !== void 0) {
+        precision = options.precision;
+      } else {
+        precision = calculatePrecision(values, dtick);
+      }
+      var result = [];
+      for (var i = 0; i < values.length; i++) {
+        var formatted = formatFixed(values[i], precision);
+        if (precision > 0) {
+          formatted = formatted.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+        }
+        result.push(formatted);
+      }
+      return result;
+    }
+    module.exports = {
+      countDecimals,
+      roundTo,
+      formatScientific,
+      formatFixed,
+      formatTickLabel,
+      formatTickLabels,
+      formatTickLabelsUniform,
+      calculatePrecision
+    };
+  }
+});
+
+// axes/calc_ticks.js
+var require_calc_ticks = __commonJS({
+  "axes/calc_ticks.js"(exports, module) {
+    "use strict";
+    var autoTicks = require_auto_ticks();
+    var tickFormat = require_tick_format();
+    var DEFAULT_AXIS_CONFIG = {
+      show: true,
+      showticklabels: true,
+      showgrid: false,
+      tickmode: "auto",
+      dtick: void 0,
+      tick0: void 0,
+      nticks: 5,
+      tickvals: void 0,
+      ticktext: void 0,
+      ticklen: 5,
+      tickcolor: "#666666",
+      tickwidth: 1,
+      side: "bottom",
+      // for x-axis: 'bottom' | 'top', for y-axis: 'left' | 'right'
+      title: "",
+      exponentformat: "auto"
+      // 'auto' | 'none' | 'e' | 'E' | 'power' | 'SI'
+    };
+    function inferRangeFromData(data) {
+      if (!data || data.length === 0) {
+        return [0, 1];
+      }
+      var min = data[0];
+      var max = data[0];
+      for (var i = 1; i < data.length; i++) {
+        var val = data[i];
+        if (typeof val === "number" && isFinite(val)) {
+          if (val < min) min = val;
+          if (val > max) max = val;
+        }
+      }
+      if (min === max) {
+        if (min === 0) {
+          return [0, 1];
+        }
+        return [min - Math.abs(min) * 0.1, max + Math.abs(max) * 0.1];
+      }
+      return [min, max];
+    }
+    function normalizeAxisConfig(axis) {
+      if (!axis) {
+        axis = {};
+      }
+      var normalized = {};
+      for (var key in DEFAULT_AXIS_CONFIG) {
+        if (axis.hasOwnProperty(key)) {
+          normalized[key] = axis[key];
+        } else {
+          normalized[key] = DEFAULT_AXIS_CONFIG[axis[key]];
+        }
+      }
+      return normalized;
+    }
+    function calcTicks(axis) {
+      axis = normalizeAxisConfig(axis);
+      var range = axis.range;
+      if (!range) {
+        if (axis.data) {
+          range = inferRangeFromData(axis.data);
+        } else {
+          range = [0, 10];
+        }
+      }
+      var rangeMin = Math.min(range[0], range[1]);
+      var rangeMax = Math.max(range[0], range[1]);
+      var tickValues = [];
+      var tickTexts = [];
+      if (axis.tickmode === "array" && axis.tickvals && axis.tickvals.length > 0) {
+        tickValues = axis.tickvals.slice();
+        tickValues = tickValues.filter(function(v) {
+          return v >= rangeMin && v <= rangeMax;
+        });
+        if (axis.ticktext && axis.ticktext.length === axis.tickvals.length) {
+          var textMap = {};
+          for (var i = 0; i < axis.tickvals.length; i++) {
+            textMap[axis.tickvals[i]] = axis.ticktext[i];
+          }
+          tickTexts = tickValues.map(function(v) {
+            return String(textMap[v] !== void 0 ? textMap[v] : v);
+          });
+        }
+      } else if (axis.tickmode === "linear" && axis.dtick) {
+        var dtick = axis.dtick;
+        var tick0 = axis.tick0 !== void 0 ? axis.tick0 : 0;
+        var firstTick = autoTicks.calcFirstTick(rangeMin, rangeMax, dtick, tick0);
+        var lastTick = autoTicks.calcLastTick(rangeMax, dtick, tick0);
+        tickValues = autoTicks.generateTickValues(firstTick, lastTick, dtick);
+      } else {
+        var autoResult = autoTicks.autoTicks(
+          rangeMin,
+          rangeMax,
+          axis.nticks || 5,
+          axis.tick0
+        );
+        tickValues = autoResult.values;
+      }
+      if (tickTexts.length === 0) {
+        var formatOptions = {
+          exponentformat: axis.exponentformat,
+          precision: axis.precision
+        };
+        var dtick = axis.dtick || autoTicks.calcTickInterval(rangeMin, rangeMax, axis.nticks || 5);
+        tickTexts = tickFormat.formatTickLabelsUniform(tickValues, dtick, formatOptions);
+      }
+      var ticks = [];
+      for (var i = 0; i < tickValues.length; i++) {
+        ticks.push({
+          value: tickValues[i],
+          text: tickTexts[i],
+          index: i
+        });
+      }
+      return ticks;
+    }
+    function calcAxesTicks(config) {
+      config = config || {};
+      var xConfig = config.x || {};
+      var yConfig = config.y || {};
+      if (config.xData) {
+        xConfig.data = config.xData;
+      }
+      if (config.yData) {
+        yConfig.data = config.yData;
+      }
+      return {
+        xTicks: calcTicks(xConfig),
+        yTicks: calcTicks(yConfig)
+      };
+    }
+    module.exports = {
+      calcTicks,
+      calcAxesTicks,
+      normalizeAxisConfig,
+      inferRangeFromData,
+      DEFAULT_AXIS_CONFIG
+    };
+  }
+});
+
+// axes/position.js
+var require_position2 = __commonJS({
+  "axes/position.js"(exports, module) {
+    "use strict";
+    function createLinearToPixel(range, pixelLength, reverse) {
+      var rMin = Math.min(range[0], range[1]);
+      var rMax = Math.max(range[0], range[1]);
+      var rRange = rMax - rMin;
+      if (rRange === 0) {
+        return function l2p(value) {
+          return pixelLength / 2;
+        };
+      }
+      return function l2p(value) {
+        var clampedValue = Math.max(rMin, Math.min(rMax, value));
+        var normalized = (clampedValue - rMin) / rRange;
+        if (reverse) {
+          normalized = 1 - normalized;
+        }
+        return normalized * pixelLength;
+      };
+    }
+    function createPixelToLinear(range, pixelLength, reverse) {
+      var rMin = Math.min(range[0], range[1]);
+      var rMax = Math.max(range[0], range[1]);
+      var rRange = rMax - rMin;
+      if (rRange === 0) {
+        return function p2l(pixel) {
+          return rMin;
+        };
+      }
+      return function p2l(pixel) {
+        var normalized = pixel / pixelLength;
+        if (reverse) {
+          normalized = 1 - normalized;
+        }
+        return rMin + normalized * rRange;
+      };
+    }
+    function createCategoryToPixel(categories, pixelLength, reverse) {
+      var numCategories = categories.length;
+      if (numCategories === 0) {
+        return function c2p(index) {
+          return 0;
+        };
+      }
+      var categoryWidth = pixelLength / numCategories;
+      return function c2p(index) {
+        var clampedIndex = Math.max(0, Math.min(numCategories - 1, Math.floor(index)));
+        var position = clampedIndex * categoryWidth + categoryWidth / 2;
+        if (reverse) {
+          position = pixelLength - position;
+        }
+        return position;
+      };
+    }
+    function calculateAxisMargins(axis, isHorizontal) {
+      var margins = {
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0
+      };
+      if (!axis || axis.show === false) {
+        return margins;
+      }
+      var tickLength = axis.ticklen || 5;
+      var showLabels = axis.showticklabels !== false;
+      var title = axis.title;
+      if (isHorizontal) {
+        if (axis.side === "top") {
+          margins.top = tickLength;
+          if (showLabels) margins.top += 15;
+          if (title) margins.top += 20;
+        } else {
+          margins.bottom = tickLength;
+          if (showLabels) margins.bottom += 15;
+          if (title) margins.bottom += 20;
+        }
+      } else {
+        if (axis.side === "right") {
+          margins.right = tickLength;
+          if (showLabels) margins.right += 30;
+          if (title) margins.right += 20;
+        } else {
+          margins.left = tickLength;
+          if (showLabels) margins.left += 30;
+          if (title) margins.left += 20;
+        }
+      }
+      return margins;
+    }
+    function calculateDrawingArea(canvasWidth, canvasHeight, xAxis, yAxis) {
+      var xMargins = calculateAxisMargins(xAxis, true);
+      var yMargins = calculateAxisMargins(yAxis, false);
+      var margins = {
+        left: Math.max(xMargins.left, yMargins.left, 30),
+        right: Math.max(xMargins.right, yMargins.right, 30),
+        top: Math.max(xMargins.top, yMargins.top, 30),
+        bottom: Math.max(xMargins.bottom, yMargins.bottom, 30)
+      };
+      return {
+        x: margins.left,
+        y: margins.top,
+        width: canvasWidth - margins.left - margins.right,
+        height: canvasHeight - margins.top - margins.bottom,
+        margins
+      };
+    }
+    module.exports = {
+      createLinearToPixel,
+      createPixelToLinear,
+      createCategoryToPixel,
+      calculateAxisMargins,
+      calculateDrawingArea
+    };
+  }
+});
+
+// axes/index.js
+var require_axes = __commonJS({
+  "axes/index.js"(exports, module) {
+    "use strict";
+    var calcTicks = require_calc_ticks();
+    var autoTicks = require_auto_ticks();
+    var tickFormat = require_tick_format();
+    var position = require_position2();
+    function setupAxes(config) {
+      config = config || {};
+      var width = config.width || 600;
+      var height = config.height || 500;
+      var drawingArea = position.calculateDrawingArea(
+        width,
+        height,
+        config.x || {},
+        config.y || {}
+      );
+      var xConfig = config.x || {};
+      var yConfig = config.y || {};
+      if (!xConfig.range && config.xData) {
+        xConfig.range = calcTicks.inferRangeFromData(config.xData);
+      }
+      if (!yConfig.range && config.yData) {
+        yConfig.range = calcTicks.inferRangeFromData(config.yData);
+      }
+      var xRange = xConfig.range || [0, width];
+      var yRange = yConfig.range || [0, height];
+      var ticksResult = calcTicks.calcAxesTicks({
+        x: xConfig,
+        y: yConfig
+      });
+      var xIsReversed = xRange[0] > xRange[1];
+      var yIsReversed = yRange[0] < yRange[1];
+      var xL2P = position.createLinearToPixel(
+        xRange,
+        drawingArea.width,
+        xIsReversed
+      );
+      var yL2P = position.createLinearToPixel(
+        yRange,
+        drawingArea.height,
+        yIsReversed
+      );
+      var xTicksWithPos = ticksResult.xTicks.map(function(tick) {
+        return {
+          value: tick.value,
+          text: tick.text,
+          index: tick.index,
+          pixel: xL2P(tick.value)
+        };
+      });
+      var yTicksWithPos = ticksResult.yTicks.map(function(tick) {
+        return {
+          value: tick.value,
+          text: tick.text,
+          index: tick.index,
+          pixel: yL2P(tick.value)
+        };
+      });
+      return {
+        // Drawing area
+        drawingArea,
+        // X-axis
+        x: {
+          ticks: xTicksWithPos,
+          l2p: xL2P,
+          range: xRange,
+          config: calcTicks.normalizeAxisConfig(xConfig)
+        },
+        // Y-axis
+        y: {
+          ticks: yTicksWithPos,
+          l2p: yL2P,
+          range: yRange,
+          config: calcTicks.normalizeAxisConfig(yConfig)
+        }
+      };
+    }
+    module.exports = {
+      // Main setup function
+      setupAxes,
+      // Tick calculation
+      calcTicks: calcTicks.calcTicks,
+      calcAxesTicks: calcTicks.calcAxesTicks,
+      normalizeAxisConfig: calcTicks.normalizeAxisConfig,
+      inferRangeFromData: calcTicks.inferRangeFromData,
+      // Auto ticks algorithm
+      calcTickInterval: autoTicks.calcTickInterval,
+      calcFirstTick: autoTicks.calcFirstTick,
+      calcLastTick: autoTicks.calcLastTick,
+      generateTickValues: autoTicks.generateTickValues,
+      autoTicks: autoTicks.autoTicks,
+      // Position conversion
+      createLinearToPixel: position.createLinearToPixel,
+      createPixelToLinear: position.createPixelToLinear,
+      createCategoryToPixel: position.createCategoryToPixel,
+      calculateAxisMargins: position.calculateAxisMargins,
+      calculateDrawingArea: position.calculateDrawingArea,
+      // Tick formatting
+      countDecimals: tickFormat.countDecimals,
+      roundTo: tickFormat.roundTo,
+      formatTickLabel: tickFormat.formatTickLabel,
+      formatTickLabels: tickFormat.formatTickLabels,
+      formatTickLabelsUniform: tickFormat.formatTickLabelsUniform,
+      calculatePrecision: tickFormat.calculatePrecision
+    };
+  }
+});
+
+// renderers/canvas/axes.js
+var require_axes2 = __commonJS({
+  "renderers/canvas/axes.js"(exports, module) {
+    "use strict";
+    var axes = require_axes();
+    function drawXAxis(ctx, axisSetup, yOffset) {
+      var xAxis = axisSetup.x;
+      var config = xAxis.config;
+      var ticks = xAxis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (config.show === false) {
+        return;
+      }
+      var side = config.side || "bottom";
+      var tickLength = config.ticklen || 5;
+      var tickColor = config.tickcolor || "#666666";
+      var tickWidth = config.tickwidth || 1;
+      var showLabels = config.showticklabels !== false;
+      var axisY;
+      var labelY;
+      var labelAlign = "center";
+      var labelBaseline = "top";
+      if (side === "top") {
+        axisY = drawingArea.margins.top;
+        labelY = axisY - tickLength - 5;
+        labelBaseline = "bottom";
+      } else {
+        axisY = drawingArea.y + drawingArea.height;
+        labelY = axisY + tickLength + 5;
+        labelBaseline = "top";
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = config.linecolor || "#333";
+      ctx.lineWidth = config.linewidth || 1;
+      ctx.moveTo(drawingArea.x, axisY);
+      ctx.lineTo(drawingArea.x + drawingArea.width, axisY);
+      ctx.stroke();
+      ctx.font = config.tickfont || "12px Arial, sans-serif";
+      ctx.fillStyle = config.tickfontcolor || "#333";
+      ctx.textAlign = labelAlign;
+      ctx.textBaseline = labelBaseline;
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        var x = drawingArea.x + tick.pixel;
+        if (tick.pixel < -10 || tick.pixel > drawingArea.width + 10) {
+          continue;
+        }
+        ctx.beginPath();
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth = tickWidth;
+        if (side === "top") {
+          ctx.moveTo(x, axisY);
+          ctx.lineTo(x, axisY - tickLength);
+        } else {
+          ctx.moveTo(x, axisY);
+          ctx.lineTo(x, axisY + tickLength);
+        }
+        ctx.stroke();
+        if (showLabels) {
+          ctx.fillText(tick.text, x, labelY);
+        }
+      }
+      if (config.title) {
+        ctx.save();
+        ctx.font = config.titlefont || "bold 14px Arial, sans-serif";
+        ctx.fillStyle = config.titlefontcolor || "#000";
+        ctx.textAlign = "center";
+        var titleY;
+        if (side === "top") {
+          titleY = labelY - 25;
+        } else {
+          titleY = labelY + 20;
+        }
+        ctx.fillText(config.title, drawingArea.x + drawingArea.width / 2, titleY);
+        ctx.restore();
+      }
+    }
+    function drawYAxis(ctx, axisSetup, xOffset) {
+      var yAxis = axisSetup.y;
+      var config = yAxis.config;
+      var ticks = yAxis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (config.show === false) {
+        return;
+      }
+      var side = config.side || "left";
+      var tickLength = config.ticklen || 5;
+      var tickColor = config.tickcolor || "#666666";
+      var tickWidth = config.tickwidth || 1;
+      var showLabels = config.showticklabels !== false;
+      var axisX;
+      var labelX;
+      var labelAlign = "end";
+      var labelBaseline = "middle";
+      if (side === "right") {
+        axisX = drawingArea.x + drawingArea.width;
+        labelX = axisX + tickLength + 5;
+        labelAlign = "start";
+      } else {
+        axisX = drawingArea.margins.left;
+        labelX = axisX - tickLength - 5;
+        labelAlign = "end";
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = config.linecolor || "#333";
+      ctx.lineWidth = config.linewidth || 1;
+      ctx.moveTo(axisX, drawingArea.y);
+      ctx.lineTo(axisX, drawingArea.y + drawingArea.height);
+      ctx.stroke();
+      ctx.font = config.tickfont || "12px Arial, sans-serif";
+      ctx.fillStyle = config.tickfontcolor || "#333";
+      ctx.textAlign = labelAlign;
+      ctx.textBaseline = labelBaseline;
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        var y = drawingArea.y + tick.pixel;
+        if (tick.pixel < -10 || tick.pixel > drawingArea.height + 10) {
+          continue;
+        }
+        ctx.beginPath();
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth = tickWidth;
+        if (side === "right") {
+          ctx.moveTo(axisX, y);
+          ctx.lineTo(axisX + tickLength, y);
+        } else {
+          ctx.moveTo(axisX, y);
+          ctx.lineTo(axisX - tickLength, y);
+        }
+        ctx.stroke();
+        if (showLabels) {
+          ctx.fillText(tick.text, labelX, y);
+        }
+      }
+      if (config.title) {
+        ctx.save();
+        ctx.font = config.titlefont || "bold 14px Arial, sans-serif";
+        ctx.fillStyle = config.titlefontcolor || "#000";
+        ctx.textAlign = "center";
+        var titleX;
+        var titleY = drawingArea.y + drawingArea.height / 2;
+        if (side === "right") {
+          titleX = labelX + 30;
+        } else {
+          titleX = labelX - 25;
+        }
+        ctx.translate(titleX, titleY);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(config.title, 0, 0);
+        ctx.restore();
+      }
+    }
+    function drawGrid(ctx, axisSetup, isXAxis) {
+      var axis = isXAxis ? axisSetup.x : axisSetup.y;
+      var config = axis.config;
+      var ticks = axis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (!config.showgrid) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = config.gridcolor || "#e0e0e0";
+      ctx.lineWidth = config.gridwidth || 1;
+      if (config.griddash) {
+        var dashArray = typeof config.griddash === "string" ? config.griddash.split(",").map(Number) : [5, 5];
+        ctx.setLineDash(dashArray);
+      } else {
+        ctx.setLineDash([]);
+      }
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea.width : drawingArea.height)) {
+          continue;
+        }
+        if (isXAxis) {
+          var x = drawingArea.x + tick.pixel;
+          ctx.moveTo(x, drawingArea.y);
+          ctx.lineTo(x, drawingArea.y + drawingArea.height);
+        } else {
+          var y = drawingArea.y + tick.pixel;
+          ctx.moveTo(drawingArea.x, y);
+          ctx.lineTo(drawingArea.x + drawingArea.width, y);
+        }
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    function drawAxes(ctx, axesConfig) {
+      axesConfig = axesConfig || {};
+      var width = axesConfig.width || ctx.canvas.width;
+      var height = axesConfig.height || ctx.canvas.height;
+      var axisSetup = axes.setupAxes(axesConfig);
+      drawGrid(ctx, axisSetup, true);
+      drawGrid(ctx, axisSetup, false);
+      drawXAxis(ctx, axisSetup);
+      drawYAxis(ctx, axisSetup);
+      return axisSetup;
+    }
+    function drawAxesFromSetup(ctx, axisSetup) {
+      drawGrid(ctx, axisSetup, true);
+      drawGrid(ctx, axisSetup, false);
+      drawXAxis(ctx, axisSetup);
+      drawYAxis(ctx, axisSetup);
+    }
+    module.exports = {
+      drawAxes,
+      drawAxesFromSetup,
+      drawXAxis,
+      drawYAxis,
+      drawGrid
+    };
+  }
+});
+
 // renderers/canvas/index.js
 var require_canvas = __commonJS({
   "renderers/canvas/index.js"(exports, module) {
@@ -2795,6 +3620,7 @@ var require_canvas = __commonJS({
     var drawColorbar = require_colorbar2();
     var drawNulls = require_nulls();
     var drawHeatmap = require_heatmap();
+    var axesRenderer = require_axes2();
     var nullHandling = require_null_handling();
     function drawContours(ctx, contourResult, style) {
       style = style || {};
@@ -2914,7 +3740,8 @@ var require_canvas = __commonJS({
       drawLabels,
       drawColorbar,
       drawNulls,
-      drawHeatmap
+      drawHeatmap,
+      drawAxes: axesRenderer.drawAxes
     };
   }
 });
@@ -3033,6 +3860,9 @@ var require_api = __commonJS({
       var style = {
         width,
         height,
+        x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
+        y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
+        z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
         coloring: contourType,
         showLines: contourType === "lines" || contourType === "heatmap",
         lineWidth: 1.5,
@@ -3043,6 +3873,18 @@ var require_api = __commonJS({
       canvasRenderer.drawContours(ctx, result, style);
       if (result.nullMask && result.nullCount > 0) {
         drawNullRegions(ctx, result, style, config.nullRegion);
+      }
+      if (config.axes) {
+        var axesConfig = config.axes;
+        axesConfig.width = width;
+        axesConfig.height = height;
+        if (config.x) {
+          axesConfig.xData = config.x;
+        }
+        if (config.y) {
+          axesConfig.yData = config.y;
+        }
+        canvasRenderer.drawAxes(ctx, axesConfig);
       }
       if (config.colorbar && config.colorbar.show !== false && contourType !== "lines") {
         drawColorbar(ctx, result, colors, config.colorbar, width, height);
@@ -3734,6 +4576,7 @@ var require_index = __commonJS({
       labels: require_labels(),
       colorbar: require_colorbar(),
       renderers: require_renderers(),
+      axes: require_axes(),
       // ============================================
       // Utilities
       // ============================================
@@ -3741,6 +4584,10 @@ var require_index = __commonJS({
     };
     if (typeof module !== "undefined" && module.exports) {
       module.exports = contourCore;
+    }
+    if (typeof window !== "undefined") {
+      window.contourCore = contourCore;
+      window.contour = contourCore;
     }
   }
 });

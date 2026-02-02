@@ -68,6 +68,25 @@ var COLOR_SCALES = {
  * @param {String} config.nullRegion.fill - Fill color for null regions (default: '#ffffff')
  * @param {String} config.nullRegion.stroke - Stroke color for null regions (default: '#cccccc')
  * @param {Number} config.nullRegion.strokeWidth - Stroke width (default: 1)
+ * @param {Object} config.axes - Axes configuration
+ * @param {Object} config.axes.x - X-axis configuration
+ * @param {Boolean} config.axes.x.show - Show X-axis (default: true)
+ * @param {Array<number>} config.axes.x.range - X-axis range [min, max] (inferred from data if not provided)
+ * @param {String} config.axes.x.title - X-axis title
+ * @param {String} config.axes.x.tickmode - 'auto' | 'linear' | 'array'
+ * @param {Number} config.axes.x.dtick - Tick interval (for linear mode)
+ * @param {Number} config.axes.x.nticks - Target number of ticks (for auto mode)
+ * @param {Array} config.axes.x.tickvals - Custom tick values (for array mode)
+ * @param {Array} config.axes.x.ticktext - Custom tick labels (for array mode)
+ * @param {Number} config.axes.x.ticklen - Tick line length (default: 5)
+ * @param {String} config.axes.x.tickcolor - Tick line color (default: '#666')
+ * @param {Number} config.axes.x.tickwidth - Tick line width (default: 1)
+ * @param {String} config.axes.x.side - 'bottom' | 'top' (default: 'bottom')
+ * @param {Boolean} config.axes.x.showgrid - Show X-axis grid lines (default: false)
+ * @param {String} config.axes.x.gridcolor - Grid line color (default: '#e0e0e0')
+ * @param {Number} config.axes.x.gridwidth - Grid line width (default: 1)
+ * @param {Object} config.axes.y - Y-axis configuration (similar to x)
+ * @param {String} config.axes.y.side - 'left' | 'right' (default: 'left')
  * @param {Number} config.width - Canvas width (default: canvas.width)
  * @param {Number} config.height - Canvas height (default: canvas.height)
  */
@@ -123,6 +142,9 @@ function render(canvas, config) {
     var style = {
         width: width,
         height: height,
+        x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
+        y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
+        z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
         coloring: contourType,
         showLines: contourType === 'lines' || contourType === 'heatmap',
         lineWidth: 1.5,
@@ -137,6 +159,25 @@ function render(canvas, config) {
     // Draw null regions if present
     if (result.nullMask && result.nullCount > 0) {
         drawNullRegions(ctx, result, style, config.nullRegion);
+    }
+
+    // Draw axes if configured
+    if (config.axes) {
+        // Set up axes configuration with dimensions
+        var axesConfig = config.axes;
+        axesConfig.width = width;
+        axesConfig.height = height;
+
+        // Pass x and y data for range inference
+        if (config.x) {
+            axesConfig.xData = config.x;
+        }
+        if (config.y) {
+            axesConfig.yData = config.y;
+        }
+
+        // Draw axes (grid lines are drawn automatically if enabled)
+        canvasRenderer.drawAxes(ctx, axesConfig);
     }
 
     // Draw colorbar if requested

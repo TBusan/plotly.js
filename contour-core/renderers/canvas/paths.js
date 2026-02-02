@@ -501,10 +501,10 @@ function scalePoint(style, pt) {
     var padding = style.padding || 30;
 
     // Get data range
-    var xMin = x.length > 0 ? Math.min.apply(Math, x) : 0;
-    var xMax = x.length > 0 ? Math.max.apply(Math, x) : 1;
-    var yMin = y.length > 0 ? Math.min.apply(Math, y) : 0;
-    var yMax = y.length > 0 ? Math.max.apply(Math, y) : 1;
+    var xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
+    var xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
+    var yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
+    var yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
 
     // Avoid division by zero
     var xRange = xMax - xMin || 1;

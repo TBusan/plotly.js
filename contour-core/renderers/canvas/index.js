@@ -10,6 +10,7 @@ var drawLabels = require('./labels');
 var drawColorbar = require('./colorbar');
 var drawNulls = require('./nulls');
 var drawHeatmap = require('./heatmap');
+var axesRenderer = require('./axes');
 var nullHandling = require('../../null_handling');
 
 /**
@@ -184,5 +185,6 @@ module.exports = {
     drawLabels: drawLabels,
     drawColorbar: drawColorbar,
     drawNulls: drawNulls,
-    drawHeatmap: drawHeatmap
+    drawHeatmap: drawHeatmap,
+    drawAxes: axesRenderer.drawAxes
 };
