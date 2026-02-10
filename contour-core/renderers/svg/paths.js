@@ -247,7 +247,7 @@ function createFilledPaths(contourResult, options) {
         var color = getColorForLevel(pathInfo.level, levels, options);
 
         // Build the complete path string
-        var boundaryPath = 'M' + perimeter.join('L') + 'Z';
+        var boundaryPath = 'M' + perimeter.map(function(pt) { return pt.join(' '); }).join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, options);
         var fullpath = '';
 

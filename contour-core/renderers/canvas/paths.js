@@ -350,6 +350,11 @@ function drawFilledPaths(ctx, contourResult, style) {
         }
     }
 
+    // Debug: Log colorScale info
+    if (typeof window !== 'undefined' && window.console) {
+        console.log('[drawFilledPaths] colorScale:', colorScale ? colorScale.slice(0, 3) : null);
+    }
+
     // Draw background layer
     var bgColor;
     if (valueColorMap) {
@@ -395,7 +400,14 @@ function drawFilledPaths(ctx, contourResult, style) {
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
 
-        var boundaryPath = 'M' + perimeter.join('L') + 'Z';
+        // Debug log
+        if (typeof window !== 'undefined' && window.console && i < 3) {
+            console.log('[drawFilledPaths] Path ' + i + ' level=' + pathInfo.level + ' fillColor=' + fillColor +
+                        ' edgepaths=' + pathInfo.edgepaths.length + ' paths=' + pathInfo.paths.length +
+                        ' prefixBoundary=' + pathInfo.prefixBoundary);
+        }
+
+        var boundaryPath = 'M' + perimeter.map(function(pt) { return pt.join(' '); }).join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = pathInfo.prefixBoundary ? (boundaryPath + joinedPaths) : joinedPaths;
 

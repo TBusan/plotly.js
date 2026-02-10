@@ -1764,6 +1764,9 @@ var contourCore = (() => {
             colorScale = [[0, "blue"], [1, "red"]];
           }
         }
+        if (typeof window !== "undefined" && window.console) {
+          console.log("[drawFilledPaths] colorScale:", colorScale ? colorScale.slice(0, 3) : null);
+        }
         var bgColor;
         if (valueColorMap) {
           bgColor = valueColorMap[0][1];
@@ -1802,7 +1805,12 @@ var contourCore = (() => {
           var pathInfo = paths[i];
           var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
           ctx.fillStyle = fillColor;
-          var boundaryPath = "M" + perimeter.join("L") + "Z";
+          if (typeof window !== "undefined" && window.console && i < 3) {
+            console.log("[drawFilledPaths] Path " + i + " level=" + pathInfo.level + " fillColor=" + fillColor + " edgepaths=" + pathInfo.edgepaths.length + " paths=" + pathInfo.paths.length + " prefixBoundary=" + pathInfo.prefixBoundary);
+          }
+          var boundaryPath = "M" + perimeter.map(function(pt) {
+            return pt.join(" ");
+          }).join("L") + "Z";
           var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
           var fullpath = pathInfo.prefixBoundary ? boundaryPath + joinedPaths : joinedPaths;
           if (fullpath) {
@@ -4901,7 +4909,9 @@ var contourCore = (() => {
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
           var color = getColorForLevel(pathInfo.level, levels, options);
-          var boundaryPath = "M" + perimeter.join("L") + "Z";
+          var boundaryPath = "M" + perimeter.map(function(pt) {
+            return pt.join(" ");
+          }).join("L") + "Z";
           var joinedPaths = joinAllPaths(pathInfo, perimeter, options);
           var fullpath = "";
           if (pathInfo.prefixBoundary) {

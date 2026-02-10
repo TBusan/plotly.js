@@ -412,9 +412,11 @@
             var colors = ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
                           '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'];
             var colorScale = result.levels.map(function(level, i) {
-                var t = result.levels.length > 1 ? (i / (result.levels - 1)) : 0.5;
+                var t = result.levels.length > 1 ? (i / (result.levels.length - 1)) : 0.5;
                 var colorIdx = Math.floor(t * (colors.length - 1));
-                return [level, colors[Math.max(0, Math.min(colors.length - 1, colorIdx))]];
+                // Clamp index to valid range
+                colorIdx = Math.max(0, Math.min(colors.length - 1, colorIdx));
+                return [level, colors[colorIdx]];
             });
 
             var style = {
