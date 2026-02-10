@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ncontours 与颜色映射示例 - Contour-Core</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+        .canvas-area {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-width: 100%;
+        }
+        .controls {
+            width: 350px;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .controls h3 {
+            margin-top: 0;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .control-group .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        select, input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        .info-panel h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+        }
+        .info-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .colorscale-preview {
+            display: flex;
+            height: 24px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid #ddd;
+        }
+        .colorscale-preview span {
+            flex: 1;
+        }
+        .section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .section h4 {
+            margin-top: 0;
+            color: #555;
+        }
+        .data-type-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .data-type-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .data-type-btn:hover {
+            background: #bbdefb;
+        }
+        .data-type-btn.active {
+            background: #1976d2;
+            color: white;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .description {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .description code {
+            background: rgba(0,0,0,0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← 返回 Demo 列表</a>
+
+    <h1>ncontours 与颜色映射示例</h1>
+    <p class="subtitle">演示如何使用 ncontours 参数和自定义颜色方案</p>
+
+    <div class="description">
+        <strong>核心概念：</strong><br>
+        • <code>ncontours</code>：自动生成等值线时的目标数量，使用"优美刻度"算法生成美观的等值线级别<br>
+        • <code>colorscale</code>：颜色映射方案，支持预设方案（如 Viridis、Hot）或自定义颜色数组<br>
+        • <code>reversescale</code>：反转颜色方向
+    </div>
+
+    <div class="main-container">
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="700" height="500"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>控制面板</h3>
+
+            <!-- 数据类型选择 -->
+            <div class="control-group">
+                <label>数据类型</label>
+                <div class="data-type-buttons">
+                    <button class="data-type-btn active" onclick="setDataType('gaussian')">高斯分布</button>
+                    <button class="data-type-btn" onclick="setDataType('saddle')">马鞍面</button>
+                    <button class="data-type-btn" onclick="setDataType('peaks')">多峰分布</button>
+                </div>
+            </div>
+
+            <!-- ncontours 控制 -->
+            <div class="control-group">
+                <label>等值线数量 (ncontours)</label>
+                <div class="slider-container">
+                    <input type="range" id="ncontoursSlider" min="3" max="30" value="10" oninput="updateNcontoursDisplay(this.value)">
+                    <span class="slider-value" id="ncontoursValue">10</span>
+                </div>
+                <div class="hint">自动生成的等值线数量</div>
+            </div>
+
+            <!-- 颜色方案选择 -->
+            <div class="control-group">
+                <label>颜色方案 (colorscale)</label>
+                <select id="colorscaleSelect" onchange="updateColorscalePreview()">
+                    <option value="Viridis">Viridis (默认)</option>
+                    <option value="Plasma">Plasma</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Jet">Jet</option>
+                    <option value="Earth">Earth</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Custom">自定义...</option>
+                </select>
+                <div class="colorscale-preview" id="colorscalePreview"></div>
+            </div>
+
+            <!-- 自定义颜色输入 -->
+            <div class="control-group" id="customColorsGroup" style="display: none;">
+                <label>自定义颜色 (逗号分隔)</label>
+                <input type="text" id="customColors" placeholder="#ff0000, #ffff00, #00ff00" value="#0000ff, #00ffff, #00ff00, #ffff00, #ff0000">
+                <div class="hint">支持十六进制、rgb() 或颜色名称</div>
+            </div>
+
+            <!-- 渲染模式 -->
+            <div class="control-group">
+                <label>渲染模式</label>
+                <select id="renderMode">
+                    <option value="fill">填充模式</option>
+                    <option value="lines">线条模式</option>
+                    <option value="heatmap">热力图模式</option>
+                </select>
+            </div>
+
+            <!-- 反转颜色 -->
+            <div class="control-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reverseCheck">
+                    <label for="reverseCheck" style="margin: 0;">反转颜色方向</label>
+                </div>
+            </div>
+
+            <!-- 平滑度 -->
+            <div class="control-group">
+                <label>平滑度</label>
+                <div class="slider-container">
+                    <input type="range" id="smoothingSlider" min="0" max="1" step="0.1" value="0.5" oninput="updateSmoothingDisplay(this.value)">
+                    <span class="slider-value" id="smoothingValue">0.5</span>
+                </div>
+            </div>
+
+            <button onclick="updateChart()">更新图表</button>
+
+            <!-- 信息面板 -->
+            <div class="info-panel">
+                <h4>当前参数</h4>
+                <div class="info-item">
+                    <span class="info-label">数据范围:</span>
+                    <span class="info-value" id="infoRange">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">等值线数量:</span>
+                    <span class="info-value" id="infoLevels">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">等值线级别:</span>
+                    <span class="info-value" id="infoLevelsList">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">颜色数量:</span>
+                    <span class="info-value" id="infoColors">-</span>
+                </div>
+            </div>
+
+            <!-- 代码示例 -->
+            <div class="section">
+                <h4>代码示例</h4>
+                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 12px; overflow-x: auto;"><code style="background: none; padding: 0;">// 使用 ncontours 和 colorscale
+var options = {
+  autocontour: true,
+  ncontours: <span id="codeNcontours">10</span>,
+  smoothing: 0.5
+};
+
+var result = contourCore.computeContours(grid, options);
+
+// 构建颜色映射
+var colorScale = buildColorScale(
+  result.levels,
+  '<span id="codeColorscale">Viridis</span>'
+);</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 颜色方案定义
+        var COLOR_SCALES = {
+            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+            Plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+            Hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000', '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+            Jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80', '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+            Earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b', '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887'],
+            Electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']
+        };
+
+        // 当前状态
+        var currentDataType = 'gaussian';
+        var currentGrid = null;
+        var currentLevels = [];
+        var currentColors = [];
+
+        // 初始化颜色预览
+        function updateColorscalePreview() {
+            var select = document.getElementById('colorscaleSelect');
+            var value = select.value;
+            var preview = document.getElementById('colorscalePreview');
+            var customGroup = document.getElementById('customColorsGroup');
+
+            preview.innerHTML = '';
+
+            if (value === 'Custom') {
+                customGroup.style.display = 'block';
+                var customColors = parseCustomColors();
+                customColors.forEach(function(color) {
+                    var span = document.createElement('span');
+                    span.style.backgroundColor = color;
+                    preview.appendChild(span);
+                });
+            } else {
+                customGroup.style.display = 'none';
+                var colors = COLOR_SCALES[value] || COLOR_SCALES.Viridis;
+                colors.forEach(function(color) {
+                    var span = document.createElement('span');
+                    span.style.backgroundColor = color;
+                    preview.appendChild(span);
+                });
+            }
+        }
+
+        // 解析自定义颜色
+        function parseCustomColors() {
+            var input = document.getElementById('customColors').value;
+            var colors = input.split(',').map(function(s) {
+                return s.trim();
+            }).filter(function(s) {
+                return s.length > 0;
+            });
+
+            if (colors.length === 0) {
+                return COLOR_SCALES.Viridis;
+            }
+
+            return colors;
+        }
+
+        // 获取当前颜色方案
+        function getCurrentColorscale() {
+            var select = document.getElementById('colorscaleSelect');
+            var value = select.value;
+            var reverse = document.getElementById('reverseCheck').checked;
+
+            var colors;
+
+            if (value === 'Custom') {
+                colors = parseCustomColors();
+            } else {
+                colors = COLOR_SCALES[value] || COLOR_SCALES.Viridis;
+            }
+
+            if (reverse) {
+                colors = colors.slice().reverse();
+            }
+
+            return colors;
+        }
+
+        // 构建颜色映射 (level -> color)
+        function buildColorScale(levels, colors) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colors.length - 1));
+                colorIdx = Math.max(0, Math.min(colors.length - 1, colorIdx));
+                return [level, colors[colorIdx]];
+            });
+        }
+
+        // 生成测试数据
+        function generateData(type, size) {
+            var grid = { z: [], x: [], y: [] };
+            size = size || 50;
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    var x = (j - size / 2) / (size / 4);
+                    var y = (i - size / 2) / (size / 4);
+                    var value;
+
+                    switch(type) {
+                        case 'gaussian':
+                            // 高斯分布
+                            var dist = Math.sqrt(x * x + y * y);
+                            value = 100 * Math.exp(-dist * dist / 2);
+                            break;
+                        case 'saddle':
+                            // 马鞍面
+                            value = 50 + 20 * (x * x - y * y);
+                            break;
+                        case 'peaks':
+                            // 多峰分布
+                            value = 30 * Math.exp(-((x - 1) * (x - 1) + y * y) / 2) +
+                                    40 * Math.exp(-((x + 1) * (x + 1) + (y + 0.5) * (y + 0.5)) / 3) +
+                                    20 * Math.sin(x * 2) * Math.cos(y * 2);
+                            break;
+                        default:
+                            value = 0;
+                    }
+
+                    grid.z[i][j] = value;
+                }
+            }
+
+            return grid;
+        }
+
+        // 计算数据范围
+        function getDataRange(grid) {
+            var min = Infinity;
+            var max = -Infinity;
+
+            for (var i = 0; i < grid.z.length; i++) {
+                for (var j = 0; j < grid.z[i].length; j++) {
+                    var val = grid.z[i][j];
+                    if (typeof val === 'number' && !isNaN(val)) {
+                        min = Math.min(min, val);
+                        max = Math.max(max, val);
+                    }
+                }
+            }
+
+            return { min: min, max: max };
+        }
+
+        // 设置数据类型
+        function setDataType(type) {
+            currentDataType = type;
+
+            // 更新按钮状态
+            document.querySelectorAll('.data-type-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            updateChart();
+        }
+
+        // 更新 ncontours 显示
+        function updateNcontoursDisplay(value) {
+            document.getElementById('ncontoursValue').textContent = value;
+            document.getElementById('codeNcontours').textContent = value;
+        }
+
+        // 更新平滑度显示
+        function updateSmoothingDisplay(value) {
+            document.getElementById('smoothingValue').textContent = value;
+        }
+
+        // 更新图表
+        function updateChart() {
+            var canvas = document.getElementById('mainCanvas');
+            var ctx = canvas.getContext('2d');
+
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 获取参数
+            var ncontours = parseInt(document.getElementById('ncontoursSlider').value);
+            var smoothing = parseFloat(document.getElementById('smoothingSlider').value);
+            var renderMode = document.getElementById('renderMode').value;
+            var colors = getCurrentColorscale();
+            var colorscaleName = document.getElementById('colorscaleSelect').value;
+
+            // 生成数据
+            currentGrid = generateData(currentDataType, 50);
+
+            // 计算等值线
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: smoothing
+            };
+
+            var result = contourCore.computeContours(currentGrid, options);
+            currentLevels = result.levels;
+            currentColors = colors;
+
+            // 构建颜色映射
+            var colorScale = buildColorScale(result.levels, colors);
+
+            // 渲染样式
+            var style = {
+                width: canvas.width,
+                height: canvas.height,
+                padding: 40,
+                coloring: renderMode,
+                colorScale: colorScale,
+                smoothing: smoothing,
+                showLines: true,
+                lineWidth: 1.5,
+                z: currentGrid.z,
+                x: currentGrid.x,
+                y: currentGrid.y
+            };
+
+            // 绘制
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+
+            // 绘制颜色条
+            drawColorbar(ctx, result, colors, canvas.width, canvas.height);
+
+            // 更新信息面板
+            var range = getDataRange(currentGrid);
+            document.getElementById('infoRange').textContent = range.min.toFixed(1) + ' ~ ' + range.max.toFixed(1);
+            document.getElementById('infoLevels').textContent = result.levels.length;
+            document.getElementById('infoLevelsList').textContent =
+                '[' + result.levels.slice(0, 4).join(', ') +
+                (result.levels.length > 4 ? ', ...' : '') + ']';
+            document.getElementById('infoColors').textContent = colors.length;
+            document.getElementById('codeColorscale').textContent = colorscaleName === 'Custom' ? '自定义' : colorscaleName;
+        }
+
+        // 绘制颜色条
+        function drawColorbar(ctx, result, colors, canvasWidth, canvasHeight) {
+            var thickness = 20;
+            var len = 0.7;
+            var barHeight = canvasHeight * len;
+            var x = canvasWidth - thickness - 30;
+            var y = (canvasHeight - barHeight) / 2;
+
+            // 绘制渐变
+            for (var i = 0; i < barHeight; i++) {
+                var t = 1 - i / barHeight;
+                var colorIdx = Math.floor(t * (colors.length - 1));
+                colorIdx = Math.max(0, Math.min(colors.length - 1, colorIdx));
+
+                ctx.fillStyle = colors[colorIdx];
+                ctx.fillRect(x, y + i, thickness, 1);
+            }
+
+            // 绘制边框
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, thickness, barHeight);
+
+            // 绘制刻度标签
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+
+            var levels = result.levels;
+            var tickCount = Math.min(5, levels.length);
+            for (var i = 0; i < tickCount; i++) {
+                var idx = Math.floor(i * (levels.length - 1) / (tickCount - 1));
+                var level = levels[idx];
+                var t = (level - levels[0]) / (levels[levels.length - 1] - levels[0]);
+                var tickY = y + barHeight * (1 - t);
+
+                ctx.fillText(level.toFixed(1), x + thickness + 8, tickY);
+            }
+        }
+
+        // 初始化
+        updateColorscalePreview();
+        updateChart();
+    </script>
+</body>
+</html>

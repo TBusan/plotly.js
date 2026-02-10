@@ -55,6 +55,9 @@ var COLOR_SCALES = {
  * @param {Number} config.ncontours - Number of auto contours (default: 15)
  * @param {Number} config.smoothing - Smoothing factor 0-1 (default: 0.5)
  * @param {String|Array} config.colorscale - Color scale name or array of colors
+ * @param {Array} config.valueColorMap - Segmented color mapping in [[value, color], ...] format
+ *                                    Example: [[10, '#ff0000'], [20, '#00ff00'], [30, '#0000ff']]
+ *                                    value < 10 uses '#ff0000', 10-20 uses '#00ff00', >= 30 uses '#0000ff'
  * @param {Number} config.zmin - Minimum z value for color mapping
  * @param {Number} config.zmax - Maximum z value for color mapping
  * @param {Boolean} config.reversescale - Reverse the color scale
@@ -116,7 +119,8 @@ function render(canvas, config) {
         start: config.contours ? config.contours.start : undefined,
         end: config.contours ? config.contours.end : undefined,
         size: config.contours ? config.contours.size : undefined,
-        smoothing: config.smoothing !== undefined ? config.smoothing : 0.5
+        smoothing: config.smoothing !== undefined ? config.smoothing : 0.5,
+        valueColorMap: config.valueColorMap // Segmented color mapping [[value, color], ...]
     };
 
     // Compute contours
@@ -132,11 +136,14 @@ function render(canvas, config) {
         contourType = config.contours.type;
     }
 
-    // Get color scale
+    // Get color scale (not used if valueColorMap is provided)
     var colors = getColors(config.colorscale, result.levels, config.zmin, config.zmax, config.reversescale);
 
-    // Build color scale array for renderer
+    // Build color scale array for renderer (for non-valueColorMap modes)
     var colorScale = buildColorScale(result.levels, colors);
+
+    // For valueColorMap, build a direct mapping format
+    var valueColorMap = config.valueColorMap;
 
     // Rendering style
     var style = {
@@ -150,6 +157,7 @@ function render(canvas, config) {
         lineWidth: 1.5,
         lineColor: contourType === 'lines' ? '#666' : 'rgba(255,255,255,0.5)',
         colorScale: colorScale,
+        valueColorMap: valueColorMap, // Segmented color mapping
         smoothing: options.smoothing
     };
 
@@ -195,6 +203,7 @@ function render(canvas, config) {
  * @param {HTMLCanvasElement} canvas - Canvas element to render on
  * @param {Object} result - Result from computeContours()
  * @param {Object} options - Rendering options
+ * @param {Array} options.valueColorMap - Segmented color mapping [[value, color], ...]
  */
 function drawTo(canvas, result, options) {
     if (!canvas) {
@@ -215,7 +224,7 @@ function drawTo(canvas, result, options) {
     var width = options.width || canvas.width || 600;
     var height = options.height || canvas.height || 500;
 
-    // Get color scale
+    // Get color scale (not used if valueColorMap is provided)
     var colors = getColors(
         options.colorscale,
         result.levels,
@@ -225,6 +234,7 @@ function drawTo(canvas, result, options) {
     );
 
     var colorScale = buildColorScale(result.levels, colors);
+    var valueColorMap = options.valueColorMap;
 
     var style = {
         width: width,
@@ -234,6 +244,7 @@ function drawTo(canvas, result, options) {
         lineWidth: options.lineWidth || 1.5,
         lineColor: options.lineColor || '#666',
         colorScale: colorScale,
+        valueColorMap: valueColorMap,
         smoothing: options.smoothing || 0
     };
 

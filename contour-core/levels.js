@@ -9,6 +9,7 @@
  *
  * @param {Object} options - Contour options
  * @param {Array} options.thresholds - Custom threshold values (optional)
+ * @param {Array} options.valueColorMap - Value-color map in [[value, color], ...] format (optional, highest priority)
  * @param {Boolean} options.autocontour - Auto-generate contour levels
  * @param {Number} options.start - Start value for contours
  * @param {Number} options.end - End value for contours
@@ -20,7 +21,35 @@
 function setContours(options, vals) {
     var levels = [];
 
-    // Check if we have custom thresholds - highest priority
+    // HIGHEST PRIORITY: valueColorMap - Extract threshold values from [[value, color], ...] format
+    // This format defines segmented color mapping where each value is a boundary
+    // Example: [[10, '#300030'], [20, '#ff453'], [30, '#ff5663']]
+    //          means: value < 10 uses '#300030', 10-20 uses '#ff453', 20-30 uses '#ff5663'
+    if (options.valueColorMap && Array.isArray(options.valueColorMap) && options.valueColorMap.length > 0) {
+        // Validate valueColorMap format: [[value, color], ...]
+        var isValidFormat = options.valueColorMap.every(function(item) {
+            return Array.isArray(item) && item.length >= 2 &&
+                   typeof item[0] === 'number' && typeof item[1] === 'string';
+        });
+
+        if (isValidFormat) {
+            // Extract threshold values and sort
+            levels = options.valueColorMap.map(function(item) {
+                return item[0];
+            }).sort(function(a, b) {
+                return a - b;
+            });
+
+            // Remove duplicates
+            levels = uniqueSorted(levels);
+
+            if (levels.length > 0) {
+                return levels;
+            }
+        }
+    }
+
+    // Check if we have custom thresholds - second priority
     if (options.thresholds && Array.isArray(options.thresholds) && options.thresholds.length > 0) {
         // Validate and sort thresholds
         levels = options.thresholds.slice().sort(function(a, b) {

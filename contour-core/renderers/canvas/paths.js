@@ -206,11 +206,58 @@ function getColorForValue(value, colorScale) {
 }
 
 /**
- * Get color for a contour level
- * Supports both [[0, color], ...] and [[level, color], ...] formats
+ * Get color for a value using segmented color mapping (valueColorMap)
+ * valueColorMap format: [[threshold, color], ...]
+ * Example: [[10, 'red'], [20, 'blue'], [30, 'green']]
+ *          value < 10 uses 'red', 10-20 uses 'blue', >= 30 uses 'green'
  */
-function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize) {
-    // Validate inputs
+function getColorForSegmentedValue(value, valueColorMap) {
+    if (!valueColorMap || !Array.isArray(valueColorMap) || valueColorMap.length === 0) {
+        return 'rgba(100, 100, 100, 0.5)';
+    }
+
+    // If value is below first threshold, use first color
+    if (value < valueColorMap[0][0]) {
+        return valueColorMap[0][1];
+    }
+
+    // Find the appropriate segment
+    for (var i = 0; i < valueColorMap.length - 1; i++) {
+        if (value >= valueColorMap[i][0] && value < valueColorMap[i + 1][0]) {
+            return valueColorMap[i][1];
+        }
+    }
+
+    // If value is at or above last threshold, use last color
+    return valueColorMap[valueColorMap.length - 1][1];
+}
+
+/**
+ * Get color for a contour level
+ * Supports:
+ * 1. valueColorMap: Segmented color mapping [[threshold, color], ...]
+ * 2. colorScale: [[0, color], ...] normalized format
+ * 3. [[level, color], ...] direct level-to-color mapping
+ */
+function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
+    // PRIORITY 1: Use valueColorMap (segmented color mapping) if provided
+    if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
+        // For segmented mapping, the color is determined by the value relative to thresholds
+        // Each level represents a threshold boundary, so we use the midpoint of the segment
+        var segmentValue;
+        if (levelIndex < valueColorMap.length - 1) {
+            // Midpoint between this threshold and next
+            segmentValue = (valueColorMap[levelIndex][0] + valueColorMap[levelIndex + 1][0]) / 2;
+        } else if (levelIndex === valueColorMap.length - 1) {
+            // Last segment: value above the last threshold
+            segmentValue = valueColorMap[levelIndex][0] + 1; // Just above the threshold
+        } else {
+            segmentValue = level;
+        }
+        return getColorForSegmentedValue(segmentValue, valueColorMap);
+    }
+
+    // Validate inputs for other color modes
     if (!colorScale || colorScale.length === 0) {
         return 'rgba(100, 100, 100, 0.5)';
     }
@@ -293,6 +340,7 @@ function drawFilledPaths(ctx, contourResult, style) {
     var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
     var stepSize = (!hasCustomLevels && levels.length > 1) ? levels[1] - levels[0] : 0;
     var colorScale = style.colorScale;
+    var valueColorMap = style.valueColorMap; // Segmented color mapping [[value, color], ...]
     if (!colorScale) {
         if (typeof style.colorscale === 'string') {
             var colors = require('../../colorbar/colors');
@@ -304,7 +352,10 @@ function drawFilledPaths(ctx, contourResult, style) {
 
     // Draw background layer
     var bgColor;
-    if (hasCustomLevels) {
+    if (valueColorMap) {
+        // For segmented mapping, background uses the first color (below minimum threshold)
+        bgColor = valueColorMap[0][1];
+    } else if (hasCustomLevels) {
         if (levels.length > 1) {
             var firstInterval = levels[1] - levels[0];
             var bgValue = levels[0] - firstInterval / 2;
@@ -315,7 +366,7 @@ function drawFilledPaths(ctx, contourResult, style) {
             normalizedBg = Math.max(0, Math.min(1, normalizedBg));
             bgColor = getColorForValue(normalizedBg, colorScale);
         } else {
-            bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize);
+            bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize, null);
         }
     } else {
         var bgValue = levels[0] - 0.5 * stepSize;
@@ -341,7 +392,7 @@ function drawFilledPaths(ctx, contourResult, style) {
         var pathInfo = paths[i];
 
         // Get color and build path
-        var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize);
+        var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
 
         var boundaryPath = 'M' + perimeter.join('L') + 'Z';

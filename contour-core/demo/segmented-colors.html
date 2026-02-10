@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分段颜色映射示例 - Contour-Core</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+        .canvas-area {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-width: 100%;
+        }
+        .controls {
+            width: 380px;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .controls h3 {
+            margin-top: 0;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .control-group .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            min-height: 80px;
+            resize: vertical;
+        }
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .preset-btn:hover {
+            background: #bbdefb;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        .info-panel h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+        }
+        .info-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .color-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .description {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .description code {
+            background: rgba(0,0,0,0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .render-mode-tabs {
+            display: flex;
+            gap: 5px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .mode-tab:hover {
+            background: #e0e0e0;
+        }
+        .mode-tab.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← 返回 Demo 列表</a>
+
+    <h1>分段颜色映射示例</h1>
+    <p class="subtitle">使用 valueColorMap 参数实现分段颜色控制</p>
+
+    <div class="description">
+        <strong>分段颜色映射格式：</strong><code>[[值, 颜色], [值, 颜色], ...]</code><br>
+        每个数组项定义一个边界值和对应的颜色。值在两个边界之间时使用较低边界的颜色。<br>
+        例如：<code>[[10, '#ff0000'], [20, '#00ff00'], [30, '#0000ff']]</code> 表示：<br>
+        • 值 < 10: 使用红色<br>
+        • 10 ≤ 值 < 20: 使用绿色<br>
+        • 20 ≤ 值 < 30: 使用蓝色<br>
+        • 值 ≥ 30: 使用蓝色（最后一个颜色延续）
+    </div>
+
+    <div class="main-container">
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="700" height="500"></canvas>
+            </div>
+            <div class="color-legend" id="colorLegend"></div>
+        </div>
+
+        <div class="controls">
+            <h3>控制面板</h3>
+
+            <!-- 预设方案 -->
+            <div class="control-group">
+                <label>预设方案</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="applyPreset('temperature')">温度分层</button>
+                    <button class="preset-btn" onclick="applyPreset('elevation')">海拔分层</button>
+                    <button class="preset-btn" onclick="applyPreset('pollution')">污染指数</button>
+                    <button class="preset-btn" onclick="applyPreset('custom')">自定义</button>
+                </div>
+            </div>
+
+            <!-- valueColorMap 输入 -->
+            <div class="control-group">
+                <label>分段颜色映射 (valueColorMap)</label>
+                <textarea id="valueColorMapInput" placeholder="例如: [[10, '#ff0000'], [20, '#00ff00'], [30, '#0000ff']]"></textarea>
+                <div class="hint">格式: [[值, 颜色], [值, 颜色], ...]</div>
+            </div>
+
+            <!-- 渲染模式 -->
+            <div class="control-group">
+                <label>渲染模式</label>
+                <div class="render-mode-tabs">
+                    <button class="mode-tab active" onclick="setRenderMode('fill')">填充</button>
+                    <button class="mode-tab" onclick="setRenderMode('lines')">线条</button>
+                    <button class="mode-tab" onclick="setRenderMode('heatmap')">热力图</button>
+                </div>
+            </div>
+
+            <!-- 平滑度 -->
+            <div class="control-group">
+                <label>平滑度</label>
+                <div class="slider-container">
+                    <input type="range" id="smoothingSlider" min="0" max="1" step="0.1" value="0.5" oninput="updateSmoothingDisplay(this.value)">
+                    <span class="slider-value" id="smoothingValue">0.5</span>
+                </div>
+            </div>
+
+            <!-- 线条显示 -->
+            <div class="control-group">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="showLinesCheck" checked>
+                    显示等值线边界
+                </label>
+            </div>
+
+            <button onclick="updateChart()">更新图表</button>
+
+            <!-- 信息面板 -->
+            <div class="info-panel">
+                <h4>当前参数</h4>
+                <div class="info-item">
+                    <span class="info-label">分段数量:</span>
+                    <span class="info-value" id="infoSegments">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">等值线级别:</span>
+                    <span class="info-value" id="infoLevels">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">数据范围:</span>
+                    <span class="info-value" id="infoRange">-</span>
+                </div>
+            </div>
+
+            <!-- 代码示例 -->
+            <div class="info-panel">
+                <h4>代码示例</h4>
+                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; overflow-x: auto;"><code>// 使用分段颜色映射
+var config = {
+  z: gridData,
+  valueColorMap: [
+    [10, '#ff0000'],
+    [20, '#00ff00'],
+    [30, '#0000ff']
+  ],
+  contours: { type: 'fill' }
+};
+
+contourCore.render(canvas, config);</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 预设方案
+        var PRESETS = {
+            temperature: {
+                name: '温度分层',
+                valueColorMap: [
+                    [0, '#0000ff'],    // 严寒 (< 0°C)
+                    [10, '#00bfff'],   // 寒冷 (0-10°C)
+                    [20, '#00ff00'],   // 凉爽 (10-20°C)
+                    [30, '#ffff00'],   // 温暖 (20-30°C)
+                    [35, '#ffa500'],   // 炎热 (30-35°C)
+                    [40, '#ff0000']    // 酷热 (≥ 40°C)
+                ]
+            },
+            elevation: {
+                name: '海拔分层',
+                valueColorMap: [
+                    [0, '#006633'],    // 深海 (< 0m)
+                    [200, '#00cc66'],  // 浅海 (0-200m)
+                    [500, '#cccccc'],  // 平原 (200-500m)
+                    [1000, '#996633'], // 丘陵 (500-1000m)
+                    [2000, '#663300'], // 山地 (1000-2000m)
+                    [4000, '#ffffff']  // 高山/雪地 (≥ 2000m)
+                ]
+            },
+            pollution: {
+                name: '污染指数',
+                valueColorMap: [
+                    [50, '#00e400'],   // 优 (0-50)
+                    [100, '#ffff00'],  // 良 (50-100)
+                    [150, '#ff7e00'],  // 轻度污染 (100-150)
+                    [200, '#ff0000'],  // 中度污染 (150-200)
+                    [300, '#99004c'],  // 重度污染 (200-300)
+                    [500, '#7e0023']   // 严重污染 (≥ 300)
+                ]
+            },
+            custom: {
+                name: '自定义',
+                valueColorMap: [
+                    [10, '#300030'],
+                    [20, '#ff0453'],
+                    [30, '#ff5663']
+                ]
+            }
+        };
+
+        // 当前状态
+        var currentRenderMode = 'fill';
+        var currentValueColorMap = PRESETS.temperature.valueColorMap;
+
+        // 初始化
+        function init() {
+            applyPreset('temperature');
+        }
+
+        // 应用预设
+        function applyPreset(presetKey) {
+            var preset = PRESETS[presetKey];
+            currentValueColorMap = preset.valueColorMap;
+
+            // 更新输入框
+            var inputStr = JSON.stringify(preset.valueColorMap)
+                .replace(/\],/g, '],\n  ')
+                .replace('[[', '[\n  [')
+                .replace(']]', ']\n]');
+            document.getElementById('valueColorMapInput').value = inputStr;
+
+            updateChart();
+        }
+
+        // 设置渲染模式
+        function setRenderMode(mode) {
+            currentRenderMode = mode;
+
+            // 更新按钮状态
+            document.querySelectorAll('.mode-tab').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            updateChart();
+        }
+
+        // 更新平滑度显示
+        function updateSmoothingDisplay(value) {
+            document.getElementById('smoothingValue').textContent = value;
+        }
+
+        // 解析 valueColorMap 输入
+        function parseValueColorMap() {
+            var input = document.getElementById('valueColorMapInput').value;
+
+            try {
+                // 尝试解析 JSON
+                var parsed = JSON.parse(input);
+
+                // 验证格式
+                if (!Array.isArray(parsed)) {
+                    throw new Error('必须是数组');
+                }
+
+                var isValid = parsed.every(function(item) {
+                    return Array.isArray(item) && item.length >= 2 &&
+                           typeof item[0] === 'number' && typeof item[1] === 'string';
+                });
+
+                if (!isValid) {
+                    throw new Error('格式错误');
+                }
+
+                // 排序（按值）
+                parsed.sort(function(a, b) {
+                    return a[0] - b[0];
+                });
+
+                return parsed;
+            } catch (e) {
+                console.error('解析 valueColorMap 失败:', e);
+                return PRESETS.temperature.valueColorMap;
+            }
+        }
+
+        // 生成测试数据
+        function generateGrid(size) {
+            var grid = [];
+            size = size || 50;
+
+            for (var i = 0; i < size; i++) {
+                grid[i] = [];
+                for (var j = 0; j < size; j++) {
+                    var x = (j - size / 2) / (size / 6);
+                    var y = (i - size / 2) / (size / 6);
+
+                    // 生成多峰分布，值范围约 0-50
+                    var value = 25 + 15 * Math.exp(-((x - 1) * (x - 1) + y * y) / 4) +
+                                20 * Math.exp(-((x + 1.5) * (x + 1.5) + (y + 0.5) * (y + 0.5)) / 3) +
+                                10 * Math.sin(x) * Math.cos(y);
+
+                    grid[i][j] = value;
+                }
+            }
+
+            return grid;
+        }
+
+        // 计算数据范围
+        function getDataRange(grid) {
+            var min = Infinity;
+            var max = -Infinity;
+
+            for (var i = 0; i < grid.length; i++) {
+                for (var j = 0; j < grid[i].length; j++) {
+                    var val = grid[i][j];
+                    if (typeof val === 'number' && !isNaN(val)) {
+                        min = Math.min(min, val);
+                        max = Math.max(max, val);
+                    }
+                }
+            }
+
+            return { min: min, max: max };
+        }
+
+        // 更新颜色图例
+        function updateColorLegend(valueColorMap) {
+            var legend = document.getElementById('colorLegend');
+            legend.innerHTML = '';
+
+            for (var i = 0; i < valueColorMap.length; i++) {
+                var item = valueColorMap[i];
+                var label;
+
+                if (i === 0) {
+                    label = '< ' + item[0];
+                } else if (i === valueColorMap.length - 1) {
+                    label = '≥ ' + item[0];
+                } else {
+                    label = valueColorMap[i - 1][0] + ' - ' + item[0];
+                }
+
+                var div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = '<div class="legend-color" style="background: ' + item[1] + '"></div>' +
+                               '<span>' + label + '</span>';
+                legend.appendChild(div);
+            }
+        }
+
+        // 更新图表
+        function updateChart() {
+            var canvas = document.getElementById('mainCanvas');
+            var ctx = canvas.getContext('2d');
+
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 获取参数
+            var valueColorMap = parseValueColorMap();
+            currentValueColorMap = valueColorMap;
+            var smoothing = parseFloat(document.getElementById('smoothingSlider').value);
+            var showLines = document.getElementById('showLinesCheck').checked;
+
+            // 生成数据
+            var gridData = generateGrid(50);
+
+            // 计算数据范围
+            var range = getDataRange(gridData);
+
+            // 使用 API 渲染
+            var config = {
+                z: gridData,
+                valueColorMap: valueColorMap,
+                smoothing: smoothing,
+                contours: {
+                    type: currentRenderMode
+                }
+            };
+
+            try {
+                contourCore.render(canvas, config);
+
+                // 更新信息面板
+                document.getElementById('infoSegments').textContent = valueColorMap.length;
+                document.getElementById('infoLevels').textContent = valueColorMap.map(function(item) {
+                    return item[0];
+                }).join(', ');
+                document.getElementById('infoRange').textContent = range.min.toFixed(1) + ' ~ ' + range.max.toFixed(1);
+
+                // 更新图例
+                updateColorLegend(valueColorMap);
+
+                // 绘制等值线（如果需要）
+                if (showLines && currentRenderMode === 'fill') {
+                    // 这里已经由 contourCore.render 处理了
+                }
+
+            } catch (e) {
+                console.error('渲染错误:', e);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('渲染错误: ' + e.message, canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

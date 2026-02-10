@@ -11,6 +11,22 @@ var contourCore = (() => {
       "use strict";
       function setContours(options, vals) {
         var levels = [];
+        if (options.valueColorMap && Array.isArray(options.valueColorMap) && options.valueColorMap.length > 0) {
+          var isValidFormat = options.valueColorMap.every(function(item) {
+            return Array.isArray(item) && item.length >= 2 && typeof item[0] === "number" && typeof item[1] === "string";
+          });
+          if (isValidFormat) {
+            levels = options.valueColorMap.map(function(item) {
+              return item[0];
+            }).sort(function(a, b) {
+              return a - b;
+            });
+            levels = uniqueSorted(levels);
+            if (levels.length > 0) {
+              return levels;
+            }
+          }
+        }
         if (options.thresholds && Array.isArray(options.thresholds) && options.thresholds.length > 0) {
           levels = options.thresholds.slice().sort(function(a, b) {
             return a - b;
@@ -1654,7 +1670,32 @@ var contourCore = (() => {
         if (value > colorScale[n - 1][0]) return colorScale[n - 1][1];
         return colorScale[Math.floor(n / 2)][1];
       }
-      function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize) {
+      function getColorForSegmentedValue(value, valueColorMap) {
+        if (!valueColorMap || !Array.isArray(valueColorMap) || valueColorMap.length === 0) {
+          return "rgba(100, 100, 100, 0.5)";
+        }
+        if (value < valueColorMap[0][0]) {
+          return valueColorMap[0][1];
+        }
+        for (var i = 0; i < valueColorMap.length - 1; i++) {
+          if (value >= valueColorMap[i][0] && value < valueColorMap[i + 1][0]) {
+            return valueColorMap[i][1];
+          }
+        }
+        return valueColorMap[valueColorMap.length - 1][1];
+      }
+      function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
+        if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
+          var segmentValue;
+          if (levelIndex < valueColorMap.length - 1) {
+            segmentValue = (valueColorMap[levelIndex][0] + valueColorMap[levelIndex + 1][0]) / 2;
+          } else if (levelIndex === valueColorMap.length - 1) {
+            segmentValue = valueColorMap[levelIndex][0] + 1;
+          } else {
+            segmentValue = level;
+          }
+          return getColorForSegmentedValue(segmentValue, valueColorMap);
+        }
         if (!colorScale || colorScale.length === 0) {
           return "rgba(100, 100, 100, 0.5)";
         }
@@ -1714,6 +1755,7 @@ var contourCore = (() => {
         var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
         var stepSize = !hasCustomLevels && levels.length > 1 ? levels[1] - levels[0] : 0;
         var colorScale = style.colorScale;
+        var valueColorMap = style.valueColorMap;
         if (!colorScale) {
           if (typeof style.colorscale === "string") {
             var colors = require_colors();
@@ -1723,7 +1765,9 @@ var contourCore = (() => {
           }
         }
         var bgColor;
-        if (hasCustomLevels) {
+        if (valueColorMap) {
+          bgColor = valueColorMap[0][1];
+        } else if (hasCustomLevels) {
           if (levels.length > 1) {
             var firstInterval = levels[1] - levels[0];
             var bgValue = levels[0] - firstInterval / 2;
@@ -1734,7 +1778,7 @@ var contourCore = (() => {
             normalizedBg = Math.max(0, Math.min(1, normalizedBg));
             bgColor = getColorForValue(normalizedBg, colorScale);
           } else {
-            bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize);
+            bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize, null);
           }
         } else {
           var bgValue = levels[0] - 0.5 * stepSize;
@@ -1756,7 +1800,7 @@ var contourCore = (() => {
         ctx.fill();
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
-          var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize);
+          var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
           ctx.fillStyle = fillColor;
           var boundaryPath = "M" + perimeter.join("L") + "Z";
           var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
@@ -3848,7 +3892,9 @@ var contourCore = (() => {
           start: config.contours ? config.contours.start : void 0,
           end: config.contours ? config.contours.end : void 0,
           size: config.contours ? config.contours.size : void 0,
-          smoothing: config.smoothing !== void 0 ? config.smoothing : 0.5
+          smoothing: config.smoothing !== void 0 ? config.smoothing : 0.5,
+          valueColorMap: config.valueColorMap
+          // Segmented color mapping [[value, color], ...]
         };
         var result = compute.computeContours(grid, options);
         var width = config.width || canvas.width || 600;
@@ -3859,6 +3905,7 @@ var contourCore = (() => {
         }
         var colors = getColors(config.colorscale, result.levels, config.zmin, config.zmax, config.reversescale);
         var colorScale = buildColorScale(result.levels, colors);
+        var valueColorMap = config.valueColorMap;
         var style = {
           width,
           height,
@@ -3870,6 +3917,8 @@ var contourCore = (() => {
           lineWidth: 1.5,
           lineColor: contourType === "lines" ? "#666" : "rgba(255,255,255,0.5)",
           colorScale,
+          valueColorMap,
+          // Segmented color mapping
           smoothing: options.smoothing
         };
         canvasRenderer.drawContours(ctx, result, style);
@@ -3915,6 +3964,7 @@ var contourCore = (() => {
           options.reversescale
         );
         var colorScale = buildColorScale(result.levels, colors);
+        var valueColorMap = options.valueColorMap;
         var style = {
           width,
           height,
@@ -3923,6 +3973,7 @@ var contourCore = (() => {
           lineWidth: options.lineWidth || 1.5,
           lineColor: options.lineColor || "#666",
           colorScale,
+          valueColorMap,
           smoothing: options.smoothing || 0
         };
         canvasRenderer.drawContours(ctx, result, style);
