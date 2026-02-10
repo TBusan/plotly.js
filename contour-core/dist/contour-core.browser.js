@@ -1986,8 +1986,32 @@ var contourCore = (() => {
         ANGLECOST: 1,
         NEIGHBORCOST: 5,
         SAMELEVELFACTOR: 10,
-        SAMELEVELDISTANCE: 5
+        SAMELEVELDISTANCE: 5,
+        MAXCOST: 100
       };
+      function segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+        var a = x2 - x1, b = x3 - x1, c = x4 - x3;
+        var d = y2 - y1, e = y3 - y1, f = y4 - y3;
+        var det = a * f - c * d;
+        if (det === 0) return null;
+        var t = (b * f - c * e) / det;
+        var u = (b * d - a * e) / det;
+        if (u < 0 || u > 1 || t < 0 || t > 1) return null;
+        return { x: x1 + a * t, y: y1 + d * t };
+      }
+      function perpDistance2(xab, yab, llab, xac, yac) {
+        var fcAB = xac * xab + yac * yab;
+        if (fcAB < 0) {
+          return xac * xac + yac * yac;
+        } else if (fcAB > llab) {
+          var xbc = xac - xab;
+          var ybc = yac - yab;
+          return xbc * xbc + ybc * ybc;
+        } else {
+          var crossProduct = xac * yab - yac * xab;
+          return crossProduct * crossProduct / llab;
+        }
+      }
       function locationCost(loc, textOpts, labelData, bounds) {
         var halfWidth = textOpts.width / 2;
         var halfHeight = textOpts.height / 2;
@@ -2037,22 +2061,22 @@ var contourCore = (() => {
         return cost;
       }
       function segmentDistance(x1, y1, x2, y2, x3, y3, x4, y4) {
-        var dist = Infinity;
-        dist = Math.min(dist, pointToSegmentDistance(x1, y1, x3, y3, x4, y4));
-        dist = Math.min(dist, pointToSegmentDistance(x2, y2, x3, y3, x4, y4));
-        dist = Math.min(dist, pointToSegmentDistance(x3, y3, x1, y1, x2, y2));
-        dist = Math.min(dist, pointToSegmentDistance(x4, y4, x1, y1, x2, y2));
-        return dist;
-      }
-      function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
-        var dx = x2 - x1;
-        var dy = y2 - y1;
-        var len2 = dx * dx + dy * dy;
-        if (len2 === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
-        var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
-        var projX = x1 + t * dx;
-        var projY = y1 + t * dy;
-        return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+        if (segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4)) return 0;
+        var x12 = x2 - x1, y12 = y2 - y1;
+        var x34 = x4 - x3, y34 = y4 - y3;
+        var ll12 = x12 * x12 + y12 * y12;
+        var ll34 = x34 * x34 + y34 * y34;
+        var dist2 = Math.min(
+          perpDistance2(x12, y12, ll12, x3 - x1, y3 - y1),
+          // Point 3 to segment 12
+          perpDistance2(x12, y12, ll12, x4 - x1, y4 - y1),
+          // Point 4 to segment 12
+          perpDistance2(x34, y34, ll34, x1 - x3, y1 - y3),
+          // Point 1 to segment 34
+          perpDistance2(x34, y34, ll34, x2 - x3, y2 - y3)
+          // Point 2 to segment 34
+        );
+        return Math.sqrt(dist2);
       }
       module.exports = locationCost;
     }
@@ -2073,6 +2097,12 @@ var contourCore = (() => {
         INITIALSEARCHPOINTS: 10,
         ITERATIONS: 5
       };
+      var workingPath = null;
+      var workingTextWidth = 0;
+      var locationCache = {};
+      function mod(n, m) {
+        return (n % m + m) % m;
+      }
       function pathLength(path) {
         var len = 0;
         for (var i = 1; i < path.length; i++) {
@@ -2099,17 +2129,36 @@ var contourCore = (() => {
         }
         return { x: path[path.length - 1][0], y: path[path.length - 1][1] };
       }
-      function getTextLocation(path, totalPathLen, positionOnPath, textWidth) {
+      function getTextLocation(path, totalPathLen, positionOnPath, textWidth, isClosed) {
+        if (path !== workingPath || textWidth !== workingTextWidth) {
+          locationCache = {};
+          workingPath = path;
+          workingTextWidth = textWidth;
+        }
+        var cacheKey = Math.round(positionOnPath * 100) / 100;
+        if (locationCache[cacheKey] !== void 0) {
+          return locationCache[cacheKey];
+        }
         var halfWidth = textWidth / 2;
-        var p0 = getPointAtLength(path, Math.max(0, positionOnPath - halfWidth));
-        var p1 = getPointAtLength(path, Math.min(totalPathLen, positionOnPath + halfWidth));
+        var p0Pos, p1Pos;
+        if (isClosed) {
+          p0Pos = mod(positionOnPath - halfWidth, totalPathLen);
+          p1Pos = mod(positionOnPath + halfWidth, totalPathLen);
+        } else {
+          p0Pos = Math.max(0, positionOnPath - halfWidth);
+          p1Pos = Math.min(totalPathLen, positionOnPath + halfWidth);
+        }
+        var p0 = getPointAtLength(path, p0Pos);
+        var p1 = getPointAtLength(path, p1Pos);
         var pCenter = getPointAtLength(path, positionOnPath);
         var theta = Math.atan2(p1.y - p0.y, p1.x - p0.x);
         var x = (pCenter.x * 4 + p0.x + p1.x) / 6;
         var y = (pCenter.y * 4 + p0.y + p1.y) / 6;
-        return { x, y, theta };
+        var result = { x, y, theta };
+        locationCache[cacheKey] = result;
+        return result;
       }
-      function findBestTextLocation(path, textOpts, existingLabels, plotBounds) {
+      function findBestTextLocation(path, textOpts, existingLabels, plotBounds, isClosed) {
         if (!path || path.length < 2) {
           return null;
         }
@@ -2117,11 +2166,23 @@ var contourCore = (() => {
         plotBounds = plotBounds || {};
         var textWidth = textOpts.width || 50;
         var totalPathLen = pathLength(path);
+        if (isClosed === void 0) {
+          var startPt = path[0];
+          var endPt = path[path.length - 1];
+          var dx = endPt[0] - startPt[0];
+          var dy = endPt[1] - startPt[1];
+          var closureDist = Math.sqrt(dx * dx + dy * dy);
+          isClosed = closureDist < 1;
+        }
         var dp, p0, pMax;
-        if (totalPathLen > textWidth * 2) {
-          dp = (totalPathLen - textWidth) / (COST_CONSTANTS.INITIALSEARCHPOINTS + 1);
-          p0 = dp + textWidth / 2;
-          pMax = totalPathLen - textWidth / 2 - dp;
+        if (isClosed) {
+          dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
+          p0 = dp / 2;
+          pMax = totalPathLen;
+        } else if (totalPathLen > textWidth * 2) {
+          dp = (totalPathLen - textWidth * 2) / (COST_CONSTANTS.INITIALSEARCHPOINTS - 1);
+          p0 = textWidth;
+          pMax = totalPathLen - textWidth;
         } else {
           dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
           p0 = dp / 2;
@@ -2132,7 +2193,7 @@ var contourCore = (() => {
         var pMin = p0;
         for (var j = 0; j < COST_CONSTANTS.ITERATIONS; j++) {
           for (var p = p0; p < pMax; p += dp) {
-            var newLocation = getTextLocation(path, totalPathLen, p, textWidth);
+            var newLocation = getTextLocation(path, totalPathLen, p, textWidth, isClosed);
             var newCost = locationCost(newLocation, {
               width: textWidth,
               height: textOpts.height || 20,
@@ -2147,7 +2208,7 @@ var contourCore = (() => {
           if (bestCost > COST_CONSTANTS.MAXCOST * 2) break;
           if (j > 0) dp /= 2;
           p0 = pMin - dp / 2;
-          pMax = pMin + dp / 2;
+          pMax = pMin + dp * 1.5;
         }
         if (bestCost <= COST_CONSTANTS.MAXCOST) {
           bestLoc.level = textOpts.level || 0;
@@ -2203,6 +2264,121 @@ var contourCore = (() => {
     }
   });
 
+  // labels/density.js
+  var require_density = __commonJS({
+    "labels/density.js"(exports, module) {
+      "use strict";
+      var DENSITY_CONSTANTS = {
+        LABELDISTANCE: 2,
+        // Each label occupies this length (multiplier of plot diagonal)
+        LABELMIN: 3,
+        // Minimum path length (multiplier of text width)
+        LABELMAX: 10,
+        // Maximum labels per contour line
+        LABELINCREASE: 10
+        // Start increasing density after this many contour levels
+      };
+      function calculateMaxLabels(pathLen, textWidth, textHeight, numLevels, plotDiagonal) {
+        if (pathLen < (textWidth + textHeight) * DENSITY_CONSTANTS.LABELMIN) {
+          return 0;
+        }
+        var normLength = DENSITY_CONSTANTS.LABELDISTANCE * plotDiagonal / Math.max(1, numLevels / DENSITY_CONSTANTS.LABELINCREASE);
+        return Math.min(
+          Math.ceil(pathLen / normLength),
+          DENSITY_CONSTANTS.LABELMAX
+        );
+      }
+      function pathLength(path) {
+        var len = 0;
+        for (var i = 1; i < path.length; i++) {
+          var dx = path[i][0] - path[i - 1][0];
+          var dy = path[i][1] - path[i - 1][1];
+          len += Math.sqrt(dx * dx + dy * dy);
+        }
+        return len;
+      }
+      function getVisibleSegment(path, bounds, padding) {
+        bounds = bounds || {};
+        var left = bounds.left !== void 0 ? bounds.left : 0;
+        var right = bounds.right !== void 0 ? bounds.right : 100;
+        var top = bounds.top !== void 0 ? bounds.top : 0;
+        var bottom = bounds.bottom !== void 0 ? bounds.bottom : 100;
+        padding = padding || 0;
+        var totalLen = pathLength(path);
+        var min = null;
+        var max = null;
+        var accumulated = 0;
+        for (var i = 0; i < path.length; i++) {
+          var pt = path[i];
+          if (pt[0] >= left + padding && pt[0] <= right - padding && pt[1] >= top + padding && pt[1] <= bottom - padding) {
+            min = accumulated;
+            break;
+          }
+          if (i > 0) {
+            var dx = path[i][0] - path[i - 1][0];
+            var dy = path[i][1] - path[i - 1][1];
+            accumulated += Math.sqrt(dx * dx + dy * dy);
+          }
+        }
+        if (min === null) return null;
+        accumulated = 0;
+        for (var i = path.length - 1; i >= 0; i--) {
+          var pt = path[i];
+          if (pt[0] >= left + padding && pt[0] <= right - padding && pt[1] >= top + padding && pt[1] <= bottom - padding) {
+            max = totalLen - accumulated;
+            break;
+          }
+          if (i < path.length - 1) {
+            var dx = path[i + 1][0] - path[i][0];
+            var dy = path[i + 1][1] - path[i][1];
+            accumulated += Math.sqrt(dx * dx + dy * dy);
+          }
+        }
+        if (max === null) max = totalLen;
+        var visibleLen = max - min;
+        return {
+          min,
+          max,
+          len: visibleLen,
+          total: totalLen
+        };
+      }
+      function isPathClosed(path, threshold) {
+        threshold = threshold !== void 0 ? threshold : 1;
+        if (!path || path.length < 2) return false;
+        var start = path[0];
+        var end = path[path.length - 1];
+        var dx = end[0] - start[0];
+        var dy = end[1] - start[1];
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        return dist < threshold;
+      }
+      function setDensityConstants(custom) {
+        for (var key in custom) {
+          if (DENSITY_CONSTANTS.hasOwnProperty(key)) {
+            DENSITY_CONSTANTS[key] = custom[key];
+          }
+        }
+      }
+      function getDensityConstants() {
+        var result = {};
+        for (var key in DENSITY_CONSTANTS) {
+          result[key] = DENSITY_CONSTANTS[key];
+        }
+        return result;
+      }
+      module.exports = {
+        calculateMaxLabels,
+        pathLength,
+        getVisibleSegment,
+        isPathClosed,
+        setDensityConstants,
+        getDensityConstants,
+        DENSITY_CONSTANTS
+      };
+    }
+  });
+
   // labels/index.js
   var require_labels = __commonJS({
     "labels/index.js"(exports, module) {
@@ -2210,7 +2386,14 @@ var contourCore = (() => {
       module.exports = {
         findBestTextLocation: require_position(),
         formatContourLabel: require_formatter(),
-        locationCost: require_cost()
+        locationCost: require_cost(),
+        // Density control module
+        density: require_density(),
+        // Convenience exports from density module
+        calculateMaxLabels: require_density().calculateMaxLabels,
+        pathLength: require_density().pathLength,
+        getVisibleSegment: require_density().getVisibleSegment,
+        isPathClosed: require_density().isPathClosed
       };
     }
   });
@@ -2219,8 +2402,12 @@ var contourCore = (() => {
   var require_labels2 = __commonJS({
     "renderers/canvas/labels.js"(exports, module) {
       "use strict";
-      var findBestTextLocation = require_labels().findBestTextLocation;
-      var formatContourLabel = require_labels().formatContourLabel;
+      var labels = require_labels();
+      var findBestTextLocation = labels.findBestTextLocation;
+      var formatContourLabel = labels.formatContourLabel;
+      var calculateMaxLabels = labels.calculateMaxLabels;
+      var pathLength = labels.pathLength;
+      var isPathClosed = labels.isPathClosed;
       function drawLabels(ctx, contourResult, style) {
         style = style || {};
         var paths = contourResult.paths;
@@ -2228,81 +2415,119 @@ var contourCore = (() => {
         var labelSize = style.labelSize || 12;
         var labelColor = style.labelColor || "#000";
         var showLabels = style.showLabels !== false;
-        if (!showLabels) return;
+        if (!showLabels || !paths || !paths.length) return;
         ctx.font = labelSize + "px " + labelFont;
         ctx.fillStyle = labelColor;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        var m = style.z ? style.z.length : 10;
+        var n = style.z && style.z[0] ? style.z[0].length : 10;
+        var plotBounds = {
+          left: 0,
+          right: n - 1,
+          top: 0,
+          bottom: m - 1,
+          center: (n - 1) / 2,
+          middle: (m - 1) / 2
+        };
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var scaleX = (width - 2 * padding) / (n - 1);
+        var scaleY = (height - 2 * padding) / (m - 1);
+        var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
         var existingLabels = [];
-        var plotBounds = calculatePlotBounds(style, contourResult);
+        var labelsToDraw = [];
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
           for (var j = 0; j < pathInfo.paths.length; j++) {
             var path = pathInfo.paths[j];
-            if (path.length < 10) continue;
+            if (path.length < 3) continue;
             var labelText = formatContourLabel(pathInfo.level, ".1f");
             var textWidth = ctx.measureText(labelText).width;
-            var textHeight = labelSize;
-            var labelPos = findBestTextLocation(
-              path,
-              {
-                level: pathInfo.level,
-                width: textWidth,
-                height: textHeight
-              },
-              existingLabels,
-              plotBounds
+            var textWidthGrid = textWidth / scaleX;
+            var textHeightGrid = labelSize / scaleY;
+            var len = pathLength(path);
+            var maxLabels = calculateMaxLabels(
+              len,
+              textWidthGrid,
+              textHeightGrid,
+              paths.length,
+              plotDiagonal
             );
-            if (!labelPos) continue;
-            var scaled = scalePointForLabel(style, labelPos);
-            ctx.save();
-            ctx.translate(scaled.x, scaled.y);
-            ctx.rotate(labelPos.theta || 0);
-            if (style.labelBackground) {
-              var bgPadding = 2;
-              ctx.fillStyle = style.labelBackground || "rgba(255,255,255,0.8)";
-              ctx.fillRect(
-                -textWidth / 2 - bgPadding,
-                -textHeight / 2 - bgPadding,
-                textWidth + bgPadding * 2,
-                textHeight + bgPadding * 2
+            if (maxLabels === 0) continue;
+            var closed = isPathClosed(path);
+            var usedPositions = [];
+            for (var k = 0; k < maxLabels; k++) {
+              var labelPos = findBestTextLocation(
+                path,
+                {
+                  level: pathInfo.level,
+                  width: textWidthGrid,
+                  height: textHeightGrid
+                },
+                existingLabels,
+                plotBounds,
+                closed
               );
-              ctx.fillStyle = labelColor;
+              if (!labelPos) break;
+              var tooClose = false;
+              for (var u = 0; u < usedPositions.length; u++) {
+                var dx = labelPos.x - usedPositions[u].x;
+                var dy = labelPos.y - usedPositions[u].y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < textWidthGrid * 2) {
+                  tooClose = true;
+                  break;
+                }
+              }
+              if (tooClose) break;
+              labelsToDraw.push({
+                text: labelText,
+                pos: labelPos,
+                level: pathInfo.level,
+                textColor: labelColor
+              });
+              existingLabels.push({
+                x: labelPos.x,
+                y: labelPos.y,
+                theta: labelPos.theta || 0,
+                level: pathInfo.level,
+                width: textWidthGrid,
+                height: textHeightGrid
+              });
+              usedPositions.push(labelPos);
+              if (closed) {
+                var midLen = len / 2;
+                var oppositeLen = usedPositions[usedPositions.length - 2] ? (pathLength(path) / 2 + midLen) % len : midLen;
+              }
             }
-            ctx.fillText(labelText, 0, 0);
-            ctx.restore();
-            existingLabels.push({
-              x: scaled.x,
-              y: scaled.y,
-              theta: labelPos.theta || 0,
-              level: pathInfo.level,
-              width: textWidth,
-              height: textHeight
-            });
           }
         }
+        for (var i = 0; i < labelsToDraw.length; i++) {
+          var label = labelsToDraw[i];
+          var scaled = scalePoint(label.pos, n, m, width, height, padding);
+          ctx.save();
+          ctx.translate(scaled.x, scaled.y);
+          ctx.rotate(label.pos.theta || 0);
+          if (style.labelBackground) {
+            var bgPadding = 2;
+            ctx.fillStyle = style.labelBackground || "rgba(255,255,255,0.8)";
+            var bgWidth = ctx.measureText(label.text).width;
+            var bgHeight = labelSize;
+            ctx.fillRect(
+              -bgWidth / 2 - bgPadding,
+              -bgHeight / 2 - bgPadding,
+              bgWidth + bgPadding * 2,
+              bgHeight + bgPadding * 2
+            );
+            ctx.fillStyle = label.textColor;
+          }
+          ctx.fillText(label.text, 0, 0);
+          ctx.restore();
+        }
       }
-      function calculatePlotBounds(style, contourResult) {
-        var m = style.z ? style.z.length : 10;
-        var n = style.z && style.z[0] ? style.z[0].length : 10;
-        var width = style.width || 500;
-        var height = style.height || 400;
-        var padding = style.padding || 30;
-        return {
-          left: padding,
-          right: width - padding,
-          top: padding,
-          bottom: height - padding,
-          center: width / 2,
-          middle: height / 2
-        };
-      }
-      function scalePointForLabel(style, pt) {
-        var m = style.z ? style.z.length : 10;
-        var n = style.z && style.z[0] ? style.z[0].length : 10;
-        var width = style.width || 500;
-        var height = style.height || 400;
-        var padding = style.padding || 30;
+      function scalePoint(pt, n, m, width, height, padding) {
         var scaleX = (width - 2 * padding) / (n - 1);
         var scaleY = (height - 2 * padding) / (m - 1);
         return {
@@ -4744,82 +4969,106 @@ var contourCore = (() => {
   var require_labels3 = __commonJS({
     "renderers/svg/labels.js"(exports, module) {
       "use strict";
-      var findBestTextLocation = require_labels().findBestTextLocation;
-      var formatContourLabel = require_labels().formatContourLabel;
+      var labels = require_labels();
+      var findBestTextLocation = labels.findBestTextLocation;
+      var formatContourLabel = labels.formatContourLabel;
+      var calculateMaxLabels = labels.calculateMaxLabels;
+      var pathLength = labels.pathLength;
+      var isPathClosed = labels.isPathClosed;
       function createLabels(contourResult, options) {
         options = options || {};
         var paths = contourResult.paths;
         var labelFont = options.labelFont || "Arial";
         var labelSize = options.labelSize || 12;
         var labelColor = options.labelColor || "#000";
+        if (!paths || !paths.length) return "";
         var svgParts = [];
-        var existingLabels = [];
-        var plotBounds = calculatePlotBounds(options);
-        for (var i = 0; i < paths.length; i++) {
-          var pathInfo = paths[i];
-          for (var j = 0; j < pathInfo.paths.length; j++) {
-            var path = pathInfo.paths[j];
-            if (path.length < 10) continue;
-            var labelText = formatContourLabel(pathInfo.level, ".1f");
-            var textWidth = labelText.length * labelSize * 0.6;
-            var textHeight = labelSize;
-            var labelPos = findBestTextLocation(
-              path,
-              {
-                level: pathInfo.level,
-                width: textWidth,
-                height: textHeight
-              },
-              existingLabels,
-              plotBounds
-            );
-            if (!labelPos) continue;
-            var scaled = scalePointForLabel(contourResult, labelPos, options);
-            var transform = "translate(" + scaled.x + " " + scaled.y + ") rotate(" + (labelPos.theta || 0) * 180 / Math.PI + ")";
-            svgParts.push(
-              '<text x="0" y="0" transform="' + transform + '" font-family="' + labelFont + '" font-size="' + labelSize + '" fill="' + labelColor + '" text-anchor="middle" dominant-baseline="middle">' + labelText + "</text>"
-            );
-            existingLabels.push({
-              x: scaled.x,
-              y: scaled.y,
-              theta: labelPos.theta || 0,
-              width: textWidth,
-              height: textHeight,
-              level: pathInfo.level
-            });
-          }
-        }
-        return svgParts.join("\n");
-      }
-      function calculatePlotBounds(options) {
-        var width = options.width || 500;
-        var height = options.height || 400;
-        var padding = options.padding || 30;
-        return {
-          left: padding,
-          right: width - padding,
-          top: padding,
-          bottom: height - padding,
-          center: width / 2,
-          middle: height / 2
-        };
-      }
-      function scalePointForLabel(contourResult, pt, options) {
-        var pathinfo = contourResult.pathinfo || contourResult.paths;
         var m = 10, n = 10;
+        var pathinfo = contourResult.pathinfo || contourResult.paths;
         if (pathinfo && pathinfo[0] && pathinfo[0].z) {
           m = pathinfo[0].z.length;
           n = pathinfo[0].z[0].length;
         }
+        var plotBounds = {
+          left: 0,
+          right: n - 1,
+          top: 0,
+          bottom: m - 1,
+          center: (n - 1) / 2,
+          middle: (m - 1) / 2
+        };
         var width = options.width || 500;
         var height = options.height || 400;
         var padding = options.padding || 30;
         var scaleX = (width - 2 * padding) / (n - 1);
         var scaleY = (height - 2 * padding) / (m - 1);
-        return {
-          x: padding + pt.x * scaleX,
-          y: padding + (m - 1 - pt.y) * scaleY
-        };
+        var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
+        var existingLabels = [];
+        for (var i = 0; i < paths.length; i++) {
+          var pathInfo = paths[i];
+          for (var j = 0; j < pathInfo.paths.length; j++) {
+            var path = pathInfo.paths[j];
+            if (path.length < 3) continue;
+            var labelText = formatContourLabel(pathInfo.level, ".1f");
+            var textWidth = labelText.length * labelSize * 0.6;
+            var textWidthGrid = textWidth / scaleX;
+            var textHeightGrid = labelSize / scaleY;
+            var len = pathLength(path);
+            var maxLabels = calculateMaxLabels(
+              len,
+              textWidthGrid,
+              textHeightGrid,
+              paths.length,
+              plotDiagonal
+            );
+            if (maxLabels === 0) continue;
+            var closed = isPathClosed(path);
+            var usedPositions = [];
+            for (var k = 0; k < maxLabels; k++) {
+              var labelPos = findBestTextLocation(
+                path,
+                {
+                  level: pathInfo.level,
+                  width: textWidthGrid,
+                  height: textHeightGrid
+                },
+                existingLabels,
+                plotBounds,
+                closed
+              );
+              if (!labelPos) break;
+              var tooClose = false;
+              for (var u = 0; u < usedPositions.length; u++) {
+                var dx = labelPos.x - usedPositions[u].x;
+                var dy = labelPos.y - usedPositions[u].y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < textWidthGrid * 2) {
+                  tooClose = true;
+                  break;
+                }
+              }
+              if (tooClose) break;
+              var scaled = {
+                x: padding + labelPos.x * scaleX,
+                y: padding + (m - 1 - labelPos.y) * scaleY
+              };
+              var transform = "translate(" + scaled.x + " " + scaled.y + ") rotate(" + (labelPos.theta || 0) * 180 / Math.PI + ")";
+              svgParts.push(
+                '<text x="0" y="0" transform="' + transform + '" font-family="' + labelFont + '" font-size="' + labelSize + '" fill="' + labelColor + '" text-anchor="middle" dominant-baseline="middle">' + labelText + "</text>"
+              );
+              existingLabels.push({
+                x: labelPos.x,
+                y: labelPos.y,
+                theta: labelPos.theta || 0,
+                level: pathInfo.level,
+                width: textWidthGrid,
+                height: textHeightGrid
+              });
+              usedPositions.push(labelPos);
+            }
+          }
+        }
+        return svgParts.join("\n");
       }
       module.exports = {
         createLabels

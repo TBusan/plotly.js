@@ -11,8 +11,59 @@ var COST_CONSTANTS = {
     ANGLECOST: 1,
     NEIGHBORCOST: 5,
     SAMELEVELFACTOR: 10,
-    SAMELEVELDISTANCE: 5
+    SAMELEVELDISTANCE: 5,
+    MAXCOST: 100
 };
+
+/**
+ * Check if two line segments intersect
+ * Based on Plotly's segmentsIntersect function
+ * @param {number} x1, y1, x2, y2 - First segment endpoints
+ * @param {number} x3, y3, x4, y4 - Second segment endpoints
+ * @returns {Object|null} Intersection point or null
+ */
+function segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+    var a = x2 - x1, b = x3 - x1, c = x4 - x3;
+    var d = y2 - y1, e = y3 - y1, f = y4 - y3;
+    var det = a * f - c * d; // Determinant
+
+    if (det === 0) return null; // Parallel lines
+
+    var t = (b * f - c * e) / det;
+    var u = (b * d - a * e) / det;
+
+    // Segments intersect when both t and u are in [0, 1]
+    if (u < 0 || u > 1 || t < 0 || t > 1) return null;
+
+    return { x: x1 + a * t, y: y1 + d * t };
+}
+
+/**
+ * Calculate squared perpendicular distance from point to line segment
+ * Using dot product to determine if point projects onto segment
+ * Based on Plotly's perpDistance2 function
+ * @param {number} xab, yab - Vector from point A to B
+ * @param {number} llab - Squared length of AB
+ * @param {number} xac, yac - Vector from point A to C (point to check)
+ * @returns {number} Squared distance
+ */
+function perpDistance2(xab, yab, llab, xac, yac) {
+    var fcAB = (xac * xab + yac * yab); // Dot product
+
+    if (fcAB < 0) {
+        // Point C is outside segment AB at A end
+        return xac * xac + yac * yac;
+    } else if (fcAB > llab) {
+        // Point C is outside segment AB at B end
+        var xbc = xac - xab;
+        var ybc = yac - yab;
+        return xbc * xbc + ybc * ybc;
+    } else {
+        // Point C projects onto segment AB - perpendicular distance
+        var crossProduct = xac * yab - yac * xab;
+        return crossProduct * crossProduct / llab;
+    }
+}
 
 /**
  * Calculate placement cost for a label at a given position
@@ -91,36 +142,30 @@ function locationCost(loc, textOpts, labelData, bounds) {
 
 /**
  * Calculate distance between two line segments
- * Simplified version of segmentDistance
+ * Complete implementation based on Plotly's segmentDistance
+ * @param {number} x1, y1, x2, y2 - First segment endpoints
+ * @param {number} x3, y3, x4, y4 - Second segment endpoints
+ * @returns {number} Minimum distance between segments (0 if intersecting)
  */
 function segmentDistance(x1, y1, x2, y2, x3, y3, x4, y4) {
-    // Find the closest points on the two segments
-    var dist = Infinity;
+    // 1. If segments intersect, distance is 0
+    if (segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4)) return 0;
 
-    // Check all endpoints
-    dist = Math.min(dist, pointToSegmentDistance(x1, y1, x3, y3, x4, y4));
-    dist = Math.min(dist, pointToSegmentDistance(x2, y2, x3, y3, x4, y4));
-    dist = Math.min(dist, pointToSegmentDistance(x3, y3, x1, y1, x2, y2));
-    dist = Math.min(dist, pointToSegmentDistance(x4, y4, x1, y1, x2, y2));
+    // 2. Calculate segment vectors and squared lengths
+    var x12 = x2 - x1, y12 = y2 - y1;
+    var x34 = x4 - x3, y34 = y4 - y3;
+    var ll12 = x12 * x12 + y12 * y12;
+    var ll34 = x34 * x34 + y34 * y34;
 
-    return dist;
-}
+    // 3. Calculate minimum distance from all four endpoints to the other segment
+    var dist2 = Math.min(
+        perpDistance2(x12, y12, ll12, x3 - x1, y3 - y1),  // Point 3 to segment 12
+        perpDistance2(x12, y12, ll12, x4 - x1, y4 - y1),  // Point 4 to segment 12
+        perpDistance2(x34, y34, ll34, x1 - x3, y1 - y3),  // Point 1 to segment 34
+        perpDistance2(x34, y34, ll34, x2 - x3, y2 - y3)   // Point 2 to segment 34
+    );
 
-/**
- * Distance from point to line segment
- */
-function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
-    var dx = x2 - x1;
-    var dy = y2 - y1;
-    var len2 = dx * dx + dy * dy;
-
-    if (len2 === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
-
-    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
-    var projX = x1 + t * dx;
-    var projY = y1 + t * dy;
-
-    return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+    return Math.sqrt(dist2);
 }
 
 module.exports = locationCost;

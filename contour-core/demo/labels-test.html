@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标注优化测试 - Contour-Core</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .info-box.success {
+            background: #e8f5e9;
+            border-left-color: #4CAF50;
+        }
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .control-group label {
+            font-weight: bold;
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        select, input[type="range"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .display-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #2196F3;
+            text-align: center;
+        }
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #4CAF50;
+        }
+        .feature-item h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        .feature-item p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← 返回 Demo 列表</a>
+
+        <h1>等值线标注优化测试</h1>
+        <p class="subtitle">测试优化后的标注功能：防碰撞、多标注、闭合路径处理</p>
+
+        <div class="info-box success">
+            <strong>优化功能：</strong>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                <li>✓ 线段相交检测 - 更精确的防碰撞</li>
+                <li>✓ 闭合路径环绕处理 - 环形等值线正确标注</li>
+                <li>✓ 标注密度控制 - 根据路径长度自适应</li>
+                <li>✓ 单路径多标注 - 长路径支持多个标注</li>
+                <li>✓ 统一坐标系统 - 网格坐标计算，避免压盖</li>
+            </ul>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>数据类型</label>
+                <select id="dataType">
+                    <option value="peaks">双峰分布</option>
+                    <option value="concentric">同心圆</option>
+                    <option value="waves">波浪形</option>
+                    <option value="spiral">螺旋形</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>等值线数量</label>
+                <select id="ncontours">
+                    <option value="5">5 条</option>
+                    <option value="8">8 条</option>
+                    <option value="12" selected>12 条</option>
+                    <option value="16">16 条</option>
+                    <option value="20">20 条</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>标注大小</label>
+                <select id="labelSize">
+                    <option value="10">10px</option>
+                    <option value="12" selected>12px</option>
+                    <option value="14">14px</option>
+                    <option value="16">16px</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>渲染模式</label>
+                <select id="renderMode">
+                    <option value="lines">线条模式</option>
+                    <option value="fill">填充模式</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>显示标注</label>
+                <select id="showLabels">
+                    <option value="true" selected>显示</option>
+                    <option value="false">隐藏</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button onclick="updateRender()">更新渲染</button>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="statContours">0</div>
+                <div class="stat-label">等值线数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statPaths">0</div>
+                <div class="stat-label">路径数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statLabels">0</div>
+                <div class="stat-label">标注数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statClosed">0</div>
+                <div class="stat-label">闭合路径</div>
+            </div>
+        </div>
+
+        <div class="display-grid">
+            <div class="panel">
+                <h3>Canvas 渲染</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasOutput" width="700" height="550"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>SVG 渲染</h3>
+                <div class="canvas-wrapper" id="svgOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        var currentData = null;
+
+        // 数据生成函数
+        function generatePeaks(size) {
+            size = size || 40;
+            var grid = { z: [], x: [], y: [] };
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    // 主峰
+                    var dx1 = j - size * 0.35;
+                    var dy1 = i - size * 0.35;
+                    var peak1 = 80 * Math.exp(-(dx1 * dx1 + dy1 * dy1) / 50);
+
+                    // 次峰
+                    var dx2 = j - size * 0.7;
+                    var dy2 = i - size * 0.6;
+                    var peak2 = 60 * Math.exp(-(dx2 * dx2 + dy2 * dy2) / 40);
+
+                    // 波动
+                    var wave = 5 * Math.sin(i * 0.2) * Math.cos(j * 0.2);
+
+                    grid.z[i][j] = peak1 + peak2 + wave;
+                }
+            }
+            return grid;
+        }
+
+        function generateConcentric(size) {
+            size = size || 40;
+            var grid = { z: [], x: [], y: [] };
+            var cx = size / 2;
+            var cy = size / 2;
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    var dx = j - cx;
+                    var dy = i - cy;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // 同心圆
+                    grid.z[i][j] = 100 - dist * 3 + Math.sin(dist * 0.5) * 10;
+                }
+            }
+            return grid;
+        }
+
+        function generateWaves(size) {
+            size = size || 40;
+            var grid = { z: [], x: [], y: [] };
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    // 波浪形
+                    grid.z[i][j] = 50 + 30 * Math.sin(i * 0.3) * Math.cos(j * 0.3) +
+                                   15 * Math.sin(i * 0.1 + j * 0.1);
+                }
+            }
+            return grid;
+        }
+
+        function generateSpiral(size) {
+            size = size || 40;
+            var grid = { z: [], x: [], y: [] };
+            var cx = size / 2;
+            var cy = size / 2;
+
+            for (var i = 0; i < size; i++) {
+                grid.z[i] = [];
+                grid.y.push(i);
+                for (var j = 0; j < size; j++) {
+                    if (i === 0) grid.x.push(j);
+
+                    var dx = j - cx;
+                    var dy = i - cy;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    var angle = Math.atan2(dy, dx);
+
+                    // 螺旋形
+                    grid.z[i][j] = 50 + dist * 2 + 20 * Math.sin(angle * 3 + dist * 0.3);
+                }
+            }
+            return grid;
+        }
+
+        function generateData(type) {
+            switch (type) {
+                case 'concentric': return generateConcentric();
+                case 'waves': return generateWaves();
+                case 'spiral': return generateSpiral();
+                default: return generatePeaks();
+            }
+        }
+
+        function updateRender() {
+            var dataType = document.getElementById('dataType').value;
+            var ncontours = parseInt(document.getElementById('ncontours').value);
+            var labelSize = parseInt(document.getElementById('labelSize').value);
+            var renderMode = document.getElementById('renderMode').value;
+            var showLabels = document.getElementById('showLabels').value === 'true';
+
+            // 生成数据
+            currentData = generateData(dataType);
+
+            var options = {
+                autocontour: true,
+                ncontours: ncontours,
+                smoothing: 0.3
+            };
+
+            var result = contourCore.computeContours(currentData, options);
+
+            // 统计信息
+            var totalPaths = 0;
+            var closedPaths = 0;
+            for (var i = 0; i < result.paths.length; i++) {
+                totalPaths += result.paths[i].paths.length;
+                for (var j = 0; j < result.paths[i].paths.length; j++) {
+                    var path = result.paths[i].paths[j];
+                    if (contourCore.labels.isPathClosed(path)) {
+                        closedPaths++;
+                    }
+                }
+            }
+
+            document.getElementById('statContours').textContent = result.paths.length;
+            document.getElementById('statPaths').textContent = totalPaths;
+            document.getElementById('statClosed').textContent = closedPaths;
+
+            // 构建颜色映射
+            var colors = ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f',
+                          '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'];
+            var colorScale = result.levels.map(function(level, i) {
+                var t = result.levels.length > 1 ? (i / (result.levels - 1)) : 0.5;
+                var colorIdx = Math.floor(t * (colors.length - 1));
+                return [level, colors[Math.max(0, Math.min(colors.length - 1, colorIdx))]];
+            });
+
+            var style = {
+                width: 700,
+                height: 550,
+                padding: 40,
+                coloring: renderMode,
+                colorScale: colorScale,
+                smoothing: 0.3,
+                showLines: true,
+                lineWidth: 1.5,
+                lineColor: '#666',
+                z: currentData.z,
+                x: currentData.x,
+                y: currentData.y,
+                // 标注设置
+                showLabels: showLabels,
+                labelSize: labelSize,
+                labelColor: '#000',
+                labelFont: 'Arial',
+                labelBackground: 'rgba(255,255,255,0.85)'
+            };
+
+            // Canvas 渲染
+            var canvas = document.getElementById('canvasOutput');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            contourCore.renderers.canvas.drawContours(ctx, result, style);
+
+            // SVG 渲染
+            var svg = contourCore.renderers.svg.renderSVG(result, style);
+            document.getElementById('svgOutput').innerHTML = svg;
+
+            // 统计标注数量（通过模拟计算）
+            var estimatedLabels = 0;
+            for (var i = 0; i < result.paths.length; i++) {
+                for (var j = 0; j < result.paths[i].paths.length; j++) {
+                    var path = result.paths[i].paths[j];
+                    var len = contourCore.labels.pathLength(path);
+                    if (len > 20) estimatedLabels++;
+                }
+            }
+            document.getElementById('statLabels').textContent = estimatedLabels;
+        }
+
+        // 初始化
+        updateRender();
+    </script>
+</body>
+</html>
