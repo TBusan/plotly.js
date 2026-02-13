@@ -49,6 +49,12 @@ var contourCore = {
     axes: require('./axes'),
 
     // ============================================
+    // Interaction layer (NEW)
+    // ============================================
+    interaction: require('./interaction'),
+    createInteractiveContour: require('./interaction').createInteraction,
+
+    // ============================================
     // Utilities
     // ============================================
     COLOR_SCALES: api.COLOR_SCALES

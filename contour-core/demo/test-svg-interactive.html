@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Contour - Interactive Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .main-layout {
+            display: flex;
+            gap: 20px;
+        }
+        .controls-panel {
+            flex: 0 0 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+        }
+        .svg-container {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .control-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .control-section:last-child {
+            border-bottom: none;
+        }
+        .control-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .toggle-group label {
+            font-size: 14px;
+            color: #555;
+        }
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle input:checked + .toggle-slider {
+            background-color: #2196F3;
+        }
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        .select-group {
+            margin-bottom: 10px;
+        }
+        .select-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+        .range-group {
+            margin-bottom: 10px;
+        }
+        .range-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        button.primary {
+            background: #4CAF50;
+            color: white;
+            border-color: transparent;
+        }
+        button.primary:hover {
+            background: #45a049;
+        }
+        #svg-wrapper {
+            position: relative;
+            flex: 1;
+            min-height: 500px;
+            overflow: hidden;
+        }
+        #contour-svg {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: grab;
+        }
+        #contour-svg.dragging {
+            cursor: grabbing;
+        }
+        .info-panel {
+            margin-top: 15px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        .info-label {
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        .interaction-guide {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .interaction-guide h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #388E3C;
+        }
+        .interaction-guide ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        .interaction-guide li {
+            margin: 3px 0;
+            color: #333;
+        }
+        .interaction-guide kbd {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+        }
+
+        /* SVG Tooltip */
+        #tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #tooltip.visible {
+            opacity: 1;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* SVG hover effects */
+        .contour-path {
+            transition: opacity 0.2s;
+        }
+        .contour-path:hover {
+            opacity: 0.8;
+        }
+
+        /* Axes styles */
+        .axis-line { stroke: #333; stroke-width: 1; }
+        .axis-grid { stroke: #e0e0e0; stroke-width: 1; }
+        .axis-tick { stroke: #666; stroke-width: 1; }
+        .axis-label { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+        .axis-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #000; }
+
+        /* Box selection */
+        #selection-box {
+            fill: rgba(33, 150, 243, 0.2);
+            stroke: #2196F3;
+            stroke-width: 1;
+            stroke-dasharray: 4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SVG Contour - Interactive Test</h1>
+        <p class="subtitle">Full-featured SVG rendering with zoom, pan, and controls</p>
+
+        <div class="main-layout">
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <!-- Rendering Mode -->
+                <div class="control-section">
+                    <h3>Rendering Mode</h3>
+                    <div class="select-group">
+                        <label>Contour Type:</label>
+                        <select id="contour-type">
+                            <option value="fill">Fill (Filled Contours)</option>
+                            <option value="lines">Lines (Contour Lines)</option>
+                            <option value="heatmap">Heatmap</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>Color Scale:</label>
+                        <select id="colorscale">
+                            <option value="viridis">Viridis</option>
+                            <option value="plasma">Plasma</option>
+                            <option value="hot">Hot</option>
+                            <option value="jet">Jet</option>
+                            <option value="electric">Electric</option>
+                            <option value="earth">Earth</option>
+                        </select>
+                    </div>
+                    <div class="range-group">
+                        <label>
+                            <span>Smoothing</span>
+                            <span id="smoothing-value">0.5</span>
+                        </label>
+                        <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.5">
+                    </div>
+                    <div class="range-group">
+                        <label>
+                            <span>Contour Count</span>
+                            <span id="ncontours-value">15</span>
+                        </label>
+                        <input type="range" id="ncontours" min="5" max="50" step="1" value="15">
+                    </div>
+                </div>
+
+                <!-- Display Options -->
+                <div class="control-section">
+                    <h3>Display Options</h3>
+                    <div class="toggle-group">
+                        <label for="toggle-colorbar">ColorBar</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-colorbar" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-labels">Labels</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-labels" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-axes">Axes (Rulers)</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-axes" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-grid">Grid Lines</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-grid" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Interaction -->
+                <div class="control-section">
+                    <h3>Interaction</h3>
+                    <div class="toggle-group">
+                        <label for="toggle-zoom">Zoom</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-zoom" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-pan">Pan</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-pan" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-hover">Hover Tooltip</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-hover" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-highlight">Path Highlight</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-highlight" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="control-section">
+                    <h3>Actions</h3>
+                    <button id="btn-reset">Reset View</button>
+                    <button id="btn-regenerate">Regenerate Data</button>
+                    <button id="btn-export" class="primary">Export as SVG</button>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span class="info-label">Mouse:</span>
+                        <span class="info-value" id="info-mouse">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Data Value:</span>
+                        <span class="info-value" id="info-value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Zoom:</span>
+                        <span class="info-value" id="info-zoom">1.00x</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Elements:</span>
+                        <span class="info-value" id="info-elements">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SVG Container -->
+            <div class="svg-container">
+                <div id="svg-wrapper">
+                    <div id="contour-svg"></div>
+                </div>
+
+                <div class="interaction-guide">
+                    <h4>Interaction Guide</h4>
+                    <ul>
+                        <li><kbd>Mouse Wheel</kbd> Zoom in/out at cursor</li>
+                        <li><kbd>Left Drag</kbd> Pan the view</li>
+                        <li><kbd>Shift + Drag</kbd> Box zoom selection</li>
+                        <li><kbd>Double Click</kbd> Reset to initial view</li>
+                        <li><kbd>Mouse Move</kbd> Show data value at cursor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip element -->
+    <div id="tooltip"></div>
+
+    <!-- Load contour-core library -->
+    <script src="../dist/contour-core.browser.js"></script>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================
+            // Configuration state
+            // ============================================
+            var config = {
+                contourType: 'fill',
+                colorscale: 'viridis',
+                smoothing: 0.5,
+                ncontours: 15,
+                showColorbar: true,
+                showLabels: true,
+                showAxes: true,
+                showGrid: true,
+                enableZoom: true,
+                enablePan: true,
+                enableHover: true,
+                enableHighlight: true
+            };
+
+            // View state for pan/zoom
+            var viewState = {
+                scale: 1,
+                offsetX: 0,
+                offsetY: 0,
+                isDragging: false,
+                lastX: 0,
+                lastY: 0,
+                boxStart: null,
+                boxEnd: null
+            };
+
+            // ============================================
+            // Data generation
+            // ============================================
+            function generatePeaksData(width, height) {
+                var z = [];
+                var x = [];
+                var y = [];
+
+                for (var j = 0; j < width; j++) x.push(j);
+                for (var i = 0; i < height; i++) y.push(i);
+
+                for (var i = 0; i < height; i++) {
+                    var row = [];
+                    for (var j = 0; j < width; j++) {
+                        var xi = (j / width) * 6 - 3;
+                        var yi = (i / height) * 6 - 3;
+
+                        var z1 = 3 * Math.pow(1 - xi, 2) * Math.exp(-xi * xi - (yi + 1) * (yi + 1));
+                        var z2 = -10 * (xi / 5 - xi * xi * xi - yi * yi * yi * yi * yi * yi) * Math.exp(-xi * xi - yi * yi);
+                        var z3 = -1/3 * Math.exp(-(xi + 1) * (xi + 1) - yi * yi);
+                        var zi = z1 + z2 + z3;
+
+                        row.push(zi);
+                    }
+                    z.push(row);
+                }
+
+                return { z: z, x: x, y: y };
+            }
+
+            // ============================================
+            // Color utilities
+            // ============================================
+            function getColorScaleArray(name) {
+                var COLOR_SCALES = {
+                    viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26828f',
+                              '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+                    plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786',
+                             '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+                    hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000',
+                          '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+                    jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80',
+                          '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+                    electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60',
+                               '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4'],
+                    earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b',
+                            '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887']
+                };
+                return COLOR_SCALES[name] || COLOR_SCALES.viridis;
+            }
+
+            function buildColorScale(levels, colorscale) {
+                var colors = getColorScaleArray(colorscale);
+                var scale = [];
+                for (var i = 0; i < levels.length; i++) {
+                    var t = levels.length > 1 ? i / (levels.length - 1) : 0;
+                    var colorIdx = Math.floor(t * (colors.length - 1));
+                    scale.push([levels[i], colors[colorIdx]]);
+                }
+                return scale;
+            }
+
+            function getMargins() {
+                if (config.showAxes) return { left: 60, right: 20, top: 20, bottom: 50 };
+                if (config.showColorbar) return { left: 20, right: 60, top: 20, bottom: 20 };
+                return { left: 20, right: 20, top: 20, bottom: 20 };
+            }
+
+            // ============================================
+            // SVG rendering
+            // ============================================
+            var svgContainer = document.getElementById('contour-svg');
+            var tooltip = document.getElementById('tooltip');
+            var data = generatePeaksData(50, 50);
+            var contourResult = null;
+
+            function getDimensions() {
+                var wrapper = document.getElementById('svg-wrapper');
+                var rect = wrapper.getBoundingClientRect();
+                return {
+                    width: Math.max(600, rect.width - 40),
+                    height: Math.max(500, window.innerHeight - 350)
+                };
+            }
+
+            function generateAxesSVG(width, height, margins) {
+                if (!config.showAxes) return '';
+
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: width - margins.left - margins.right,
+                    height: height - margins.top - margins.bottom
+                };
+                var parts = [];
+
+                if (config.showGrid) {
+                    for (var i = 0; i <= 10; i++) {
+                        var x = drawArea.x + (drawArea.width / 10) * i;
+                        parts.push('<line class="axis-grid" x1="' + x + '" y1="' + drawArea.y +
+                                   '" x2="' + x + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
+                        var y = drawArea.y + (drawArea.height / 10) * i;
+                        parts.push('<line class="axis-grid" x1="' + drawArea.x + '" y1="' + y +
+                                   '" x2="' + (drawArea.x + drawArea.width) + '" y2="' + y + '"/>');
+                    }
+                }
+
+                parts.push('<line class="axis-line" x1="' + drawArea.x + '" y1="' + (drawArea.y + drawArea.height) +
+                           '" x2="' + (drawArea.x + drawArea.width) + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
+                parts.push('<line class="axis-line" x1="' + drawArea.x + '" y1="' + drawArea.y +
+                           '" x2="' + drawArea.x + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
+
+                for (var i = 0; i <= 10; i++) {
+                    x = drawArea.x + (drawArea.width / 10) * i;
+                    var value = Math.round((data.x[data.x.length - 1] / 10) * i);
+                    parts.push('<line class="axis-tick" x1="' + x + '" y1="' + (drawArea.y + drawArea.height) +
+                               '" x2="' + x + '" y2="' + (drawArea.y + drawArea.height + 5) + '"/>');
+                    parts.push('<text class="axis-label" x="' + x + '" y="' + (drawArea.y + drawArea.height + 20) +
+                               '" text-anchor="middle">' + value + '</text>');
+
+                    y = drawArea.y + drawArea.height - (drawArea.height / 10) * i;
+                    value = Math.round((data.y[data.y.length - 1] / 10) * i);
+                    parts.push('<line class="axis-tick" x1="' + drawArea.x + '" y1="' + y +
+                               '" x2="' + (drawArea.x - 5) + '" y2="' + y + '"/>');
+                    parts.push('<text class="axis-label" x="' + (drawArea.x - 10) + '" y="' + (y + 4) +
+                               '" text-anchor="end">' + value + '</text>');
+                }
+
+                parts.push('<text class="axis-title" x="' + (drawArea.x + drawArea.width / 2) + '" y="' +
+                           (drawArea.y + drawArea.height + 40) + '" text-anchor="middle">X Axis</text>');
+                parts.push('<text class="axis-title" x="' + (drawArea.x - 40) + '" y="' +
+                           (drawArea.y + drawArea.height / 2) + '" text-anchor="middle" transform="rotate(-90, ' +
+                           (drawArea.x - 40) + ', ' + (drawArea.y + drawArea.height / 2) + ')">Y Axis</text>');
+
+                return parts.join('\n');
+            }
+
+            function render() {
+                if (!contourResult) return;
+
+                var startTime = performance.now();
+                var dims = getDimensions();
+                var margins = getMargins();
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: dims.width - margins.left - margins.right,
+                    height: dims.height - margins.top - margins.bottom
+                };
+
+                var options = {
+                    width: dims.width,
+                    height: dims.height,
+                    coloring: config.contourType,
+                    showLabels: config.showLabels,
+                    colorbar: config.showColorbar,
+                    colorScale: buildColorScale(contourResult.levels, config.colorscale),
+                    smoothing: config.smoothing
+                };
+
+                var mainSVG = contourCore.renderers.svg.renderSVG(contourResult, options);
+                var svgStart = mainSVG.indexOf('<svg');
+                var svgEnd = mainSVG.indexOf('>');
+                var svgHeader = mainSVG.substring(svgStart, svgEnd + 1);
+                var svgContent = mainSVG.substring(svgEnd + 1, mainSVG.lastIndexOf('</svg>'));
+
+                // Add transform for pan/zoom
+                var transform = 'transform="translate(' + viewState.offsetX + ', ' + viewState.offsetY + ') scale(' + viewState.scale + ')" transform-origin="center"';
+
+                var completeSVG = svgHeader.replace('>', ' ' + transform + '>') + '\n';
+                completeSVG += '<defs>\n';
+                completeSVG += '  <clipPath id="plotAreaClip">\n';
+                completeSVG += '    <rect x="' + drawArea.x + '" y="' + drawArea.y + '" width="' +
+                               drawArea.width + '" height="' + drawArea.height + '"/>\n';
+                completeSVG += '  </clipPath>\n';
+                completeSVG += '</defs>\n';
+                completeSVG += generateAxesSVG(dims.width, dims.height, margins) + '\n';
+                completeSVG += '<g clip-path="url(#plotAreaClip)">\n';
+                completeSVG += svgContent + '\n';
+
+                // Add selection box if active
+                if (viewState.boxStart && viewState.boxEnd) {
+                    var boxX = Math.min(viewState.boxStart.x, viewState.boxEnd.x);
+                    var boxY = Math.min(viewState.boxStart.y, viewState.boxEnd.y);
+                    var boxW = Math.abs(viewState.boxEnd.x - viewState.boxStart.x);
+                    var boxH = Math.abs(viewState.boxEnd.y - viewState.boxStart.y);
+                    completeSVG += '<rect id="selection-box" x="' + boxX + '" y="' + boxY + '" width="' +
+                                   boxW + '" height="' + boxH + '"/>\n';
+                }
+
+                completeSVG += '</g>\n</svg>';
+
+                svgContainer.innerHTML = completeSVG;
+
+                if (config.enableHighlight) {
+                    var paths = svgContainer.querySelectorAll('path');
+                    for (var i = 0; i < paths.length; i++) {
+                        paths[i].classList.add('contour-path');
+                    }
+                }
+
+                var endTime = performance.now();
+                document.getElementById('info-zoom').textContent = viewState.scale.toFixed(2) + 'x';
+
+                // Count elements
+                var elementCount = svgContainer.querySelectorAll('*').length;
+                document.getElementById('info-elements').textContent = elementCount;
+            }
+
+            function computeContours() {
+                var options = {
+                    autocontour: true,
+                    ncontours: config.ncontours,
+                    smoothing: config.smoothing
+                };
+                contourResult = contourCore.computeContours(data, options);
+            }
+
+            // ============================================
+            // Interaction handlers
+            // ============================================
+            function getDataValue(clientX, clientY) {
+                var svg = svgContainer.querySelector('svg');
+                if (!svg) return null;
+
+                var rect = svg.getBoundingClientRect();
+                var x = (clientX - rect.left - viewState.offsetX) / viewState.scale;
+                var y = (clientY - rect.top - viewState.offsetY) / viewState.scale;
+
+                var margins = getMargins();
+                var dims = getDimensions();
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: dims.width - margins.left - margins.right,
+                    height: dims.height - margins.top - margins.bottom
+                };
+
+                if (x < drawArea.x || x > drawArea.x + drawArea.width ||
+                    y < drawArea.y || y > drawArea.y + drawArea.height) {
+                    return null;
+                }
+
+                var dataX = Math.round((x - drawArea.x) / drawArea.width * (data.x.length - 1));
+                var dataY = Math.round((y - drawArea.y) / drawArea.height * (data.y.length - 1));
+
+                if (dataX >= 0 && dataX < data.x.length && dataY >= 0 && dataY < data.y.length) {
+                    return {
+                        x: data.x[dataX],
+                        y: data.y[dataY],
+                        z: data.z[dataY][dataX],
+                        ix: dataX,
+                        iy: dataY
+                    };
+                }
+                return null;
+            }
+
+            // Mouse events
+            svgContainer.addEventListener('mousedown', function(e) {
+                if (!config.enablePan && !config.enableZoom) return;
+
+                var rect = svgContainer.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var y = e.clientY - rect.top;
+
+                if (e.shiftKey && config.enableZoom) {
+                    // Start box zoom
+                    viewState.boxStart = { x: x, y: y };
+                    viewState.boxEnd = { x: x, y: y };
+                } else if (config.enablePan) {
+                    // Start pan
+                    viewState.isDragging = true;
+                    viewState.lastX = e.clientX;
+                    viewState.lastY = e.clientY;
+                    svgContainer.classList.add('dragging');
+                }
+            });
+
+            svgContainer.addEventListener('mousemove', function(e) {
+                var dataVal = getDataValue(e.clientX, e.clientY);
+
+                if (dataVal) {
+                    document.getElementById('info-mouse').textContent = '(' + dataVal.ix + ', ' + dataVal.iy + ')';
+                    document.getElementById('info-value').textContent = dataVal.z.toFixed(3);
+
+                    // Show tooltip
+                    if (config.enableHover) {
+                        tooltip.innerHTML = 'x=' + dataVal.x.toFixed(1) + ', y=' + dataVal.y.toFixed(1) +
+                            ', z=' + dataVal.z.toFixed(2);
+                        tooltip.classList.add('visible');
+
+                        // Position tooltip at cursor with fixed positioning
+                        var tooltipX = e.clientX + 15;
+                        var tooltipY = e.clientY + 15;
+
+                        // Keep tooltip on screen
+                        if (tooltipX + 160 > window.innerWidth) tooltipX = e.clientX - 170;
+                        if (tooltipY + 50 > window.innerHeight) tooltipY = e.clientY - 50;
+
+                        tooltip.style.left = tooltipX + 'px';
+                        tooltip.style.top = tooltipY + 'px';
+                    }
+                } else {
+                    document.getElementById('info-mouse').textContent = '-';
+                    document.getElementById('info-value').textContent = '-';
+                    tooltip.classList.remove('visible');
+                }
+
+                // Handle box zoom
+                if (viewState.boxStart && e.shiftKey) {
+                    var rect = svgContainer.getBoundingClientRect();
+                    viewState.boxEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                    render();
+                }
+
+                // Handle pan
+                if (viewState.isDragging && config.enablePan) {
+                    var dx = e.clientX - viewState.lastX;
+                    var dy = e.clientY - viewState.lastY;
+                    viewState.offsetX += dx;
+                    viewState.offsetY += dy;
+                    viewState.lastX = e.clientX;
+                    viewState.lastY = e.clientY;
+                    render();
+                }
+            });
+
+            svgContainer.addEventListener('mouseup', function(e) {
+                // End pan
+                if (viewState.isDragging) {
+                    viewState.isDragging = false;
+                    svgContainer.classList.remove('dragging');
+                }
+
+                // End box zoom
+                if (viewState.boxStart && e.shiftKey) {
+                    var rect = svgContainer.getBoundingClientRect();
+                    var boxEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+
+                    // Calculate new view bounds
+                    var x1 = Math.min(viewState.boxStart.x, boxEnd.x);
+                    var y1 = Math.min(viewState.boxStart.y, boxEnd.y);
+                    var x2 = Math.max(viewState.boxStart.x, boxEnd.x);
+                    var y2 = Math.max(viewState.boxStart.y, boxEnd.y);
+
+                    if (Math.abs(x2 - x1) > 20 && Math.abs(y2 - y1) > 20) {
+                        // Apply zoom to box
+                        var centerX = (x1 + x2) / 2;
+                        var centerY = (y1 + y2) / 2;
+                        var zoomFactor = Math.min(
+                            rect.width / Math.abs(x2 - x1),
+                            rect.height / Math.abs(y2 - y1)
+                        );
+                        zoomFactor = Math.min(zoomFactor, 5);
+                        viewState.scale *= zoomFactor;
+                        viewState.scale = Math.max(0.5, Math.min(10, viewState.scale));
+
+                        // Center the zoomed area
+                        viewState.offsetX = rect.width / 2 - centerX * viewState.scale;
+                        viewState.offsetY = rect.height / 2 - centerY * viewState.scale;
+                    }
+
+                    viewState.boxStart = null;
+                    viewState.boxEnd = null;
+                    updateZoomInfo();
+                    render();
+                }
+            });
+
+            svgContainer.addEventListener('mouseleave', function() {
+                viewState.isDragging = false;
+                viewState.boxStart = null;
+                viewState.boxEnd = null;
+                svgContainer.classList.remove('dragging');
+                document.getElementById('info-mouse').textContent = '-';
+                document.getElementById('info-value').textContent = '-';
+                tooltip.classList.remove('visible');
+            });
+
+            svgContainer.addEventListener('wheel', function(e) {
+                if (!config.enableZoom) return;
+                e.preventDefault();
+
+                var rect = svgContainer.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left - rect.width / 2;
+                var mouseY = e.clientY - rect.top - rect.height / 2;
+
+                var zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                var newScale = viewState.scale * zoomFactor;
+
+                if (newScale < 0.5 || newScale > 10) return;
+
+                // Adjust offset to zoom towards mouse
+                viewState.offsetX -= mouseX * (zoomFactor - 1);
+                viewState.offsetY -= mouseY * (zoomFactor - 1);
+                viewState.scale = newScale;
+
+                updateZoomInfo();
+                render();
+            }, { passive: false });
+
+            svgContainer.addEventListener('dblclick', function() {
+                resetView();
+            });
+
+            function updateZoomInfo() {
+                document.getElementById('info-zoom').textContent = viewState.scale.toFixed(2) + 'x';
+            }
+
+            function resetView() {
+                viewState.scale = 1;
+                viewState.offsetX = 0;
+                viewState.offsetY = 0;
+                updateZoomInfo();
+                render();
+            }
+
+            // ============================================
+            // Control event handlers
+            // ============================================
+            document.getElementById('contour-type').addEventListener('change', function(e) {
+                config.contourType = e.target.value;
+                render();
+            });
+
+            document.getElementById('colorscale').addEventListener('change', function(e) {
+                config.colorscale = e.target.value;
+                render();
+            });
+
+            document.getElementById('smoothing').addEventListener('input', function(e) {
+                config.smoothing = parseFloat(e.target.value);
+                document.getElementById('smoothing-value').textContent = config.smoothing.toFixed(1);
+                computeContours();
+                render();
+            });
+
+            document.getElementById('ncontours').addEventListener('input', function(e) {
+                config.ncontours = parseInt(e.target.value);
+                document.getElementById('ncontours-value').textContent = config.ncontours;
+                computeContours();
+                render();
+            });
+
+            document.getElementById('toggle-colorbar').addEventListener('change', function(e) {
+                config.showColorbar = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-labels').addEventListener('change', function(e) {
+                config.showLabels = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-axes').addEventListener('change', function(e) {
+                config.showAxes = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-grid').addEventListener('change', function(e) {
+                config.showGrid = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-zoom').addEventListener('change', function(e) {
+                config.enableZoom = e.target.checked;
+            });
+
+            document.getElementById('toggle-pan').addEventListener('change', function(e) {
+                config.enablePan = e.target.checked;
+            });
+
+            document.getElementById('toggle-hover').addEventListener('change', function(e) {
+                config.enableHover = e.target.checked;
+            });
+
+            document.getElementById('toggle-highlight').addEventListener('change', function(e) {
+                config.enableHighlight = e.target.checked;
+                render();
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', resetView);
+
+            document.getElementById('btn-regenerate').addEventListener('click', function() {
+                data = generatePeaksData(50, 50);
+                computeContours();
+                resetView();
+            });
+
+            document.getElementById('btn-export').addEventListener('click', function() {
+                var svgContent = svgContainer.innerHTML;
+                var blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.download = 'contour-svg.svg';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // ============================================
+            // Initialize
+            // ============================================
+            window.addEventListener('resize', render);
+
+            computeContours();
+            render();
+
+        })();
+    </script>
+</body>
+</html>

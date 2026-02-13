@@ -183,6 +183,5 @@ function calculatePlotBounds(options) {
     };
 }
 
-module.exports = {
-    createLabels: createLabels
-};
+// Export as function directly (not object) for easier usage
+module.exports = createLabels;

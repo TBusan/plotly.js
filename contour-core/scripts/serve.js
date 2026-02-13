@@ -82,12 +82,14 @@ server.listen(PORT, () => {
     console.log('\nDemo pages:');
     console.log('  http://localhost:' + PORT + '/demo.html');
     console.log('  http://localhost:' + PORT + '/demo_simple.html');
+    console.log('  http://localhost:' + PORT + '/complete-demo.html (完整功能演示!)');
+    console.log('  http://localhost:' + PORT + '/demo_interactive.html (交互演示)');
     console.log('\nPress Ctrl+C to stop the server');
     console.log('========================================\n');
 
     // Try to open browser automatically
     const { exec } = require('child_process');
-    const url = 'http://localhost:' + PORT + '/demo.html';
+    const url = 'http://localhost:' + PORT + '/complete-demo.html';
 
     // Try different commands based on OS
     const commands = process.platform === 'win32' ? ['start', url] : ['open', url];

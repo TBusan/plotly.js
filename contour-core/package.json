@@ -39,6 +39,11 @@
   "devDependencies": {
     "esbuild": "^0.20.0"
   },
+  "optionalDependencies": {
+    "d3-zoom": "^3.0.0",
+    "d3-selection": "^3.0.0",
+    "d3-ease": "^3.0.0"
+  },
   "exports": {
     ".": {
       "browser": "./dist/contour-core.browser.js",
@@ -61,6 +66,7 @@
     "labels/**",
     "colorbar/**",
     "renderers/**",
+    "interaction/**",
     "dist/"
   ]
 }

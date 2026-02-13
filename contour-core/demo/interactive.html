@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>contour-core Interactive Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .demo-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #contour-container {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        button:active {
+            background: #e0e0e0;
+        }
+
+        .info-panel {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .info-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .help-text {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .help-text strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .help-text ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .help-text li {
+            margin: 4px 0;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-group label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>contour-core Interactive Demo</h1>
+        <p class="subtitle">Mouse interaction features for contour visualization</p>
+
+        <div class="demo-container">
+            <div class="controls">
+                <button id="btn-reset">Reset View</button>
+                <button id="btn-zoom-in">Zoom In</button>
+                <button id="btn-zoom-out">Zoom Out</button>
+                <button id="btn-regenerate">Regenerate Data</button>
+
+                <div class="control-group">
+                    <label>Color Scale:</label>
+                    <select id="colorscale-select">
+                        <option value="viridis">Viridis</option>
+                        <option value="plasma">Plasma</option>
+                        <option value="hot">Hot</option>
+                        <option value="jet">Jet</option>
+                        <option value="electric">Electric</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Contour Type:</label>
+                    <select id="contour-type-select">
+                        <option value="fill">Fill</option>
+                        <option value="lines">Lines</option>
+                        <option value="heatmap">Heatmap</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="contour-container"></div>
+
+            <div class="info-panel">
+                <h3>Current State</h3>
+                <div class="info-item">
+                    <span class="info-label">View X Range:</span>
+                    <span class="info-value" id="info-x-range">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">View Y Range:</span>
+                    <span class="info-value" id="info-y-range">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Scale:</span>
+                    <span class="info-value" id="info-scale">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Hover Position:</span>
+                    <span class="info-value" id="info-hover">-</span>
+                </div>
+            </div>
+
+            <div class="help-text">
+                <strong>Interaction Guide:</strong>
+                <ul>
+                    <li><strong>Scroll Wheel:</strong> Zoom in/out (centered on mouse)</li>
+                    <li><strong>Left Drag:</strong> Box zoom (select area to zoom)</li>
+                    <li><strong>Middle Drag or Shift+Left Drag:</strong> Pan the view</li>
+                    <li><strong>Double Click:</strong> Reset to initial view</li>
+                    <li><strong>Mouse Move:</strong> Show data value at cursor position</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load bundled contour-core with interaction support -->
+    <script src="../dist/contour-core.browser.js"></script>
+
+    <script>
+        // Generate sample data (peaks function)
+        function generatePeaksData(width, height) {
+            var z = [];
+            var x = [];
+            var y = [];
+
+            for (var i = 0; i < height; i++) {
+                var row = [];
+                for (var j = 0; j < width; j++) {
+                    var xi = (j / width) * 6 - 3;
+                    var yi = (i / height) * 6 - 3;
+
+                    // Peaks function
+                    var z1 = 3 * Math.pow(1 - xi, 2) * Math.exp(-xi * xi - (yi + 1) * (yi + 1));
+                    var z2 = -10 * (xi / 5 - xi * xi * xi - yi * yi * yi * yi * yi * yi) * Math.exp(-xi * xi - yi * yi);
+                    var z3 = -1/3 * Math.exp(-(xi + 1) * (xi + 1) - yi * yi);
+                    var zi = z1 + z2 + z3;
+
+                    row.push(zi);
+                }
+                z.push(row);
+            }
+
+            for (var j = 0; j < width; j++) {
+                x.push(j);
+            }
+
+            for (var i = 0; i < height; i++) {
+                y.push(i);
+            }
+
+            return { z: z, x: x, y: y };
+        }
+
+        // Initialize
+        var container = document.getElementById('contour-container');
+        var width = container.clientWidth;
+        var height = container.clientHeight;
+
+        var data = generatePeaksData(50, 50);
+
+        var chart = contourCore.createInteractiveContour(container, {
+            width: width,
+            height: height,
+            z: data.z,
+            x: data.x,
+            y: data.y,
+            contours: {
+                type: 'fill'
+            },
+            colorscale: 'viridis',
+            ncontours: 15,
+            smoothing: 0.5,
+
+            interaction: {
+                zoom: {
+                    wheelEnabled: true,
+                    boxEnabled: true,
+                    scaleExtent: [0.5, 10]
+                },
+                pan: {
+                    enabled: true
+                },
+                hover: {
+                    enabled: true,
+                    tooltip: true
+                }
+            }
+        });
+
+        // Update info panel
+        function updateInfo() {
+            var view = chart.getView();
+
+            document.getElementById('info-x-range').textContent =
+                view.xMin.toFixed(2) + ' - ' + view.xMax.toFixed(2);
+            document.getElementById('info-y-range').textContent =
+                view.yMin.toFixed(2) + ' - ' + view.yMax.toFixed(2);
+
+            var components = chart.getComponents();
+            var transform = components.stateManager.getTransform();
+            document.getElementById('info-scale').textContent = transform.k.toFixed(2) + 'x';
+        }
+
+        // Register view change listener
+        chart.onViewChange(updateInfo);
+
+        // Register hover listener
+        chart.onHover(function(hoverData) {
+            if (hoverData && hoverData.data) {
+                var d = hoverData.data;
+                document.getElementById('info-hover').textContent =
+                    'x=' + d.x.toFixed(1) + ', y=' + d.y.toFixed(1) + ', z=' + d.z.toFixed(2);
+            } else {
+                document.getElementById('info-hover').textContent = '-';
+            }
+        });
+
+        // Initial info update
+        updateInfo();
+
+        // Button handlers
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            chart.resetView();
+        });
+
+        document.getElementById('btn-zoom-in').addEventListener('click', function() {
+            var view = chart.getView();
+            var centerX = (view.xMin + view.xMax) / 2;
+            var centerY = (view.yMin + view.yMax) / 2;
+            chart.zoomTo(
+                centerX - (view.xMax - view.xMin) / 4,
+                centerY - (view.yMax - view.yMin) / 4,
+                centerX + (view.xMax - view.xMin) / 4,
+                centerY + (view.yMax - view.yMin) / 4
+            );
+        });
+
+        document.getElementById('btn-zoom-out').addEventListener('click', function() {
+            var view = chart.getView();
+            var centerX = (view.xMin + view.xMax) / 2;
+            var centerY = (view.yMin + view.yMax) / 2;
+            chart.zoomTo(
+                centerX - (view.xMax - view.xMin),
+                centerY - (view.yMax - view.yMin),
+                centerX + (view.xMax - view.xMin),
+                centerY + (view.yMax - view.yMin)
+            );
+        });
+
+        document.getElementById('btn-regenerate').addEventListener('click', function() {
+            var newData = generatePeaksData(50, 50);
+            chart.update({
+                z: newData.z,
+                x: newData.x,
+                y: newData.y
+            });
+        });
+
+        // Color scale change
+        document.getElementById('colorscale-select').addEventListener('change', function(e) {
+            chart.destroy();
+            chart = contourCore.createInteractiveContour(container, {
+                width: width,
+                height: height,
+                z: data.z,
+                x: data.x,
+                y: data.y,
+                contours: { type: document.getElementById('contour-type-select').value },
+                colorscale: e.target.value,
+                ncontours: 15,
+                smoothing: 0.5,
+                interaction: {
+                    zoom: { wheelEnabled: true, boxEnabled: true },
+                    pan: { enabled: true },
+                    hover: { enabled: true, tooltip: true }
+                }
+            });
+
+            chart.onViewChange(updateInfo);
+            chart.onHover(function(hoverData) {
+                if (hoverData && hoverData.data) {
+                    var d = hoverData.data;
+                    document.getElementById('info-hover').textContent =
+                        'x=' + d.x.toFixed(1) + ', y=' + d.y.toFixed(1) + ', z=' + d.z.toFixed(2);
+                } else {
+                    document.getElementById('info-hover').textContent = '-';
+                }
+            });
+            updateInfo();
+        });
+
+        // Contour type change
+        document.getElementById('contour-type-select').addEventListener('change', function(e) {
+            chart.destroy();
+            chart = contourCore.createInteractiveContour(container, {
+                width: width,
+                height: height,
+                z: data.z,
+                x: data.x,
+                y: data.y,
+                contours: { type: e.target.value },
+                colorscale: document.getElementById('colorscale-select').value,
+                ncontours: 15,
+                smoothing: 0.5,
+                interaction: {
+                    zoom: { wheelEnabled: true, boxEnabled: true },
+                    pan: { enabled: true },
+                    hover: { enabled: true, tooltip: true }
+                }
+            });
+
+            chart.onViewChange(updateInfo);
+            chart.onHover(function(hoverData) {
+                if (hoverData && hoverData.data) {
+                    var d = hoverData.data;
+                    document.getElementById('info-hover').textContent =
+                        'x=' + d.x.toFixed(1) + ', y=' + d.y.toFixed(1) + ', z=' + d.y.toFixed(2);
+                } else {
+                    document.getElementById('info-hover').textContent = '-';
+                }
+            });
+            updateInfo();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            var newWidth = container.clientWidth;
+            var newHeight = container.clientHeight;
+            chart.resize(newWidth, newHeight);
+        });
+    </script>
+</body>
+</html>

@@ -70,6 +70,10 @@ function createPerimeter(options) {
  * Scale path from grid space to canvas space
  */
 function scalePath(path, options) {
+    if (!path || !Array.isArray(path) || path.length === 0) {
+        return path;
+    }
+
     var pathinfo = options.pathinfo || options.paths;
     var m = 10, n = 10;
     if (pathinfo && pathinfo[0] && pathinfo[0].z) {
@@ -116,9 +120,15 @@ function getColorForLevel(level, levels, options) {
  */
 function joinAllPaths(pathInfo, perimeter, options) {
     var fullpath = '';
-    var edgepaths = pathInfo.edgepaths;
+    var edgepaths = pathInfo.edgepaths || [];
+    var paths = pathInfo.paths || [];
 
-    if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+    // Check if pathInfo has valid data
+    if (!edgepaths || !paths) {
+        return '';
+    }
+
+    if (edgepaths.length === 0 && paths.length === 0) {
         // No paths at all
         return '';
     }
@@ -154,14 +164,20 @@ function joinAllPaths(pathInfo, perimeter, options) {
             if (!endpt) break;
 
             // Determine which corner to move to
+            newendpt = null; // Initialize to null
             if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1]; // right top
             else if (isleft(endpt)) newendpt = perimeter[0]; // left top
             else if (isbottom(endpt)) newendpt = perimeter[3]; // right bottom
             else if (isright(endpt)) newendpt = perimeter[2]; // left bottom
 
+            // If endpt is not on any boundary, skip this iteration
+            if (!newendpt) break;
+
             // Find next path that starts on this edge
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
-                var ptNew = scalePath(edgepaths[possiblei], options)[0];
+                var scaled = scalePath(edgepaths[possiblei], options);
+                if (!scaled || scaled.length === 0) continue;
+                var ptNew = scaled[0];
 
                 // Check if ptNew is on the segment from endpt to newendpt
                 if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
@@ -199,8 +215,8 @@ function joinAllPaths(pathInfo, perimeter, options) {
     }
 
     // Finally add the interior closed paths (THIS WAS MISSING!)
-    for (i = 0; i < pathInfo.paths.length; i++) {
-        var scaledPath = scalePath(pathInfo.paths[i], options);
+    for (i = 0; i < paths.length; i++) {
+        var scaledPath = scalePath(paths[i], options);
         fullpath += pathToSVG(scaledPath, true);
     }
 

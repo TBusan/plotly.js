@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Contour - Interactive Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .main-layout {
+            display: flex;
+            gap: 20px;
+        }
+        .controls-panel {
+            flex: 0 0 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+        }
+        .canvas-container {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .control-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .control-section:last-child {
+            border-bottom: none;
+        }
+        .control-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .toggle-group label {
+            font-size: 14px;
+            color: #555;
+        }
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle input:checked + .toggle-slider {
+            background-color: #2196F3;
+        }
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        .select-group {
+            margin-bottom: 10px;
+        }
+        .select-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+        .range-group {
+            margin-bottom: 10px;
+        }
+        .range-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        button.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        #canvas-wrapper {
+            position: relative;
+            flex: 1;
+            min-height: 500px;
+            overflow: hidden;
+        }
+        #contour-canvas {
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: grab;
+        }
+        #contour-canvas.dragging {
+            cursor: grabbing;
+        }
+        .info-panel {
+            margin-top: 15px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        .info-label {
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        .interaction-guide {
+            margin-top: 15px;
+            padding: 12px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .interaction-guide h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #667eea;
+        }
+        .interaction-guide ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        .interaction-guide li {
+            margin: 3px 0;
+            color: #333;
+        }
+        .interaction-guide kbd {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+        }
+
+        /* Canvas Tooltip */
+        #canvas-tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #canvas-tooltip.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Canvas Contour - Interactive Test</h1>
+        <p class="subtitle">Full-featured Canvas rendering with zoom, pan, and controls</p>
+
+        <div class="main-layout">
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <!-- Rendering Mode -->
+                <div class="control-section">
+                    <h3>Rendering Mode</h3>
+                    <div class="select-group">
+                        <label>Contour Type:</label>
+                        <select id="contour-type">
+                            <option value="fill">Fill (Filled Contours)</option>
+                            <option value="lines">Lines (Contour Lines)</option>
+                            <option value="heatmap">Heatmap</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label>Color Scale:</label>
+                        <select id="colorscale">
+                            <option value="viridis">Viridis</option>
+                            <option value="plasma">Plasma</option>
+                            <option value="hot">Hot</option>
+                            <option value="jet">Jet</option>
+                            <option value="electric">Electric</option>
+                            <option value="earth">Earth</option>
+                        </select>
+                    </div>
+                    <div class="range-group">
+                        <label>
+                            <span>Smoothing</span>
+                            <span id="smoothing-value">0.5</span>
+                        </label>
+                        <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.5">
+                    </div>
+                    <div class="range-group">
+                        <label>
+                            <span>Contour Count</span>
+                            <span id="ncontours-value">15</span>
+                        </label>
+                        <input type="range" id="ncontours" min="5" max="50" step="1" value="15">
+                    </div>
+                </div>
+
+                <!-- Display Options -->
+                <div class="control-section">
+                    <h3>Display Options</h3>
+                    <div class="toggle-group">
+                        <label for="toggle-colorbar">ColorBar</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-colorbar" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-labels">Labels</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-labels" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-axes">Axes (Rulers)</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-axes" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-grid">Grid Lines</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-grid" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Interaction -->
+                <div class="control-section">
+                    <h3>Interaction</h3>
+                    <div class="toggle-group">
+                        <label for="toggle-zoom">Zoom</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-zoom" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-pan">Pan</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-pan" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <label for="toggle-hover">Hover Tooltip</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-hover" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="control-section">
+                    <h3>Actions</h3>
+                    <button id="btn-reset">Reset View</button>
+                    <button id="btn-regenerate">Regenerate Data</button>
+                    <button id="btn-export" class="primary">Export as PNG</button>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span class="info-label">Mouse:</span>
+                        <span class="info-value" id="info-mouse">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Data Value:</span>
+                        <span class="info-value" id="info-value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Zoom:</span>
+                        <span class="info-value" id="info-zoom">1.00x</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Render Time:</span>
+                        <span class="info-value" id="info-render-time">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="canvas-container">
+                <div id="canvas-wrapper">
+                    <canvas id="contour-canvas"></canvas>
+                </div>
+
+                <div class="interaction-guide">
+                    <h4>Interaction Guide</h4>
+                    <ul>
+                        <li><kbd>Mouse Wheel</kbd> Zoom in/out at cursor</li>
+                        <li><kbd>Left Drag</kbd> Pan the view</li>
+                        <li><kbd>Shift + Drag</kbd> Box zoom selection</li>
+                        <li><kbd>Double Click</kbd> Reset to initial view</li>
+                        <li><kbd>Mouse Move</kbd> Show data value at cursor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Tooltip element -->
+    <div id="canvas-tooltip"></div>
+
+    <!-- Load contour-core library -->
+    <script src="../dist/contour-core.browser.js"></script>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================
+            // Configuration state
+            // ============================================
+            var config = {
+                contourType: 'fill',
+                colorscale: 'viridis',
+                smoothing: 0.5,
+                ncontours: 15,
+                showColorbar: true,
+                showLabels: true,
+                showAxes: true,
+                showGrid: true,
+                enableZoom: true,
+                enablePan: true,
+                enableHover: true
+            };
+
+            // View state for pan/zoom
+            var viewState = {
+                scale: 1,
+                offsetX: 0,
+                offsetY: 0,
+                isDragging: false,
+                lastX: 0,
+                lastY: 0,
+                boxStart: null,
+                boxEnd: null
+            };
+
+            // ============================================
+            // Data generation
+            // ============================================
+            function generatePeaksData(width, height) {
+                var z = [];
+                var x = [];
+                var y = [];
+
+                for (var j = 0; j < width; j++) x.push(j);
+                for (var i = 0; i < height; i++) y.push(i);
+
+                for (var i = 0; i < height; i++) {
+                    var row = [];
+                    for (var j = 0; j < width; j++) {
+                        var xi = (j / width) * 6 - 3;
+                        var yi = (i / height) * 6 - 3;
+
+                        var z1 = 3 * Math.pow(1 - xi, 2) * Math.exp(-xi * xi - (yi + 1) * (yi + 1));
+                        var z2 = -10 * (xi / 5 - xi * xi * xi - yi * yi * yi * yi * yi * yi) * Math.exp(-xi * xi - yi * yi);
+                        var z3 = -1/3 * Math.exp(-(xi + 1) * (xi + 1) - yi * yi);
+                        var zi = z1 + z2 + z3;
+
+                        row.push(zi);
+                    }
+                    z.push(row);
+                }
+
+                return { z: z, x: x, y: y };
+            }
+
+            // ============================================
+            // Color utilities
+            // ============================================
+            function getColorScaleArray(name) {
+                var COLOR_SCALES = {
+                    viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26828f',
+                              '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
+                    plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786',
+                             '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+                    hot: ['#000000', '#4a0000', '#880000', '#c20000', '#ff0000',
+                          '#ff4a00', '#ff8800', '#ffc200', '#ffff00', '#ffff80'],
+                    jet: ['#000080', '#0000ff', '#0080ff', '#00ffff', '#80ff80',
+                          '#ffff00', '#ff8000', '#ff0000', '#800000', '#000000'],
+                    electric: ['#000004', '#1b0c42', '#4a0c6e', '#781c6d', '#a52c60',
+                               '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4'],
+                    earth: ['#2a1c0b', '#5c4033', '#8f6b4e', '#c19a6b', '#e5c99b',
+                            '#f5e6c8', '#8b4513', '#a0522d', '#cd853f', '#deb887']
+                };
+                return COLOR_SCALES[name] || COLOR_SCALES.viridis;
+            }
+
+            function buildColorScale(levels, colorscale) {
+                var colors = getColorScaleArray(colorscale);
+                var scale = [];
+                for (var i = 0; i < levels.length; i++) {
+                    var t = levels.length > 1 ? i / (levels.length - 1) : 0;
+                    var colorIdx = Math.floor(t * (colors.length - 1));
+                    scale.push([levels[i], colors[colorIdx]]);
+                }
+                return scale;
+            }
+
+            function getMargins() {
+                if (config.showAxes) return { left: 60, right: 60, top: 20, bottom: 50 };
+                if (config.showColorbar) return { left: 20, right: 60, top: 20, bottom: 20 };
+                return { left: 20, right: 20, top: 20, bottom: 20 };
+            }
+
+            // ============================================
+            // Canvas rendering
+            // ============================================
+            var canvas = document.getElementById('contour-canvas');
+            var ctx = canvas.getContext('2d');
+            var data = generatePeaksData(50, 50);
+            var contourResult = null;
+            var axisSetup = null;
+
+            function resizeCanvas() {
+                var wrapper = document.getElementById('canvas-wrapper');
+                var rect = wrapper.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = Math.max(500, window.innerHeight - 300);
+                render();
+            }
+
+            function render() {
+                if (!contourResult || !ctx) return;
+
+                var startTime = performance.now();
+                var width = canvas.width;
+                var height = canvas.height;
+                var margins = getMargins();
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: width - margins.left - margins.right,
+                    height: height - margins.top - margins.bottom
+                };
+
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.save();
+
+                // Draw grid first (behind contours)
+                if (config.showAxes && config.showGrid) {
+                    drawGrid(drawArea);
+                }
+
+                // Clip to drawing area and apply transforms
+                ctx.beginPath();
+                ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
+                ctx.clip();
+
+                // Apply zoom transform
+                ctx.translate(drawArea.x + drawArea.width / 2, drawArea.y + drawArea.height / 2);
+                ctx.scale(viewState.scale, viewState.scale);
+                ctx.translate(-drawArea.width / 2 + viewState.offsetX, -drawArea.height / 2 + viewState.offsetY);
+
+                // Draw contours
+                var style = {
+                    width: drawArea.width,
+                    height: drawArea.height,
+                    x: data.x,
+                    y: data.y,
+                    z: data.z,
+                    coloring: config.contourType,
+                    showLines: config.contourType === 'lines',
+                    showLabels: config.showLabels,
+                    colorbar: config.showColorbar,
+                    colorScale: buildColorScale(contourResult.levels, config.colorscale),
+                    smoothing: config.smoothing,
+                    lineWidth: 1.5
+                };
+
+                // Need to temporarily override margins for contour rendering
+                var originalMargins = style.margins;
+                style.margins = { left: 0, right: 0, top: 0, bottom: 0 };
+
+                contourCore.renderers.canvas.drawContours(ctx, contourResult, style);
+                style.margins = originalMargins;
+
+                ctx.restore();
+
+                // Draw axes on top
+                if (config.showAxes) {
+                    drawAxes(width, height, drawArea);
+                }
+
+                // Draw box selection if active
+                if (viewState.boxStart && viewState.boxEnd) {
+                    drawBoxSelection();
+                }
+
+                var endTime = performance.now();
+                document.getElementById('info-render-time').textContent = (endTime - startTime).toFixed(1) + 'ms';
+            }
+
+            function drawGrid(drawArea) {
+                ctx.save();
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+
+                // Vertical grid lines - extend beyond draw area
+                var gridExtension = 20;
+                for (var i = 0; i <= 10; i++) {
+                    var x = drawArea.x + (drawArea.width / 10) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x, drawArea.y);
+                    ctx.lineTo(x, drawArea.y + drawArea.height + gridExtension);
+                    ctx.stroke();
+                }
+
+                // Horizontal grid lines - extend beyond draw area
+                for (var i = 0; i <= 10; i++) {
+                    var y = drawArea.y + (drawArea.height / 10) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(drawArea.x - gridExtension, y);
+                    ctx.lineTo(drawArea.x + drawArea.width, y);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            function drawAxes(width, height, drawArea) {
+                ctx.save();
+
+                // X-axis line
+                ctx.beginPath();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.moveTo(drawArea.x, drawArea.y + drawArea.height);
+                ctx.lineTo(drawArea.x + drawArea.width, drawArea.y + drawArea.height);
+                ctx.stroke();
+
+                // X-axis ticks and labels
+                ctx.font = '12px Arial, sans-serif';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+
+                for (var i = 0; i <= 10; i++) {
+                    var x = drawArea.x + (drawArea.width / 10) * i;
+                    var value = Math.round((data.x[data.x.length - 1] / 10) * i);
+
+                    // Tick mark
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#666';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(x, drawArea.y + drawArea.height);
+                    ctx.lineTo(x, drawArea.y + drawArea.height + 5);
+                    ctx.stroke();
+
+                    // Label
+                    ctx.fillText(value.toString(), x, drawArea.y + drawArea.height + 10);
+                }
+
+                // X-axis title
+                ctx.font = 'bold 14px Arial, sans-serif';
+                ctx.fillText('X Axis', drawArea.x + drawArea.width / 2, drawArea.y + drawArea.height + 30);
+
+                // Y-axis line
+                ctx.beginPath();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.moveTo(drawArea.x, drawArea.y);
+                ctx.lineTo(drawArea.x, drawArea.y + drawArea.height);
+                ctx.stroke();
+
+                // Y-axis ticks and labels
+                ctx.font = '12px Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+
+                for (var i = 0; i <= 10; i++) {
+                    var y = drawArea.y + drawArea.height - (drawArea.height / 10) * i;
+                    var value = Math.round((data.y[data.y.length - 1] / 10) * i);
+
+                    // Tick mark
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#666';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(drawArea.x, y);
+                    ctx.lineTo(drawArea.x - 5, y);
+                    ctx.stroke();
+
+                    // Label
+                    ctx.fillText(value.toString(), drawArea.x - 10, y);
+                }
+
+                // Y-axis title (rotated)
+                ctx.save();
+                ctx.translate(drawArea.x - 40, drawArea.y + drawArea.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.font = 'bold 14px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Y Axis', 0, 0);
+                ctx.restore();
+
+                ctx.restore();
+            }
+
+            function drawBoxSelection() {
+                var rect = canvas.getBoundingClientRect();
+                var x1 = Math.min(viewState.boxStart.x, viewState.boxEnd.x);
+                var y1 = Math.min(viewState.boxStart.y, viewState.boxEnd.y);
+                var w = Math.abs(viewState.boxEnd.x - viewState.boxStart.x);
+                var h = Math.abs(viewState.boxEnd.y - viewState.boxStart.y);
+
+                ctx.save();
+                ctx.strokeStyle = '#2196F3';
+                ctx.fillStyle = 'rgba(33, 150, 243, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.fillRect(x1, y1, w, h);
+                ctx.strokeRect(x1, y1, w, h);
+                ctx.restore();
+            }
+
+            function computeContours() {
+                var options = {
+                    autocontour: true,
+                    ncontours: config.ncontours,
+                    smoothing: config.smoothing
+                };
+                contourResult = contourCore.computeContours(data, options);
+            }
+
+            // ============================================
+            // Interaction handlers
+            // ============================================
+            function getDataValue(clientX, clientY) {
+                var rect = canvas.getBoundingClientRect();
+                var dims = getDrawArea();
+
+                // Calculate position in transformed canvas coordinates
+                var x = (clientX - rect.left - dims.x - dims.width / 2) / viewState.scale - viewState.offsetX + dims.width / 2;
+                var y = (clientY - rect.top - dims.y - dims.height / 2) / viewState.scale - viewState.offsetY + dims.height / 2;
+
+                // Check if within drawing area
+                if (x < 0 || x > dims.width || y < 0 || y > dims.height) {
+                    return null;
+                }
+
+                var dataX = Math.round(x / dims.width * (data.x.length - 1));
+                var dataY = Math.round(y / dims.height * (data.y.length - 1));
+
+                if (dataX >= 0 && dataX < data.x.length && dataY >= 0 && dataY < data.y.length) {
+                    return {
+                        x: data.x[dataX],
+                        y: data.y[dataY],
+                        z: data.z[dataY][dataX],
+                        ix: dataX,
+                        iy: dataY
+                    };
+                }
+                return null;
+            }
+
+            // Helper function to get draw area
+            function getDrawArea() {
+                var margins = getMargins();
+                return {
+                    x: margins.left,
+                    y: margins.top,
+                    width: canvas.width - margins.left - margins.right,
+                    height: canvas.height - margins.top - margins.bottom
+                };
+            }
+
+            canvas.addEventListener('mousedown', function(e) {
+                var rect = canvas.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var y = e.clientY - rect.top;
+
+                if (e.shiftKey && config.enableZoom) {
+                    // Start box zoom
+                    viewState.boxStart = { x: x, y: y };
+                    viewState.boxEnd = { x: x, y: y };
+                } else if (config.enablePan) {
+                    // Start pan
+                    viewState.isDragging = true;
+                    viewState.lastX = e.clientX;
+                    viewState.lastY = e.clientY;
+                    canvas.classList.add('dragging');
+                }
+            });
+
+            canvas.addEventListener('mousemove', function(e) {
+                var dataVal = getDataValue(e.clientX, e.clientY);
+
+                if (dataVal) {
+                    document.getElementById('info-mouse').textContent = '(' + dataVal.ix + ', ' + dataVal.iy + ')';
+                    document.getElementById('info-value').textContent = dataVal.z.toFixed(3);
+
+                    // Show tooltip
+                    if (config.enableHover) {
+                        var tooltip = document.getElementById('canvas-tooltip');
+                        tooltip.innerHTML = 'x=' + dataVal.x.toFixed(1) + ', y=' + dataVal.y.toFixed(1) +
+                            ', z=' + dataVal.z.toFixed(2);
+                        tooltip.classList.add('visible');
+
+                        // Position tooltip near cursor
+                        var tooltipX = e.clientX + 15;
+                        var tooltipY = e.clientY + 15;
+
+                        // Keep tooltip on screen
+                        if (tooltipX + 160 > window.innerWidth) tooltipX = e.clientX - 170;
+                        if (tooltipY + 50 > window.innerHeight) tooltipY = e.clientY - 50;
+
+                        tooltip.style.left = tooltipX + 'px';
+                        tooltip.style.top = tooltipY + 'px';
+                    }
+                } else {
+                    document.getElementById('info-mouse').textContent = '-';
+                    document.getElementById('info-value').textContent = '-';
+
+                    // Hide tooltip
+                    var tooltip = document.getElementById('canvas-tooltip');
+                    tooltip.classList.remove('visible');
+                }
+
+                // Handle box zoom
+                if (viewState.boxStart && e.shiftKey) {
+                    var rect = canvas.getBoundingClientRect();
+                    viewState.boxEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                    render();
+                }
+
+                // Handle pan
+                if (viewState.isDragging && config.enablePan) {
+                    var dx = e.clientX - viewState.lastX;
+                    var dy = e.clientY - viewState.lastY;
+                    viewState.offsetX += dx;
+                    viewState.offsetY += dy;
+                    viewState.lastX = e.clientX;
+                    viewState.lastY = e.clientY;
+                    render();
+                }
+            });
+
+            canvas.addEventListener('mouseup', function(e) {
+                // End pan
+                if (viewState.isDragging) {
+                    viewState.isDragging = false;
+                    canvas.classList.remove('dragging');
+                }
+
+                // End box zoom
+                if (viewState.boxStart && e.shiftKey) {
+                    var rect = canvas.getBoundingClientRect();
+                    var boxEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+
+                    var x1 = Math.min(viewState.boxStart.x, boxEnd.x);
+                    var y1 = Math.min(viewState.boxStart.y, boxEnd.y);
+                    var x2 = Math.max(viewState.boxStart.x, boxEnd.x);
+                    var y2 = Math.max(viewState.boxStart.y, boxEnd.y);
+
+                    if (Math.abs(x2 - x1) > 20 && Math.abs(y2 - y1) > 20) {
+                        var dims = getDrawArea();
+                        var centerX = (x1 + x2) / 2 - dims.x;
+                        var centerY = (y1 + y2) / 2 - dims.y;
+                        var zoomFactor = Math.min(
+                            dims.width / Math.abs(x2 - x1),
+                            dims.height / Math.abs(y2 - y1)
+                        );
+                        zoomFactor = Math.min(zoomFactor, 5);
+                        viewState.scale *= zoomFactor;
+                        viewState.scale = Math.max(0.5, Math.min(10, viewState.scale));
+                        viewState.offsetX = -(centerX * viewState.scale - dims.width / 2);
+                        viewState.offsetY = -(centerY * viewState.scale - dims.height / 2);
+                    }
+
+                    viewState.boxStart = null;
+                    viewState.boxEnd = null;
+                    updateZoomInfo();
+                    render();
+                }
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                viewState.isDragging = false;
+                viewState.boxStart = null;
+                viewState.boxEnd = null;
+                canvas.classList.remove('dragging');
+                document.getElementById('info-mouse').textContent = '-';
+                document.getElementById('info-value').textContent = '-';
+
+                // Hide tooltip
+                var tooltip = document.getElementById('canvas-tooltip');
+                tooltip.classList.remove('visible');
+            });
+
+            canvas.addEventListener('wheel', function(e) {
+                if (!config.enableZoom) return;
+                e.preventDefault();
+
+                var rect = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var mouseY = e.clientY - rect.top;
+
+                var dims = getDrawArea();
+                var centerX = mouseX - (dims.x + dims.width / 2);
+                var centerY = mouseY - (dims.y + dims.height / 2);
+
+                var zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                var newScale = viewState.scale * zoomFactor;
+
+                if (newScale < 0.5 || newScale > 10) return;
+
+                // Adjust offset to zoom towards mouse
+                viewState.offsetX -= centerX * (zoomFactor - 1);
+                viewState.offsetY -= centerY * (zoomFactor - 1);
+                viewState.scale = newScale;
+
+                updateZoomInfo();
+                render();
+            }, { passive: false });
+
+            canvas.addEventListener('dblclick', function() {
+                resetView();
+            });
+
+            function updateZoomInfo() {
+                document.getElementById('info-zoom').textContent = viewState.scale.toFixed(2) + 'x';
+            }
+
+            function resetView() {
+                viewState.scale = 1;
+                viewState.offsetX = 0;
+                viewState.offsetY = 0;
+                updateZoomInfo();
+                render();
+            }
+
+            // ============================================
+            // Control event handlers
+            // ============================================
+            document.getElementById('contour-type').addEventListener('change', function(e) {
+                config.contourType = e.target.value;
+                render();
+            });
+
+            document.getElementById('colorscale').addEventListener('change', function(e) {
+                config.colorscale = e.target.value;
+                render();
+            });
+
+            document.getElementById('smoothing').addEventListener('input', function(e) {
+                config.smoothing = parseFloat(e.target.value);
+                document.getElementById('smoothing-value').textContent = config.smoothing.toFixed(1);
+                computeContours();
+                render();
+            });
+
+            document.getElementById('ncontours').addEventListener('input', function(e) {
+                config.ncontours = parseInt(e.target.value);
+                document.getElementById('ncontours-value').textContent = config.ncontours;
+                computeContours();
+                render();
+            });
+
+            document.getElementById('toggle-colorbar').addEventListener('change', function(e) {
+                config.showColorbar = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-labels').addEventListener('change', function(e) {
+                config.showLabels = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-axes').addEventListener('change', function(e) {
+                config.showAxes = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-grid').addEventListener('change', function(e) {
+                config.showGrid = e.target.checked;
+                render();
+            });
+
+            document.getElementById('toggle-zoom').addEventListener('change', function(e) {
+                config.enableZoom = e.target.checked;
+            });
+
+            document.getElementById('toggle-pan').addEventListener('change', function(e) {
+                config.enablePan = e.target.checked;
+            });
+
+            document.getElementById('toggle-hover').addEventListener('change', function(e) {
+                config.enableHover = e.target.checked;
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', resetView);
+
+            document.getElementById('btn-regenerate').addEventListener('click', function() {
+                data = generatePeaksData(50, 50);
+                computeContours();
+                resetView();
+            });
+
+            document.getElementById('btn-export').addEventListener('click', function() {
+                var link = document.createElement('a');
+                link.download = 'contour-canvas.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+
+            // ============================================
+            // Initialize
+            // ============================================
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('load', function() {
+                computeContours();
+                resizeCanvas();
+            });
+
+        })();
+    </script>
+</body>
+</html>

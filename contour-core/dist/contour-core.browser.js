@@ -1,7 +1,14 @@
 "use strict";
 var contourCore = (() => {
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
 
@@ -264,12 +271,16 @@ var contourCore = (() => {
         var xi, yi, startIndices, ystartIndices, label, corners, mi, pi, i;
         for (yi = 0; yi < m - 1; yi++) {
           ystartIndices = [];
-          if (yi === 0) ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
-          if (yi === m - 2) ystartIndices = ystartIndices.concat(constants.TOPSTART);
+          if (yi === 0)
+            ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
+          if (yi === m - 2)
+            ystartIndices = ystartIndices.concat(constants.TOPSTART);
           for (xi = 0; xi < n - 1; xi++) {
             startIndices = ystartIndices.slice();
-            if (xi === 0) startIndices = startIndices.concat(constants.LEFTSTART);
-            if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
+            if (xi === 0)
+              startIndices = startIndices.concat(constants.LEFTSTART);
+            if (xi === n - 2)
+              startIndices = startIndices.concat(constants.RIGHTSTART);
             corners = [
               [z[yi][xi], z[yi][xi + 1]],
               [z[yi + 1][xi], z[yi + 1][xi + 1]]
@@ -278,7 +289,8 @@ var contourCore = (() => {
             for (i = 0; i < pathinfo.length; i++) {
               pi = pathinfo[i];
               mi = getMarchingIndex(pi.level, corners);
-              if (!mi) continue;
+              if (!mi)
+                continue;
               pi.crossings[label] = mi;
               if (startIndices.indexOf(mi) !== -1) {
                 pi.starts.push([xi, yi]);
@@ -294,7 +306,8 @@ var contourCore = (() => {
         var mi = (corners[0][0] > val ? 0 : 1) + (corners[0][1] > val ? 0 : 2) + (corners[1][1] > val ? 0 : 4) + (corners[1][0] > val ? 0 : 8);
         if (mi === 5 || mi === 10) {
           var avg = (corners[0][0] + corners[0][1] + corners[1][0] + corners[1][1]) / 4;
-          if (val > avg) return mi === 5 ? 713 : 1114;
+          if (val > avg)
+            return mi === 5 ? 713 : 1114;
           return mi === 5 ? 104 : 208;
         }
         return mi === 15 ? 0 : mi;
@@ -371,7 +384,8 @@ var contourCore = (() => {
           }
           var atEdge = marchStep[0] && (loc[0] < 0 || loc[0] > n - 2) || marchStep[1] && (loc[1] < 0 || loc[1] > m - 2);
           var closedLoop = loc[0] === startLoc[0] && loc[1] === startLoc[1] && marchStep[0] === startStep[0] && marchStep[1] === startStep[1];
-          if (closedLoop || edgeflag && atEdge) break;
+          if (closedLoop || edgeflag && atEdge)
+            break;
           mi = pi.crossings[locStr];
         }
         if (cnt === 1e4) {
@@ -382,7 +396,8 @@ var contourCore = (() => {
         for (cnt = 0; cnt < simplifiedPts.length; cnt++) {
           simplifiedPts[cnt].length = 2;
         }
-        if (simplifiedPts.length < 2) return;
+        if (simplifiedPts.length < 2)
+          return;
         if (closedpath) {
           pi.paths.push(simplifiedPts);
         } else {
@@ -398,7 +413,8 @@ var contourCore = (() => {
           totaldist += thisdist;
           alldists.push(thisdist);
         }
-        if (alldists.length === 0) return pts;
+        if (alldists.length === 0)
+          return pts;
         var distThresholdFactor = 0.2 * smoothing;
         var distThreshold = totaldist / alldists.length * distThresholdFactor;
         var result = [];
@@ -414,13 +430,15 @@ var contourCore = (() => {
             for (cnt2 = cnt - 1; cnt2 >= cropstart; cnt2--) {
               if (distgroup + alldists[cnt2] < distThreshold) {
                 distgroup += alldists[cnt2];
-              } else break;
+              } else
+                break;
             }
             if (closedpath && cnt === pts.length - 2) {
               for (cnt3 = 0; cnt3 < cnt2; cnt3++) {
                 if (distgroup + alldists[cnt3] < distThreshold) {
                   distgroup += alldists[cnt3];
-                } else break;
+                } else
+                  break;
               }
             }
             var ptcnt = cnt - cnt2 + cnt3 + 1;
@@ -441,10 +459,13 @@ var contourCore = (() => {
             }
             pts.splice(cnt2 + 1, cnt - cnt2 + 1, newpt);
             cnt = cnt2 + 1;
-            if (cnt3) cropstart = cnt3;
+            if (cnt3)
+              cropstart = cnt3;
             if (closedpath) {
-              if (cnt === pts.length - 2) pts[cnt3] = pts[pts.length - 1];
-              else if (cnt === 0) pts[pts.length - 1] = pts[0];
+              if (cnt === pts.length - 2)
+                pts[cnt3] = pts[pts.length - 1];
+              else if (cnt === 0)
+                pts[pts.length - 1] = pts[0];
             }
           }
         }
@@ -469,7 +490,8 @@ var contourCore = (() => {
                 if (j === i) {
                   pi.paths.push(pts.concat(edgepathj));
                 } else {
-                  if (j > i) j--;
+                  if (j > i)
+                    j--;
                   pi.edgepaths[j] = edgepathj.concat(pts, edgepathi);
                 }
                 break;
@@ -481,7 +503,8 @@ var contourCore = (() => {
           }
         }
         for (i = 0; i < pi.edgepaths.length; i++) {
-          if (merged) break;
+          if (merged)
+            break;
           edgepathi = pi.edgepaths[i];
           if (equalPts(edgepathi[edgepathi.length - 1], pts[0], xtol, ytol)) {
             pts.shift();
@@ -521,7 +544,8 @@ var contourCore = (() => {
         var y = scaleFunctions && scaleFunctions.y ? scaleFunctions.y : pi.y;
         if (step[1]) {
           var dx = (pi.level - zxy) / (pi.z[locy][locx + 1] - zxy);
-          if (!isFinite(dx)) dx = 0.5;
+          if (!isFinite(dx))
+            dx = 0.5;
           var dataX;
           if (dx !== 1 && dx !== 0) {
             dataX = (1 - dx) * x[locx] + dx * x[locx + 1];
@@ -543,7 +567,8 @@ var contourCore = (() => {
           ];
         } else {
           var dy = (pi.level - zxy) / (pi.z[locy + 1][locx] - zxy);
-          if (!isFinite(dy)) dy = 0.5;
+          if (!isFinite(dy))
+            dy = 0.5;
           var dataX = x[locx];
           var dataY;
           if (dy !== 1 && dy !== 0) {
@@ -701,10 +726,14 @@ var contourCore = (() => {
             if (row[j] === void 0) {
               var neighborCount = (row[j - 1] !== void 0 ? 1 : 0) + (row[j + 1] !== void 0 ? 1 : 0) + (prevRow && prevRow[j] !== void 0 ? 1 : 0) + (nextRow && nextRow[j] !== void 0 ? 1 : 0);
               if (neighborCount) {
-                if (i === 0) neighborCount++;
-                if (j === 0) neighborCount++;
-                if (i === z.length - 1) neighborCount++;
-                if (row && j === row.length - 1) neighborCount++;
+                if (i === 0)
+                  neighborCount++;
+                if (j === 0)
+                  neighborCount++;
+                if (i === z.length - 1)
+                  neighborCount++;
+                if (row && j === row.length - 1)
+                  neighborCount++;
                 if (neighborCount < 4) {
                   neighborHash[[i, j]] = [i, j, neighborCount];
                 }
@@ -760,7 +789,8 @@ var contourCore = (() => {
         var i;
         iterateInterp2d(z, emptyPoints);
         for (i = 0; i < emptyPoints.length; i++) {
-          if (emptyPoints[i][2] < 4) break;
+          if (emptyPoints[i][2] < 4)
+            break;
         }
         emptyPoints = emptyPoints.slice(i);
         for (i = 0; i < 100 && maxFractionalChange > INTERPTHRESHOLD; i++) {
@@ -800,7 +830,8 @@ var contourCore = (() => {
           for (q = 0; q < 4; q++) {
             neighborShift = NEIGHBORSHIFTS[q];
             neighborRow = z[i + neighborShift[0]];
-            if (!neighborRow) continue;
+            if (!neighborRow)
+              continue;
             neighborVal = neighborRow[j + neighborShift[1]];
             if (neighborVal !== void 0) {
               if (neighborSum === 0) {
@@ -818,7 +849,8 @@ var contourCore = (() => {
           }
           z[i][j] = neighborSum / neighborCount;
           if (initialVal === void 0) {
-            if (neighborCount < 4) maxFractionalChange = 1;
+            if (neighborCount < 4)
+              maxFractionalChange = 1;
           } else {
             if (overshoot !== void 0 && overshoot !== 0) {
               z[i][j] = (1 + overshoot) * z[i][j] - overshoot * initialVal;
@@ -858,7 +890,8 @@ var contourCore = (() => {
             break;
           case "constraint":
             pi0.prefixBoundary = false;
-            if (pi0.edgepaths.length) return;
+            if (pi0.edgepaths.length)
+              return;
             var na = pi0.x.length;
             var nb = pi0.y.length;
             var boundaryMax = -Infinity;
@@ -918,7 +951,8 @@ var contourCore = (() => {
       var pathFinding = require_pathfinding();
       var closeBoundaries = require_close_boundaries();
       function makeBinaryMask(nullMask) {
-        if (!nullMask) return null;
+        if (!nullMask)
+          return null;
         var m = nullMask.length;
         var n = nullMask[0].length;
         var binaryMask = [];
@@ -938,7 +972,8 @@ var contourCore = (() => {
           return null;
         }
         var binaryMask = makeBinaryMask(nullMask);
-        if (!binaryMask) return null;
+        if (!binaryMask)
+          return null;
         var m = binaryMask.length;
         var n = binaryMask[0].length;
         var width = options.width || 500;
@@ -946,8 +981,10 @@ var contourCore = (() => {
         var padding = options.padding || 30;
         var x = [];
         var y = [];
-        for (var i = 0; i < n; i++) x.push(i);
-        for (var j = 0; j < m; j++) y.push(j);
+        for (var i = 0; i < n; i++)
+          x.push(i);
+        for (var j = 0; j < m; j++)
+          y.push(j);
         var clipPathInfo = {
           level: 0.9,
           crossings: {},
@@ -965,7 +1002,8 @@ var contourCore = (() => {
         return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
       }
       function pathToSVG(path, isClosed) {
-        if (!path || path.length === 0) return "";
+        if (!path || path.length === 0)
+          return "";
         var d = "M " + path[0][0] + " " + path[0][1];
         for (var i = 1; i < path.length; i++) {
           d += " L " + path[i][0] + " " + path[i][1];
@@ -1050,11 +1088,16 @@ var contourCore = (() => {
           endpt = scaledPath[scaledPath.length - 1];
           nexti = -1;
           for (cnt = 0; cnt < 4; cnt++) {
-            if (!endpt) break;
-            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
-            else if (isleft(endpt)) newendpt = perimeter[0];
-            else if (isbottom(endpt)) newendpt = perimeter[3];
-            else if (isright(endpt)) newendpt = perimeter[2];
+            if (!endpt)
+              break;
+            if (istop(endpt) && !isright(endpt))
+              newendpt = perimeter[1];
+            else if (isleft(endpt))
+              newendpt = perimeter[0];
+            else if (isbottom(endpt))
+              newendpt = perimeter[3];
+            else if (isright(endpt))
+              newendpt = perimeter[2];
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
               var ptNew = scalePath(edgepaths[possiblei])[0];
               if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
@@ -1070,10 +1113,12 @@ var contourCore = (() => {
               }
             }
             endpt = newendpt;
-            if (nexti >= 0) break;
+            if (nexti >= 0)
+              break;
             fullpath += "L" + newendpt[0] + " " + newendpt[1];
           }
-          if (nexti === edgepaths.length || nexti < 0) break;
+          if (nexti === edgepaths.length || nexti < 0)
+            break;
           i = nexti;
           newloop = startsleft.indexOf(i) === -1;
           if (newloop) {
@@ -1590,11 +1635,16 @@ var contourCore = (() => {
           endpt = scalePoint(style, currentPath[currentPath.length - 1]);
           nexti = -1;
           for (cnt = 0; cnt < 4; cnt++) {
-            if (!endpt) break;
-            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
-            else if (isleft(endpt)) newendpt = perimeter[0];
-            else if (isbottom(endpt)) newendpt = perimeter[3];
-            else if (isright(endpt)) newendpt = perimeter[2];
+            if (!endpt)
+              break;
+            if (istop(endpt) && !isright(endpt))
+              newendpt = perimeter[1];
+            else if (isleft(endpt))
+              newendpt = perimeter[0];
+            else if (isbottom(endpt))
+              newendpt = perimeter[3];
+            else if (isright(endpt))
+              newendpt = perimeter[2];
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
               if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0) {
                 continue;
@@ -1613,10 +1663,12 @@ var contourCore = (() => {
               }
             }
             endpt = newendpt;
-            if (nexti >= 0) break;
+            if (nexti >= 0)
+              break;
             fullpath += "L" + newendpt[0] + " " + newendpt[1];
           }
-          if (nexti === edgepaths.length || nexti < 0) break;
+          if (nexti === edgepaths.length || nexti < 0)
+            break;
           i = nexti;
           newloop = startsleft.indexOf(i) === -1;
           if (newloop) {
@@ -1658,16 +1710,20 @@ var contourCore = (() => {
           return "rgba(100, 100, 100, 0.5)";
         }
         var n = colorScale.length;
-        if (n === 0) return "rgba(100, 100, 100, 0.5)";
-        if (n === 1) return colorScale[0][1];
+        if (n === 0)
+          return "rgba(100, 100, 100, 0.5)";
+        if (n === 1)
+          return colorScale[0][1];
         for (var i = 0; i < n - 1; i++) {
           if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
             var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
             return interpolateColor(colorScale[i][1], colorScale[i + 1][1], t);
           }
         }
-        if (value < colorScale[0][0]) return colorScale[0][1];
-        if (value > colorScale[n - 1][0]) return colorScale[n - 1][1];
+        if (value < colorScale[0][0])
+          return colorScale[0][1];
+        if (value > colorScale[n - 1][0])
+          return colorScale[n - 1][1];
         return colorScale[Math.floor(n / 2)][1];
       }
       function getColorForSegmentedValue(value, valueColorMap) {
@@ -1751,7 +1807,8 @@ var contourCore = (() => {
         var showLines = style.showLines !== false;
         var lineColor = style.lineColor || "#333";
         var lineWidth = style.lineWidth || 1.5;
-        if (paths.length === 0) return;
+        if (paths.length === 0)
+          return;
         var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
         var stepSize = !hasCustomLevels && levels.length > 1 ? levels[1] - levels[0] : 0;
         var colorScale = style.colorScale;
@@ -1860,7 +1917,8 @@ var contourCore = (() => {
         }
       }
       function drawPathStroke(ctx, path, smoothing, isClosed, style) {
-        if (path.length < 2) return;
+        if (path.length < 2)
+          return;
         ctx.beginPath();
         var scaledPath = path.map(scalePoint.bind(null, style));
         if (smoothing > 0 && isClosed) {
@@ -2001,10 +2059,12 @@ var contourCore = (() => {
         var a = x2 - x1, b = x3 - x1, c = x4 - x3;
         var d = y2 - y1, e = y3 - y1, f = y4 - y3;
         var det = a * f - c * d;
-        if (det === 0) return null;
+        if (det === 0)
+          return null;
         var t = (b * f - c * e) / det;
         var u = (b * d - a * e) / det;
-        if (u < 0 || u > 1 || t < 0 || t > 1) return null;
+        if (u < 0 || u > 1 || t < 0 || t > 1)
+          return null;
         return { x: x1 + a * t, y: y1 + d * t };
       }
       function perpDistance2(xab, yab, llab, xac, yac) {
@@ -2037,7 +2097,8 @@ var contourCore = (() => {
         var middle = bounds.middle !== void 0 ? bounds.middle : (top + bottom) / 2;
         var normX = (x > center ? right - x : x - left) / (dx + Math.abs(Math.sin(theta) * halfHeight));
         var normY = (y > middle ? bottom - y : y - top) / (Math.abs(dy) + Math.cos(theta) * halfHeight);
-        if (normX < 1 || normY < 1) return Infinity;
+        if (normX < 1 || normY < 1)
+          return Infinity;
         var cost = COST_CONSTANTS.EDGECOST * (1 / (normX - 1) + 1 / (normY - 1));
         cost += COST_CONSTANTS.ANGLECOST * theta * theta;
         if (labelData && labelData.length > 0) {
@@ -2061,7 +2122,8 @@ var contourCore = (() => {
             ) * 2 / (textOpts.height + labeli.height);
             var sameLevel = textOpts.level === labeli.level;
             var distOffset = sameLevel ? COST_CONSTANTS.SAMELEVELDISTANCE : 1;
-            if (dist <= distOffset) return Infinity;
+            if (dist <= distOffset)
+              return Infinity;
             var distFactor = COST_CONSTANTS.NEIGHBORCOST * (sameLevel ? COST_CONSTANTS.SAMELEVELFACTOR : 1);
             cost += distFactor / (dist - distOffset);
           }
@@ -2069,7 +2131,8 @@ var contourCore = (() => {
         return cost;
       }
       function segmentDistance(x1, y1, x2, y2, x3, y3, x4, y4) {
-        if (segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4)) return 0;
+        if (segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4))
+          return 0;
         var x12 = x2 - x1, y12 = y2 - y1;
         var x34 = x4 - x3, y34 = y4 - y3;
         var ll12 = x12 * x12 + y12 * y12;
@@ -2213,8 +2276,10 @@ var contourCore = (() => {
               pMin = p;
             }
           }
-          if (bestCost > COST_CONSTANTS.MAXCOST * 2) break;
-          if (j > 0) dp /= 2;
+          if (bestCost > COST_CONSTANTS.MAXCOST * 2)
+            break;
+          if (j > 0)
+            dp /= 2;
           p0 = pMin - dp / 2;
           pMax = pMin + dp * 1.5;
         }
@@ -2328,7 +2393,8 @@ var contourCore = (() => {
             accumulated += Math.sqrt(dx * dx + dy * dy);
           }
         }
-        if (min === null) return null;
+        if (min === null)
+          return null;
         accumulated = 0;
         for (var i = path.length - 1; i >= 0; i--) {
           var pt = path[i];
@@ -2342,7 +2408,8 @@ var contourCore = (() => {
             accumulated += Math.sqrt(dx * dx + dy * dy);
           }
         }
-        if (max === null) max = totalLen;
+        if (max === null)
+          max = totalLen;
         var visibleLen = max - min;
         return {
           min,
@@ -2353,7 +2420,8 @@ var contourCore = (() => {
       }
       function isPathClosed(path, threshold) {
         threshold = threshold !== void 0 ? threshold : 1;
-        if (!path || path.length < 2) return false;
+        if (!path || path.length < 2)
+          return false;
         var start = path[0];
         var end = path[path.length - 1];
         var dx = end[0] - start[0];
@@ -2423,7 +2491,8 @@ var contourCore = (() => {
         var labelSize = style.labelSize || 12;
         var labelColor = style.labelColor || "#000";
         var showLabels = style.showLabels !== false;
-        if (!showLabels || !paths || !paths.length) return;
+        if (!showLabels || !paths || !paths.length)
+          return;
         ctx.font = labelSize + "px " + labelFont;
         ctx.fillStyle = labelColor;
         ctx.textAlign = "center";
@@ -2450,7 +2519,8 @@ var contourCore = (() => {
           var pathInfo = paths[i];
           for (var j = 0; j < pathInfo.paths.length; j++) {
             var path = pathInfo.paths[j];
-            if (path.length < 3) continue;
+            if (path.length < 3)
+              continue;
             var labelText = formatContourLabel(pathInfo.level, ".1f");
             var textWidth = ctx.measureText(labelText).width;
             var textWidthGrid = textWidth / scaleX;
@@ -2463,7 +2533,8 @@ var contourCore = (() => {
               paths.length,
               plotDiagonal
             );
-            if (maxLabels === 0) continue;
+            if (maxLabels === 0)
+              continue;
             var closed = isPathClosed(path);
             var usedPositions = [];
             for (var k = 0; k < maxLabels; k++) {
@@ -2478,7 +2549,8 @@ var contourCore = (() => {
                 plotBounds,
                 closed
               );
-              if (!labelPos) break;
+              if (!labelPos)
+                break;
               var tooClose = false;
               for (var u = 0; u < usedPositions.length; u++) {
                 var dx = labelPos.x - usedPositions[u].x;
@@ -2489,7 +2561,8 @@ var contourCore = (() => {
                   break;
                 }
               }
-              if (tooClose) break;
+              if (tooClose)
+                break;
               labelsToDraw.push({
                 text: labelText,
                 pos: labelPos,
@@ -2599,15 +2672,18 @@ var contourCore = (() => {
         return autoFormatValue(value);
       }
       function formatFixed(value, precision) {
-        if (!isFinite(value)) return String(value);
+        if (!isFinite(value))
+          return String(value);
         if (Math.abs(value) < Math.pow(10, -precision)) {
           return "0";
         }
         return value.toFixed(precision);
       }
       function formatExponential(value, precision, uppercase) {
-        if (!isFinite(value)) return String(value);
-        if (value === 0) return "0e+0";
+        if (!isFinite(value))
+          return String(value);
+        if (value === 0)
+          return "0e+0";
         let str = value.toExponential(precision);
         if (uppercase) {
           str = str.replace("e", "E");
@@ -2615,12 +2691,15 @@ var contourCore = (() => {
         return str;
       }
       function formatPercent(value, precision) {
-        if (!isFinite(value)) return String(value);
+        if (!isFinite(value))
+          return String(value);
         return (value * 100).toFixed(precision) + "%";
       }
       function autoFormatValue(value) {
-        if (!isFinite(value)) return String(value);
-        if (value === 0) return "0";
+        if (!isFinite(value))
+          return String(value);
+        if (value === 0)
+          return "0";
         const absValue = Math.abs(value);
         if (absValue < 0.01) {
           return value.toExponential(2);
@@ -2694,15 +2773,20 @@ var contourCore = (() => {
         const exponent = Math.floor(Math.log10(roughStep));
         const fraction = roughStep / Math.pow(10, exponent);
         let niceFraction;
-        if (fraction < 1.5) niceFraction = 1;
-        else if (fraction < 3) niceFraction = 2;
-        else if (fraction < 7) niceFraction = 5;
-        else niceFraction = 10;
+        if (fraction < 1.5)
+          niceFraction = 1;
+        else if (fraction < 3)
+          niceFraction = 2;
+        else if (fraction < 7)
+          niceFraction = 5;
+        else
+          niceFraction = 10;
         const step = niceFraction * Math.pow(10, exponent);
         const values = [];
         const positions = [];
         let firstTick = Math.ceil(start / step) * step;
-        if (firstTick > start) firstTick -= step;
+        if (firstTick > start)
+          firstTick -= step;
         for (let val = firstTick; val <= end + step * 1e-4; val += step) {
           if (val >= start - step * 1e-4) {
             values.push(val);
@@ -2745,7 +2829,8 @@ var contourCore = (() => {
       function drawColorbar(ctx, contourResult, style) {
         style = style || {};
         var levels = contourResult.levels;
-        if (!levels || levels.length === 0) return;
+        if (!levels || levels.length === 0)
+          return;
         var width = style.width || ctx.canvas.width;
         var height = style.height || ctx.canvas.height;
         var thickness = style.colorbarThickness || 20;
@@ -2799,11 +2884,13 @@ var contourCore = (() => {
       "use strict";
       function drawNulls(ctx, contourResult, style) {
         var nullMask = contourResult.nullMask;
-        if (!nullMask) return;
+        if (!nullMask)
+          return;
         style = style || {};
         var nullRegion = style.nullRegion || {};
         var visible = nullRegion.visible !== false;
-        if (!visible) return;
+        if (!visible)
+          return;
         var m = nullMask.length;
         var n = nullMask[0].length;
         var width = style.width || 500;
@@ -2900,8 +2987,10 @@ var contourCore = (() => {
             for (var j = 0; j < n; j++) {
               var val = z[i][j];
               if (typeof val === "number" && isFinite(val)) {
-                if (val < minVal) minVal = val;
-                if (val > maxVal) maxVal = val;
+                if (val < minVal)
+                  minVal = val;
+                if (val > maxVal)
+                  maxVal = val;
               }
             }
           }
@@ -2967,8 +3056,10 @@ var contourCore = (() => {
             for (var j = 0; j < n; j++) {
               var val = z[i][j];
               if (typeof val === "number" && isFinite(val)) {
-                if (val < minVal) minVal = val;
-                if (val > maxVal) maxVal = val;
+                if (val < minVal)
+                  minVal = val;
+                if (val > maxVal)
+                  maxVal = val;
               }
             }
           }
@@ -3335,8 +3426,10 @@ var contourCore = (() => {
         for (var i = 1; i < data.length; i++) {
           var val = data[i];
           if (typeof val === "number" && isFinite(val)) {
-            if (val < min) min = val;
-            if (val > max) max = val;
+            if (val < min)
+              min = val;
+            if (val > max)
+              max = val;
           }
         }
         if (min === max) {
@@ -3519,22 +3612,30 @@ var contourCore = (() => {
         if (isHorizontal) {
           if (axis.side === "top") {
             margins.top = tickLength;
-            if (showLabels) margins.top += 15;
-            if (title) margins.top += 20;
+            if (showLabels)
+              margins.top += 15;
+            if (title)
+              margins.top += 20;
           } else {
             margins.bottom = tickLength;
-            if (showLabels) margins.bottom += 15;
-            if (title) margins.bottom += 20;
+            if (showLabels)
+              margins.bottom += 15;
+            if (title)
+              margins.bottom += 20;
           }
         } else {
           if (axis.side === "right") {
             margins.right = tickLength;
-            if (showLabels) margins.right += 30;
-            if (title) margins.right += 20;
+            if (showLabels)
+              margins.right += 30;
+            if (title)
+              margins.right += 20;
           } else {
             margins.left = tickLength;
-            if (showLabels) margins.left += 30;
-            if (title) margins.left += 20;
+            if (showLabels)
+              margins.left += 30;
+            if (title)
+              margins.left += 20;
           }
         }
         return margins;
@@ -4020,7 +4121,8 @@ var contourCore = (() => {
         drawColorbar,
         drawNulls,
         drawHeatmap,
-        drawAxes: axesRenderer.drawAxes
+        drawAxes: axesRenderer.drawAxes,
+        drawAxesFromSetup: axesRenderer.drawAxesFromSetup
       };
     }
   });
@@ -4245,10 +4347,12 @@ var contourCore = (() => {
         return scale;
       }
       function drawNullRegions(ctx, result, style, config) {
-        if (!result.nullMask) return;
+        if (!result.nullMask)
+          return;
         config = config || {};
         var visible = config.visible !== false;
-        if (!visible) return;
+        if (!visible)
+          return;
         var nullMask = result.nullMask;
         var m = nullMask.length;
         var n = nullMask[0].length;
@@ -4344,7 +4448,8 @@ var contourCore = (() => {
             for (var j = 0; j < pathInfo.paths.length; j++) {
               var path = pathInfo.paths[j];
               var coords = convertPathCoordinates(path, options);
-              if (coords.length < 2) continue;
+              if (coords.length < 2)
+                continue;
               if (bounds && !isPathInBounds(coords, bounds)) {
                 continue;
               }
@@ -4373,7 +4478,8 @@ var contourCore = (() => {
             for (var k = 0; k < pathInfo.edgepaths.length; k++) {
               var edgePath = pathInfo.edgepaths[k];
               var edgeCoords = convertPathCoordinates(edgePath, options);
-              if (edgeCoords.length < 2) continue;
+              if (edgeCoords.length < 2)
+                continue;
               if (bounds && !isPathInBounds(edgeCoords, bounds)) {
                 continue;
               }
@@ -4515,7 +4621,8 @@ var contourCore = (() => {
               var nextStartIdx = -1;
               for (var j = 0; j < startIndices.length; j++) {
                 var nextPath = edgepaths[startIndices[j]];
-                if (!nextPath || nextPath.length === 0) continue;
+                if (!nextPath || nextPath.length === 0)
+                  continue;
                 var nextCoords = convertPathCoordinates(nextPath, options);
                 if (isOnEdgeSegment(nextCoords[0], endPt, nextCorner, isTop, isBottom, isLeft, isRight)) {
                   nextStartIdx = startIndices[j];
@@ -4542,7 +4649,8 @@ var contourCore = (() => {
           boundaries.push(currentBoundary);
         }
         for (var k = 0; k < closedPaths.length; k++) {
-          if (!closedPaths[k] || closedPaths[k].length < 3) continue;
+          if (!closedPaths[k] || closedPaths[k].length < 3)
+            continue;
           var closedCoords = convertPathCoordinates(closedPaths[k], options);
           closedCoords.push([closedCoords[0][0], closedCoords[0][1]]);
           boundaries.push(closedCoords);
@@ -4574,7 +4682,8 @@ var contourCore = (() => {
         return polygons;
       }
       function isPointInPolygon(point, polygon) {
-        if (!polygon || polygon.length < 3) return false;
+        if (!polygon || polygon.length < 3)
+          return false;
         var x = point[0];
         var y = point[1];
         var inside = false;
@@ -4584,15 +4693,20 @@ var contourCore = (() => {
           var xj = polygon[j][0];
           var yj = polygon[j][1];
           var intersect = yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi;
-          if (intersect) inside = !inside;
+          if (intersect)
+            inside = !inside;
         }
         return inside;
       }
       function getNextCorner(pt, perimeter, isTop, isBottom, isLeft, isRight) {
-        if (isTop(pt) && !isRight(pt)) return perimeter[1];
-        if (isLeft(pt)) return perimeter[0];
-        if (isBottom(pt)) return perimeter[3];
-        if (isRight(pt)) return perimeter[2];
+        if (isTop(pt) && !isRight(pt))
+          return perimeter[1];
+        if (isLeft(pt))
+          return perimeter[0];
+        if (isBottom(pt))
+          return perimeter[3];
+        if (isRight(pt))
+          return perimeter[2];
         return perimeter[0];
       }
       function isOnEdgeSegment(pt, endPt, nextCorner, isTop, isBottom, isLeft, isRight) {
@@ -4609,15 +4723,21 @@ var contourCore = (() => {
         return false;
       }
       function addBoundaryConnection(poly, fromPt, toPt, perimeter, isTop, isBottom, isLeft, isRight) {
-        if (!fromPt || !toPt) return;
+        if (!fromPt || !toPt)
+          return;
         var currentPt = fromPt;
         for (var cnt = 0; cnt < 4 && (Math.abs(currentPt[0] - toPt[0]) > 0.1 || Math.abs(currentPt[1] - toPt[1]) > 0.1); cnt++) {
           var nextCorner;
-          if (isTop(currentPt) && !isRight(currentPt)) nextCorner = perimeter[1];
-          else if (isLeft(currentPt)) nextCorner = perimeter[0];
-          else if (isBottom(currentPt)) nextCorner = perimeter[3];
-          else if (isRight(currentPt)) nextCorner = perimeter[2];
-          else break;
+          if (isTop(currentPt) && !isRight(currentPt))
+            nextCorner = perimeter[1];
+          else if (isLeft(currentPt))
+            nextCorner = perimeter[0];
+          else if (isBottom(currentPt))
+            nextCorner = perimeter[3];
+          else if (isRight(currentPt))
+            nextCorner = perimeter[2];
+          else
+            break;
           if (isOnEdgeSegment(toPt, currentPt, nextCorner, isTop, isBottom, isLeft, isRight)) {
             poly.push([toPt[0], toPt[1]]);
             return;
@@ -4747,7 +4867,8 @@ var contourCore = (() => {
     "renderers/svg/paths.js"(exports, module) {
       "use strict";
       function pathToSVG(path, isClosed) {
-        if (!path || path.length === 0) return "";
+        if (!path || path.length === 0)
+          return "";
         var d = "M " + path[0][0] + " " + path[0][1];
         for (var i = 1; i < path.length; i++) {
           d += " L " + path[i][0] + " " + path[i][1];
@@ -4785,6 +4906,9 @@ var contourCore = (() => {
         ];
       }
       function scalePath(path, options) {
+        if (!path || !Array.isArray(path) || path.length === 0) {
+          return path;
+        }
         var pathinfo = options.pathinfo || options.paths;
         var m = 10, n = 10;
         if (pathinfo && pathinfo[0] && pathinfo[0].z) {
@@ -4815,8 +4939,12 @@ var contourCore = (() => {
       }
       function joinAllPaths(pathInfo, perimeter, options) {
         var fullpath = "";
-        var edgepaths = pathInfo.edgepaths;
-        if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+        var edgepaths = pathInfo.edgepaths || [];
+        var paths = pathInfo.paths || [];
+        if (!edgepaths || !paths) {
+          return "";
+        }
+        if (edgepaths.length === 0 && paths.length === 0) {
           return "";
         }
         var i = 0;
@@ -4850,13 +4978,24 @@ var contourCore = (() => {
           endpt = scaledPath[scaledPath.length - 1];
           nexti = -1;
           for (cnt = 0; cnt < 4; cnt++) {
-            if (!endpt) break;
-            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
-            else if (isleft(endpt)) newendpt = perimeter[0];
-            else if (isbottom(endpt)) newendpt = perimeter[3];
-            else if (isright(endpt)) newendpt = perimeter[2];
+            if (!endpt)
+              break;
+            newendpt = null;
+            if (istop(endpt) && !isright(endpt))
+              newendpt = perimeter[1];
+            else if (isleft(endpt))
+              newendpt = perimeter[0];
+            else if (isbottom(endpt))
+              newendpt = perimeter[3];
+            else if (isright(endpt))
+              newendpt = perimeter[2];
+            if (!newendpt)
+              break;
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
-              var ptNew = scalePath(edgepaths[possiblei], options)[0];
+              var scaled = scalePath(edgepaths[possiblei], options);
+              if (!scaled || scaled.length === 0)
+                continue;
+              var ptNew = scaled[0];
               if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
                 if (Math.abs(endpt[0] - ptNew[0]) < 0.1 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
                   newendpt = ptNew;
@@ -4870,10 +5009,12 @@ var contourCore = (() => {
               }
             }
             endpt = newendpt;
-            if (nexti >= 0) break;
+            if (nexti >= 0)
+              break;
             fullpath += "L" + newendpt[0] + " " + newendpt[1];
           }
-          if (nexti === edgepaths.length || nexti < 0) break;
+          if (nexti === edgepaths.length || nexti < 0)
+            break;
           i = nexti;
           newloop = startsleft.indexOf(i) === -1;
           if (newloop) {
@@ -4883,8 +5024,8 @@ var contourCore = (() => {
             fullpath += "Z";
           }
         }
-        for (i = 0; i < pathInfo.paths.length; i++) {
-          var scaledPath = scalePath(pathInfo.paths[i], options);
+        for (i = 0; i < paths.length; i++) {
+          var scaledPath = scalePath(paths[i], options);
           fullpath += pathToSVG(scaledPath, true);
         }
         return fullpath;
@@ -4991,7 +5132,8 @@ var contourCore = (() => {
         var labelFont = options.labelFont || "Arial";
         var labelSize = options.labelSize || 12;
         var labelColor = options.labelColor || "#000";
-        if (!paths || !paths.length) return "";
+        if (!paths || !paths.length)
+          return "";
         var svgParts = [];
         var m = 10, n = 10;
         var pathinfo = contourResult.pathinfo || contourResult.paths;
@@ -5018,7 +5160,8 @@ var contourCore = (() => {
           var pathInfo = paths[i];
           for (var j = 0; j < pathInfo.paths.length; j++) {
             var path = pathInfo.paths[j];
-            if (path.length < 3) continue;
+            if (path.length < 3)
+              continue;
             var labelText = formatContourLabel(pathInfo.level, ".1f");
             var textWidth = labelText.length * labelSize * 0.6;
             var textWidthGrid = textWidth / scaleX;
@@ -5031,7 +5174,8 @@ var contourCore = (() => {
               paths.length,
               plotDiagonal
             );
-            if (maxLabels === 0) continue;
+            if (maxLabels === 0)
+              continue;
             var closed = isPathClosed(path);
             var usedPositions = [];
             for (var k = 0; k < maxLabels; k++) {
@@ -5046,7 +5190,8 @@ var contourCore = (() => {
                 plotBounds,
                 closed
               );
-              if (!labelPos) break;
+              if (!labelPos)
+                break;
               var tooClose = false;
               for (var u = 0; u < usedPositions.length; u++) {
                 var dx = labelPos.x - usedPositions[u].x;
@@ -5057,7 +5202,8 @@ var contourCore = (() => {
                   break;
                 }
               }
-              if (tooClose) break;
+              if (tooClose)
+                break;
               var scaled = {
                 x: padding + labelPos.x * scaleX,
                 y: padding + (m - 1 - labelPos.y) * scaleY
@@ -5080,9 +5226,7 @@ var contourCore = (() => {
         }
         return svgParts.join("\n");
       }
-      module.exports = {
-        createLabels
-      };
+      module.exports = createLabels;
     }
   });
 
@@ -5094,7 +5238,8 @@ var contourCore = (() => {
       function createColorbar(contourResult, options) {
         options = options || {};
         var levels = contourResult.levels;
-        if (!levels || levels.length === 0) return "";
+        if (!levels || levels.length === 0)
+          return "";
         var width = options.width || 500;
         var height = options.height || 400;
         var thickness = options.colorbarThickness || 20;
@@ -5159,11 +5304,13 @@ var contourCore = (() => {
       "use strict";
       function createNullRegions(contourResult, options) {
         var nullMask = contourResult.nullMask;
-        if (!nullMask) return "";
+        if (!nullMask)
+          return "";
         options = options || {};
         var nullRegion = options.nullRegion || {};
         var visible = nullRegion.visible !== false;
-        if (!visible) return "";
+        if (!visible)
+          return "";
         var m = nullMask.length;
         var n = nullMask[0].length;
         var width = options.width || 500;
@@ -5240,7 +5387,7 @@ var contourCore = (() => {
           svgParts.push("</g>");
         }
         if (options.showLabels) {
-          svgParts.push(createLabels.createLabels(contourResult, options));
+          svgParts.push(createLabels(contourResult, options));
         }
         if (options.colorbar !== false && coloring !== "lines") {
           svgParts.push(createColorbar.createColorbar(contourResult, options));
@@ -5278,8 +5425,1721 @@ var contourCore = (() => {
     }
   });
 
+  // interaction/EventManager.js
+  var require_EventManager = __commonJS({
+    "interaction/EventManager.js"(exports, module) {
+      "use strict";
+      function EventManager(options) {
+        options = options || {};
+        this.listeners = [];
+        this.paused = false;
+        this.element = null;
+        this.handlerContext = options.handlerContext || null;
+      }
+      EventManager.prototype.on = function(element, event, handler, options) {
+        if (!element || !event || typeof handler !== "function") {
+          console.warn("EventManager.on: Invalid parameters");
+          return this;
+        }
+        var listener = {
+          element,
+          event,
+          handler,
+          options: options || false,
+          boundHandler: null
+        };
+        if (this.handlerContext) {
+          listener.boundHandler = handler.bind(this.handlerContext);
+        } else {
+          listener.boundHandler = handler;
+        }
+        var eventOptions = options || false;
+        if (typeof eventOptions === "object") {
+          element.addEventListener(event, listener.boundHandler, eventOptions);
+        } else {
+          element.addEventListener(event, listener.boundHandler);
+        }
+        this.listeners.push(listener);
+        this.element = this.element || element;
+        return this;
+      };
+      EventManager.prototype.off = function(element, event, handler) {
+        var i = this.listeners.length;
+        while (i--) {
+          var listener = this.listeners[i];
+          if (listener.element === element && listener.event === event && listener.handler === handler) {
+            element.removeEventListener(event, listener.boundHandler);
+            this.listeners.splice(i, 1);
+          }
+        }
+        return this;
+      };
+      EventManager.prototype.pause = function() {
+        this.paused = true;
+        return this;
+      };
+      EventManager.prototype.resume = function() {
+        this.paused = false;
+        return this;
+      };
+      EventManager.prototype.isPaused = function() {
+        return this.paused;
+      };
+      EventManager.prototype.destroy = function() {
+        var i = this.listeners.length;
+        while (i--) {
+          var listener = this.listeners[i];
+          listener.element.removeEventListener(
+            listener.event,
+            listener.boundHandler,
+            listener.options
+          );
+        }
+        this.listeners = [];
+        this.element = null;
+        return this;
+      };
+      EventManager.prototype.getListenerCount = function() {
+        return this.listeners.length;
+      };
+      EventManager.prototype.delegate = function(parent, event, selector, handler) {
+        var self = this;
+        var delegateHandler = function(e) {
+          var target = e.target;
+          var match = target.closest(selector);
+          if (match && parent.contains(match)) {
+            var syntheticEvent = {};
+            for (var key in e) {
+              syntheticEvent[key] = e[key];
+            }
+            syntheticEvent.delegateTarget = match;
+            syntheticEvent.originalEvent = e;
+            if (self.handlerContext) {
+              handler.call(self.handlerContext, syntheticEvent);
+            } else {
+              handler(syntheticEvent);
+            }
+          }
+        };
+        return this.on(parent, event, delegateHandler);
+      };
+      module.exports = EventManager;
+    }
+  });
+
+  // interaction/StateManager.js
+  var require_StateManager = __commonJS({
+    "interaction/StateManager.js"(exports, module) {
+      "use strict";
+      function StateManager(initialState) {
+        initialState = initialState || {};
+        this.dataBounds = {
+          xMin: initialState.xMin !== void 0 ? initialState.xMin : 0,
+          xMax: initialState.xMax !== void 0 ? initialState.xMax : 100,
+          yMin: initialState.yMin !== void 0 ? initialState.yMin : 0,
+          yMax: initialState.yMax !== void 0 ? initialState.yMax : 100
+        };
+        var view = initialState.view || {};
+        this.state = {
+          // Current visible range in data coordinates
+          view: {
+            xMin: view.xMin !== void 0 ? view.xMin : this.dataBounds.xMin,
+            xMax: view.xMax !== void 0 ? view.xMax : this.dataBounds.xMax,
+            yMin: view.yMin !== void 0 ? view.yMin : this.dataBounds.yMin,
+            yMax: view.yMax !== void 0 ? view.yMax : this.dataBounds.yMax
+          },
+          // Transform state (from d3-zoom or similar)
+          transform: {
+            k: view.scale || 1,
+            // scale factor
+            x: view.translateX || 0,
+            // x translation in pixels
+            y: view.translateY || 0
+            // y translation in pixels
+          },
+          // Interaction state
+          interaction: {
+            isDragging: false,
+            isZooming: false,
+            dragStart: null,
+            zoomCenter: null,
+            isPanning: false
+          }
+        };
+        this.initialState = JSON.parse(JSON.stringify(this.state));
+        this.constraints = initialState.constraints || {};
+        this.constraints.minScale = this.constraints.minScale || 0.1;
+        this.constraints.maxScale = this.constraints.maxScale || 10;
+        this.constraints.constrainPan = this.constraints.constrainPan !== false;
+        this.history = [];
+        this.historyIndex = -1;
+        this.maxHistorySize = 50;
+        this.changeListeners = [];
+        this._saveToHistory();
+      }
+      StateManager.prototype.getState = function() {
+        return JSON.parse(JSON.stringify(this.state));
+      };
+      StateManager.prototype.getViewRange = function() {
+        return {
+          xMin: this.state.view.xMin,
+          xMax: this.state.view.xMax,
+          yMin: this.state.view.yMin,
+          yMax: this.state.view.yMax
+        };
+      };
+      StateManager.prototype.getTransform = function() {
+        return {
+          k: this.state.transform.k,
+          x: this.state.transform.x,
+          y: this.state.transform.y,
+          zoomCenterX: this.state.transform.zoomCenterX,
+          zoomCenterY: this.state.transform.zoomCenterY
+        };
+      };
+      StateManager.prototype.update = function(newState, options) {
+        options = options || {};
+        var updatedState = this._mergeState(this.state, newState);
+        updatedState = this._applyConstraints(updatedState);
+        if (this._statesEqual(this.state, updatedState)) {
+          return this.state;
+        }
+        var oldState = this.state;
+        this.state = updatedState;
+        if (options.saveHistory !== false) {
+          this._saveToHistory();
+        }
+        this._notifyChange(oldState, this.state);
+        return this.state;
+      };
+      StateManager.prototype.updateTransform = function(transform, view) {
+        var update = {};
+        if (transform) {
+          update.transform = transform;
+        }
+        if (view) {
+          update.view = view;
+        }
+        return this.update(update);
+      };
+      StateManager.prototype.reset = function() {
+        this.state = JSON.parse(JSON.stringify(this.initialState));
+        this._saveToHistory();
+        this._notifyChange(null, this.state);
+        return this.state;
+      };
+      StateManager.prototype.onChange = function(callback) {
+        var self = this;
+        this.changeListeners.push(callback);
+        return function() {
+          var index = self.changeListeners.indexOf(callback);
+          if (index !== -1) {
+            self.changeListeners.splice(index, 1);
+          }
+        };
+      };
+      StateManager.prototype.undo = function() {
+        if (this.historyIndex > 0) {
+          this.historyIndex--;
+          this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+          this._notifyChange(null, this.state);
+        }
+        return this.state;
+      };
+      StateManager.prototype.redo = function() {
+        if (this.historyIndex < this.history.length - 1) {
+          this.historyIndex++;
+          this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+          this._notifyChange(null, this.state);
+        }
+        return this.state;
+      };
+      StateManager.prototype.canUndo = function() {
+        return this.historyIndex > 0;
+      };
+      StateManager.prototype.canRedo = function() {
+        return this.historyIndex < this.history.length - 1;
+      };
+      StateManager.prototype.clearHistory = function() {
+        this.history = [];
+        this.historyIndex = -1;
+        this._saveToHistory();
+      };
+      StateManager.prototype.serialize = function() {
+        return {
+          view: this.state.view,
+          transform: this.state.transform,
+          dataBounds: this.dataBounds
+        };
+      };
+      StateManager.prototype.deserialize = function(data) {
+        if (data && data.view) {
+          this.update({
+            view: data.view,
+            transform: data.transform || { k: 1, x: 0, y: 0 }
+          }, { saveHistory: true });
+        }
+      };
+      StateManager.prototype._mergeState = function(current, update) {
+        var merged = JSON.parse(JSON.stringify(current));
+        for (var key in update) {
+          if (update.hasOwnProperty(key)) {
+            if (typeof update[key] === "object" && !Array.isArray(update[key])) {
+              merged[key] = this._mergeState(merged[key] || {}, update[key]);
+            } else {
+              merged[key] = update[key];
+            }
+          }
+        }
+        return merged;
+      };
+      StateManager.prototype._applyConstraints = function(state) {
+        var constrained = JSON.parse(JSON.stringify(state));
+        constrained.transform.k = Math.max(
+          this.constraints.minScale,
+          Math.min(this.constraints.maxScale, constrained.transform.k)
+        );
+        if (this.constraints.constrainPan) {
+          var viewWidth = constrained.view.xMax - constrained.view.xMin;
+          var viewHeight = constrained.view.yMax - constrained.view.yMin;
+          var dataWidth = this.dataBounds.xMax - this.dataBounds.xMin;
+          var dataHeight = this.dataBounds.yMax - this.dataBounds.yMin;
+          var maxOverscroll = 0.5;
+          if (viewWidth > dataWidth * (1 + maxOverscroll)) {
+            var centerX = (constrained.view.xMin + constrained.view.xMax) / 2;
+            constrained.view.xMin = centerX - dataWidth * (1 + maxOverscroll) / 2;
+            constrained.view.xMax = centerX + dataWidth * (1 + maxOverscroll) / 2;
+          }
+          if (viewHeight > dataHeight * (1 + maxOverscroll)) {
+            var centerY = (constrained.view.yMin + constrained.view.yMax) / 2;
+            constrained.view.yMin = centerY - dataHeight * (1 + maxOverscroll) / 2;
+            constrained.view.yMax = centerY + dataHeight * (1 + maxOverscroll) / 2;
+          }
+        }
+        return constrained;
+      };
+      StateManager.prototype._statesEqual = function(a, b) {
+        return JSON.stringify(a) === JSON.stringify(b);
+      };
+      StateManager.prototype._saveToHistory = function() {
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        this.history.push(JSON.parse(JSON.stringify(this.state)));
+        if (this.history.length > this.maxHistorySize) {
+          this.history.shift();
+        } else {
+          this.historyIndex++;
+        }
+      };
+      StateManager.prototype._notifyChange = function(oldState, newState) {
+        for (var i = 0; i < this.changeListeners.length; i++) {
+          try {
+            this.changeListeners[i](oldState, newState);
+          } catch (e) {
+            console.error("Error in state change listener:", e);
+          }
+        }
+      };
+      module.exports = StateManager;
+    }
+  });
+
+  // interaction/CoordinateConverter.js
+  var require_CoordinateConverter = __commonJS({
+    "interaction/CoordinateConverter.js"(exports, module) {
+      "use strict";
+      function CoordinateConverter(options) {
+        options = options || {};
+        this.dataBounds = {
+          xMin: options.xMin !== void 0 ? options.xMin : 0,
+          xMax: options.xMax !== void 0 ? options.xMax : 100,
+          yMin: options.yMin !== void 0 ? options.yMin : 0,
+          yMax: options.yMax !== void 0 ? options.yMax : 100
+        };
+        this.screenSize = {
+          width: options.width || 600,
+          height: options.height || 500
+        };
+        this.margins = options.margins || {
+          left: 50,
+          right: 30,
+          top: 20,
+          bottom: 50
+        };
+        this.plotArea = {
+          x: this.margins.left,
+          y: this.margins.top,
+          width: this.screenSize.width - this.margins.left - this.margins.right,
+          height: this.screenSize.height - this.margins.top - this.margins.bottom
+        };
+        this.viewRange = {
+          xMin: this.dataBounds.xMin,
+          xMax: this.dataBounds.xMax,
+          yMin: this.dataBounds.yMin,
+          yMax: this.dataBounds.yMax
+        };
+        this.transform = {
+          k: 1,
+          // scale
+          x: 0,
+          // x translation
+          y: 0
+          // y translation
+        };
+        this.axisTypes = {
+          x: options.xType || "linear",
+          y: options.yType || "linear"
+        };
+      }
+      CoordinateConverter.prototype.update = function(view, transform) {
+        if (view) {
+          this.viewRange = {
+            xMin: view.xMin,
+            xMax: view.xMax,
+            yMin: view.yMin,
+            yMax: view.yMax
+          };
+        }
+        if (transform) {
+          this.transform = {
+            k: transform.k,
+            x: transform.x,
+            y: transform.y
+          };
+        }
+      };
+      CoordinateConverter.prototype.updateScreenSize = function(width, height) {
+        this.screenSize.width = width;
+        this.screenSize.height = height;
+        this.plotArea = {
+          x: this.margins.left,
+          y: this.margins.top,
+          width: width - this.margins.left - this.margins.right,
+          height: height - this.margins.top - this.margins.bottom
+        };
+      };
+      CoordinateConverter.prototype.updateMargins = function(margins) {
+        this.margins = margins || this.margins;
+        this.plotArea = {
+          x: this.margins.left,
+          y: this.margins.top,
+          width: this.screenSize.width - this.margins.left - this.margins.right,
+          height: this.screenSize.height - this.margins.top - this.margins.bottom
+        };
+      };
+      CoordinateConverter.prototype.dataToPixel = function(x, y) {
+        var normX = (x - this.viewRange.xMin) / (this.viewRange.xMax - this.viewRange.xMin);
+        var normY = (y - this.viewRange.yMin) / (this.viewRange.yMax - this.viewRange.yMin);
+        var plotX = this.plotArea.x + normX * this.plotArea.width;
+        var plotY = this.plotArea.y + (1 - normY) * this.plotArea.height;
+        var screenX = plotX * this.transform.k + this.transform.x;
+        var screenY = plotY * this.transform.k + this.transform.y;
+        return {
+          x: screenX,
+          y: screenY
+        };
+      };
+      CoordinateConverter.prototype.pixelToData = function(px, py) {
+        var plotX = (px - this.transform.x) / this.transform.k;
+        var plotY = (py - this.transform.y) / this.transform.k;
+        var normX = (plotX - this.plotArea.x) / this.plotArea.width;
+        var normY = 1 - (plotY - this.plotArea.y) / this.plotArea.height;
+        var dataX = this.viewRange.xMin + normX * (this.viewRange.xMax - this.viewRange.xMin);
+        var dataY = this.viewRange.yMin + normY * (this.viewRange.yMax - this.viewRange.yMin);
+        return {
+          x: dataX,
+          y: dataY
+        };
+      };
+      CoordinateConverter.prototype.getPlotArea = function() {
+        return {
+          x: this.plotArea.x,
+          y: this.plotArea.y,
+          width: this.plotArea.width,
+          height: this.plotArea.height
+        };
+      };
+      CoordinateConverter.prototype.getScreenSize = function() {
+        return {
+          width: this.screenSize.width,
+          height: this.screenSize.height
+        };
+      };
+      CoordinateConverter.prototype.getMargins = function() {
+        return {
+          left: this.margins.left,
+          right: this.margins.right,
+          top: this.margins.top,
+          bottom: this.margins.bottom
+        };
+      };
+      CoordinateConverter.prototype.getScale = function() {
+        var scaleX = this.plotArea.width / (this.viewRange.xMax - this.viewRange.xMin);
+        var scaleY = this.plotArea.height / (this.viewRange.yMax - this.viewRange.yMin);
+        return {
+          x: scaleX,
+          y: scaleY
+        };
+      };
+      CoordinateConverter.prototype.clampToPlotArea = function(px, py) {
+        return {
+          x: Math.max(this.plotArea.x, Math.min(this.plotArea.x + this.plotArea.width, px)),
+          y: Math.max(this.plotArea.y, Math.min(this.plotArea.y + this.plotArea.height, py))
+        };
+      };
+      CoordinateConverter.prototype.isInPlotArea = function(px, py) {
+        return px >= this.plotArea.x && px <= this.plotArea.x + this.plotArea.width && py >= this.plotArea.y && py <= this.plotArea.y + this.plotArea.height;
+      };
+      CoordinateConverter.prototype.createInverse = function() {
+        var self = this;
+        return {
+          toPixel: function(x, y) {
+            return self.dataToPixel(x, y);
+          },
+          toData: function(px, py) {
+            return self.pixelToData(px, py);
+          }
+        };
+      };
+      module.exports = CoordinateConverter;
+    }
+  });
+
+  // interaction/handlers/Zoom.js
+  var require_Zoom = __commonJS({
+    "interaction/handlers/Zoom.js"(exports, module) {
+      "use strict";
+      function ZoomHandler(options) {
+        options = options || {};
+        this.options = {
+          minScale: options.minScale || 0.1,
+          maxScale: options.maxScale || 10,
+          duration: options.duration || 250,
+          wheelEnabled: options.wheelEnabled !== false,
+          boxEnabled: options.boxEnabled !== false,
+          wheelSensitivity: options.wheelSensitivity || 1 / 150
+        };
+      }
+      ZoomHandler.prototype.handleWheel = function(event, stateManager, converter) {
+        if (!this.options.wheelEnabled) {
+          return null;
+        }
+        event.preventDefault();
+        var currentState = stateManager.getState();
+        var currentTransform = currentState.transform;
+        var currentView = currentState.view;
+        var zoomFactor = Math.exp(-event.deltaY * this.options.wheelSensitivity);
+        var newScale = currentTransform.k * zoomFactor;
+        newScale = Math.max(this.options.minScale, Math.min(this.options.maxScale, newScale));
+        if (newScale === currentTransform.k) {
+          return null;
+        }
+        var mouseX = event.offsetX;
+        var mouseY = event.offsetY;
+        var dataPos = converter.pixelToData(mouseX, mouseY);
+        var scaleRatio = newScale / currentTransform.k;
+        var viewWidth = currentView.xMax - currentView.xMin;
+        var viewHeight = currentView.yMax - currentView.yMin;
+        var newViewWidth = viewWidth / scaleRatio;
+        var newViewHeight = viewHeight / scaleRatio;
+        var xRatio = (dataPos.x - currentView.xMin) / viewWidth;
+        var yRatio = (dataPos.y - currentView.yMin) / viewHeight;
+        var newView = {
+          xMin: dataPos.x - newViewWidth * xRatio,
+          xMax: dataPos.x + newViewWidth * (1 - xRatio),
+          yMin: dataPos.y - newViewHeight * yRatio,
+          yMax: dataPos.y + newViewHeight * (1 - yRatio)
+        };
+        var newTransform = {
+          k: newScale,
+          x: 0,
+          y: 0,
+          // Store zoom center in plot area coordinates for rendering
+          zoomCenterX: mouseX,
+          zoomCenterY: mouseY
+        };
+        return {
+          view: newView,
+          transform: newTransform
+        };
+      };
+      ZoomHandler.prototype.startBoxZoom = function(event, stateManager) {
+        if (!this.options.boxEnabled) {
+          return null;
+        }
+        return {
+          active: true,
+          startX: event.offsetX,
+          startY: event.offsetY,
+          currentX: event.offsetX,
+          currentY: event.offsetY
+        };
+      };
+      ZoomHandler.prototype.updateBoxZoom = function(event, boxState) {
+        if (!boxState || !boxState.active) {
+          return null;
+        }
+        return {
+          active: true,
+          startX: boxState.startX,
+          startY: boxState.startY,
+          currentX: event.offsetX,
+          currentY: event.offsetY
+        };
+      };
+      ZoomHandler.prototype.finishBoxZoom = function(event, boxState, stateManager, converter) {
+        if (!boxState || !boxState.active) {
+          return null;
+        }
+        var x1 = Math.min(boxState.startX, event.offsetX);
+        var y1 = Math.min(boxState.startY, event.offsetY);
+        var x2 = Math.max(boxState.startX, event.offsetX);
+        var y2 = Math.max(boxState.startY, event.offsetY);
+        if (x2 - x1 < 10 || y2 - y1 < 10) {
+          return null;
+        }
+        var dataMin = converter.pixelToData(x1, y2);
+        var dataMax = converter.pixelToData(x2, y1);
+        var newView = {
+          xMin: Math.min(dataMin.x, dataMax.x),
+          xMax: Math.max(dataMin.x, dataMax.x),
+          yMin: Math.min(dataMin.y, dataMax.y),
+          yMax: Math.max(dataMin.y, dataMax.y)
+        };
+        var currentView = stateManager.getViewRange();
+        var scaleX = (currentView.xMax - currentView.xMin) / (newView.xMax - newView.xMin);
+        var currentTransform = stateManager.getTransform();
+        var newScale = currentTransform.k * scaleX;
+        return {
+          view: newView,
+          transform: {
+            k: newScale,
+            x: 0,
+            y: 0
+          }
+        };
+      };
+      ZoomHandler.prototype.cancelBoxZoom = function() {
+        return {
+          active: false,
+          startX: 0,
+          startY: 0,
+          currentX: 0,
+          currentY: 0
+        };
+      };
+      ZoomHandler.prototype.zoomToRange = function(xMin, xMax, yMin, yMax, stateManager, converter) {
+        var currentView = stateManager.getViewRange();
+        var currentTransform = stateManager.getTransform();
+        if (xMin >= xMax) {
+          var temp = xMin;
+          xMin = xMax;
+          xMax = temp;
+        }
+        if (yMin >= yMax) {
+          temp = yMin;
+          yMin = yMax;
+          yMax = temp;
+        }
+        var scaleX = (currentView.xMax - currentView.xMin) / (xMax - xMin);
+        var scaleY = (currentView.yMax - currentView.yMin) / (yMax - yMin);
+        var newScale = currentTransform.k * Math.min(scaleX, scaleY);
+        newScale = Math.max(this.options.minScale, Math.min(this.options.maxScale, newScale));
+        return {
+          view: {
+            xMin,
+            xMax,
+            yMin,
+            yMax
+          },
+          transform: {
+            k: newScale,
+            x: 0,
+            y: 0
+          }
+        };
+      };
+      ZoomHandler.prototype.zoomByFactor = function(factor, center, stateManager) {
+        var currentView = stateManager.getViewRange();
+        var currentTransform = stateManager.getTransform();
+        var newScale = currentTransform.k * factor;
+        newScale = Math.max(this.options.minScale, Math.min(this.options.maxScale, newScale));
+        var viewWidth = currentView.xMax - currentView.xMin;
+        var viewHeight = currentView.yMax - currentView.yMin;
+        var newViewWidth = viewWidth / factor;
+        var newViewHeight = viewHeight / factor;
+        var centerX = center ? center.x : (currentView.xMin + currentView.xMax) / 2;
+        var centerY = center ? center.y : (currentView.yMin + currentView.yMax) / 2;
+        var xRatio = (centerX - currentView.xMin) / viewWidth;
+        var yRatio = (centerY - currentView.yMin) / viewHeight;
+        return {
+          view: {
+            xMin: centerX - newViewWidth * xRatio,
+            xMax: centerX + newViewWidth * (1 - xRatio),
+            yMin: centerY - newViewHeight * yRatio,
+            yMax: centerY + newViewHeight * (1 - yRatio)
+          },
+          transform: {
+            k: newScale,
+            x: 0,
+            y: 0
+          }
+        };
+      };
+      ZoomHandler.prototype.getBoxRect = function(boxState) {
+        if (!boxState || !boxState.active) {
+          return null;
+        }
+        var x = Math.min(boxState.startX, boxState.currentX);
+        var y = Math.min(boxState.startY, boxState.currentY);
+        var width = Math.abs(boxState.currentX - boxState.startX);
+        var height = Math.abs(boxState.currentY - boxState.startY);
+        return { x, y, width, height };
+      };
+      module.exports = ZoomHandler;
+    }
+  });
+
+  // interaction/handlers/Pan.js
+  var require_Pan = __commonJS({
+    "interaction/handlers/Pan.js"(exports, module) {
+      "use strict";
+      function PanHandler(options) {
+        options = options || {};
+        this.options = {
+          enabled: options.enabled !== false,
+          inertia: options.inertia || false,
+          inertiaDuration: options.inertiaDuration || 500,
+          friction: options.friction || 0.9
+        };
+      }
+      PanHandler.prototype.startPan = function(event, stateManager) {
+        if (!this.options.enabled) {
+          return null;
+        }
+        return {
+          active: true,
+          startX: event.clientX,
+          startY: event.clientY,
+          lastX: event.clientX,
+          lastY: event.clientY,
+          velocityX: 0,
+          velocityY: 0
+        };
+      };
+      PanHandler.prototype.handlePan = function(event, panState, stateManager, converter) {
+        if (!panState || !panState.active || !this.options.enabled) {
+          return null;
+        }
+        event.preventDefault();
+        var deltaX = event.clientX - panState.lastX;
+        var deltaY = event.clientY - panState.lastY;
+        panState.velocityX = deltaX;
+        panState.velocityY = deltaY;
+        panState.lastX = event.clientX;
+        panState.lastY = event.clientY;
+        var currentState = stateManager.getState();
+        var currentView = currentState.view;
+        var currentTransform = currentState.transform;
+        var plotArea = converter.getPlotArea();
+        var scaleX = plotArea.width / (currentView.xMax - currentView.xMin);
+        var scaleY = plotArea.height / (currentView.yMax - currentView.yMin);
+        var dataDeltaX = -deltaX / (scaleX * currentTransform.k);
+        var dataDeltaY = deltaY / (scaleY * currentTransform.k);
+        var newView = {
+          xMin: currentView.xMin + dataDeltaX,
+          xMax: currentView.xMax + dataDeltaX,
+          yMin: currentView.yMin + dataDeltaY,
+          yMax: currentView.yMax + dataDeltaY
+        };
+        return {
+          view: newView,
+          transform: {
+            k: currentTransform.k,
+            x: 0,
+            y: 0,
+            zoomCenterX: void 0,
+            // Clear zoom center
+            zoomCenterY: void 0
+          }
+        };
+      };
+      PanHandler.prototype.endPan = function(event, panState) {
+        if (!panState || !panState.active) {
+          return null;
+        }
+        return {
+          active: false,
+          velocityX: panState.velocityX,
+          velocityY: panState.velocityY
+        };
+      };
+      PanHandler.prototype.applyInertia = function(endState, stateManager, converter, deltaTime) {
+        if (!this.options.inertia || !endState) {
+          return null;
+        }
+        if (Math.abs(endState.velocityX) < 0.1 && Math.abs(endState.velocityY) < 0.1) {
+          return null;
+        }
+        endState.velocityX *= this.options.friction;
+        endState.velocityY *= this.options.friction;
+        var currentState = stateManager.getState();
+        var currentView = currentState.view;
+        var currentTransform = currentState.transform;
+        var plotArea = converter.getPlotArea();
+        var scaleX = plotArea.width / (currentView.xMax - currentView.xMin);
+        var scaleY = plotArea.height / (currentView.yMax - currentView.yMin);
+        var dataDeltaX = -endState.velocityX / (scaleX * currentTransform.k);
+        var dataDeltaY = endState.velocityY / (scaleY * currentTransform.k);
+        var newView = {
+          xMin: currentView.xMin + dataDeltaX,
+          xMax: currentView.xMax + dataDeltaX,
+          yMin: currentView.yMin + dataDeltaY,
+          yMax: currentView.yMax + dataDeltaY
+        };
+        return {
+          view: newView,
+          transform: {
+            k: currentTransform.k,
+            x: 0,
+            y: 0
+          },
+          inertia: {
+            velocityX: endState.velocityX,
+            velocityY: endState.velocityY
+          }
+        };
+      };
+      PanHandler.prototype.panBy = function(dx, dy, stateManager) {
+        var currentView = stateManager.getViewRange();
+        var currentTransform = stateManager.getTransform();
+        return {
+          view: {
+            xMin: currentView.xMin + dx,
+            xMax: currentView.xMax + dx,
+            yMin: currentView.yMin + dy,
+            yMax: currentView.yMax + dy
+          },
+          transform: {
+            k: currentTransform.k,
+            x: 0,
+            y: 0
+          }
+        };
+      };
+      PanHandler.prototype.panTo = function(x, y, stateManager) {
+        var currentView = stateManager.getViewRange();
+        var currentTransform = stateManager.getTransform();
+        var centerX = (currentView.xMin + currentView.xMax) / 2;
+        var centerY = (currentView.yMin + currentView.yMax) / 2;
+        var dx = x - centerX;
+        var dy = y - centerY;
+        return {
+          view: {
+            xMin: currentView.xMin + dx,
+            xMax: currentView.xMax + dx,
+            yMin: currentView.yMin + dy,
+            yMax: currentView.yMax + dy
+          },
+          transform: {
+            k: currentTransform.k,
+            x: 0,
+            y: 0
+          }
+        };
+      };
+      PanHandler.prototype.isPanning = function(panState) {
+        return panState && panState.active;
+      };
+      module.exports = PanHandler;
+    }
+  });
+
+  // interaction/handlers/Hover.js
+  var require_Hover = __commonJS({
+    "interaction/handlers/Hover.js"(exports, module) {
+      "use strict";
+      function HoverHandler(options) {
+        options = options || {};
+        this.options = {
+          enabled: options.enabled !== false,
+          showTooltip: options.showTooltip !== false,
+          highlightLine: options.highlightLine || false,
+          format: options.format || null,
+          snapToGrid: options.snapToGrid !== false,
+          interpolation: options.interpolation || "bilinear"
+        };
+        this.gridData = null;
+      }
+      HoverHandler.prototype.setGridData = function(grid) {
+        this.gridData = grid;
+      };
+      HoverHandler.prototype.handleMove = function(event, converter, grid) {
+        if (!this.options.enabled) {
+          return null;
+        }
+        grid = grid || this.gridData;
+        if (!grid || !grid.z) {
+          return null;
+        }
+        var px = event.offsetX;
+        var py = event.offsetY;
+        if (!converter.isInPlotArea(px, py)) {
+          return null;
+        }
+        var dataPos = converter.pixelToData(px, py);
+        var zValue = this.findZValue(dataPos.x, dataPos.y, grid);
+        return {
+          screen: {
+            x: px,
+            y: py
+          },
+          data: {
+            x: dataPos.x,
+            y: dataPos.y,
+            z: zValue
+          },
+          event
+        };
+      };
+      HoverHandler.prototype.findZValue = function(x, y, grid) {
+        if (!grid || !grid.z) {
+          return null;
+        }
+        var z = grid.z;
+        var m = z.length;
+        var n = z[0].length;
+        var xCoords = grid.x || this._defaultArray(n);
+        var yCoords = grid.y || this._defaultArray(m);
+        var result = this._findCell(x, y, xCoords, yCoords);
+        if (!result) {
+          return null;
+        }
+        var i = result.i;
+        var j = result.j;
+        var x1 = xCoords[j];
+        var x2 = xCoords[j + 1];
+        var y1 = yCoords[i];
+        var y2 = yCoords[i + 1];
+        var z11 = z[i][j];
+        var z12 = z[i][j + 1];
+        var z21 = z[i + 1][j];
+        var z22 = z[i + 1][j + 1];
+        var hasNull = z11 == null || z12 == null || z21 == null || z22 == null;
+        if (hasNull) {
+          return null;
+        }
+        if (this.options.interpolation === "bilinear") {
+          var t = (x - x1) / (x2 - x1);
+          var u = (y - y1) / (y2 - y1);
+          return (1 - t) * (1 - u) * z11 + t * (1 - u) * z12 + (1 - t) * u * z21 + t * u * z22;
+        }
+        return z11;
+      };
+      HoverHandler.prototype._findCell = function(x, y, xCoords, yCoords) {
+        var m = yCoords.length;
+        var n = xCoords.length;
+        if (x < xCoords[0] || x > xCoords[n - 1] || y < yCoords[0] || y > yCoords[m - 1]) {
+          return null;
+        }
+        var j = this._findIndex(x, xCoords);
+        var i = this._findIndex(y, yCoords);
+        i = Math.min(i, m - 2);
+        j = Math.min(j, n - 2);
+        return { i, j };
+      };
+      HoverHandler.prototype._findIndex = function(value, array) {
+        var left = 0;
+        var right = array.length - 1;
+        while (left < right) {
+          var mid = Math.floor((left + right) / 2);
+          if (value < array[mid]) {
+            right = mid;
+          } else if (value >= array[mid + 1]) {
+            left = mid + 1;
+          } else {
+            return mid;
+          }
+        }
+        return left;
+      };
+      HoverHandler.prototype._defaultArray = function(length) {
+        var arr = [];
+        for (var i = 0; i < length; i++) {
+          arr.push(i);
+        }
+        return arr;
+      };
+      HoverHandler.prototype.findNearestLine = function(dataPos, contourResult, maxDistance) {
+        maxDistance = maxDistance || Infinity;
+        if (!contourResult || !contourResult.paths) {
+          return null;
+        }
+        var nearest = null;
+        var minDistance = Infinity;
+        var levels = contourResult.levels;
+        var paths = contourResult.paths;
+        for (var levelIdx = 0; levelIdx < paths.length; levelIdx++) {
+          var levelPaths = paths[levelIdx];
+          var level = levels[levelIdx];
+          for (var pathIdx = 0; pathIdx < levelPaths.length; pathIdx++) {
+            var path = levelPaths[pathIdx];
+            if (path && path.length > 0) {
+              var distance = this._pointToPathDistance(dataPos, path);
+              if (distance < minDistance && distance <= maxDistance) {
+                minDistance = distance;
+                nearest = {
+                  level,
+                  pathIndex: pathIdx,
+                  path,
+                  distance
+                };
+              }
+            }
+          }
+        }
+        return nearest;
+      };
+      HoverHandler.prototype._pointToPathDistance = function(point, path) {
+        var minDist = Infinity;
+        for (var i = 0; i < path.length - 1; i++) {
+          var p1 = path[i];
+          var p2 = path[i + 1];
+          var dist = this._pointToSegmentDistance(point, p1, p2);
+          minDist = Math.min(minDist, dist);
+        }
+        return minDist;
+      };
+      HoverHandler.prototype._pointToSegmentDistance = function(point, p1, p2) {
+        var l2 = (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+        if (l2 === 0) {
+          var dx = point.x - p1.x;
+          var dy = point.y - p1.y;
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+        var t = ((point.x - p1.x) * (p2.x - p1.x) + (point.y - p1.y) * (p2.y - p1.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        var closestX = p1.x + t * (p2.x - p1.x);
+        var closestY = p1.y + t * (p2.y - p1.y);
+        var dx = point.x - closestX;
+        var dy = point.y - closestY;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+      HoverHandler.prototype.formatTooltip = function(hoverData, config) {
+        config = config || {};
+        if (!hoverData) {
+          return "";
+        }
+        var data = hoverData.data;
+        if (this.options.format) {
+          return this.options.format(data, config);
+        }
+        var parts = [];
+        if (data.x !== void 0 && data.x !== null) {
+          var xFormat = config.xFormat || "{x}";
+          var xStr = xFormat.replace("{x}", this._formatNumber(data.x, config.xPrecision));
+          parts.push("x: " + xStr);
+        }
+        if (data.y !== void 0 && data.y !== null) {
+          var yFormat = config.yFormat || "{y}";
+          var yStr = yFormat.replace("{y}", this._formatNumber(data.y, config.yPrecision));
+          parts.push("y: " + yStr);
+        }
+        if (data.z !== void 0 && data.z !== null) {
+          var zFormat = config.zFormat || "{z}";
+          var zStr = zFormat.replace("{z}", this._formatNumber(data.z, config.zPrecision));
+          parts.push("z: " + zStr);
+        }
+        return parts.join(", ");
+      };
+      HoverHandler.prototype._formatNumber = function(value, precision) {
+        if (value == null) {
+          return "N/A";
+        }
+        if (precision !== void 0) {
+          return value.toFixed(precision);
+        }
+        if (Math.abs(value) >= 1e3 || Math.abs(value) < 0.01 && value !== 0) {
+          return value.toExponential(2);
+        } else if (Number.isInteger(value)) {
+          return value.toString();
+        } else {
+          return value.toFixed(2);
+        }
+      };
+      HoverHandler.prototype.clampTooltipPosition = function(x, y, width, height, screenWidth, screenHeight) {
+        var margin = 10;
+        var clampedX = x + width + margin > screenWidth ? x - width - margin : x + margin;
+        var clampedY = y + height + margin > screenHeight ? y - height - margin : y + margin;
+        clampedX = Math.max(margin, Math.min(screenWidth - width - margin, clampedX));
+        clampedY = Math.max(margin, Math.min(screenHeight - height - margin, clampedY));
+        return { x: clampedX, y: clampedY };
+      };
+      module.exports = HoverHandler;
+    }
+  });
+
+  // interaction/handlers/D3Zoom.js
+  var require_D3Zoom = __commonJS({
+    "interaction/handlers/D3Zoom.js"(exports, module) {
+      "use strict";
+      var d3Zoom = null;
+      var d3Select = null;
+      try {
+        d3Zoom = __require("d3-zoom");
+        d3Select = __require("d3-selection");
+      } catch (e) {
+      }
+      function isAvailable() {
+        return d3Zoom !== null && d3Select !== null;
+      }
+      function D3ZoomHandler(options) {
+        options = options || {};
+        this.options = {
+          minScale: options.minScale || 0.5,
+          maxScale: options.maxScale || 10,
+          duration: options.duration || 250,
+          enableD3: options.enableD3 !== false
+          // Try to use d3 if available
+        };
+        this.zoomBehavior = null;
+        this.selection = null;
+        this.stateManager = null;
+        this.converter = null;
+        this.onZoomCallback = null;
+      }
+      D3ZoomHandler.prototype.init = function(element, stateManager, converter, onZoom) {
+        if (!this.options.enableD3 || !isAvailable()) {
+          return false;
+        }
+        this.stateManager = stateManager;
+        this.converter = converter;
+        this.onZoomCallback = onZoom;
+        this.zoomBehavior = d3Zoom.zoom().scaleExtent([this.options.minScale, this.options.maxScale]).on("zoom", this._handleZoom.bind(this)).on("start", this._handleZoomStart.bind(this)).on("end", this._handleZoomEnd.bind(this));
+        this.selection = d3Select(element);
+        this.selection.call(this.zoomBehavior);
+        return true;
+      };
+      D3ZoomHandler.prototype._handleZoom = function(event) {
+        if (!this.stateManager || !this.converter) {
+          return;
+        }
+        var transform = event.transform;
+        var currentState = this.stateManager.getState();
+        var currentView = currentState.view;
+        var newTransform = {
+          k: transform.k,
+          x: transform.x,
+          y: transform.y
+        };
+        this.stateManager.updateTransform(newTransform, currentView);
+        if (this.onZoomCallback) {
+          this.onZoomCallback();
+        }
+      };
+      D3ZoomHandler.prototype._handleZoomStart = function(event) {
+      };
+      D3ZoomHandler.prototype._handleZoomEnd = function(event) {
+      };
+      D3ZoomHandler.prototype.zoomTo = function(k, x, y, duration) {
+        if (!this.selection || !this.zoomBehavior) {
+          return false;
+        }
+        duration = duration !== void 0 ? duration : this.options.duration;
+        var transform = d3Zoom.zoomIdentity.translate(x, y).scale(k);
+        if (duration > 0) {
+          this.selection.transition().duration(duration).call(this.zoomBehavior.transform, transform);
+        } else {
+          this.selection.call(this.zoomBehavior.transform, transform);
+        }
+        return true;
+      };
+      D3ZoomHandler.prototype.zoomToRange = function(xMin, xMax, yMin, yMax, duration) {
+        if (!this.stateManager || !this.converter) {
+          return false;
+        }
+        var currentView = this.stateManager.getViewRange();
+        var plotArea = this.converter.getPlotArea();
+        var scaleX = plotArea.width / (xMax - xMin) / (currentView.xMax - currentView.xMin) * plotArea.width;
+        var scaleY = plotArea.height / (yMax - yMin) / (currentView.yMax - currentView.yMin) * plotArea.height;
+        var k = Math.min(scaleX, scaleY);
+        var centerX = (xMin + xMax) / 2;
+        var centerY = (yMin + yMax) / 2;
+        var centerPixel = this.converter.dataToPixel(centerX, centerY);
+        var x = plotArea.width / 2 - centerPixel.x * k;
+        var y = plotArea.height / 2 - centerPixel.y * k;
+        return this.zoomTo(k, x, y, duration);
+      };
+      D3ZoomHandler.prototype.reset = function(duration) {
+        return this.zoomTo(1, 0, 0, duration);
+      };
+      D3ZoomHandler.prototype.setEnabled = function(enabled) {
+        if (!this.selection || !this.zoomBehavior) {
+          return;
+        }
+        if (enabled) {
+          this.selection.on(".zoom", null);
+          this.selection.call(this.zoomBehavior);
+        } else {
+          this.selection.on(".zoom", null);
+        }
+      };
+      D3ZoomHandler.prototype.destroy = function() {
+        if (this.selection && this.zoomBehavior) {
+          this.selection.on(".zoom", null);
+        }
+        this.selection = null;
+        this.zoomBehavior = null;
+        this.stateManager = null;
+        this.converter = null;
+        this.onZoomCallback = null;
+      };
+      D3ZoomHandler.prototype.getTransform = function() {
+        if (!this.selection) {
+          return null;
+        }
+        var event = this.selection.node().__zoom;
+        if (event) {
+          return {
+            k: event.k,
+            x: event.x,
+            y: event.y
+          };
+        }
+        return null;
+      };
+      module.exports = {
+        D3ZoomHandler,
+        isAvailable
+      };
+    }
+  });
+
+  // interaction/createInteraction.js
+  var require_createInteraction = __commonJS({
+    "interaction/createInteraction.js"(exports, module) {
+      "use strict";
+      var EventManager = require_EventManager();
+      var StateManager = require_StateManager();
+      var CoordinateConverter = require_CoordinateConverter();
+      var ZoomHandler = require_Zoom();
+      var PanHandler = require_Pan();
+      var HoverHandler = require_Hover();
+      var canvasRenderer = require_canvas();
+      var computeModule = require_compute();
+      function createInteraction(container, config) {
+        config = config || {};
+        var element = typeof container === "string" ? document.querySelector(container) : container;
+        if (!element) {
+          throw new Error("Container element not found");
+        }
+        var interactionConfig = config.interaction || {};
+        var dataConfig = {
+          z: config.z,
+          x: config.x,
+          y: config.y
+        };
+        var contourResult = null;
+        var renderRequested = false;
+        var rafId = null;
+        var canvas = document.createElement("canvas");
+        canvas.style.display = "block";
+        canvas.style.cursor = "grab";
+        element.appendChild(canvas);
+        var ctx = canvas.getContext("2d");
+        var width = config.width || element.clientWidth || 600;
+        var height = config.height || element.clientHeight || 500;
+        canvas.width = width;
+        canvas.height = height;
+        var stateManager = new StateManager({
+          xMin: 0,
+          xMax: config.x ? config.x[config.x.length - 1] : 100,
+          yMin: 0,
+          yMax: config.y ? config.y[config.y.length - 1] : 100,
+          constraints: interactionConfig.constraints
+        });
+        var converter = new CoordinateConverter({
+          xMin: 0,
+          xMax: config.x ? config.x[config.x.length - 1] : 100,
+          yMin: 0,
+          yMax: config.y ? config.y[config.y.length - 1] : 100,
+          width,
+          height,
+          margins: config.margins || { left: 50, right: 30, top: 20, bottom: 50 }
+        });
+        var zoomHandler = new ZoomHandler(interactionConfig.zoom);
+        var panHandler = new PanHandler(interactionConfig.pan);
+        var hoverHandler = new HoverHandler(interactionConfig.hover);
+        var eventManager = new EventManager();
+        var panState = null;
+        var boxState = null;
+        var hoverData = null;
+        var isInteractionEnabled = true;
+        var callbacks = {
+          viewChange: [],
+          hover: [],
+          click: [],
+          zoomStart: [],
+          zoomEnd: []
+        };
+        function requestRender() {
+          if (rafId) {
+            return;
+          }
+          rafId = requestAnimationFrame(function() {
+            render();
+            rafId = null;
+          });
+        }
+        function render() {
+          if (!contourResult) {
+            return;
+          }
+          var view = stateManager.getViewRange();
+          var transform = stateManager.getTransform();
+          converter.update(view, transform);
+          ctx.clearRect(0, 0, width, height);
+          ctx.save();
+          var plotArea = converter.getPlotArea();
+          var dataBounds = stateManager.dataBounds;
+          var dataWidth = dataBounds.xMax - dataBounds.xMin;
+          var dataHeight = dataBounds.yMax - dataBounds.yMin;
+          var viewWidth = view.xMax - view.xMin;
+          var viewHeight = view.yMax - view.yMin;
+          var scaleX = plotArea.width / dataWidth;
+          var scaleY = plotArea.height / dataHeight;
+          var offsetX = -(view.xMin - dataBounds.xMin) * scaleX;
+          var offsetY = (view.yMax - dataBounds.yMax) * scaleY;
+          var zoomCenterX = transform.zoomCenterX !== void 0 ? transform.zoomCenterX : plotArea.x + plotArea.width / 2;
+          var zoomCenterY = transform.zoomCenterY !== void 0 ? transform.zoomCenterY : plotArea.y + plotArea.height / 2;
+          ctx.translate(zoomCenterX, zoomCenterY);
+          ctx.scale(transform.k, transform.k);
+          ctx.translate(-zoomCenterX, -zoomCenterY);
+          ctx.translate(offsetX, offsetY);
+          var style = {
+            width,
+            height,
+            x: contourResult.pathinfo && contourResult.pathinfo[0] ? contourResult.pathinfo[0].x : dataConfig.x,
+            y: contourResult.pathinfo && contourResult.pathinfo[0] ? contourResult.pathinfo[0].y : dataConfig.y,
+            z: contourResult.pathinfo && contourResult.pathinfo[0] ? contourResult.pathinfo[0].z : dataConfig.z,
+            coloring: config.contours ? config.contours.type : "fill",
+            showLines: true,
+            lineWidth: 1.5,
+            lineColor: "#666",
+            colorScale: buildColorScale(contourResult.levels, config.colorscale),
+            valueColorMap: config.valueColorMap,
+            smoothing: config.smoothing || 0
+          };
+          canvasRenderer.drawContours(ctx, contourResult, style);
+          ctx.restore();
+          if (boxState && boxState.active) {
+            drawBoxSelection();
+          }
+          if (hoverData && interactionConfig.hover && interactionConfig.hover.tooltip) {
+            drawTooltip();
+          }
+        }
+        function buildColorScale(levels, colorscale) {
+          var colors = getColorScale(colorscale);
+          var scale = [];
+          for (var i = 0; i < levels.length; i++) {
+            var t = levels.length > 1 ? i / (levels.length - 1) : 0;
+            var colorIdx = Math.floor(t * (colors.length - 1));
+            scale.push([levels[i], colors[colorIdx]]);
+          }
+          return scale;
+        }
+        function getColorScale(colorscale) {
+          if (Array.isArray(colorscale)) {
+            return colorscale;
+          }
+          var COLOR_SCALES = {
+            viridis: [
+              "#440154",
+              "#482878",
+              "#3e4a89",
+              "#31688e",
+              "#26828f",
+              "#1f9d8a",
+              "#35b779",
+              "#6dcd59",
+              "#b4de2c",
+              "#fde725"
+            ],
+            plasma: [
+              "#0d0887",
+              "#46039f",
+              "#7201a8",
+              "#9c179e",
+              "#bd3786",
+              "#d8576b",
+              "#ed7953",
+              "#fb9f3a",
+              "#fdca26",
+              "#f0f921"
+            ],
+            hot: [
+              "#000000",
+              "#4a0000",
+              "#880000",
+              "#c20000",
+              "#ff0000",
+              "#ff4a00",
+              "#ff8800",
+              "#ffc200",
+              "#ffff00",
+              "#ffff80"
+            ],
+            jet: [
+              "#000080",
+              "#0000ff",
+              "#0080ff",
+              "#00ffff",
+              "#80ff80",
+              "#ffff00",
+              "#ff8000",
+              "#ff0000",
+              "#800000",
+              "#000000"
+            ],
+            earth: [
+              "#2a1c0b",
+              "#5c4033",
+              "#8f6b4e",
+              "#c19a6b",
+              "#e5c99b",
+              "#f5e6c8",
+              "#8b4513",
+              "#a0522d",
+              "#cd853f",
+              "#deb887"
+            ],
+            electric: [
+              "#000004",
+              "#1b0c42",
+              "#4a0c6e",
+              "#781c6d",
+              "#a52c60",
+              "#cf4446",
+              "#ed6925",
+              "#fb9b06",
+              "#f7d13d",
+              "#fcffa4"
+            ]
+          };
+          if (typeof colorscale === "string") {
+            var name = colorscale.toLowerCase();
+            if (COLOR_SCALES[name]) {
+              return COLOR_SCALES[name];
+            }
+          }
+          return COLOR_SCALES.viridis;
+        }
+        function drawBoxSelection() {
+          var rect = zoomHandler.getBoxRect(boxState);
+          if (!rect)
+            return;
+          ctx.save();
+          ctx.strokeStyle = "rgba(0, 100, 200, 0.8)";
+          ctx.fillStyle = "rgba(0, 100, 200, 0.2)";
+          ctx.lineWidth = 1;
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.restore();
+        }
+        function drawTooltip() {
+          if (!hoverData)
+            return;
+          var text = hoverHandler.formatTooltip(hoverData, config.tooltip || {});
+          if (!text)
+            return;
+          var padding = 8;
+          var fontSize = 12;
+          ctx.font = fontSize + "px Arial";
+          var textWidth = ctx.measureText(text).width;
+          var tooltipWidth = textWidth + padding * 2;
+          var tooltipHeight = fontSize + padding * 2;
+          var pos = hoverHandler.clampTooltipPosition(
+            hoverData.screen.x,
+            hoverData.screen.y,
+            tooltipWidth,
+            tooltipHeight,
+            width,
+            height
+          );
+          ctx.save();
+          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+          ctx.fillRect(pos.x, pos.y, tooltipWidth, tooltipHeight);
+          ctx.fillStyle = "#fff";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(text, pos.x + padding, pos.y + padding);
+          ctx.restore();
+        }
+        function onMouseDown(event) {
+          if (!isInteractionEnabled)
+            return;
+          if (event.button === 0 && event.shiftKey) {
+            boxState = zoomHandler.startBoxZoom(event, stateManager);
+            event.preventDefault();
+          } else if (event.button === 0 || event.button === 1) {
+            panState = panHandler.startPan(event, stateManager);
+            canvas.style.cursor = "grabbing";
+            event.preventDefault();
+          }
+        }
+        function onMouseMove(event) {
+          if (!isInteractionEnabled)
+            return;
+          if (panHandler.isPanning(panState)) {
+            var panUpdate = panHandler.handlePan(event, panState, stateManager, converter);
+            if (panUpdate) {
+              stateManager.update(panUpdate);
+              requestRender();
+            }
+            return;
+          }
+          if (boxState && boxState.active) {
+            boxState = zoomHandler.updateBoxZoom(event, boxState);
+            requestRender();
+            return;
+          }
+          if (interactionConfig.hover && interactionConfig.hover.enabled !== false) {
+            hoverHandler.setGridData(dataConfig);
+            var newHoverData = hoverHandler.handleMove(event, converter, dataConfig);
+            if (newHoverData) {
+              hoverData = newHoverData;
+              requestRender();
+              callbacks.hover.forEach(function(cb) {
+                try {
+                  cb(hoverData);
+                } catch (e) {
+                  console.error(e);
+                }
+              });
+            } else if (hoverData) {
+              hoverData = null;
+              requestRender();
+            }
+          }
+        }
+        function onMouseUp(event) {
+          if (!isInteractionEnabled)
+            return;
+          if (panHandler.isPanning(panState)) {
+            panState = panHandler.endPan(event, panState);
+            canvas.style.cursor = "grab";
+          }
+          if (boxState && boxState.active) {
+            var boxUpdate = zoomHandler.finishBoxZoom(event, boxState, stateManager, converter);
+            if (boxUpdate) {
+              stateManager.update(boxUpdate);
+              notifyViewChange();
+            }
+            boxState = zoomHandler.cancelBoxZoom();
+            requestRender();
+          }
+        }
+        function onWheel(event) {
+          if (!isInteractionEnabled)
+            return;
+          if (interactionConfig.zoom && interactionConfig.zoom.wheelEnabled !== false) {
+            var zoomUpdate = zoomHandler.handleWheel(event, stateManager, converter);
+            if (zoomUpdate) {
+              stateManager.update(zoomUpdate);
+              requestRender();
+              notifyViewChange();
+            }
+          }
+        }
+        function onDoubleClick(event) {
+          if (!isInteractionEnabled)
+            return;
+          if (interactionConfig.doubleClickReset !== false) {
+            resetView();
+          }
+        }
+        function onMouseLeave(event) {
+          panState = null;
+          if (boxState && boxState.active) {
+            boxState = zoomHandler.cancelBoxZoom();
+            requestRender();
+          }
+          if (hoverData) {
+            hoverData = null;
+            requestRender();
+          }
+          canvas.style.cursor = "grab";
+        }
+        function notifyViewChange() {
+          var view = stateManager.getViewRange();
+          callbacks.viewChange.forEach(function(cb) {
+            try {
+              cb(view);
+            } catch (e) {
+              console.error(e);
+            }
+          });
+        }
+        eventManager.on(canvas, "mousedown", onMouseDown, { passive: false });
+        eventManager.on(canvas, "mousemove", onMouseMove, { passive: false });
+        eventManager.on(canvas, "mouseup", onMouseUp);
+        eventManager.on(canvas, "mouseleave", onMouseLeave);
+        eventManager.on(canvas, "wheel", onWheel, { passive: false });
+        eventManager.on(canvas, "dblclick", onDoubleClick);
+        stateManager.onChange(function(oldState, newState) {
+          requestRender();
+        });
+        function compute() {
+          var options = {
+            autocontour: config.autocontour !== false,
+            ncontours: config.ncontours || 15,
+            start: config.contours ? config.contours.start : void 0,
+            end: config.contours ? config.contours.end : void 0,
+            size: config.contours ? config.contours.size : void 0,
+            smoothing: config.smoothing !== void 0 ? config.smoothing : 0.5,
+            valueColorMap: config.valueColorMap
+          };
+          contourResult = computeModule.computeContours(dataConfig, options);
+          return contourResult;
+        }
+        compute();
+        requestRender();
+        return {
+          // Update data
+          update: function(newData) {
+            if (newData.z)
+              dataConfig.z = newData.z;
+            if (newData.x)
+              dataConfig.x = newData.x;
+            if (newData.y)
+              dataConfig.y = newData.y;
+            contourResult = compute();
+            requestRender();
+          },
+          // Set view range
+          setView: function(xMin, xMax, yMin, yMax) {
+            var currentTransform = stateManager.getTransform();
+            stateManager.update({
+              view: { xMin, xMax, yMin, yMax }
+            });
+            requestRender();
+            notifyViewChange();
+          },
+          // Get current view
+          getView: function() {
+            return stateManager.getViewRange();
+          },
+          // Reset view
+          resetView: function() {
+            stateManager.reset();
+            requestRender();
+            notifyViewChange();
+          },
+          // Zoom to range
+          zoomTo: function(x1, y1, x2, y2, options) {
+            var zoomUpdate = zoomHandler.zoomToRange(x1, x2, y1, y2, stateManager, converter);
+            stateManager.update(zoomUpdate);
+            requestRender();
+            notifyViewChange();
+          },
+          // Pan by offset
+          panTo: function(dx, dy, options) {
+            var panUpdate = panHandler.panBy(dx, dy, stateManager);
+            stateManager.update(panUpdate);
+            requestRender();
+            notifyViewChange();
+          },
+          // Enable/disable interaction
+          enableInteraction: function(enabled) {
+            isInteractionEnabled = enabled;
+            canvas.style.cursor = enabled ? "grab" : "default";
+          },
+          // Event registration
+          onViewChange: function(callback) {
+            if (typeof callback === "function") {
+              callbacks.viewChange.push(callback);
+            }
+          },
+          onHover: function(callback) {
+            if (typeof callback === "function") {
+              callbacks.hover.push(callback);
+            }
+          },
+          onClick: function(callback) {
+            if (typeof callback === "function") {
+              callbacks.click.push(callback);
+            }
+          },
+          onZoomStart: function(callback) {
+            if (typeof callback === "function") {
+              callbacks.zoomStart.push(callback);
+            }
+          },
+          onZoomEnd: function(callback) {
+            if (typeof callback === "function") {
+              callbacks.zoomEnd.push(callback);
+            }
+          },
+          // Get internal components (for advanced usage)
+          getComponents: function() {
+            return {
+              stateManager,
+              converter,
+              eventManager,
+              zoomHandler,
+              panHandler,
+              hoverHandler
+            };
+          },
+          // Resize
+          resize: function(newWidth, newHeight) {
+            width = newWidth || width;
+            height = newHeight || height;
+            canvas.width = width;
+            canvas.height = height;
+            converter.updateScreenSize(width, height);
+            requestRender();
+          },
+          // Destroy
+          destroy: function() {
+            eventManager.destroy();
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+            }
+            if (element.contains(canvas)) {
+              element.removeChild(canvas);
+            }
+          },
+          // Get canvas element
+          getCanvas: function() {
+            return canvas;
+          }
+        };
+      }
+      module.exports = createInteraction;
+    }
+  });
+
+  // interaction/index.js
+  var require_interaction = __commonJS({
+    "interaction/index.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        EventManager: require_EventManager(),
+        StateManager: require_StateManager(),
+        CoordinateConverter: require_CoordinateConverter(),
+        ZoomHandler: require_Zoom(),
+        PanHandler: require_Pan(),
+        HoverHandler: require_Hover(),
+        D3ZoomHandler: require_D3Zoom().D3ZoomHandler,
+        isD3Available: require_D3Zoom().isAvailable,
+        createInteraction: require_createInteraction()
+      };
+    }
+  });
+
   // index.js
-  var require_index = __commonJS({
+  var require_contour_core = __commonJS({
     "index.js"(exports, module) {
       var api = require_api();
       var contourCore = {
@@ -5316,6 +7176,11 @@ var contourCore = (() => {
         renderers: require_renderers(),
         axes: require_axes(),
         // ============================================
+        // Interaction layer (NEW)
+        // ============================================
+        interaction: require_interaction(),
+        createInteractiveContour: require_interaction().createInteraction,
+        // ============================================
         // Utilities
         // ============================================
         COLOR_SCALES: api.COLOR_SCALES
@@ -5329,5 +7194,5 @@ var contourCore = (() => {
       }
     }
   });
-  return require_index();
+  return require_contour_core();
 })();

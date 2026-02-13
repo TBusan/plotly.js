@@ -75,7 +75,7 @@ function renderSVG(contourResult, options) {
 
     // Draw labels (if enabled)
     if (options.showLabels) {
-        svgParts.push(createLabels.createLabels(contourResult, options));
+        svgParts.push(createLabels(contourResult, options));
     }
 
     // Draw colorbar (if enabled)
