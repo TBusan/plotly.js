@@ -3950,13 +3950,13 @@ var require_axes2 = __commonJS({
           continue;
         }
         if (isXAxis) {
-          var x = drawingArea.x + tick.pixel;
-          ctx.moveTo(x, drawingArea.y);
-          ctx.lineTo(x, drawingArea.y + drawingArea.height);
+          var x = tick.pixel;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, drawingArea.height);
         } else {
-          var y = drawingArea.y + tick.pixel;
-          ctx.moveTo(drawingArea.x, y);
-          ctx.lineTo(drawingArea.x + drawingArea.width, y);
+          var y = tick.pixel;
+          ctx.moveTo(0, y);
+          ctx.lineTo(drawingArea.width, y);
         }
       }
       ctx.stroke();
@@ -3967,6 +3967,11 @@ var require_axes2 = __commonJS({
       var width = axesConfig.width || ctx.canvas.width;
       var height = axesConfig.height || ctx.canvas.height;
       var axisSetup = axes.setupAxes(axesConfig);
+      if (axesConfig.drawGridOnly) {
+        drawGrid(ctx, axisSetup, true);
+        drawGrid(ctx, axisSetup, false);
+        return axisSetup;
+      }
       drawGrid(ctx, axisSetup, true);
       drawGrid(ctx, axisSetup, false);
       drawXAxis(ctx, axisSetup);
@@ -4120,7 +4125,8 @@ var require_canvas = __commonJS({
       drawNulls,
       drawHeatmap,
       drawAxes: axesRenderer.drawAxes,
-      drawAxesFromSetup: axesRenderer.drawAxesFromSetup
+      drawAxesFromSetup: axesRenderer.drawAxesFromSetup,
+      drawGrid: axesRenderer.drawGrid
     };
   }
 });
@@ -5341,6 +5347,190 @@ var require_nulls2 = __commonJS({
   }
 });
 
+// renderers/svg/axes.js
+var require_axes3 = __commonJS({
+  "renderers/svg/axes.js"(exports, module) {
+    "use strict";
+    var axes = require_axes();
+    function createXAxis(axisSetup) {
+      var xAxis = axisSetup.x;
+      var config = xAxis.config;
+      var ticks = xAxis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (config.show === false) {
+        return "";
+      }
+      var parts = [];
+      var side = config.side || "bottom";
+      var tickLength = config.ticklen || 5;
+      var tickColor = config.tickcolor || "#666666";
+      var tickWidth = config.tickwidth || 1;
+      var showLabels = config.showticklabels !== false;
+      var lineColor = config.linecolor || "#333";
+      var lineWidth = config.linewidth || 1;
+      var axisY;
+      var labelY;
+      var labelBaseline = "start";
+      if (side === "top") {
+        axisY = drawingArea.margins.top;
+        labelY = axisY - tickLength - 5;
+      } else {
+        axisY = drawingArea.y + drawingArea.height;
+        labelY = axisY + tickLength + 5;
+      }
+      parts.push('<line class="axis-line x-axis-line" x1="' + drawingArea.x + '" y1="' + axisY + '" x2="' + (drawingArea.x + drawingArea.width) + '" y2="' + axisY + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        var x = drawingArea.x + tick.pixel;
+        if (tick.pixel < -10 || tick.pixel > drawingArea.width + 10) {
+          continue;
+        }
+        var tickY2 = side === "top" ? axisY - tickLength : axisY + tickLength;
+        parts.push('<line class="axis-tick x-axis-tick" x1="' + x + '" y1="' + axisY + '" x2="' + x + '" y2="' + tickY2 + '" stroke="' + tickColor + '" stroke-width="' + tickWidth + '"/>');
+        if (showLabels) {
+          parts.push('<text class="axis-label x-axis-label" x="' + x + '" y="' + labelY + '" text-anchor="middle">' + tick.text + "</text>");
+        }
+      }
+      if (config.title) {
+        var titleY;
+        if (side === "top") {
+          titleY = labelY - 25;
+        } else {
+          titleY = labelY + 20;
+        }
+        parts.push('<text class="axis-title x-axis-title" x="' + (drawingArea.x + drawingArea.width / 2) + '" y="' + titleY + '" text-anchor="middle">' + config.title + "</text>");
+      }
+      return parts.join("\n");
+    }
+    function createYAxis(axisSetup) {
+      var yAxis = axisSetup.y;
+      var config = yAxis.config;
+      var ticks = yAxis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (config.show === false) {
+        return "";
+      }
+      var parts = [];
+      var side = config.side || "left";
+      var tickLength = config.ticklen || 5;
+      var tickColor = config.tickcolor || "#666666";
+      var tickWidth = config.tickwidth || 1;
+      var showLabels = config.showticklabels !== false;
+      var lineColor = config.linecolor || "#333";
+      var lineWidth = config.linewidth || 1;
+      var axisX;
+      var labelX;
+      var labelAnchor = "end";
+      if (side === "right") {
+        axisX = drawingArea.x + drawingArea.width;
+        labelX = axisX + tickLength + 5;
+        labelAnchor = "start";
+      } else {
+        axisX = drawingArea.margins.left;
+        labelX = axisX - tickLength - 5;
+        labelAnchor = "end";
+      }
+      parts.push('<line class="axis-line y-axis-line" x1="' + axisX + '" y1="' + drawingArea.y + '" x2="' + axisX + '" y2="' + (drawingArea.y + drawingArea.height) + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        var y = drawingArea.y + tick.pixel;
+        if (tick.pixel < -10 || tick.pixel > drawingArea.height + 10) {
+          continue;
+        }
+        var tickX2 = side === "right" ? axisX + tickLength : axisX - tickLength;
+        parts.push('<line class="axis-tick y-axis-tick" x1="' + axisX + '" y1="' + y + '" x2="' + tickX2 + '" y2="' + y + '" stroke="' + tickColor + '" stroke-width="' + tickWidth + '"/>');
+        if (showLabels) {
+          parts.push('<text class="axis-label y-axis-label" x="' + labelX + '" y="' + (y + 4) + '" text-anchor="' + labelAnchor + '">' + tick.text + "</text>");
+        }
+      }
+      if (config.title) {
+        var titleX;
+        var titleY = drawingArea.y + drawingArea.height / 2;
+        if (side === "right") {
+          titleX = labelX + 30;
+        } else {
+          titleX = labelX - 25;
+        }
+        parts.push('<text class="axis-title y-axis-title" x="' + titleX + '" y="' + titleY + '" text-anchor="middle" transform="rotate(-90, ' + titleX + ", " + titleY + ')">' + config.title + "</text>");
+      }
+      return parts.join("\n");
+    }
+    function createGrid(axisSetup, isXAxis) {
+      var axis = isXAxis ? axisSetup.x : axisSetup.y;
+      var config = axis.config;
+      var ticks = axis.ticks;
+      var drawingArea = axisSetup.drawingArea;
+      if (!config.showgrid) {
+        return "";
+      }
+      var parts = [];
+      var gridColor = config.gridcolor || "#e0e0e0";
+      var gridWidth = config.gridwidth || 1;
+      var dashArray = config.griddash || "";
+      var strokeDasharray = "";
+      if (dashArray) {
+        if (typeof dashArray === "string") {
+          strokeDasharray = 'stroke-dasharray="' + dashArray + '"';
+        } else if (Array.isArray(dashArray)) {
+          strokeDasharray = 'stroke-dasharray="' + dashArray.join(",") + '"';
+        }
+      }
+      for (var i = 0; i < ticks.length; i++) {
+        var tick = ticks[i];
+        if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea.width : drawingArea.height)) {
+          continue;
+        }
+        if (isXAxis) {
+          var x = drawingArea.x + tick.pixel;
+          parts.push('<line class="axis-grid x-grid-line" x1="' + x + '" y1="' + drawingArea.y + '" x2="' + x + '" y2="' + (drawingArea.y + drawingArea.height) + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
+        } else {
+          var y = drawingArea.y + tick.pixel;
+          parts.push('<line class="axis-grid y-grid-line" x1="' + drawingArea.x + '" y1="' + y + '" x2="' + (drawingArea.x + drawingArea.width) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
+        }
+      }
+      return parts.join("\n");
+    }
+    function createAxes(axesConfig) {
+      axesConfig = axesConfig || {};
+      var axisSetup = axes.setupAxes(axesConfig);
+      var parts = [];
+      if (axesConfig.gridOnly) {
+        parts.push(createGrid(axisSetup, true));
+        parts.push(createGrid(axisSetup, false));
+        return {
+          svg: parts.join("\n"),
+          axisSetup
+        };
+      }
+      parts.push(createGrid(axisSetup, true));
+      parts.push(createGrid(axisSetup, false));
+      parts.push(createXAxis(axisSetup));
+      parts.push(createYAxis(axisSetup));
+      return {
+        svg: parts.join("\n"),
+        axisSetup
+      };
+    }
+    function createAxesFromSetup(axisSetup, includeGrid) {
+      var parts = [];
+      if (includeGrid !== false) {
+        parts.push(createGrid(axisSetup, true));
+        parts.push(createGrid(axisSetup, false));
+      }
+      parts.push(createXAxis(axisSetup));
+      parts.push(createYAxis(axisSetup));
+      return parts.join("\n");
+    }
+    module.exports = {
+      createAxes,
+      createAxesFromSetup,
+      createXAxis,
+      createYAxis,
+      createGrid
+    };
+  }
+});
+
 // renderers/svg/index.js
 var require_svg = __commonJS({
   "renderers/svg/index.js"(exports, module) {
@@ -5349,6 +5539,7 @@ var require_svg = __commonJS({
     var createLabels = require_labels3();
     var createColorbar = require_colorbar3();
     var createNulls = require_nulls2();
+    var createAxes = require_axes3();
     var nullHandling = require_null_handling();
     function renderSVG(contourResult, options) {
       options = options || {};
@@ -5407,7 +5598,12 @@ var require_svg = __commonJS({
       createStrokePaths: createPaths.createStrokePaths,
       createLabels,
       createColorbar,
-      createNulls
+      createNulls,
+      createAxes: createAxes.createAxes,
+      createAxesFromSetup: createAxes.createAxesFromSetup,
+      createXAxis: createAxes.createXAxis,
+      createYAxis: createAxes.createYAxis,
+      createGrid: createAxes.createGrid
     };
   }
 });

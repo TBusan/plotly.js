@@ -9,6 +9,7 @@ var createPaths = require('./paths');
 var createLabels = require('./labels');
 var createColorbar = require('./colorbar');
 var createNulls = require('./nulls');
+var createAxes = require('./axes');
 var nullHandling = require('../../null_handling');
 
 /**
@@ -110,5 +111,10 @@ module.exports = {
     createStrokePaths: createPaths.createStrokePaths,
     createLabels: createLabels,
     createColorbar: createColorbar,
-    createNulls: createNulls
+    createNulls: createNulls,
+    createAxes: createAxes.createAxes,
+    createAxesFromSetup: createAxes.createAxesFromSetup,
+    createXAxis: createAxes.createXAxis,
+    createYAxis: createAxes.createYAxis,
+    createGrid: createAxes.createGrid
 };

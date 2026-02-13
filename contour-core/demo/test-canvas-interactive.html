@@ -397,7 +397,7 @@
                     <h4>Interaction Guide</h4>
                     <ul>
                         <li><kbd>Mouse Wheel</kbd> Zoom in/out at cursor</li>
-                        <li><kbd>Left Drag</kbd> Pan the view</li>
+                        <li><kbd>Left Drag</kbd> Pan view</li>
                         <li><kbd>Shift + Drag</kbd> Box zoom selection</li>
                         <li><kbd>Double Click</kbd> Reset to initial view</li>
                         <li><kbd>Mouse Move</kbd> Show data value at cursor</li>
@@ -446,6 +446,14 @@
                 boxEnd: null
             };
 
+            // Data range cache (actual x,y values from contour)
+            var dataRange = {
+                xMin: 0,
+                xMax: 49,
+                yMin: 0,
+                yMax: 49
+            };
+
             // ============================================
             // Data generation
             // ============================================
@@ -464,7 +472,7 @@
                         var yi = (i / height) * 6 - 3;
 
                         var z1 = 3 * Math.pow(1 - xi, 2) * Math.exp(-xi * xi - (yi + 1) * (yi + 1));
-                        var z2 = -10 * (xi / 5 - xi * xi * xi - yi * yi * yi * yi * yi * yi) * Math.exp(-xi * xi - yi * yi);
+                        var z2 = -10 * (xi / 5 - xi * xi * xi - yi * yi * yi * yi * yi) * Math.exp(-xi * xi - yi * yi);
                         var z3 = -1/3 * Math.exp(-(xi + 1) * (xi + 1) - yi * yi);
                         var zi = z1 + z2 + z3;
 
@@ -515,13 +523,38 @@
             }
 
             // ============================================
+            // Calculate visible range based on view state
+            // ============================================
+            function getVisibleRange(drawArea) {
+                // Calculate visible portion in data coordinates
+                var centerX = drawArea.width / 2 - viewState.offsetX;
+                var centerY = drawArea.height / 2 - viewState.offsetY;
+
+                var halfVisibleWidth = (drawArea.width / 2) / viewState.scale;
+                var halfVisibleHeight = (drawArea.height / 2) / viewState.scale;
+
+                // Convert to data range
+                var xMinVisible = Math.max(dataRange.xMin, dataRange.xMin + (centerX - halfVisibleWidth) / drawArea.width * (dataRange.xMax - dataRange.xMin));
+                var xMaxVisible = Math.min(dataRange.xMax, dataRange.xMin + (centerX + halfVisibleWidth) / drawArea.width * (dataRange.xMax - dataRange.xMin));
+                var yMinVisible = Math.max(dataRange.yMin, dataRange.yMin + (centerY - halfVisibleHeight) / drawArea.height * (dataRange.yMax - dataRange.yMin));
+                var yMaxVisible = Math.min(dataRange.yMax, dataRange.yMin + (centerY + halfVisibleHeight) / drawArea.height * (dataRange.yMax - dataRange.yMin));
+
+                return {
+                    xMin: xMinVisible,
+                    xMax: xMaxVisible,
+                    yMin: yMinVisible,
+                    yMax: yMaxVisible
+                };
+            }
+
+            // ============================================
             // Canvas rendering
             // ============================================
             var canvas = document.getElementById('contour-canvas');
             var ctx = canvas.getContext('2d');
             var data = generatePeaksData(50, 50);
             var contourResult = null;
-            var axisSetup = null;
+            var axisSetup = null; // Cache axis setup
 
             function resizeCanvas() {
                 var wrapper = document.getElementById('canvas-wrapper');
@@ -550,14 +583,63 @@
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, width, height);
 
-                ctx.save();
+                // Calculate visible range for axes
+                var visibleRange = getVisibleRange(drawArea);
 
-                // Draw grid first (behind contours)
+                // ============================================
+                // STEP 1: Draw grid (transforms with content)
+                // ============================================
                 if (config.showAxes && config.showGrid) {
-                    drawGrid(drawArea);
+                    // Use full data range for grid setup
+                    var gridAxesConfig = {
+                        width: drawArea.width,
+                        height: drawArea.height,
+                        x: {
+                            show: config.showAxes,
+                            showgrid: true,
+                            range: [dataRange.xMin, dataRange.xMax],
+                            side: 'bottom',
+                            tickmode: 'auto',
+                            nticks: 10,
+                            gridcolor: '#e0e0e0',
+                            gridwidth: 1
+                        },
+                        y: {
+                            show: config.showAxes,
+                            showgrid: true,
+                            range: [dataRange.yMin, dataRange.yMax],
+                            side: 'left',
+                            tickmode: 'auto',
+                            nticks: 10,
+                            gridcolor: '#e0e0e0',
+                            gridwidth: 1
+                        }
+                    };
+
+                    // Set up axes for grid
+                    axisSetup = contourCore.axes.setupAxes(gridAxesConfig);
+
+                    // Draw grid with transform
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
+                    ctx.clip();
+
+                    ctx.translate(drawArea.x + drawArea.width / 2, drawArea.y + drawArea.height / 2);
+                    ctx.scale(viewState.scale, viewState.scale);
+                    ctx.translate(-drawArea.width / 2 + viewState.offsetX, -drawArea.height / 2 + viewState.offsetY);
+
+                    // Draw grid (relative to 0,0 in transformed context)
+                    contourCore.renderers.canvas.drawGrid(ctx, axisSetup, true);
+                    contourCore.renderers.canvas.drawGrid(ctx, axisSetup, false);
+
+                    ctx.restore();
                 }
 
-                // Clip to drawing area and apply transforms
+                // ============================================
+                // STEP 2: Draw contours (transforms with zoom/pan)
+                // ============================================
+                ctx.save();
                 ctx.beginPath();
                 ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
                 ctx.clip();
@@ -584,17 +666,42 @@
                 };
 
                 // Need to temporarily override margins for contour rendering
-                var originalMargins = style.margins;
                 style.margins = { left: 0, right: 0, top: 0, bottom: 0 };
 
                 contourCore.renderers.canvas.drawContours(ctx, contourResult, style);
-                style.margins = originalMargins;
 
                 ctx.restore();
 
-                // Draw axes on top
+                // ============================================
+                // STEP 3: Draw axes on top (NO transform, fixed position)
+                // ============================================
                 if (config.showAxes) {
-                    drawAxes(width, height, drawArea);
+                    // Use VISIBLE range for axes (dynamic labels during zoom/pan)
+                    var axesConfig = {
+                        width: width,
+                        height: height,
+                        x: {
+                            show: config.showAxes,
+                            showgrid: false, // Grid already drawn
+                            range: [visibleRange.xMin, visibleRange.xMax],
+                            side: 'bottom',
+                            title: 'X Axis',
+                            tickmode: 'auto',
+                            nticks: Math.max(5, Math.floor(10 * viewState.scale))
+                        },
+                        y: {
+                            show: config.showAxes,
+                            showgrid: false, // Grid already drawn
+                            range: [visibleRange.yMin, visibleRange.yMax],
+                            side: 'left',
+                            title: 'Y Axis',
+                            tickmode: 'auto',
+                            nticks: Math.max(5, Math.floor(10 * viewState.scale))
+                        }
+                    };
+
+                    // Draw axes without transform (fixed on screen)
+                    contourCore.renderers.canvas.drawAxes(ctx, axesConfig);
                 }
 
                 // Draw box selection if active
@@ -604,111 +711,6 @@
 
                 var endTime = performance.now();
                 document.getElementById('info-render-time').textContent = (endTime - startTime).toFixed(1) + 'ms';
-            }
-
-            function drawGrid(drawArea) {
-                ctx.save();
-                ctx.strokeStyle = '#e0e0e0';
-                ctx.lineWidth = 1;
-
-                // Vertical grid lines - extend beyond draw area
-                var gridExtension = 20;
-                for (var i = 0; i <= 10; i++) {
-                    var x = drawArea.x + (drawArea.width / 10) * i;
-                    ctx.beginPath();
-                    ctx.moveTo(x, drawArea.y);
-                    ctx.lineTo(x, drawArea.y + drawArea.height + gridExtension);
-                    ctx.stroke();
-                }
-
-                // Horizontal grid lines - extend beyond draw area
-                for (var i = 0; i <= 10; i++) {
-                    var y = drawArea.y + (drawArea.height / 10) * i;
-                    ctx.beginPath();
-                    ctx.moveTo(drawArea.x - gridExtension, y);
-                    ctx.lineTo(drawArea.x + drawArea.width, y);
-                    ctx.stroke();
-                }
-
-                ctx.restore();
-            }
-
-            function drawAxes(width, height, drawArea) {
-                ctx.save();
-
-                // X-axis line
-                ctx.beginPath();
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 1;
-                ctx.moveTo(drawArea.x, drawArea.y + drawArea.height);
-                ctx.lineTo(drawArea.x + drawArea.width, drawArea.y + drawArea.height);
-                ctx.stroke();
-
-                // X-axis ticks and labels
-                ctx.font = '12px Arial, sans-serif';
-                ctx.fillStyle = '#333';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-
-                for (var i = 0; i <= 10; i++) {
-                    var x = drawArea.x + (drawArea.width / 10) * i;
-                    var value = Math.round((data.x[data.x.length - 1] / 10) * i);
-
-                    // Tick mark
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#666';
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x, drawArea.y + drawArea.height);
-                    ctx.lineTo(x, drawArea.y + drawArea.height + 5);
-                    ctx.stroke();
-
-                    // Label
-                    ctx.fillText(value.toString(), x, drawArea.y + drawArea.height + 10);
-                }
-
-                // X-axis title
-                ctx.font = 'bold 14px Arial, sans-serif';
-                ctx.fillText('X Axis', drawArea.x + drawArea.width / 2, drawArea.y + drawArea.height + 30);
-
-                // Y-axis line
-                ctx.beginPath();
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 1;
-                ctx.moveTo(drawArea.x, drawArea.y);
-                ctx.lineTo(drawArea.x, drawArea.y + drawArea.height);
-                ctx.stroke();
-
-                // Y-axis ticks and labels
-                ctx.font = '12px Arial, sans-serif';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'middle';
-
-                for (var i = 0; i <= 10; i++) {
-                    var y = drawArea.y + drawArea.height - (drawArea.height / 10) * i;
-                    var value = Math.round((data.y[data.y.length - 1] / 10) * i);
-
-                    // Tick mark
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#666';
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(drawArea.x, y);
-                    ctx.lineTo(drawArea.x - 5, y);
-                    ctx.stroke();
-
-                    // Label
-                    ctx.fillText(value.toString(), drawArea.x - 10, y);
-                }
-
-                // Y-axis title (rotated)
-                ctx.save();
-                ctx.translate(drawArea.x - 40, drawArea.y + drawArea.height / 2);
-                ctx.rotate(-Math.PI / 2);
-                ctx.font = 'bold 14px Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Y Axis', 0, 0);
-                ctx.restore();
-
-                ctx.restore();
             }
 
             function drawBoxSelection() {
@@ -735,6 +737,14 @@
                     smoothing: config.smoothing
                 };
                 contourResult = contourCore.computeContours(data, options);
+
+                // Cache actual data range from contour result
+                if (contourResult && contourResult.pathinfo && contourResult.pathinfo[0]) {
+                    dataRange.xMin = contourResult.pathinfo[0].x[0];
+                    dataRange.xMax = contourResult.pathinfo[0].x[contourResult.pathinfo[0].x.length - 1];
+                    dataRange.yMin = contourResult.pathinfo[0].y[0];
+                    dataRange.yMax = contourResult.pathinfo[0].y[contourResult.pathinfo[0].y.length - 1];
+                }
             }
 
             // ============================================
@@ -742,43 +752,44 @@
             // ============================================
             function getDataValue(clientX, clientY) {
                 var rect = canvas.getBoundingClientRect();
-                var dims = getDrawArea();
-
-                // Calculate position in transformed canvas coordinates
-                var x = (clientX - rect.left - dims.x - dims.width / 2) / viewState.scale - viewState.offsetX + dims.width / 2;
-                var y = (clientY - rect.top - dims.y - dims.height / 2) / viewState.scale - viewState.offsetY + dims.height / 2;
-
-                // Check if within drawing area
-                if (x < 0 || x > dims.width || y < 0 || y > dims.height) {
-                    return null;
-                }
-
-                var dataX = Math.round(x / dims.width * (data.x.length - 1));
-                var dataY = Math.round(y / dims.height * (data.y.length - 1));
-
-                if (dataX >= 0 && dataX < data.x.length && dataY >= 0 && dataY < data.y.length) {
-                    return {
-                        x: data.x[dataX],
-                        y: data.y[dataY],
-                        z: data.z[dataY][dataX],
-                        ix: dataX,
-                        iy: dataY
-                    };
-                }
-                return null;
-            }
-
-            // Helper function to get draw area
-            function getDrawArea() {
                 var margins = getMargins();
-                return {
+                var drawArea = {
                     x: margins.left,
                     y: margins.top,
                     width: canvas.width - margins.left - margins.right,
                     height: canvas.height - margins.top - margins.bottom
                 };
+
+                // Calculate position in transformed canvas coordinates
+                var x = (clientX - rect.left - drawArea.x - drawArea.width / 2) / viewState.scale - viewState.offsetX + drawArea.width / 2;
+                var y = (clientY - rect.top - drawArea.y - drawArea.height / 2) / viewState.scale - viewState.offsetY + drawArea.height / 2;
+
+                // Check if within drawing area
+                if (x < 0 || x > drawArea.width || y < 0 || y > drawArea.height) {
+                    return null;
+                }
+
+                // Convert to actual data coordinates
+                var dataX = dataRange.xMin + (x / drawArea.width) * (dataRange.xMax - dataRange.xMin);
+                var dataY = dataRange.yMin + (y / drawArea.height) * (dataRange.yMax - dataRange.yMin);
+
+                // Convert to array indices
+                var ix = Math.round((dataX - dataRange.xMin) / (dataRange.xMax - dataRange.xMin) * (data.x.length - 1));
+                var iy = Math.round((dataY - dataRange.yMin) / (dataRange.yMax - dataRange.yMin) * (data.y.length - 1));
+
+                if (ix >= 0 && ix < data.x.length && iy >= 0 && iy < data.y.length) {
+                    return {
+                        x: dataX,
+                        y: dataY,
+                        z: data.z[iy][ix],
+                        ix: ix,
+                        iy: iy
+                    };
+                }
+                return null;
             }
 
+            // Mouse events
             canvas.addEventListener('mousedown', function(e) {
                 var rect = canvas.getBoundingClientRect();
                 var x = e.clientX - rect.left;
@@ -874,9 +885,9 @@
                     var y2 = Math.max(viewState.boxStart.y, boxEnd.y);
 
                     if (Math.abs(x2 - x1) > 20 && Math.abs(y2 - y1) > 20) {
-                        var dims = getDrawArea();
-                        var centerX = (x1 + x2) / 2 - dims.x;
-                        var centerY = (y1 + y2) / 2 - dims.y;
+                        var dims = { x: 60, y: 20, width: canvas.width - 120, height: canvas.height - 70 };
+                        var centerX = (x1 + x2) / 2;
+                        var centerY = (y1 + y2) / 2;
                         var zoomFactor = Math.min(
                             dims.width / Math.abs(x2 - x1),
                             dims.height / Math.abs(y2 - y1)
@@ -884,8 +895,8 @@
                         zoomFactor = Math.min(zoomFactor, 5);
                         viewState.scale *= zoomFactor;
                         viewState.scale = Math.max(0.5, Math.min(10, viewState.scale));
-                        viewState.offsetX = -(centerX * viewState.scale - dims.width / 2);
-                        viewState.offsetY = -(centerY * viewState.scale - dims.height / 2);
+                        viewState.offsetX = -(centerX - dims.x - dims.width / 2) * viewState.scale;
+                        viewState.offsetY = -(centerY - dims.y - dims.height / 2) * viewState.scale;
                     }
 
                     viewState.boxStart = null;
@@ -916,9 +927,22 @@
                 var mouseX = e.clientX - rect.left;
                 var mouseY = e.clientY - rect.top;
 
-                var dims = getDrawArea();
-                var centerX = mouseX - (dims.x + dims.width / 2);
-                var centerY = mouseY - (dims.y + dims.height / 2);
+                var margins = getMargins();
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: canvas.width - margins.left - margins.right,
+                    height: canvas.height - margins.top - margins.bottom
+                };
+
+                // Check if mouse is within drawing area
+                if (mouseX < drawArea.x || mouseX > drawArea.x + drawArea.width ||
+                    mouseY < drawArea.y || mouseY > drawArea.y + drawArea.height) {
+                    return;
+                }
+
+                var centerX = mouseX - (drawArea.x + drawArea.width / 2);
+                var centerY = mouseY - (drawArea.y + drawArea.height / 2);
 
                 var zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
                 var newScale = viewState.scale * zoomFactor;

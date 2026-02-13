@@ -549,6 +549,78 @@
             }
 
             // ============================================
+            // Dynamic axes setup based on view state
+            // ============================================
+            function getDynamicAxesConfig(width, height) {
+                var margins = getMargins();
+                var drawArea = {
+                    x: margins.left,
+                    y: margins.top,
+                    width: width - margins.left - margins.right,
+                    height: height - margins.top - margins.bottom
+                };
+
+                // Calculate visible range based on current view state
+                var centerX = drawArea.width / 2 - viewState.offsetX;
+                var centerY = drawArea.height / 2 - viewState.offsetY;
+
+                var halfVisibleWidth = (drawArea.width / 2) / viewState.scale;
+                var halfVisibleHeight = (drawArea.height / 2) / viewState.scale;
+
+                var xMinVisible = Math.max(0, (centerX - halfVisibleWidth) / drawArea.width * (data.x.length - 1));
+                var xMaxVisible = Math.min(data.x.length - 1, (centerX + halfVisibleWidth) / drawArea.width * (data.x.length - 1));
+                var yMinVisible = Math.max(0, (centerY - halfVisibleHeight) / drawArea.height * (data.y.length - 1));
+                var yMaxVisible = Math.min(data.y.length - 1, (centerY + halfVisibleHeight) / drawArea.height * (data.y.length - 1));
+
+                return {
+                    width: width,
+                    height: height,
+                    x: {
+                        show: config.showAxes,
+                        showgrid: false,  // Grid is drawn separately with content
+                        range: [xMinVisible, xMaxVisible],
+                        side: 'bottom',
+                        title: 'X Axis',
+                        tickmode: 'auto',
+                        nticks: Math.max(5, Math.floor(10 * viewState.scale))
+                    },
+                    y: {
+                        show: config.showAxes,
+                        showgrid: false,  // Grid is drawn separately with content
+                        range: [yMinVisible, yMaxVisible],
+                        side: 'left',
+                        title: 'Y Axis',
+                        tickmode: 'auto',
+                        nticks: Math.max(5, Math.floor(10 * viewState.scale))
+                    }
+                };
+
+            // ============================================
+                return {
+                    width: width,
+                    height: height,
+                    x: {
+                        show: config.showAxes,
+                        showgrid: false,  // Grid is drawn separately with content
+                        range: [xMinData, xMaxData],
+                        side: 'bottom',
+                        title: 'X Axis',
+                        tickmode: 'auto',
+                        nticks: 10  // Fixed number of ticks to fill the axis
+                    },
+                    y: {
+                        show: config.showAxes,
+                        showgrid: false,  // Grid is drawn separately with content
+                        range: [yMinData, yMaxData],
+                        side: 'left',
+                        title: 'Y Axis',
+                        tickmode: 'auto',
+                        nticks: 10  // Fixed number of ticks to fill the axis
+                    }
+                };
+            }
+
+            // ============================================
             // SVG rendering
             // ============================================
             var svgContainer = document.getElementById('contour-svg');
@@ -565,55 +637,26 @@
                 };
             }
 
-            function generateAxesSVG(width, height, margins) {
-                if (!config.showAxes) return '';
+            // Generate grid lines that transform with content
+            function generateGridSVG(drawArea) {
+                if (!config.showGrid || !config.showAxes || !contourResult) return '';
 
-                var drawArea = {
-                    x: margins.left,
-                    y: margins.top,
-                    width: width - margins.left - margins.right,
-                    height: height - margins.top - margins.bottom
-                };
+                // Get actual data range from contourResult
+                var actualXMin = contourResult.pathinfo[0].x[0];
+                var actualXMax = contourResult.pathinfo[0].x[contourResult.pathinfo[0].x.length - 1];
+                var actualYMin = contourResult.pathinfo[0].y[0];
+                var actualYMax = contourResult.pathinfo[0].y[contourResult.pathinfo[0].y.length - 1];
+
                 var parts = [];
-
-                if (config.showGrid) {
-                    for (var i = 0; i <= 10; i++) {
-                        var x = drawArea.x + (drawArea.width / 10) * i;
-                        parts.push('<line class="axis-grid" x1="' + x + '" y1="' + drawArea.y +
-                                   '" x2="' + x + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
-                        var y = drawArea.y + (drawArea.height / 10) * i;
-                        parts.push('<line class="axis-grid" x1="' + drawArea.x + '" y1="' + y +
-                                   '" x2="' + (drawArea.x + drawArea.width) + '" y2="' + y + '"/>');
-                    }
-                }
-
-                parts.push('<line class="axis-line" x1="' + drawArea.x + '" y1="' + (drawArea.y + drawArea.height) +
-                           '" x2="' + (drawArea.x + drawArea.width) + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
-                parts.push('<line class="axis-line" x1="' + drawArea.x + '" y1="' + drawArea.y +
-                           '" x2="' + drawArea.x + '" y2="' + (drawArea.y + drawArea.height) + '"/>');
-
+                parts.push('<g class="axis-grid-group">');
                 for (var i = 0; i <= 10; i++) {
-                    x = drawArea.x + (drawArea.width / 10) * i;
-                    var value = Math.round((data.x[data.x.length - 1] / 10) * i);
-                    parts.push('<line class="axis-tick" x1="' + x + '" y1="' + (drawArea.y + drawArea.height) +
-                               '" x2="' + x + '" y2="' + (drawArea.y + drawArea.height + 5) + '"/>');
-                    parts.push('<text class="axis-label" x="' + x + '" y="' + (drawArea.y + drawArea.height + 20) +
-                               '" text-anchor="middle">' + value + '</text>');
-
-                    y = drawArea.y + drawArea.height - (drawArea.height / 10) * i;
-                    value = Math.round((data.y[data.y.length - 1] / 10) * i);
-                    parts.push('<line class="axis-tick" x1="' + drawArea.x + '" y1="' + y +
-                               '" x2="' + (drawArea.x - 5) + '" y2="' + y + '"/>');
-                    parts.push('<text class="axis-label" x="' + (drawArea.x - 10) + '" y="' + (y + 4) +
-                               '" text-anchor="end">' + value + '</text>');
+                    // Use actual data range for grid positioning
+                    var x = (drawArea.width / 10) * i;
+                    parts.push('<line class="axis-grid" x1="' + x + '" y1="0" x2="' + x + '" y2="' + drawArea.height + '"/>');
+                    var y = (drawArea.height / 10) * i;
+                    parts.push('<line class="axis-grid" x1="0" y1="' + y + '" x2="' + drawArea.width + '" y2="' + y + '"/>');
                 }
-
-                parts.push('<text class="axis-title" x="' + (drawArea.x + drawArea.width / 2) + '" y="' +
-                           (drawArea.y + drawArea.height + 40) + '" text-anchor="middle">X Axis</text>');
-                parts.push('<text class="axis-title" x="' + (drawArea.x - 40) + '" y="' +
-                           (drawArea.y + drawArea.height / 2) + '" text-anchor="middle" transform="rotate(-90, ' +
-                           (drawArea.x - 40) + ', ' + (drawArea.y + drawArea.height / 2) + ')">Y Axis</text>');
-
+                parts.push('</g>');
                 return parts.join('\n');
             }
 
@@ -646,31 +689,47 @@
                 var svgHeader = mainSVG.substring(svgStart, svgEnd + 1);
                 var svgContent = mainSVG.substring(svgEnd + 1, mainSVG.lastIndexOf('</svg>'));
 
-                // Add transform for pan/zoom
-                var transform = 'transform="translate(' + viewState.offsetX + ', ' + viewState.offsetY + ') scale(' + viewState.scale + ')" transform-origin="center"';
-
-                var completeSVG = svgHeader.replace('>', ' ' + transform + '>') + '\n';
+                // Build SVG with proper layering
+                var completeSVG = svgHeader + '\n';
                 completeSVG += '<defs>\n';
                 completeSVG += '  <clipPath id="plotAreaClip">\n';
-                completeSVG += '    <rect x="' + drawArea.x + '" y="' + drawArea.y + '" width="' +
-                               drawArea.width + '" height="' + drawArea.height + '"/>\n';
+                completeSVG += '    <rect x="0" y="0" width="' + drawArea.width + '" height="' + drawArea.height + '"/>\n';
                 completeSVG += '  </clipPath>\n';
                 completeSVG += '</defs>\n';
-                completeSVG += generateAxesSVG(dims.width, dims.height, margins) + '\n';
-                completeSVG += '<g clip-path="url(#plotAreaClip)">\n';
+
+                // Generate axes using contour-core's axes module
+                var axesConfig = getDynamicAxesConfig(dims.width, dims.height);
+                var axesResult = contourCore.renderers.svg.createAxes(axesConfig);
+                completeSVG += axesResult.svg + '\n';
+
+                // Contours and grid in a group with transform and clip-path
+                // Transform origin is at the center of draw area
+                var transformOriginX = drawArea.x + drawArea.width / 2;
+                var transformOriginY = drawArea.y + drawArea.height / 2;
+                completeSVG += '<g transform="translate(' + transformOriginX + ', ' + transformOriginY + ') scale(' + viewState.scale + ') translate(' +
+                               (-drawArea.width / 2 + viewState.offsetX) + ', ' + (-drawArea.height / 2 + viewState.offsetY) + ')">\n';
+
+                // Grid lines (transform with content)
+                completeSVG += generateGridSVG(drawArea) + '\n';
+
+                completeSVG += '  <g clip-path="url(#plotAreaClip)" transform="translate(0, 0)">\n';
                 completeSVG += svgContent + '\n';
 
-                // Add selection box if active
+                // Add selection box if active (inside transformed group)
                 if (viewState.boxStart && viewState.boxEnd) {
-                    var boxX = Math.min(viewState.boxStart.x, viewState.boxEnd.x);
-                    var boxY = Math.min(viewState.boxStart.y, viewState.boxEnd.y);
-                    var boxW = Math.abs(viewState.boxEnd.x - viewState.boxStart.x);
-                    var boxH = Math.abs(viewState.boxEnd.y - viewState.boxStart.y);
-                    completeSVG += '<rect id="selection-box" x="' + boxX + '" y="' + boxY + '" width="' +
-                                   boxW + '" height="' + boxH + '"/>\n';
+                    // Selection box coordinates need to be transformed from screen to data space
+                    var boxX1 = Math.min(viewState.boxStart.x, viewState.boxEnd.x) - drawArea.x;
+                    var boxY1 = Math.min(viewState.boxStart.y, viewState.boxEnd.y) - drawArea.y;
+                    var boxX2 = Math.max(viewState.boxStart.x, viewState.boxEnd.x) - drawArea.x;
+                    var boxY2 = Math.max(viewState.boxStart.y, viewState.boxEnd.y) - drawArea.y;
+
+                    completeSVG += '    <rect id="selection-box" x="' + boxX1 + '" y="' + boxY1 + '" width="' +
+                                   (boxX2 - boxX1) + '" height="' + (boxY2 - boxY1) + '"/>\n';
                 }
 
-                completeSVG += '</g>\n</svg>';
+                completeSVG += '  </g>\n';
+                completeSVG += '</g>\n';
+                completeSVG += '</svg>';
 
                 svgContainer.innerHTML = completeSVG;
 

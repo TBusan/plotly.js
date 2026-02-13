@@ -187,5 +187,6 @@ module.exports = {
     drawNulls: drawNulls,
     drawHeatmap: drawHeatmap,
     drawAxes: axesRenderer.drawAxes,
-    drawAxesFromSetup: axesRenderer.drawAxesFromSetup
+    drawAxesFromSetup: axesRenderer.drawAxesFromSetup,
+    drawGrid: axesRenderer.drawGrid
 };

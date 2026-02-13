@@ -243,6 +243,7 @@ function drawGrid(ctx, axisSetup, isXAxis) {
         ctx.setLineDash([]);
     }
 
+    // Grid is drawn within drawing area bounds (0,0 to width,height for transformed context)
     for (var i = 0; i < ticks.length; i++) {
         var tick = ticks[i];
 
@@ -251,14 +252,15 @@ function drawGrid(ctx, axisSetup, isXAxis) {
             continue;
         }
 
+        // Draw grid lines relative to drawing area origin (0, 0 in transformed context)
         if (isXAxis) {
-            var x = drawingArea.x + tick.pixel;
-            ctx.moveTo(x, drawingArea.y);
-            ctx.lineTo(x, drawingArea.y + drawingArea.height);
+            var x = tick.pixel;
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, drawingArea.height);
         } else {
-            var y = drawingArea.y + tick.pixel;
-            ctx.moveTo(drawingArea.x, y);
-            ctx.lineTo(drawingArea.x + drawingArea.width, y);
+            var y = tick.pixel;
+            ctx.moveTo(0, y);
+            ctx.lineTo(drawingArea.width, y);
         }
     }
 
@@ -277,6 +279,7 @@ function drawGrid(ctx, axisSetup, isXAxis) {
  * @param {Object} axesConfig.y - Y-axis configuration
  * @param {Array} axesConfig.xData - X-axis data values (for range inference)
  * @param {Array} axesConfig.yData - Y-axis data values (for range inference)
+ * @param {boolean} axesConfig.drawGridOnly - If true, only draw grid (not axes)
  */
 function drawAxes(ctx, axesConfig) {
     axesConfig = axesConfig || {};
@@ -287,7 +290,15 @@ function drawAxes(ctx, axesConfig) {
     // Set up axes with ticks and positions
     var axisSetup = axes.setupAxes(axesConfig);
 
-    // Draw grid lines first (behind the plot)
+    // If drawGridOnly is true, only draw grid lines (for drawing behind content)
+    if (axesConfig.drawGridOnly) {
+        drawGrid(ctx, axisSetup, true);   // X-axis grid
+        drawGrid(ctx, axisSetup, false);  // Y-axis grid
+        return axisSetup;
+    }
+
+    // Normal mode: draw both grid and axes
+    // Draw grid lines first (behind plot)
     drawGrid(ctx, axisSetup, true);   // X-axis grid
     drawGrid(ctx, axisSetup, false);  // Y-axis grid
 
