@@ -20883,8 +20883,9 @@ var require_paths2 = __commonJS({
     }
     function joinAllPaths(pathInfo, perimeter, style) {
       var allPoints = [];
-      var edgepaths = pathInfo.edgepaths;
-      if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+      var edgepaths = pathInfo.edgepaths || [];
+      var paths = pathInfo.paths || [];
+      if (edgepaths.length === 0 && paths.length === 0) {
         return allPoints;
       }
       var i = 0;
@@ -20899,15 +20900,23 @@ var require_paths2 = __commonJS({
       var possiblei;
       var currentLoopPoints = [];
       function istop(pt) {
+        if (!pt || !perimeter || !perimeter[0])
+          return false;
         return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
       }
       function isbottom(pt) {
+        if (!pt || !perimeter || !perimeter[2])
+          return false;
         return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
       }
       function isleft(pt) {
+        if (!pt || !perimeter || !perimeter[0])
+          return false;
         return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
       }
       function isright(pt) {
+        if (!pt || !perimeter || !perimeter[2])
+          return false;
         return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
       }
       while (startsleft.length > 0) {
@@ -20962,8 +20971,12 @@ var require_paths2 = __commonJS({
             }
           }
           if (nexti < 0) {
-            currentLoopPoints.push(newendpt);
+            if (newendpt) {
+              currentLoopPoints.push(newendpt);
+            }
           }
+          if (!newendpt)
+            break;
           endpt = newendpt;
           if (nexti >= 0)
             break;
@@ -20979,11 +20992,12 @@ var require_paths2 = __commonJS({
       if (currentLoopPoints.length > 0) {
         allPoints.push(currentLoopPoints);
       }
-      for (i = 0; i < pathInfo.paths.length; i++) {
-        if (!pathInfo.paths[i] || !Array.isArray(pathInfo.paths[i]) || pathInfo.paths[i].length === 0) {
+      var interiorPaths = pathInfo.paths || [];
+      for (i = 0; i < interiorPaths.length; i++) {
+        if (!interiorPaths[i] || !Array.isArray(interiorPaths[i]) || interiorPaths[i].length === 0) {
           continue;
         }
-        var scaledPath = pathInfo.paths[i].map(function(pt) {
+        var scaledPath = interiorPaths[i].map(function(pt) {
           return scalePoint(style, pt);
         });
         allPoints.push(scaledPath);
@@ -21278,69 +21292,228 @@ var require_labels3 = __commonJS({
   "renderers/zrender/labels.js"(exports, module) {
     "use strict";
     var zrender = require_zrender();
-    var pathUtils = require_paths2();
+    var labels = require_labels();
+    var findBestTextLocation = labels.findBestTextLocation;
+    var formatContourLabel = labels.formatContourLabel;
+    var calculateMaxLabels = labels.calculateMaxLabels;
+    var pathLength = labels.pathLength;
+    var isPathClosed = labels.isPathClosed;
     function createLabel(labelData, style) {
       var x = labelData.x;
       var y = labelData.y;
+      var theta = labelData.theta || 0;
       var text = labelData.text;
       var level = labelData.level;
-      var fontSize = style.fontSize || 11;
-      var fontWeight = style.fontWeight || "bold";
-      var textColor = style.labelColor || "#333";
+      var fontSize = style.labelSize || 12;
+      var fontWeight = style.labelFontWeight || "bold";
+      var textColor = style.labelColor || "#000";
+      var labelFont = style.labelFont || "Arial";
       var textWidth = text.length * fontSize * 0.6;
       var textHeight = fontSize * 1.2;
-      var padding = style.labelPadding || 4;
+      var padding = style.labelPadding || 3;
       var bgWidth = textWidth + padding * 2;
       var bgHeight = textHeight + padding * 2;
-      var cornerRadius = style.labelRadius || 3;
+      var cornerRadius = style.labelRadius || 2;
       var group = new zrender.Group();
-      var bgColor = style.labelBgColor || "rgba(255, 255, 255, 0.85)";
-      var borderColor = style.labelBorderColor || "#999";
-      var borderWidth = style.labelBorderWidth || 1;
-      var bgRect = new zrender.Rect({
-        shape: {
-          x: x - bgWidth / 2,
-          y: y - bgHeight / 2,
-          width: bgWidth,
-          height: bgHeight,
-          r: cornerRadius
-        },
-        style: {
-          fill: bgColor,
-          stroke: borderColor,
-          lineWidth: borderWidth
-        }
+      group.attr({
+        x,
+        y,
+        rotation: theta
       });
-      group.add(bgRect);
+      if (style.labelBackground !== false) {
+        var bgColor = style.labelBgColor || "rgba(255, 255, 255, 0.85)";
+        var borderColor = style.labelBorderColor || "rgba(100, 100, 100, 0.5)";
+        var borderWidth = style.labelBorderWidth || 1;
+        var bgRect = new zrender.Rect({
+          shape: {
+            x: -bgWidth / 2,
+            y: -bgHeight / 2,
+            width: bgWidth,
+            height: bgHeight,
+            r: cornerRadius
+          },
+          style: {
+            fill: bgColor,
+            stroke: borderColor,
+            lineWidth: borderWidth
+          },
+          silent: true
+        });
+        group.add(bgRect);
+      }
       var textEl = new zrender.Text({
         style: {
           text,
-          x,
-          y,
+          x: 0,
+          y: 0,
           textAlign: "center",
           textVerticalAlign: "middle",
           fill: textColor,
           fontSize,
-          fontWeight
-        }
+          fontWeight,
+          fontFamily: labelFont
+        },
+        silent: true
       });
       group.add(textEl);
       return group;
     }
-    function createLabels(labels, style) {
+    function computeLabels(contourResult, style) {
+      style = style || {};
+      var paths = contourResult.paths;
+      var showLabels = style.showLabels !== false;
+      if (!showLabels || !paths || !paths.length) {
+        return [];
+      }
+      var m = style.z ? style.z.length : 10;
+      var n = style.z && style.z[0] ? style.z[0].length : 10;
+      var pathinfo = contourResult.pathinfo || contourResult.paths;
+      if (pathinfo && pathinfo[0] && pathinfo[0].z) {
+        m = pathinfo[0].z.length;
+        n = pathinfo[0].z[0].length;
+      }
+      var plotBounds = {
+        left: 0,
+        right: n - 1,
+        top: 0,
+        bottom: m - 1,
+        center: (n - 1) / 2,
+        middle: (m - 1) / 2
+      };
+      var width = style.width || 500;
+      var height = style.height || 400;
+      var padding = style.padding || 30;
+      var scaleX = (width - 2 * padding) / (n - 1);
+      var scaleY = (height - 2 * padding) / (m - 1);
+      var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
+      var existingLabels = [];
+      var computedLabels = [];
+      var labelSize = style.labelSize || 12;
+      for (var i = 0; i < paths.length; i++) {
+        var pathInfo = paths[i];
+        if (pathInfo.paths && pathInfo.paths.length > 0) {
+          processPathArray(
+            pathInfo.paths,
+            pathInfo.level,
+            existingLabels,
+            computedLabels,
+            plotBounds,
+            plotDiagonal,
+            scaleX,
+            scaleY,
+            m,
+            padding,
+            style,
+            labelSize,
+            n
+          );
+        }
+        if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
+          processPathArray(
+            pathInfo.edgepaths,
+            pathInfo.level,
+            existingLabels,
+            computedLabels,
+            plotBounds,
+            plotDiagonal,
+            scaleX,
+            scaleY,
+            m,
+            padding,
+            style,
+            labelSize,
+            n
+          );
+        }
+      }
+      return computedLabels;
+    }
+    function processPathArray(pathsArray, level, existingLabels, computedLabels, plotBounds, plotDiagonal, scaleX, scaleY, m, padding, style, labelSize, n) {
+      for (var j = 0; j < pathsArray.length; j++) {
+        var path = pathsArray[j];
+        if (!path || path.length < 3)
+          continue;
+        var labelText = formatContourLabel(level, style.labelFormat || ".1f");
+        var textWidth = labelText.length * labelSize * 0.6;
+        var textWidthGrid = textWidth / scaleX;
+        var textHeightGrid = labelSize / scaleY;
+        var len = pathLength(path);
+        if (len < textWidthGrid)
+          continue;
+        var maxLabels = calculateMaxLabels(
+          len,
+          textWidthGrid,
+          textHeightGrid,
+          pathsArray.length,
+          plotDiagonal
+        );
+        if (maxLabels === 0)
+          continue;
+        var closed = isPathClosed(path);
+        var usedPositions = [];
+        for (var k = 0; k < maxLabels; k++) {
+          var labelPos = findBestTextLocation(
+            path,
+            {
+              level,
+              width: textWidthGrid,
+              height: textHeightGrid
+            },
+            existingLabels,
+            plotBounds,
+            closed
+          );
+          if (!labelPos)
+            break;
+          var tooClose = false;
+          for (var u = 0; u < usedPositions.length; u++) {
+            var dx = labelPos.x - usedPositions[u].x;
+            var dy = labelPos.y - usedPositions[u].y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < textWidthGrid * 2) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (tooClose)
+            break;
+          var scaledX = padding + labelPos.x * scaleX;
+          var scaledY = padding + (m - 1 - labelPos.y) * scaleY;
+          computedLabels.push({
+            x: scaledX,
+            y: scaledY,
+            theta: labelPos.theta || 0,
+            text: labelText,
+            level
+          });
+          existingLabels.push({
+            x: labelPos.x,
+            y: labelPos.y,
+            theta: labelPos.theta || 0,
+            level,
+            width: textWidthGrid,
+            height: textHeightGrid
+          });
+          usedPositions.push(labelPos);
+        }
+      }
+    }
+    function createLabels(contourResult, style) {
       var elements = [];
-      if (!labels || labels.length === 0) {
+      if (!contourResult || !contourResult.paths) {
         return elements;
       }
-      for (var i = 0; i < labels.length; i++) {
-        var label = createLabel(labels[i], style);
-        elements.push(label);
+      var computedLabels = computeLabels(contourResult, style);
+      for (var i = 0; i < computedLabels.length; i++) {
+        var labelElement = createLabel(computedLabels[i], style);
+        elements.push(labelElement);
       }
       return elements;
     }
     module.exports = {
       createLabel,
-      createLabels
+      createLabels,
+      computeLabels
     };
   }
 });
@@ -21724,6 +21897,7 @@ var require_zrender2 = __commonJS({
       this.layers.background.removeAll();
       this.layers.fills.removeAll();
       this.layers.lines.removeAll();
+      this.layers.labels.removeAll();
       this.contourResult = result;
       this.style = style;
       var contourElements = pathUtils.createContourPaths(result, style, this.options);
@@ -21741,12 +21915,12 @@ var require_zrender2 = __commonJS({
         return item2.type === "fill";
       }));
     };
-    ZRenderContourRenderer.prototype.renderLabels = function(labels, style) {
+    ZRenderContourRenderer.prototype.renderLabels = function(contourResult, style) {
       this.layers.labels.removeAll();
-      if (!labels || labels.length === 0) {
+      if (!contourResult || !contourResult.paths) {
         return;
       }
-      var labelElements = labelUtils.createLabels(labels, style);
+      var labelElements = labelUtils.createLabels(contourResult, style);
       for (var i = 0; i < labelElements.length; i++) {
         this.layers.labels.add(labelElements[i]);
       }
@@ -22073,6 +22247,7 @@ var require_api = __commonJS({
     var compute = require_compute();
     var canvasRenderer = require_canvas();
     var zrenderRenderer = require_zrender2();
+    var labelUtils = require_labels();
     var COLOR_SCALES = {
       Viridis: [
         "#440154",
@@ -22407,8 +22582,8 @@ var require_api = __commonJS({
         opacity: config.opacity || 1
       };
       renderer.renderContours(result, style);
-      if (config.contours && config.contours.showlabels && result.labels) {
-        renderer.renderLabels(result.labels, style);
+      if (config.contours && config.contours.showlabels) {
+        renderer.renderLabels(result, style);
       }
       if (config.axes) {
         var axesConfig = Object.assign({}, config.axes, {
@@ -22454,8 +22629,8 @@ var require_api = __commonJS({
           style.y = result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : grid.y;
           style.z = result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : grid.z;
           renderer.renderContours(result, style);
-          if (config.contours && config.contours.showlabels && result.labels) {
-            renderer.renderLabels(result.labels, style);
+          if (config.contours && config.contours.showlabels) {
+            renderer.renderLabels(result, style);
           }
         },
         // Set view

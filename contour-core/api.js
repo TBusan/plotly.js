@@ -8,6 +8,7 @@
 var compute = require('./compute');
 var canvasRenderer = require('./renderers/canvas');
 var zrenderRenderer = require('./renderers/zrender');
+var labelUtils = require('./labels');
 
 // Preset color scales
 var COLOR_SCALES = {
@@ -473,8 +474,8 @@ function createInteractive(container, config) {
     renderer.renderContours(result, style);
 
     // Render labels if configured
-    if (config.contours && config.contours.showlabels && result.labels) {
-        renderer.renderLabels(result.labels, style);
+    if (config.contours && config.contours.showlabels) {
+        renderer.renderLabels(result, style);
     }
 
     // Render axes if configured
@@ -535,8 +536,8 @@ function createInteractive(container, config) {
 
             renderer.renderContours(result, style);
 
-            if (config.contours && config.contours.showlabels && result.labels) {
-                renderer.renderLabels(result.labels, style);
+            if (config.contours && config.contours.showlabels) {
+                renderer.renderLabels(result, style);
             }
         },
 

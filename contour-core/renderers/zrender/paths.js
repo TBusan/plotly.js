@@ -39,9 +39,10 @@ function createPerimeter(style) {
  */
 function joinAllPaths(pathInfo, perimeter, style) {
     var allPoints = [];  // Array of point arrays for CompoundPath
-    var edgepaths = pathInfo.edgepaths;
+    var edgepaths = pathInfo.edgepaths || [];
+    var paths = pathInfo.paths || [];
 
-    if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+    if (edgepaths.length === 0 && paths.length === 0) {
         return allPoints;
     }
 
@@ -55,10 +56,22 @@ function joinAllPaths(pathInfo, perimeter, style) {
     var possiblei;
     var currentLoopPoints = [];
 
-    function istop(pt) { return Math.abs(pt[1] - perimeter[0][1]) < 0.1; }
-    function isbottom(pt) { return Math.abs(pt[1] - perimeter[2][1]) < 0.1; }
-    function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
-    function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
+    function istop(pt) {
+        if (!pt || !perimeter || !perimeter[0]) return false;
+        return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
+    }
+    function isbottom(pt) {
+        if (!pt || !perimeter || !perimeter[2]) return false;
+        return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
+    }
+    function isleft(pt) {
+        if (!pt || !perimeter || !perimeter[0]) return false;
+        return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
+    }
+    function isright(pt) {
+        if (!pt || !perimeter || !perimeter[2]) return false;
+        return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
+    }
 
     // Process edge paths
     while (startsleft.length > 0) {
@@ -132,8 +145,11 @@ function joinAllPaths(pathInfo, perimeter, style) {
 
             // Add corner point if no path found
             if (nexti < 0) {
-                currentLoopPoints.push(newendpt);
+                if (newendpt) {
+                    currentLoopPoints.push(newendpt);
+                }
             }
+            if (!newendpt) break;
             endpt = newendpt;
             if (nexti >= 0) break;
         }
@@ -153,12 +169,13 @@ function joinAllPaths(pathInfo, perimeter, style) {
     }
 
     // Add interior closed paths
-    for (i = 0; i < pathInfo.paths.length; i++) {
-        if (!pathInfo.paths[i] || !Array.isArray(pathInfo.paths[i]) ||
-            pathInfo.paths[i].length === 0) {
+    var interiorPaths = pathInfo.paths || [];
+    for (i = 0; i < interiorPaths.length; i++) {
+        if (!interiorPaths[i] || !Array.isArray(interiorPaths[i]) ||
+            interiorPaths[i].length === 0) {
             continue;
         }
-        var scaledPath = pathInfo.paths[i].map(function(pt) {
+        var scaledPath = interiorPaths[i].map(function(pt) {
             return scalePoint(style, pt);
         });
         allPoints.push(scaledPath);

@@ -70,6 +70,7 @@ ZRenderContourRenderer.prototype.renderContours = function(result, style) {
     this.layers.background.removeAll();
     this.layers.fills.removeAll();
     this.layers.lines.removeAll();
+    this.layers.labels.removeAll();  // Also clear labels when re-rendering contours
 
     this.contourResult = result;
     this.style = style;
@@ -100,15 +101,17 @@ ZRenderContourRenderer.prototype.renderContours = function(result, style) {
 
 /**
  * Render labels
+ * @param {Object} contourResult - Contour computation result
+ * @param {Object} style - Style options
  */
-ZRenderContourRenderer.prototype.renderLabels = function(labels, style) {
+ZRenderContourRenderer.prototype.renderLabels = function(contourResult, style) {
     this.layers.labels.removeAll();
 
-    if (!labels || labels.length === 0) {
+    if (!contourResult || !contourResult.paths) {
         return;
     }
 
-    var labelElements = labelUtils.createLabels(labels, style);
+    var labelElements = labelUtils.createLabels(contourResult, style);
 
     for (var i = 0; i < labelElements.length; i++) {
         this.layers.labels.add(labelElements[i]);
