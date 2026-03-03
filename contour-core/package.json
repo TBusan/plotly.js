@@ -10,6 +10,8 @@
     "test:levels": "node test/test_levels.js",
     "test:ticks": "node test/test_ticks.js",
     "test:colors": "node test/test_colors.js",
+    "test:zrender": "node test/unit/zrender.test.js",
+    "test:zrender-opt": "node test/zrender-optimization.test.js",
     "demo": "node scripts/serve.js",
     "demo:python": "python -m http.server 8080",
     "demo:open": "start http://localhost:8080/demo.html",
@@ -37,12 +39,11 @@
     "node": ">=12.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.20.0"
+    "esbuild": "^0.20.0",
+    "jsdom": "^23.0.0"
   },
-  "optionalDependencies": {
-    "d3-zoom": "^3.0.0",
-    "d3-selection": "^3.0.0",
-    "d3-ease": "^3.0.0"
+  "dependencies": {
+    "zrender": "^5.6.0"
   },
   "exports": {
     ".": {
@@ -66,7 +67,7 @@
     "labels/**",
     "colorbar/**",
     "renderers/**",
-    "interaction/**",
+    "test/**",
     "dist/"
   ]
 }

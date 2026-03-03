@@ -49,10 +49,10 @@ var contourCore = {
     axes: require('./axes'),
 
     // ============================================
-    // Interaction layer (NEW)
+    // ZRender interaction layer
     // ============================================
-    interaction: require('./interaction'),
-    createInteractiveContour: require('./interaction').createInteraction,
+    zrender: require('./renderers/zrender'),
+    createInteractive: require('./api').createInteractive,
 
     // ============================================
     // Utilities

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Contour Core - ZRender Debug Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        #container {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            background: #fff;
+        }
+        .controls {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #debug-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contour Core - ZRender Debug Demo</h1>
+
+    <div class="controls">
+        <button onclick="testCompute()">Test Compute Only</button>
+        <button onclick="testPaths()">Test Paths</button>
+        <button onclick="resetView()">Reset View</button>
+    </div>
+
+    <div id="info">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>Click "Test Compute Only" first to check contour calculation</li>
+            <li>Then click "Test Paths" to see path data format</li>
+        </ul>
+    </div>
+
+    <div id="container"></div>
+
+    <div id="debug-info"></div>
+
+    <!-- zrender is bundled in contour-core.browser.js -->
+    <script src="../dist/contour-core.browser.js"></script>
+
+    <script>
+        // Debug helper
+        function log(msg) {
+            var debugDiv = document.getElementById('debug-info');
+            debugDiv.innerHTML += msg + '\n';
+            console.log(msg);
+        }
+
+        // Clear debug
+        function clearLog() {
+            document.getElementById('debug-info').innerHTML = '';
+        }
+
+        // Generate test data
+        function generateGrid(size) {
+            var grid = [];
+            for (var i = 0; i < size; i++) {
+                grid[i] = [];
+                for (var j = 0; j < size; j++) {
+                    var x = (i - size / 2) / 8;
+                    var y = (j - size / 2) / 8;
+                    var z = Math.sin(x * 2) * Math.cos(y * 2) * 15 + 25;
+                    z += Math.sin(x * 5 + y * 3) * 5;
+                    grid[i][j] = z;
+                }
+            }
+            return grid;
+        }
+
+        // Test compute only
+        function testCompute() {
+            clearLog();
+            log('=== Testing Contour Computation ===');
+
+            try {
+                // Test 1: Direct compute module
+                log('1. Testing compute.computeContours...');
+                var result = contourCore.computeContours({
+                    z: generateGrid(20)
+                }, {
+                    autocontour: true,
+                    ncontours: 8
+                });
+
+                log('   result.levels: ' + JSON.stringify(result.levels));
+                log('   result.paths.length: ' + result.paths.length);
+                log('   result.paths[0]: ' + JSON.stringify(result.paths[0]));
+
+                if (result.paths.length > 0) {
+                    var path0 = result.paths[0];
+                    log('   path[0].paths.length: ' + path0.paths.length);
+                    if (path0.paths.length > 0) {
+                        log('   path[0].paths[0].length: ' + path0.paths[0].length);
+                        log('   path[0].paths[0]: ' + JSON.stringify(path0.paths[0]));
+                    }
+                    if (path0.edgepaths && path0.edgepaths.length > 0) {
+                        log('   path[0].edgepaths[0].length: ' + path0.edgepaths[0].length);
+                        log('   path[0].edgepaths[0]: ' + JSON.stringify(path0.edgepaths[0]));
+                    }
+                }
+
+                log('   SUCCESS: Computation works!');
+                return result;
+            } catch (e) {
+                log('   ERROR: ' + e.message);
+                log('   ' + e.stack);
+            }
+        }
+
+        // Test paths
+        function testPaths() {
+            clearLog();
+            log('=== Testing ZRender Path Creation ===');
+
+            var result = testCompute();
+            log('1. Creating renderer...');
+
+            // Check container
+            var container = document.getElementById('container');
+            log('   Container found: ' + (container !== null));
+
+            // Create renderer directly
+            var ZRenderRenderer = contourCore.renderers.zrender.ZRenderContourRenderer;
+            log('   ZRenderContourRenderer class: ' + (ZRenderRenderer !== undefined));
+
+            var renderer = new ZRenderRenderer(container, {
+                width: 800,
+                height: 600
+            });
+            log('   Renderer created');
+            log('   Main group children: ' + renderer.mainGroup.children().length);
+            log('   Layers: fills=' + renderer.layers.fills.children().length +
+                      ' lines=' + renderer.layers.lines.children().length +
+                      ' axes=' + renderer.layers.axes.children().length);
+
+            // Test renderContours
+            log('2. Testing renderContours...');
+
+            var style = {
+                width: 800,
+                height: 600,
+                coloring: 'fill',
+                showLines: true,
+                lineWidth: 1.5,
+                colorScale: result.levels.map(function(l, i) {
+                    return [l, i % 2 === 0 ? '#440154' : '#fde725'];
+                })
+            };
+
+            renderer.renderContours(result, style);
+
+            log('   After renderContours:');
+            log('   fills children: ' + renderer.layers.fills.children().length);
+            log('   lines children: ' + renderer.layers.lines.children().length);
+
+            // Check what was added
+            var fillsChildren = renderer.layers.fills.children();
+            for (var i = 0; i < Math.min(5, fillsChildren.length); i++) {
+                var child = fillsChildren[i];
+                log('   fills[' + i + '] type: ' + child.type);
+                if (child.type === 'path') {
+                    log('      pathData length: ' + child.shape.pathData.length);
+                    log('      pathData: ' + child.shape.pathData.substring(0, 50) + '...');
+                }
+            }
+
+            // Test createContourPaths directly
+            log('3. Testing pathUtils.createContourPaths...');
+            var pathUtils = contourCore.renderers.zrender.paths;
+            var contourElements = pathUtils.createContourPaths(result, style, {});
+            log('   contourElements.length: ' + contourElements.length);
+
+            if (contourElements.length > 0) {
+                var first = contourElements[0];
+                log('   First element:');
+                log('      level: ' + first.level);
+                log('      element type: ' + first.element.type);
+                log('      has shape: ' + (first.element.shape !== undefined));
+                if (first.element.shape) {
+                    log('      pathData: ' + first.element.shape.pathData);
+                }
+            }
+
+            log('4. Flushing zrender...');
+            renderer.zr.flush();
+
+            log('   Canvas dimensions: ' + renderer.zr.getWidth() + 'x' + renderer.zr.getHeight());
+            log('   DONE!');
+        }
+
+        function resetView() {
+            log('=== Reset View ===');
+            // Reload page to reset
+            location.reload();
+        }
+
+        // Auto-run tests on load
+        window.onload = function() {
+            log('=== Page Loaded ===');
+            log('zrender version: ' + (typeof zrender !== 'undefined' ? 'loaded' : 'NOT LOADED'));
+            log('contourCore available: ' + (typeof contourCore !== 'undefined' ? 'YES' : 'NO'));
+        };
+    </script>
+</body>
+</html>
