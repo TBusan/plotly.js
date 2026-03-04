@@ -20,6 +20,7 @@ var position = require('./position');
  * @param {Object} config.y - Y-axis configuration
  * @param {number} config.width - Drawing area width (pixels)
  * @param {number} config.height - Drawing area height (pixels)
+ * @param {Object} config.margins - Custom margins {left, right, top, bottom} (optional)
  * @returns {Object} Complete axes configuration
  */
 function setupAxes(config) {
@@ -29,12 +30,25 @@ function setupAxes(config) {
     var height = config.height || 500;
 
     // Calculate drawing area with margins
-    var drawingArea = position.calculateDrawingArea(
-        width,
-        height,
-        config.x || {},
-        config.y || {}
-    );
+    var drawingArea;
+    if (config.margins) {
+        // Use custom margins (e.g., from contour rendering)
+        drawingArea = {
+            x: config.margins.left,
+            y: config.margins.top,
+            width: width - config.margins.left - config.margins.right,
+            height: height - config.margins.top - config.margins.bottom,
+            margins: config.margins
+        };
+    } else {
+        // Auto-calculate margins based on axis configuration
+        drawingArea = position.calculateDrawingArea(
+            width,
+            height,
+            config.x || {},
+            config.y || {}
+        );
+    }
 
     // Get axis configurations
     var xConfig = config.x || {};

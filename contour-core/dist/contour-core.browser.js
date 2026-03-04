@@ -3680,12 +3680,23 @@ var contourCore = (() => {
         config = config || {};
         var width = config.width || 600;
         var height = config.height || 500;
-        var drawingArea = position.calculateDrawingArea(
-          width,
-          height,
-          config.x || {},
-          config.y || {}
-        );
+        var drawingArea;
+        if (config.margins) {
+          drawingArea = {
+            x: config.margins.left,
+            y: config.margins.top,
+            width: width - config.margins.left - config.margins.right,
+            height: height - config.margins.top - config.margins.bottom,
+            margins: config.margins
+          };
+        } else {
+          drawingArea = position.calculateDrawingArea(
+            width,
+            height,
+            config.x || {},
+            config.y || {}
+          );
+        }
         var xConfig = config.x || {};
         var yConfig = config.y || {};
         if (!xConfig.range && config.xData) {
@@ -4062,9 +4073,16 @@ var contourCore = (() => {
       }
       function buildAxesConfig(style, contourResult, width, height) {
         var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+        var padding = style.padding || 50;
         var axesConfig = style.axes || {};
         axesConfig.width = width;
         axesConfig.height = height;
+        axesConfig.margins = {
+          left: padding,
+          right: padding,
+          top: padding,
+          bottom: padding
+        };
         if (pathInfo) {
           if (!axesConfig.xData && pathInfo.x) {
             axesConfig.xData = pathInfo.x;

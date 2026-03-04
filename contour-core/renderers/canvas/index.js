@@ -109,12 +109,24 @@ function drawContours(ctx, contourResult, style) {
 function buildAxesConfig(style, contourResult, width, height) {
     var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
 
+    // Get padding from style (same as used by contour rendering)
+    var padding = style.padding || 50;
+
     // Base axes config from style
     var axesConfig = style.axes || {};
 
     // Set dimensions
     axesConfig.width = width;
     axesConfig.height = height;
+
+    // Override margins to match contour rendering area
+    // This ensures axes align with the contour plot
+    axesConfig.margins = {
+        left: padding,
+        right: padding,
+        top: padding,
+        bottom: padding
+    };
 
     // Auto-infer data ranges from contour result if not provided
     if (pathInfo) {
