@@ -239,6 +239,145 @@ function parseSVGPathToCanvas(ctx, pathData) {
     }
 }
 
+// Import layered renderer and interaction manager
+var layers = require('./layers');
+var interactionManager = require('../../interaction/interaction_manager');
+var compute = require('../../compute');
+
+/**
+ * Create an interactive contour renderer
+ * This is the recommended way to use contour-core with zoom/pan support
+ *
+ * @param {HTMLCanvasElement} canvas - Canvas element
+ * @param {Object} config - Configuration
+ * @param {Object} config.data - Data {z, x, y}
+ * @param {Object} config.contourOptions - Contour calculation options
+ * @param {Object} config.style - Rendering style
+ * @param {Object} config.axes - Axes configuration
+ * @param {Object} config.interaction - Interaction configuration
+ * @returns {Object} Interactive renderer API
+ */
+function createInteractiveRenderer(canvas, config) {
+    config = config || {};
+
+    var data = config.data;
+    var contourOptions = config.contourOptions || {};
+    var style = config.style || {};
+    var axesConfig = config.axes || {};
+    var interactionConfig = config.interaction || {};
+
+    // Compute contours
+    var contourResult = compute.computeContours(data, contourOptions);
+
+    // Create layered renderer
+    var renderer = layers.createLayeredRenderer(canvas, {
+        width: config.width || canvas.width,
+        height: config.height || canvas.height,
+        padding: style.padding || 50,
+        style: style,
+        axes: axesConfig,
+        interaction: interactionConfig
+    });
+
+    // Initialize renderer
+    renderer.init(contourResult);
+
+    // Create interaction manager
+    var interaction = interactionManager.createInteractionManager(canvas, renderer, interactionConfig);
+
+    // Initial render
+    renderer.render(contourResult, style);
+
+    return {
+        /**
+         * Update data and re-render
+         * @param {Object} newData - New data {z, x, y}
+         */
+        updateData: function(newData) {
+            data = newData;
+            contourResult = compute.computeContours(data, contourOptions);
+            renderer.init(contourResult);
+            renderer.render(contourResult, style);
+        },
+
+        /**
+         * Get current view state
+         * @returns {Object} {xMin, xMax, yMin, yMax, zoom}
+         */
+        getViewState: function() {
+            return interaction.getViewState();
+        },
+
+        /**
+         * Set view range programmatically
+         * @param {number} xMin - X minimum
+         * @param {number} xMax - X maximum
+         * @param {number} yMin - Y minimum
+         * @param {number} yMax - Y maximum
+         */
+        setViewRange: function(xMin, xMax, yMin, yMax) {
+            interaction.setViewRange(xMin, xMax, yMin, yMax);
+        },
+
+        /**
+         * Reset view to full range
+         */
+        resetView: function() {
+            interaction.resetView();
+        },
+
+        /**
+         * Update style and re-render
+         * @param {Object} newStyle - New style options
+         */
+        updateStyle: function(newStyle) {
+            style = Object.assign(style, newStyle);
+            renderer.updateStyle(style);
+            renderer.render();
+        },
+
+        /**
+         * Resize canvas
+         * @param {number} newWidth - New width
+         * @param {number} newHeight - New height
+         */
+        resize: function(newWidth, newHeight) {
+            renderer.resize(newWidth, newHeight);
+        },
+
+        /**
+         * Get contour result
+         * @returns {Object} Contour computation result
+         */
+        getContourResult: function() {
+            return contourResult;
+        },
+
+        /**
+         * Get layered renderer
+         * @returns {Object} Layered renderer instance
+         */
+        getRenderer: function() {
+            return renderer;
+        },
+
+        /**
+         * Get interaction manager
+         * @returns {Object} Interaction manager instance
+         */
+        getInteraction: function() {
+            return interaction;
+        },
+
+        /**
+         * Destroy the renderer and cleanup
+         */
+        destroy: function() {
+            interaction.destroy();
+        }
+    };
+}
+
 module.exports = {
     drawContours: drawContours,
     drawPaths: drawPaths,
@@ -248,5 +387,7 @@ module.exports = {
     drawHeatmap: drawHeatmap,
     drawAxes: axesRenderer.drawAxes,
     drawAxesFromSetup: axesRenderer.drawAxesFromSetup,
-    drawGrid: axesRenderer.drawGrid
+    drawGrid: axesRenderer.drawGrid,
+    createInteractiveRenderer: createInteractiveRenderer,
+    createLayeredRenderer: layers.createLayeredRenderer
 };

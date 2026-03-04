@@ -47,6 +47,7 @@ var contourCore = {
     colorbar: require('./colorbar'),
     renderers: require('./renderers'),
     axes: require('./axes'),
+    interaction: require('./interaction'),
 
     // ============================================
     // Utilities

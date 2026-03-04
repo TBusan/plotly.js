@@ -1566,8 +1566,8 @@ var require_paths = __commonJS({
     "use strict";
     var smooth = require_smooth();
     function createPerimeter(style) {
-      var m = style.z ? style.z.length : 10;
-      var n = style.z && style.z[0] ? style.z[0].length : 10;
+      var m = style.z && style.z.length ? style.z.length : 10;
+      var n = style.z && style.z[0] && style.z[0].length ? style.z[0].length : 10;
       var width = style.width || 500;
       var height = style.height || 400;
       var padding = style.padding || 30;
@@ -1588,8 +1588,17 @@ var require_paths = __commonJS({
     }
     function joinAllPaths(pathInfo, perimeter, style) {
       var fullpath = "";
-      var edgepaths = pathInfo.edgepaths;
-      if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+      var edgepaths = pathInfo.edgepaths || [];
+      if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
+        return "";
+      }
+      var validPerimeter = perimeter.every(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+      });
+      if (!validPerimeter) {
+        return "";
+      }
+      if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
         return "";
       }
       var i = 0;
@@ -1604,16 +1613,16 @@ var require_paths = __commonJS({
       var possiblei;
       var addpath;
       function istop(pt) {
-        return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
+        return pt && Math.abs(pt[1] - perimeter[0][1]) < 0.1;
       }
       function isbottom(pt) {
-        return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
+        return pt && Math.abs(pt[1] - perimeter[2][1]) < 0.1;
       }
       function isleft(pt) {
-        return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
+        return pt && Math.abs(pt[0] - perimeter[0][0]) < 0.1;
       }
       function isright(pt) {
-        return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
+        return pt && Math.abs(pt[0] - perimeter[2][0]) < 0.1;
       }
       while (startsleft.length > 0) {
         var currentPath = edgepaths[i];
@@ -1625,9 +1634,21 @@ var require_paths = __commonJS({
           }
           continue;
         }
-        var scaledPath = currentPath.map(function(pt) {
+        var scaledPath = currentPath.filter(function(pt) {
+          return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+        }).map(function(pt) {
           return scalePoint(style, pt);
+        }).filter(function(pt) {
+          return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
         });
+        if (scaledPath.length < 2) {
+          startsleft.splice(startsleft.indexOf(i), 1);
+          if (startsleft.length > 0) {
+            i = startsleft[0];
+            newloop = true;
+          }
+          continue;
+        }
         addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
         fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
         startsleft.splice(startsleft.indexOf(i), 1);
@@ -1636,6 +1657,7 @@ var require_paths = __commonJS({
         for (cnt = 0; cnt < 4; cnt++) {
           if (!endpt)
             break;
+          newendpt = null;
           if (istop(endpt) && !isright(endpt))
             newendpt = perimeter[1];
           else if (isleft(endpt))
@@ -1644,11 +1666,18 @@ var require_paths = __commonJS({
             newendpt = perimeter[3];
           else if (isright(endpt))
             newendpt = perimeter[2];
+          else {
+            break;
+          }
+          if (!newendpt)
+            break;
           for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
-            if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0) {
+            if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
               continue;
             }
             var ptNew = scalePoint(style, edgepaths[possiblei][0]);
+            if (!ptNew || isNaN(ptNew[0]) || isNaN(ptNew[1]))
+              continue;
             if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
               if (Math.abs(endpt[0] - ptNew[0]) < 0.1 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
                 newendpt = ptNew;
@@ -1661,6 +1690,8 @@ var require_paths = __commonJS({
               }
             }
           }
+          if (!newendpt)
+            break;
           endpt = newendpt;
           if (nexti >= 0)
             break;
@@ -1799,10 +1830,23 @@ var require_paths = __commonJS({
     function drawFilledPaths(ctx, contourResult, style) {
       var paths = contourResult.paths;
       var levels = contourResult.levels;
+      if (!paths || paths.length === 0)
+        return;
       var width = style.width || ctx.canvas.width;
       var height = style.height || ctx.canvas.height;
       var smoothing = style.smoothing || 0;
       var perimeter = createPerimeter(style);
+      if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
+        console.warn("drawFilledPaths: Invalid perimeter structure");
+        return;
+      }
+      var validPerimeter = perimeter.every(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+      });
+      if (!validPerimeter) {
+        console.warn("drawFilledPaths: Invalid perimeter points");
+        return;
+      }
       var showLines = style.showLines !== false;
       var lineColor = style.lineColor || "#333";
       var lineWidth = style.lineWidth || 1.5;
@@ -1916,10 +1960,20 @@ var require_paths = __commonJS({
       }
     }
     function drawPathStroke(ctx, path, smoothing, isClosed, style) {
-      if (path.length < 2)
+      if (!path || path.length < 2)
+        return;
+      var validPath = path.filter(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+      });
+      if (validPath.length < 2)
         return;
       ctx.beginPath();
-      var scaledPath = path.map(scalePoint.bind(null, style));
+      var scaledPath = validPath.map(scalePoint.bind(null, style));
+      scaledPath = scaledPath.filter(function(pt) {
+        return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
+      });
+      if (scaledPath.length < 2)
+        return;
       if (smoothing > 0 && isClosed) {
         var pathStr = smooth.smoothclosed(scaledPath, smoothing);
         drawSVGPath(ctx, pathStr);
@@ -1951,10 +2005,18 @@ var require_paths = __commonJS({
       var width = style.width || 500;
       var height = style.height || 400;
       var padding = style.padding || 30;
-      var xMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
-      var xMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
-      var yMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
-      var yMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+      var xMin, xMax, yMin, yMax;
+      if (style.visibleRange) {
+        xMin = style.visibleRange.xMin;
+        xMax = style.visibleRange.xMax;
+        yMin = style.visibleRange.yMin;
+        yMax = style.visibleRange.yMax;
+      } else {
+        xMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
+        xMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
+        yMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
+        yMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+      }
       var xRange = xMax - xMin || 1;
       var yRange = yMax - yMin || 1;
       var canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
@@ -3529,9 +3591,49 @@ var require_calc_ticks = __commonJS({
         yTicks: calcTicks(yConfig)
       };
     }
+    function calcDynamicTicks(visibleRange, options) {
+      options = options || {};
+      var xMin = visibleRange.xMin;
+      var xMax = visibleRange.xMax;
+      var yMin = visibleRange.yMin;
+      var yMax = visibleRange.yMax;
+      var width = options.width || 500;
+      var height = options.height || 400;
+      var xNTicks = Math.max(3, Math.min(10, Math.floor(width / 80)));
+      var yNTicks = Math.max(3, Math.min(10, Math.floor(height / 60)));
+      var xOptions = options.x || {};
+      var yOptions = options.y || {};
+      if (xOptions.nticks)
+        xNTicks = xOptions.nticks;
+      if (yOptions.nticks)
+        yNTicks = yOptions.nticks;
+      var xResult = autoTicks.autoTicks(xMin, xMax, xNTicks, xOptions.tick0);
+      var yResult = autoTicks.autoTicks(yMin, yMax, yNTicks, yOptions.tick0);
+      var formatOptions = {
+        exponentformat: xOptions.exponentformat || "auto"
+      };
+      var xTexts = tickFormat.formatTickLabelsUniform(xResult.values, xResult.dtick, formatOptions);
+      formatOptions.exponentformat = yOptions.exponentformat || "auto";
+      var yTexts = tickFormat.formatTickLabelsUniform(yResult.values, yResult.dtick, formatOptions);
+      return {
+        x: {
+          values: xResult.values,
+          dtick: xResult.dtick,
+          texts: xTexts,
+          tick0: xResult.tick0
+        },
+        y: {
+          values: yResult.values,
+          dtick: yResult.dtick,
+          texts: yTexts,
+          tick0: yResult.tick0
+        }
+      };
+    }
     module.exports = {
       calcTicks,
       calcAxesTicks,
+      calcDynamicTicks,
       normalizeAxisConfig,
       inferRangeFromData,
       DEFAULT_AXIS_CONFIG
@@ -3697,18 +3799,51 @@ var require_axes = __commonJS({
       }
       var xConfig = config.x || {};
       var yConfig = config.y || {};
-      if (!xConfig.range && config.xData) {
-        xConfig.range = calcTicks.inferRangeFromData(config.xData);
+      var xRange, yRange;
+      var visibleRange = config.visibleRange;
+      if (visibleRange) {
+        xRange = [visibleRange.xMin, visibleRange.xMax];
+        yRange = [visibleRange.yMin, visibleRange.yMax];
+      } else {
+        if (!xConfig.range && config.xData) {
+          xConfig.range = calcTicks.inferRangeFromData(config.xData);
+        }
+        if (!yConfig.range && config.yData) {
+          yConfig.range = calcTicks.inferRangeFromData(config.yData);
+        }
+        xRange = xConfig.range || [0, width];
+        yRange = yConfig.range || [0, height];
       }
-      if (!yConfig.range && config.yData) {
-        yConfig.range = calcTicks.inferRangeFromData(config.yData);
+      var ticksResult;
+      if (visibleRange) {
+        ticksResult = calcTicks.calcDynamicTicks(visibleRange, {
+          width: drawingArea.width,
+          height: drawingArea.height,
+          x: xConfig,
+          y: yConfig
+        });
+        ticksResult = {
+          xTicks: ticksResult.x.values.map(function(value, i) {
+            return {
+              value,
+              text: ticksResult.x.texts[i],
+              index: i
+            };
+          }),
+          yTicks: ticksResult.y.values.map(function(value, i) {
+            return {
+              value,
+              text: ticksResult.y.texts[i],
+              index: i
+            };
+          })
+        };
+      } else {
+        ticksResult = calcTicks.calcAxesTicks({
+          x: xConfig,
+          y: yConfig
+        });
       }
-      var xRange = xConfig.range || [0, width];
-      var yRange = yConfig.range || [0, height];
-      var ticksResult = calcTicks.calcAxesTicks({
-        x: xConfig,
-        y: yConfig
-      });
       var xIsReversed = xRange[0] > xRange[1];
       var yIsReversed = yRange[0] < yRange[1];
       var xL2P = position.createLinearToPixel(
@@ -3737,9 +3872,19 @@ var require_axes = __commonJS({
           pixel: yL2P(tick.value)
         };
       });
+      var fullRange = config.fullRange || {
+        xMin: xRange[0],
+        xMax: xRange[1],
+        yMin: yRange[0],
+        yMax: yRange[1]
+      };
       return {
         // Drawing area
         drawingArea,
+        // Visible range (for dynamic mode)
+        visibleRange,
+        // Full data range
+        fullRange,
         // X-axis
         x: {
           ticks: xTicksWithPos,
@@ -3762,6 +3907,7 @@ var require_axes = __commonJS({
       // Tick calculation
       calcTicks: calcTicks.calcTicks,
       calcAxesTicks: calcTicks.calcAxesTicks,
+      calcDynamicTicks: calcTicks.calcDynamicTicks,
       normalizeAxisConfig: calcTicks.normalizeAxisConfig,
       inferRangeFromData: calcTicks.inferRangeFromData,
       // Auto ticks algorithm
@@ -3962,13 +4108,13 @@ var require_axes2 = __commonJS({
           continue;
         }
         if (isXAxis) {
-          var x = tick.pixel;
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, drawingArea.height);
+          var x = drawingArea.x + tick.pixel;
+          ctx.moveTo(x, drawingArea.y);
+          ctx.lineTo(x, drawingArea.y + drawingArea.height);
         } else {
-          var y = tick.pixel;
-          ctx.moveTo(0, y);
-          ctx.lineTo(drawingArea.width, y);
+          var y = drawingArea.y + tick.pixel;
+          ctx.moveTo(drawingArea.x, y);
+          ctx.lineTo(drawingArea.x + drawingArea.width, y);
         }
       }
       ctx.stroke();
@@ -4002,6 +4148,688 @@ var require_axes2 = __commonJS({
       drawXAxis,
       drawYAxis,
       drawGrid
+    };
+  }
+});
+
+// interaction/view_state.js
+var require_view_state = __commonJS({
+  "interaction/view_state.js"(exports, module) {
+    "use strict";
+    function createViewManager(fullRange, options) {
+      options = options || {};
+      var minZoom = options.minZoom || 0.1;
+      var maxZoom = options.maxZoom || 10;
+      var fullXMin = fullRange.xMin;
+      var fullXMax = fullRange.xMax;
+      var fullYMin = fullRange.yMin;
+      var fullYMax = fullRange.yMax;
+      var fullXRange = fullXMax - fullXMin;
+      var fullYRange = fullYMax - fullYMin;
+      var visibleXMin = fullXMin;
+      var visibleXMax = fullXMax;
+      var visibleYMin = fullYMin;
+      var visibleYMax = fullYMax;
+      function getState() {
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var zoomX = fullXRange / xRange;
+        var zoomY = fullYRange / yRange;
+        return {
+          xMin: visibleXMin,
+          xMax: visibleXMax,
+          yMin: visibleYMin,
+          yMax: visibleYMax,
+          zoom: Math.min(zoomX, zoomY),
+          // Report the smaller zoom (less zoomed in)
+          zoomX,
+          zoomY
+        };
+      }
+      function getFullRange() {
+        return {
+          xMin: fullXMin,
+          xMax: fullXMax,
+          yMin: fullYMin,
+          yMax: fullYMax
+        };
+      }
+      function zoomAt(factor, centerX, centerY, drawArea) {
+        var currentState = getState();
+        var newZoom = currentState.zoom * factor;
+        if (newZoom < minZoom) {
+          factor = minZoom / currentState.zoom;
+        } else if (newZoom > maxZoom) {
+          factor = maxZoom / currentState.zoom;
+        }
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var newXRange = xRange / factor;
+        var newYRange = yRange / factor;
+        var xRatio = (centerX - visibleXMin) / xRange;
+        var yRatio = (centerY - visibleYMin) / yRange;
+        visibleXMin = centerX - xRatio * newXRange;
+        visibleXMax = centerX + (1 - xRatio) * newXRange;
+        visibleYMin = centerY - yRatio * newYRange;
+        visibleYMax = centerY + (1 - yRatio) * newYRange;
+        _clampToBounds();
+      }
+      function pan(dx, dy, drawArea) {
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var dataDx = -dx * (xRange / drawArea.width);
+        var dataDy = dy * (yRange / drawArea.height);
+        visibleXMin += dataDx;
+        visibleXMax += dataDx;
+        visibleYMin += dataDy;
+        visibleYMax += dataDy;
+        _clampToBounds();
+      }
+      function setRange(xMin, xMax, yMin, yMax) {
+        visibleXMin = xMin;
+        visibleXMax = xMax;
+        visibleYMin = yMin;
+        visibleYMax = yMax;
+        _clampToBounds();
+      }
+      function reset() {
+        visibleXMin = fullXMin;
+        visibleXMax = fullXMax;
+        visibleYMin = fullYMin;
+        visibleYMax = fullYMax;
+      }
+      function _clampToBounds() {
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var maxRange = Math.max(fullXRange, fullYRange) / minZoom;
+        if (xRange > maxRange) {
+          var xCenter = (visibleXMin + visibleXMax) / 2;
+          visibleXMin = xCenter - maxRange / 2;
+          visibleXMax = xCenter + maxRange / 2;
+        }
+        if (yRange > maxRange) {
+          var yCenter = (visibleYMin + visibleYMax) / 2;
+          visibleYMin = yCenter - maxRange / 2;
+          visibleYMax = yCenter + maxRange / 2;
+        }
+        var overflowX = xRange * 0.5;
+        var overflowY = yRange * 0.5;
+        if (visibleXMax < fullXMin - overflowX) {
+          var shift = fullXMin - overflowX - visibleXMax;
+          visibleXMin += shift;
+          visibleXMax += shift;
+        }
+        if (visibleXMin > fullXMax + overflowX) {
+          var shift = fullXMax + overflowX - visibleXMin;
+          visibleXMin += shift;
+          visibleXMax += shift;
+        }
+        if (visibleYMax < fullYMin - overflowY) {
+          var shift = fullYMin - overflowY - visibleYMax;
+          visibleYMin += shift;
+          visibleYMax += shift;
+        }
+        if (visibleYMin > fullYMax + overflowY) {
+          var shift = fullYMax + overflowY - visibleYMin;
+          visibleYMin += shift;
+          visibleYMax += shift;
+        }
+      }
+      function dataToPixel(x, y, drawArea) {
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var px = drawArea.x + (x - visibleXMin) / xRange * drawArea.width;
+        var py = drawArea.y + drawArea.height - (y - visibleYMin) / yRange * drawArea.height;
+        return { px, py };
+      }
+      function pixelToData(px, py, drawArea) {
+        var xRange = visibleXMax - visibleXMin;
+        var yRange = visibleYMax - visibleYMin;
+        var x = visibleXMin + (px - drawArea.x) / drawArea.width * xRange;
+        var y = visibleYMin + (1 - (py - drawArea.y) / drawArea.height) * yRange;
+        return { x, y };
+      }
+      return {
+        getState,
+        getFullRange,
+        zoomAt,
+        pan,
+        setRange,
+        reset,
+        dataToPixel,
+        pixelToData
+      };
+    }
+    module.exports = {
+      createViewManager
+    };
+  }
+});
+
+// renderers/canvas/layers.js
+var require_layers = __commonJS({
+  "renderers/canvas/layers.js"(exports, module) {
+    "use strict";
+    var drawPaths = require_paths();
+    var drawLabels = require_labels2();
+    var drawColorbar = require_colorbar2();
+    var drawNulls = require_nulls();
+    var drawHeatmap = require_heatmap();
+    var axesRenderer = require_axes2();
+    var axes = require_axes();
+    var nullHandling = require_null_handling();
+    var viewState = require_view_state();
+    function createLayeredRenderer(canvas, config) {
+      config = config || {};
+      var ctx = canvas.getContext("2d");
+      var width = config.width || canvas.width;
+      var height = config.height || canvas.height;
+      var padding = config.padding || 50;
+      var contourResult = null;
+      var style = config.style || {};
+      var axesConfig = config.axes || {};
+      var drawingArea = {
+        x: padding,
+        y: padding,
+        width: width - 2 * padding,
+        height: height - 2 * padding,
+        margins: {
+          left: padding,
+          right: padding,
+          top: padding,
+          bottom: padding
+        }
+      };
+      var viewManager = null;
+      var fullRange = null;
+      function init(result) {
+        contourResult = result;
+        var pathInfo = result.pathinfo && result.pathinfo[0];
+        if (pathInfo) {
+          var xData = pathInfo.x || [];
+          var yData = pathInfo.y || [];
+          fullRange = {
+            xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
+            xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
+            yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
+            yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
+          };
+        } else {
+          fullRange = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+        }
+        viewManager = viewState.createViewManager(fullRange, {
+          minZoom: config.interaction ? config.interaction.minZoom : 0.1,
+          maxZoom: config.interaction ? config.interaction.maxZoom : 10
+        });
+      }
+      function render(result, renderStyle) {
+        if (result) {
+          contourResult = result;
+        }
+        if (renderStyle) {
+          style = renderStyle;
+        }
+        if (!contourResult || !viewManager) {
+          console.warn("LayeredRenderer: Not initialized");
+          return;
+        }
+        var visibleRange = viewManager.getState();
+        ctx.clearRect(0, 0, width, height);
+        if (style.backgroundColor) {
+          ctx.fillStyle = style.backgroundColor;
+          ctx.fillRect(0, 0, width, height);
+        }
+        if (style.showGrid !== false && style.showAxes !== false) {
+          renderGrid(drawingArea, visibleRange);
+        }
+        renderContours(drawingArea, visibleRange);
+        if (style.showAxes !== false) {
+          renderAxes(drawingArea, visibleRange);
+        }
+        if (style.colorbar !== false && (style.coloring === "fill" || style.coloring === "heatmap")) {
+          drawColorbar(ctx, contourResult, style);
+        }
+      }
+      function renderGrid(drawArea, visibleRange) {
+        var axisSetup = setupAxesForRange(visibleRange);
+        ctx.save();
+        var xTicks = axisSetup.x.ticks;
+        var yTicks = axisSetup.y.ticks;
+        var xConfig = axisSetup.x.config;
+        var yConfig = axisSetup.y.config;
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
+        if (xConfig.showgrid) {
+          ctx.beginPath();
+          ctx.strokeStyle = xConfig.gridcolor || "#e0e0e0";
+          ctx.lineWidth = xConfig.gridwidth || 1;
+          for (var i = 0; i < xTicks.length; i++) {
+            var dataX = xTicks[i].value;
+            var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
+            if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
+              ctx.moveTo(canvasX, drawArea.y);
+              ctx.lineTo(canvasX, drawArea.y + drawArea.height);
+            }
+          }
+          ctx.stroke();
+        }
+        if (yConfig.showgrid) {
+          ctx.beginPath();
+          ctx.strokeStyle = yConfig.gridcolor || "#e0e0e0";
+          ctx.lineWidth = yConfig.gridwidth || 1;
+          for (var i = 0; i < yTicks.length; i++) {
+            var dataY = yTicks[i].value;
+            var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
+            if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
+              ctx.moveTo(drawArea.x, canvasY);
+              ctx.lineTo(drawArea.x + drawArea.width, canvasY);
+            }
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      function renderContours(drawArea, visibleRange) {
+        var coloring = style.coloring || "lines";
+        var showLines = style.showLines !== false;
+        var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
+        var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
+        ctx.clip();
+        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+        var renderStyle = Object.assign({}, style, {
+          visibleRange,
+          width,
+          height,
+          padding,
+          // Ensure z, x, y are available for scalePoint and createPerimeter
+          z: style.z || (pathInfo ? pathInfo.z : null),
+          x: style.x || (pathInfo ? pathInfo.x : null),
+          y: style.y || (pathInfo ? pathInfo.y : null)
+        });
+        if (needsClip && style.useClipMask !== false) {
+          var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
+          if (clipPathData) {
+            applyCanvasClipPath(ctx, clipPathData, renderStyle);
+          }
+        }
+        if (coloring === "heatmap") {
+          drawHeatmap.drawInterpolatedHeatmap(ctx, {
+            z: pathInfo.z,
+            x: pathInfo.x,
+            y: pathInfo.y
+          }, renderStyle);
+        }
+        if (coloring === "fill" || coloring === "heatmap") {
+          drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
+        }
+        if (showLines && coloring === "lines") {
+          drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
+        }
+        if (needsClip && !style.useClipMask) {
+          drawNulls(ctx, contourResult, renderStyle);
+        }
+        if (style.showLabels) {
+          drawLabels(ctx, contourResult, renderStyle);
+        }
+        ctx.restore();
+      }
+      function renderAxes(drawArea, visibleRange) {
+        var axisSetup = setupAxesForRange(visibleRange);
+        axesRenderer.drawAxesFromSetup(ctx, axisSetup);
+      }
+      function applyContentTransform(ctx2, drawArea, visibleRange) {
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
+        var scaleX = drawArea.width / xRange;
+        var scaleY = drawArea.height / yRange;
+        ctx2.translate(drawArea.x, drawArea.y + drawArea.height);
+        ctx2.scale(scaleX, -scaleY);
+        ctx2.translate(-visibleRange.xMin, -visibleRange.yMin);
+      }
+      function setupAxesForRange(visibleRange) {
+        var xOptions = axesConfig.x || {};
+        var yOptions = axesConfig.y || {};
+        return axes.setupAxes({
+          width,
+          height,
+          margins: drawingArea.margins,
+          visibleRange,
+          fullRange,
+          x: xOptions,
+          y: yOptions
+        });
+      }
+      function applyCanvasClipPath(ctx2, pathData, renderStyle) {
+        var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
+        var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
+        var currentX = 0, currentY = 0;
+        var startX = 0, startY = 0;
+        var vr = renderStyle.visibleRange || fullRange;
+        var xRange = vr.xMax - vr.xMin;
+        var yRange = vr.yMax - vr.yMin;
+        ctx2.beginPath();
+        for (var i = 0; i < types.length; i++) {
+          let toCanvas = function(dx, dy) {
+            var cx = drawingArea.x + (dx - vr.xMin) / xRange * drawingArea.width;
+            var cy = drawingArea.y + drawingArea.height - (dy - vr.yMin) / yRange * drawingArea.height;
+            return [cx, cy];
+          };
+          var type = types[i];
+          var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
+          switch (type) {
+            case "M":
+              var pt = toCanvas(args[0], args[1]);
+              ctx2.moveTo(pt[0], pt[1]);
+              currentX = args[0];
+              currentY = args[1];
+              startX = args[0];
+              startY = args[1];
+              break;
+            case "m":
+              currentX += args[0];
+              currentY += args[1];
+              var pt = toCanvas(currentX, currentY);
+              ctx2.moveTo(pt[0], pt[1]);
+              startX = currentX;
+              startY = currentY;
+              break;
+            case "L":
+              var pt = toCanvas(args[0], args[1]);
+              ctx2.lineTo(pt[0], pt[1]);
+              currentX = args[0];
+              currentY = args[1];
+              break;
+            case "l":
+              currentX += args[0];
+              currentY += args[1];
+              var pt = toCanvas(currentX, currentY);
+              ctx2.lineTo(pt[0], pt[1]);
+              break;
+            case "H":
+              var pt = toCanvas(args[0], currentY);
+              ctx2.lineTo(pt[0], pt[1]);
+              currentX = args[0];
+              break;
+            case "h":
+              currentX += args[0];
+              var pt = toCanvas(currentX, currentY);
+              ctx2.lineTo(pt[0], pt[1]);
+              break;
+            case "V":
+              var pt = toCanvas(currentX, args[0]);
+              ctx2.lineTo(pt[0], pt[1]);
+              currentY = args[0];
+              break;
+            case "v":
+              currentY += args[0];
+              var pt = toCanvas(currentX, currentY);
+              ctx2.lineTo(pt[0], pt[1]);
+              break;
+            case "Z":
+            case "z":
+              ctx2.closePath();
+              currentX = startX;
+              currentY = startY;
+              break;
+            default:
+              if (args.length >= 2) {
+                var pt = toCanvas(args[args.length - 2], args[args.length - 1]);
+                ctx2.lineTo(pt[0], pt[1]);
+              }
+              break;
+          }
+        }
+        ctx2.clip();
+      }
+      function getViewManager() {
+        return viewManager;
+      }
+      function getDrawingArea() {
+        return drawingArea;
+      }
+      function updateStyle(newStyle) {
+        style = Object.assign(style, newStyle);
+      }
+      function resize(newWidth, newHeight) {
+        width = newWidth;
+        height = newHeight;
+        canvas.width = width;
+        canvas.height = height;
+        drawingArea.width = width - 2 * padding;
+        drawingArea.height = height - 2 * padding;
+        if (contourResult) {
+          render();
+        }
+      }
+      return {
+        init,
+        render,
+        renderGrid,
+        renderContours,
+        renderAxes,
+        getViewManager,
+        getDrawingArea,
+        updateStyle,
+        resize
+      };
+    }
+    module.exports = {
+      createLayeredRenderer
+    };
+  }
+});
+
+// interaction/interaction_manager.js
+var require_interaction_manager = __commonJS({
+  "interaction/interaction_manager.js"(exports, module) {
+    "use strict";
+    function createInteractionManager(canvas, layeredRenderer, config) {
+      config = config || {};
+      var viewManager = layeredRenderer.getViewManager();
+      var drawingArea = layeredRenderer.getDrawingArea();
+      var isDragging = false;
+      var isBoxZooming = false;
+      var lastX = 0;
+      var lastY = 0;
+      var boxStartX = 0;
+      var boxStartY = 0;
+      var zoomEnabled = config.zoom !== false;
+      var panEnabled = config.pan !== false;
+      var dblclickReset = config.dblclickReset !== false;
+      var boxZoomEnabled = config.boxZoom === true;
+      var zoomSensitivity = 1e-3;
+      var boundHandlers = {};
+      function getMousePos(e) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+      function isInDrawingArea(pos) {
+        return pos.x >= drawingArea.x && pos.x <= drawingArea.x + drawingArea.width && pos.y >= drawingArea.y && pos.y <= drawingArea.y + drawingArea.height;
+      }
+      function handleWheel(e) {
+        if (!zoomEnabled)
+          return;
+        var pos = getMousePos(e);
+        if (!isInDrawingArea(pos))
+          return;
+        e.preventDefault();
+        var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
+        var delta = -e.deltaY;
+        var factor = 1 + delta * zoomSensitivity;
+        factor = Math.max(0.5, Math.min(2, factor));
+        viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
+        layeredRenderer.render();
+        if (config.onZoom) {
+          config.onZoom(viewManager.getState());
+        }
+      }
+      function handleMouseDown(e) {
+        var pos = getMousePos(e);
+        if (!isInDrawingArea(pos))
+          return;
+        if (e.button === 0) {
+          if (e.shiftKey && boxZoomEnabled) {
+            isBoxZooming = true;
+            boxStartX = pos.x;
+            boxStartY = pos.y;
+          } else if (panEnabled) {
+            isDragging = true;
+            lastX = pos.x;
+            lastY = pos.y;
+            canvas.style.cursor = "grabbing";
+          }
+        }
+      }
+      function handleMouseMove(e) {
+        var pos = getMousePos(e);
+        if (isDragging) {
+          e.preventDefault();
+          var dx = pos.x - lastX;
+          var dy = pos.y - lastY;
+          viewManager.pan(dx, dy, drawingArea);
+          lastX = pos.x;
+          lastY = pos.y;
+          layeredRenderer.render();
+          if (config.onPan) {
+            config.onPan(viewManager.getState());
+          }
+        } else if (isBoxZooming) {
+        } else if (isInDrawingArea(pos)) {
+          canvas.style.cursor = "grab";
+        } else {
+          canvas.style.cursor = "default";
+        }
+      }
+      function handleMouseUp(e) {
+        if (isDragging) {
+          isDragging = false;
+          canvas.style.cursor = "grab";
+        }
+        if (isBoxZooming) {
+          isBoxZooming = false;
+          var pos = getMousePos(e);
+          var x1 = Math.min(boxStartX, pos.x);
+          var x2 = Math.max(boxStartX, pos.x);
+          var y1 = Math.min(boxStartY, pos.y);
+          var y2 = Math.max(boxStartY, pos.y);
+          if (x2 - x1 > 10 && y2 - y1 > 10) {
+            var dataStart = viewManager.pixelToData(x1, y2, drawingArea);
+            var dataEnd = viewManager.pixelToData(x2, y1, drawingArea);
+            viewManager.setRange(dataStart.x, dataEnd.x, dataStart.y, dataEnd.y);
+            layeredRenderer.render();
+            if (config.onZoom) {
+              config.onZoom(viewManager.getState());
+            }
+          }
+        }
+      }
+      function handleDblClick(e) {
+        if (!dblclickReset)
+          return;
+        var pos = getMousePos(e);
+        if (!isInDrawingArea(pos))
+          return;
+        e.preventDefault();
+        viewManager.reset();
+        layeredRenderer.render();
+        if (config.onReset) {
+          config.onReset();
+        }
+      }
+      function handleTouchStart(e) {
+        if (e.touches.length === 1) {
+          var touch = e.touches[0];
+          var pos = getMousePos(touch);
+          if (isInDrawingArea(pos)) {
+            isDragging = true;
+            lastX = pos.x;
+            lastY = pos.y;
+          }
+        }
+      }
+      function handleTouchMove(e) {
+        if (e.touches.length === 1 && isDragging) {
+          e.preventDefault();
+          var touch = e.touches[0];
+          var pos = getMousePos(touch);
+          var dx = pos.x - lastX;
+          var dy = pos.y - lastY;
+          viewManager.pan(dx, dy, drawingArea);
+          lastX = pos.x;
+          lastY = pos.y;
+          layeredRenderer.render();
+          if (config.onPan) {
+            config.onPan(viewManager.getState());
+          }
+        }
+      }
+      function handleTouchEnd(e) {
+        isDragging = false;
+      }
+      function getViewState() {
+        return viewManager.getState();
+      }
+      function setViewRange(xMin, xMax, yMin, yMax) {
+        viewManager.setRange(xMin, xMax, yMin, yMax);
+        layeredRenderer.render();
+      }
+      function resetView() {
+        viewManager.reset();
+        layeredRenderer.render();
+        if (config.onReset) {
+          config.onReset();
+        }
+      }
+      function bindEvents() {
+        boundHandlers.wheel = handleWheel.bind(this);
+        boundHandlers.mousedown = handleMouseDown.bind(this);
+        boundHandlers.mousemove = handleMouseMove.bind(this);
+        boundHandlers.mouseup = handleMouseUp.bind(this);
+        boundHandlers.mouseleave = handleMouseUp.bind(this);
+        boundHandlers.dblclick = handleDblClick.bind(this);
+        boundHandlers.touchstart = handleTouchStart.bind(this);
+        boundHandlers.touchmove = handleTouchMove.bind(this);
+        boundHandlers.touchend = handleTouchEnd.bind(this);
+        canvas.addEventListener("wheel", boundHandlers.wheel, { passive: false });
+        canvas.addEventListener("mousedown", boundHandlers.mousedown);
+        canvas.addEventListener("mousemove", boundHandlers.mousemove);
+        canvas.addEventListener("mouseup", boundHandlers.mouseup);
+        canvas.addEventListener("mouseleave", boundHandlers.mouseleave);
+        canvas.addEventListener("dblclick", boundHandlers.dblclick);
+        canvas.addEventListener("touchstart", boundHandlers.touchstart, { passive: false });
+        canvas.addEventListener("touchmove", boundHandlers.touchmove, { passive: false });
+        canvas.addEventListener("touchend", boundHandlers.touchend);
+      }
+      function unbindEvents() {
+        canvas.removeEventListener("wheel", boundHandlers.wheel);
+        canvas.removeEventListener("mousedown", boundHandlers.mousedown);
+        canvas.removeEventListener("mousemove", boundHandlers.mousemove);
+        canvas.removeEventListener("mouseup", boundHandlers.mouseup);
+        canvas.removeEventListener("mouseleave", boundHandlers.mouseleave);
+        canvas.removeEventListener("dblclick", boundHandlers.dblclick);
+        canvas.removeEventListener("touchstart", boundHandlers.touchstart);
+        canvas.removeEventListener("touchmove", boundHandlers.touchmove);
+        canvas.removeEventListener("touchend", boundHandlers.touchend);
+      }
+      function destroy() {
+        unbindEvents();
+      }
+      bindEvents();
+      return {
+        getViewState,
+        setViewRange,
+        resetView,
+        destroy
+      };
+    }
+    module.exports = {
+      createInteractionManager
     };
   }
 });
@@ -4168,6 +4996,108 @@ var require_canvas = __commonJS({
         }
       }
     }
+    var layers = require_layers();
+    var interactionManager = require_interaction_manager();
+    var compute = require_compute();
+    function createInteractiveRenderer(canvas, config) {
+      config = config || {};
+      var data = config.data;
+      var contourOptions = config.contourOptions || {};
+      var style = config.style || {};
+      var axesConfig = config.axes || {};
+      var interactionConfig = config.interaction || {};
+      var contourResult = compute.computeContours(data, contourOptions);
+      var renderer = layers.createLayeredRenderer(canvas, {
+        width: config.width || canvas.width,
+        height: config.height || canvas.height,
+        padding: style.padding || 50,
+        style,
+        axes: axesConfig,
+        interaction: interactionConfig
+      });
+      renderer.init(contourResult);
+      var interaction = interactionManager.createInteractionManager(canvas, renderer, interactionConfig);
+      renderer.render(contourResult, style);
+      return {
+        /**
+         * Update data and re-render
+         * @param {Object} newData - New data {z, x, y}
+         */
+        updateData: function(newData) {
+          data = newData;
+          contourResult = compute.computeContours(data, contourOptions);
+          renderer.init(contourResult);
+          renderer.render(contourResult, style);
+        },
+        /**
+         * Get current view state
+         * @returns {Object} {xMin, xMax, yMin, yMax, zoom}
+         */
+        getViewState: function() {
+          return interaction.getViewState();
+        },
+        /**
+         * Set view range programmatically
+         * @param {number} xMin - X minimum
+         * @param {number} xMax - X maximum
+         * @param {number} yMin - Y minimum
+         * @param {number} yMax - Y maximum
+         */
+        setViewRange: function(xMin, xMax, yMin, yMax) {
+          interaction.setViewRange(xMin, xMax, yMin, yMax);
+        },
+        /**
+         * Reset view to full range
+         */
+        resetView: function() {
+          interaction.resetView();
+        },
+        /**
+         * Update style and re-render
+         * @param {Object} newStyle - New style options
+         */
+        updateStyle: function(newStyle) {
+          style = Object.assign(style, newStyle);
+          renderer.updateStyle(style);
+          renderer.render();
+        },
+        /**
+         * Resize canvas
+         * @param {number} newWidth - New width
+         * @param {number} newHeight - New height
+         */
+        resize: function(newWidth, newHeight) {
+          renderer.resize(newWidth, newHeight);
+        },
+        /**
+         * Get contour result
+         * @returns {Object} Contour computation result
+         */
+        getContourResult: function() {
+          return contourResult;
+        },
+        /**
+         * Get layered renderer
+         * @returns {Object} Layered renderer instance
+         */
+        getRenderer: function() {
+          return renderer;
+        },
+        /**
+         * Get interaction manager
+         * @returns {Object} Interaction manager instance
+         */
+        getInteraction: function() {
+          return interaction;
+        },
+        /**
+         * Destroy the renderer and cleanup
+         */
+        destroy: function() {
+          interaction.destroy();
+        }
+      };
+    }
     module.exports = {
       drawContours,
       drawPaths,
@@ -4177,7 +5107,9 @@ var require_canvas = __commonJS({
       drawHeatmap,
       drawAxes: axesRenderer.drawAxes,
       drawAxesFromSetup: axesRenderer.drawAxesFromSetup,
-      drawGrid: axesRenderer.drawGrid
+      drawGrid: axesRenderer.drawGrid,
+      createInteractiveRenderer,
+      createLayeredRenderer: layers.createLayeredRenderer
     };
   }
 });
@@ -5843,6 +6775,19 @@ var require_renderers = __commonJS({
   }
 });
 
+// interaction/index.js
+var require_interaction = __commonJS({
+  "interaction/index.js"(exports, module) {
+    "use strict";
+    var viewState = require_view_state();
+    var interactionManager = require_interaction_manager();
+    module.exports = {
+      createViewManager: viewState.createViewManager,
+      createInteractionManager: interactionManager.createInteractionManager
+    };
+  }
+});
+
 // index.js
 var require_contour_core = __commonJS({
   "index.js"(exports, module) {
@@ -5880,6 +6825,7 @@ var require_contour_core = __commonJS({
       colorbar: require_colorbar(),
       renderers: require_renderers(),
       axes: require_axes(),
+      interaction: require_interaction(),
       // ============================================
       // Utilities
       // ============================================

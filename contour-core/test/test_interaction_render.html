@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>交互渲染问题诊断测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #e8f5e9; }
+        .error { background: #ffebee; }
+        canvas { border: 1px solid #ccc; margin: 10px 0; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 12px; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>交互渲染问题诊断测试</h1>
+
+    <div class="test-case">
+        <h3>测试1: 基础渲染（无交互）</h3>
+        <canvas id="test1" width="400" height="350"></canvas>
+        <div id="result1"></div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试2: 使用 createInteractiveRenderer</h3>
+        <canvas id="test2" width="400" height="350"></canvas>
+        <div id="result2"></div>
+        <button onclick="testZoom()">测试缩放</button>
+        <button onclick="testPan()">测试平移</button>
+        <button onclick="testReset()">重置</button>
+    </div>
+
+    <div class="test-case">
+        <h3>测试3: 分步渲染诊断</h3>
+        <canvas id="test3" width="400" height="350"></canvas>
+        <div id="result3"></div>
+        <pre id="log3"></pre>
+    </div>
+
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        // 测试数据
+        var z = [];
+        for (var i = 0; i < 20; i++) {
+            var row = [];
+            for (var j = 0; j < 25; j++) {
+                var x = j / 24;
+                var y = i / 19;
+                var val = 10 + 5 * Math.sin(x * Math.PI * 2) * Math.cos(y * Math.PI * 2);
+                row.push(val);
+            }
+            z.push(row);
+        }
+
+        var colorScale = [
+            [0, '#440154'], [0.1, '#482878'], [0.2, '#3e4a89'],
+            [0.3, '#31688e'], [0.4, '#26838f'], [0.5, '#1f9d8a'],
+            [0.6, '#35b779'], [0.7, '#6dcd59'], [0.8, '#b4de2c'],
+            [0.9, '#fde725'], [1, '#fde725']
+        ];
+
+        function buildColorScale(levels, colorScale) {
+            return levels.map(function(level, i) {
+                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
+                var colorIdx = Math.min(Math.floor(t * (colorScale.length - 1)), colorScale.length - 1);
+                return [level, colorScale[colorIdx][1]];
+            });
+        }
+
+        // ==========================================
+        // 测试1: 基础渲染
+        // ==========================================
+        try {
+            var canvas1 = document.getElementById('test1');
+            var ctx1 = canvas1.getContext('2d');
+
+            var result1 = contourCore.computeContours(z, { autocontour: true, ncontours: 10 });
+            var mappedColors1 = buildColorScale(result1.levels, colorScale);
+
+            contourCore.renderers.canvas.drawContours(ctx1, result1, {
+                width: 400, height: 350, padding: 50,
+                coloring: 'fill', colorScale: mappedColors1,
+                showLines: true, showAxes: true,
+                z: z, x: result1.pathinfo[0].x, y: result1.pathinfo[0].y
+            });
+
+            document.getElementById('result1').innerHTML = '<span class="success">✓ 成功</span> - 等值线级别: ' + result1.levels.length;
+        } catch (e) {
+            document.getElementById('result1').innerHTML = '<span class="error">✗ 失败: ' + e.message + '</span>';
+            console.error(e);
+        }
+
+        // ==========================================
+        // 测试2: 交互式渲染
+        // ==========================================
+        var interactiveRenderer;
+        try {
+            var canvas2 = document.getElementById('test2');
+
+            interactiveRenderer = contourCore.renderers.canvas.createInteractiveRenderer(canvas2, {
+                width: 400, height: 350,
+                data: z,
+                contourOptions: { autocontour: true, ncontours: 10 },
+                style: {
+                    coloring: 'fill',
+                    colorScale: buildColorScale(contourCore.computeContours(z, { autocontour: true, ncontours: 10 }).levels, colorScale),
+                    showLines: true, showAxes: true, padding: 50
+                },
+                axes: {
+                    x: { title: 'X', showgrid: true },
+                    y: { title: 'Y', showgrid: true }
+                },
+                interaction: {
+                    zoom: true, pan: true, dblclickReset: true,
+                    onZoom: function(state) { console.log('Zoom:', state); },
+                    onPan: function(state) { console.log('Pan:', state); }
+                }
+            });
+
+            document.getElementById('result2').innerHTML = '<span class="success">✓ 创建成功</span>';
+
+            window.testZoom = function() {
+                try {
+                    var state = interactiveRenderer.getViewState();
+                    console.log('Before zoom:', state);
+
+                    var renderer = interactiveRenderer.getRenderer();
+                    var vm = renderer.getViewManager();
+                    var drawArea = renderer.getDrawingArea();
+
+                    vm.zoomAt(1.5, (state.xMin + state.xMax) / 2, (state.yMin + state.yMax) / 2, drawArea);
+                    renderer.render();
+
+                    console.log('After zoom:', interactiveRenderer.getViewState());
+                    document.getElementById('result2').innerHTML = '<span class="success">✓ 缩放成功</span>';
+                } catch (e) {
+                    document.getElementById('result2').innerHTML = '<span class="error">✗ 缩放失败: ' + e.message + '</span>';
+                    console.error(e);
+                }
+            };
+
+            window.testPan = function() {
+                try {
+                    var renderer = interactiveRenderer.getRenderer();
+                    var vm = renderer.getViewManager();
+                    var drawArea = renderer.getDrawingArea();
+
+                    vm.pan(20, 20, drawArea);
+                    renderer.render();
+
+                    document.getElementById('result2').innerHTML = '<span class="success">✓ 平移成功</span>';
+                } catch (e) {
+                    document.getElementById('result2').innerHTML = '<span class="error">✗ 平移失败: ' + e.message + '</span>';
+                    console.error(e);
+                }
+            };
+
+            window.testReset = function() {
+                try {
+                    interactiveRenderer.resetView();
+                    document.getElementById('result2').innerHTML = '<span class="success">✓ 重置成功</span>';
+                } catch (e) {
+                    document.getElementById('result2').innerHTML = '<span class="error">✗ 重置失败: ' + e.message + '</span>';
+                    console.error(e);
+                }
+            };
+
+        } catch (e) {
+            document.getElementById('result2').innerHTML = '<span class="error">✗ 创建失败: ' + e.message + '</span>';
+            console.error(e);
+        }
+
+        // ==========================================
+        // 测试3: 分步诊断
+        // ==========================================
+        function log3(msg) {
+            var el = document.getElementById('log3');
+            el.textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        try {
+            var canvas3 = document.getElementById('test3');
+            var ctx3 = canvas3.getContext('2d');
+
+            log3('Step 1: 计算等值线...');
+            var result3 = contourCore.computeContours(z, { autocontour: true, ncontours: 10 });
+            log3('  等值线级别: ' + result3.levels.length);
+            log3('  路径信息数量: ' + result3.paths.length);
+
+            var pathInfo3 = result3.pathinfo[0];
+            log3('  pathInfo.x: ' + (pathInfo3.x ? pathInfo3.x.length : 'null'));
+            log3('  pathInfo.y: ' + (pathInfo3.y ? pathInfo3.y.length : 'null'));
+            log3('  pathInfo.z: ' + (pathInfo3.z ? pathInfo3.z.length + 'x' + (pathInfo3.z[0] ? pathInfo3.z[0].length : 0) : 'null'));
+
+            log3('\nStep 2: 创建视图管理器...');
+            var fullRange = {
+                xMin: Math.min.apply(Math, pathInfo3.x),
+                xMax: Math.max.apply(Math, pathInfo3.x),
+                yMin: Math.min.apply(Math, pathInfo3.y),
+                yMax: Math.max.apply(Math, pathInfo3.y)
+            };
+            log3('  fullRange: ' + JSON.stringify(fullRange));
+
+            var viewManager = contourCore.interaction.createViewManager(fullRange);
+            var visibleRange = viewManager.getState();
+            log3('  visibleRange: ' + JSON.stringify(visibleRange));
+
+            log3('\nStep 3: 模拟缩放...');
+            var drawArea = { x: 50, y: 50, width: 300, height: 250 };
+            viewManager.zoomAt(1.5, (fullRange.xMin + fullRange.xMax) / 2, (fullRange.yMin + fullRange.yMax) / 2, drawArea);
+            var zoomedRange = viewManager.getState();
+            log3('  缩放后: ' + JSON.stringify(zoomedRange));
+
+            log3('\nStep 4: 准备渲染样式...');
+            var renderStyle = {
+                width: 400, height: 350, padding: 50,
+                coloring: 'fill',
+                colorScale: buildColorScale(result3.levels, colorScale),
+                showLines: true,
+                visibleRange: zoomedRange,
+                z: pathInfo3.z,
+                x: pathInfo3.x,
+                y: pathInfo3.y
+            };
+
+            log3('  renderStyle.z: ' + (renderStyle.z ? renderStyle.z.length + 'x' + renderStyle.z[0].length : 'null'));
+            log3('  renderStyle.x: ' + (renderStyle.x ? '[' + renderStyle.x[0] + '...' + renderStyle.x[renderStyle.x.length-1] + ']' : 'null'));
+            log3('  renderStyle.y: ' + (renderStyle.y ? '[' + renderStyle.y[0] + '...' + renderStyle.y[renderStyle.y.length-1] + ']' : 'null'));
+            log3('  renderStyle.visibleRange: ' + JSON.stringify(renderStyle.visibleRange));
+
+            log3('\nStep 5: 执行渲染...');
+            contourCore.renderers.canvas.drawContours(ctx3, result3, renderStyle);
+
+            log3('  渲染完成!');
+            document.getElementById('result3').innerHTML = '<span class="success">✓ 分步测试成功</span>';
+
+        } catch (e) {
+            log3('\n错误: ' + e.message);
+            log3('堆栈: ' + e.stack);
+            document.getElementById('result3').innerHTML = '<span class="error">✗ 失败: ' + e.message + '</span>';
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

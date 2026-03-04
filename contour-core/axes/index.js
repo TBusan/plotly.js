@@ -14,6 +14,7 @@ var position = require('./position');
 
 /**
  * Calculate complete axis configuration including ticks and position converters
+ * Supports both static (full range) and dynamic (visible range) modes
  *
  * @param {Object} config - Axes configuration
  * @param {Object} config.x - X-axis configuration
@@ -21,6 +22,8 @@ var position = require('./position');
  * @param {number} config.width - Drawing area width (pixels)
  * @param {number} config.height - Drawing area height (pixels)
  * @param {Object} config.margins - Custom margins {left, right, top, bottom} (optional)
+ * @param {Object} config.visibleRange - Visible range for dynamic mode {xMin, xMax, yMin, yMax} (optional)
+ * @param {Object} config.fullRange - Full data range {xMin, xMax, yMin, yMax} (optional)
  * @returns {Object} Complete axes configuration
  */
 function setupAxes(config) {
@@ -54,24 +57,63 @@ function setupAxes(config) {
     var xConfig = config.x || {};
     var yConfig = config.y || {};
 
-    // Infer ranges if not provided
-    if (!xConfig.range && config.xData) {
-        xConfig.range = calcTicks.inferRangeFromData(config.xData);
-    }
-    if (!yConfig.range && config.yData) {
-        yConfig.range = calcTicks.inferRangeFromData(config.yData);
+    // Determine the range to use for ticks and position conversion
+    // If visibleRange is provided, use it; otherwise use full range
+    var xRange, yRange;
+    var visibleRange = config.visibleRange;
+
+    if (visibleRange) {
+        // Dynamic mode: use visible range for ticks and position
+        xRange = [visibleRange.xMin, visibleRange.xMax];
+        yRange = [visibleRange.yMin, visibleRange.yMax];
+    } else {
+        // Static mode: infer from config or data
+        if (!xConfig.range && config.xData) {
+            xConfig.range = calcTicks.inferRangeFromData(config.xData);
+        }
+        if (!yConfig.range && config.yData) {
+            yConfig.range = calcTicks.inferRangeFromData(config.yData);
+        }
+        xRange = xConfig.range || [0, width];
+        yRange = yConfig.range || [0, height];
     }
 
     // Calculate ticks
-    var xRange = xConfig.range || [0, width];
-    var yRange = yConfig.range || [0, height];
+    var ticksResult;
+    if (visibleRange) {
+        // Use dynamic tick calculation for visible range
+        ticksResult = calcTicks.calcDynamicTicks(visibleRange, {
+            width: drawingArea.width,
+            height: drawingArea.height,
+            x: xConfig,
+            y: yConfig
+        });
 
-    var ticksResult = calcTicks.calcAxesTicks({
-        x: xConfig,
-        y: yConfig
-    });
+        // Convert to same format as calcAxesTicks
+        ticksResult = {
+            xTicks: ticksResult.x.values.map(function(value, i) {
+                return {
+                    value: value,
+                    text: ticksResult.x.texts[i],
+                    index: i
+                };
+            }),
+            yTicks: ticksResult.y.values.map(function(value, i) {
+                return {
+                    value: value,
+                    text: ticksResult.y.texts[i],
+                    index: i
+                };
+            })
+        };
+    } else {
+        ticksResult = calcTicks.calcAxesTicks({
+            x: xConfig,
+            y: yConfig
+        });
+    }
 
-    // Create position converters
+    // Create position converters based on visible range
     // Note: Y-axis is typically reversed (0 at top in canvas coordinates)
     var xIsReversed = xRange[0] > xRange[1];
     var yIsReversed = yRange[0] < yRange[1];  // Canvas Y is inverted
@@ -107,9 +149,23 @@ function setupAxes(config) {
         };
     });
 
+    // Store full range for reference (if provided)
+    var fullRange = config.fullRange || {
+        xMin: xRange[0],
+        xMax: xRange[1],
+        yMin: yRange[0],
+        yMax: yRange[1]
+    };
+
     return {
         // Drawing area
         drawingArea: drawingArea,
+
+        // Visible range (for dynamic mode)
+        visibleRange: visibleRange,
+
+        // Full data range
+        fullRange: fullRange,
 
         // X-axis
         x: {
@@ -137,6 +193,7 @@ module.exports = {
     // Tick calculation
     calcTicks: calcTicks.calcTicks,
     calcAxesTicks: calcTicks.calcAxesTicks,
+    calcDynamicTicks: calcTicks.calcDynamicTicks,
     normalizeAxisConfig: calcTicks.normalizeAxisConfig,
     inferRangeFromData: calcTicks.inferRangeFromData,
 

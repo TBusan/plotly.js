@@ -10,8 +10,8 @@ var smooth = require('../../smooth');
  * Create perimeter path for boundary closing
  */
 function createPerimeter(style) {
-    var m = style.z ? style.z.length : 10;
-    var n = (style.z && style.z[0]) ? style.z[0].length : 10;
+    var m = (style.z && style.z.length) ? style.z.length : 10;
+    var n = (style.z && style.z[0] && style.z[0].length) ? style.z[0].length : 10;
     var width = style.width || 500;
     var height = style.height || 400;
     var padding = style.padding || 30;
@@ -36,9 +36,23 @@ function createPerimeter(style) {
  */
 function joinAllPaths(pathInfo, perimeter, style) {
     var fullpath = '';
-    var edgepaths = pathInfo.edgepaths;
+    var edgepaths = pathInfo.edgepaths || [];
 
-    if (edgepaths.length === 0 && pathInfo.paths.length === 0) {
+    // Validate perimeter
+    if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
+        return '';
+    }
+
+    // Check all perimeter points are valid
+    var validPerimeter = perimeter.every(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (!validPerimeter) {
+        return '';
+    }
+
+    if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
         return '';
     }
 
@@ -52,10 +66,10 @@ function joinAllPaths(pathInfo, perimeter, style) {
     var possiblei;
     var addpath;
 
-    function istop(pt) { return Math.abs(pt[1] - perimeter[0][1]) < 0.1; }
-    function isbottom(pt) { return Math.abs(pt[1] - perimeter[2][1]) < 0.1; }
-    function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
-    function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
+    function istop(pt) { return pt && Math.abs(pt[1] - perimeter[0][1]) < 0.1; }
+    function isbottom(pt) { return pt && Math.abs(pt[1] - perimeter[2][1]) < 0.1; }
+    function isleft(pt) { return pt && Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
+    function isright(pt) { return pt && Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
 
     // Process edge paths
     while (startsleft.length > 0) {
@@ -72,9 +86,23 @@ function joinAllPaths(pathInfo, perimeter, style) {
         }
 
         // Generate smooth SVG path string
-        var scaledPath = currentPath.map(function(pt) {
+        var scaledPath = currentPath.filter(function(pt) {
+            return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+        }).map(function(pt) {
             return scalePoint(style, pt);
+        }).filter(function(pt) {
+            return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
         });
+
+        if (scaledPath.length < 2) {
+            startsleft.splice(startsleft.indexOf(i), 1);
+            if (startsleft.length > 0) {
+                i = startsleft[0];
+                newloop = true;
+            }
+            continue;
+        }
+
         addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
         fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
         startsleft.splice(startsleft.indexOf(i), 1);
@@ -87,19 +115,31 @@ function joinAllPaths(pathInfo, perimeter, style) {
         for (cnt = 0; cnt < 4; cnt++) {
             if (!endpt) break;
 
-            // Determine corner to move to
+            // Determine corner to move to - initialize newendpt first
+            newendpt = null;
+
             if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
             else if (isleft(endpt)) newendpt = perimeter[0];
             else if (isbottom(endpt)) newendpt = perimeter[3];
             else if (isright(endpt)) newendpt = perimeter[2];
+            else {
+                // If endpt is not on any edge, break
+                break;
+            }
+
+            // Validate newendpt
+            if (!newendpt) break;
 
             // Find next path starting on this edge
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
                 if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) ||
-                    edgepaths[possiblei].length === 0) {
+                    edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
                     continue;
                 }
                 var ptNew = scalePoint(style, edgepaths[possiblei][0]);
+
+                // Validate ptNew
+                if (!ptNew || isNaN(ptNew[0]) || isNaN(ptNew[1])) continue;
 
                 // Check if ptNew is on the segment
                 if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
@@ -118,6 +158,9 @@ function joinAllPaths(pathInfo, perimeter, style) {
                     }
                 }
             }
+
+            // If newendpt was not set, break out of the loop
+            if (!newendpt) break;
 
             endpt = newendpt;
             if (nexti >= 0) break;
@@ -326,10 +369,30 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
 function drawFilledPaths(ctx, contourResult, style) {
     var paths = contourResult.paths;
     var levels = contourResult.levels;
+
+    if (!paths || paths.length === 0) return;
+
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
     var smoothing = style.smoothing || 0;
     var perimeter = createPerimeter(style);
+
+    // Validate perimeter and its elements
+    if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
+        console.warn('drawFilledPaths: Invalid perimeter structure');
+        return;
+    }
+
+    // Check all perimeter points are valid arrays
+    var validPerimeter = perimeter.every(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (!validPerimeter) {
+        console.warn('drawFilledPaths: Invalid perimeter points');
+        return;
+    }
+
     var showLines = style.showLines !== false;
     var lineColor = style.lineColor || '#333';
     var lineWidth = style.lineWidth || 1.5;
@@ -478,11 +541,25 @@ function drawStrokePaths(ctx, contourResult, style) {
  * Draw a single path (filled)
  */
 function drawPath(ctx, path, smoothing, isClosed, style) {
-    if (path.length < 2) return;
+    if (!path || path.length < 2) return;
+
+    // Filter out invalid points
+    var validPath = path.filter(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (validPath.length < 2) return;
 
     ctx.beginPath();
 
-    var scaledPath = path.map(scalePoint.bind(null, style));
+    var scaledPath = validPath.map(scalePoint.bind(null, style));
+
+    // Filter out any undefined results from scalePoint
+    scaledPath = scaledPath.filter(function(pt) {
+        return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (scaledPath.length < 2) return;
 
     if (smoothing > 0 && isClosed) {
         var pathStr = smooth.smoothclosed(scaledPath, smoothing);
@@ -517,11 +594,25 @@ function drawEdgePath(ctx, path, smoothing, style) {
  * Draw path stroke
  */
 function drawPathStroke(ctx, path, smoothing, isClosed, style) {
-    if (path.length < 2) return;
+    if (!path || path.length < 2) return;
+
+    // Filter out invalid points
+    var validPath = path.filter(function(pt) {
+        return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (validPath.length < 2) return;
 
     ctx.beginPath();
 
-    var scaledPath = path.map(scalePoint.bind(null, style));
+    var scaledPath = validPath.map(scalePoint.bind(null, style));
+
+    // Filter out any undefined results from scalePoint
+    scaledPath = scaledPath.filter(function(pt) {
+        return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
+    });
+
+    if (scaledPath.length < 2) return;
 
     if (smoothing > 0 && isClosed) {
         var pathStr = smooth.smoothclosed(scaledPath, smoothing);
@@ -544,6 +635,7 @@ function drawPathStroke(ctx, path, smoothing, isClosed, style) {
 
 /**
  * Scale point from DATA SPACE to canvas coordinates
+ * Supports visibleRange for zoom/pan functionality
  */
 function scalePoint(style, pt) {
     // Validate inputs
@@ -563,11 +655,22 @@ function scalePoint(style, pt) {
     var height = style.height || 400;
     var padding = style.padding || 30;
 
-    // Get data range
-    var xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
-    var xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
-    var yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
-    var yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+    // Use visibleRange if provided (for interactive zoom/pan)
+    // Otherwise use full data range
+    var xMin, xMax, yMin, yMax;
+
+    if (style.visibleRange) {
+        xMin = style.visibleRange.xMin;
+        xMax = style.visibleRange.xMax;
+        yMin = style.visibleRange.yMin;
+        yMax = style.visibleRange.yMax;
+    } else {
+        // Get data range
+        xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
+        xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
+        yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
+        yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+    }
 
     // Avoid division by zero
     var xRange = xMax - xMin || 1;

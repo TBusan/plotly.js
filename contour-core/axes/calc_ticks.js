@@ -216,9 +216,79 @@ function calcAxesTicks(config) {
     };
 }
 
+/**
+ * Calculate dynamic ticks based on visible range
+ * This is used for interactive zoom/pan where the visible range changes
+ *
+ * @param {Object} visibleRange - The currently visible data range
+ * @param {number} visibleRange.xMin - Visible X minimum
+ * @param {number} visibleRange.xMax - Visible X maximum
+ * @param {number} visibleRange.yMin - Visible Y minimum
+ * @param {number} visibleRange.yMax - Visible Y maximum
+ * @param {Object} options - Configuration options
+ * @param {number} options.width - Drawing area width in pixels (for X tick density)
+ * @param {number} options.height - Drawing area height in pixels (for Y tick density)
+ * @param {Object} options.x - X-axis options (optional)
+ * @param {Object} options.y - Y-axis options (optional)
+ * @returns {Object} { x: { values, dtick, texts }, y: { values, dtick, texts } }
+ */
+function calcDynamicTicks(visibleRange, options) {
+    options = options || {};
+
+    var xMin = visibleRange.xMin;
+    var xMax = visibleRange.xMax;
+    var yMin = visibleRange.yMin;
+    var yMax = visibleRange.yMax;
+
+    // Calculate optimal number of ticks based on pixel density
+    // Rule of thumb: ~80-100 pixels per tick for readability
+    var width = options.width || 500;
+    var height = options.height || 400;
+
+    var xNTicks = Math.max(3, Math.min(10, Math.floor(width / 80)));
+    var yNTicks = Math.max(3, Math.min(10, Math.floor(height / 60)));
+
+    // Override with user-specified nticks if provided
+    var xOptions = options.x || {};
+    var yOptions = options.y || {};
+    if (xOptions.nticks) xNTicks = xOptions.nticks;
+    if (yOptions.nticks) yNTicks = yOptions.nticks;
+
+    // Calculate ticks for X axis
+    var xResult = autoTicks.autoTicks(xMin, xMax, xNTicks, xOptions.tick0);
+
+    // Calculate ticks for Y axis
+    var yResult = autoTicks.autoTicks(yMin, yMax, yNTicks, yOptions.tick0);
+
+    // Format tick labels
+    var formatOptions = {
+        exponentformat: xOptions.exponentformat || 'auto'
+    };
+    var xTexts = tickFormat.formatTickLabelsUniform(xResult.values, xResult.dtick, formatOptions);
+
+    formatOptions.exponentformat = yOptions.exponentformat || 'auto';
+    var yTexts = tickFormat.formatTickLabelsUniform(yResult.values, yResult.dtick, formatOptions);
+
+    return {
+        x: {
+            values: xResult.values,
+            dtick: xResult.dtick,
+            texts: xTexts,
+            tick0: xResult.tick0
+        },
+        y: {
+            values: yResult.values,
+            dtick: yResult.dtick,
+            texts: yTexts,
+            tick0: yResult.tick0
+        }
+    };
+}
+
 module.exports = {
     calcTicks: calcTicks,
     calcAxesTicks: calcAxesTicks,
+    calcDynamicTicks: calcDynamicTicks,
     normalizeAxisConfig: normalizeAxisConfig,
     inferRangeFromData: inferRangeFromData,
     DEFAULT_AXIS_CONFIG: DEFAULT_AXIS_CONFIG

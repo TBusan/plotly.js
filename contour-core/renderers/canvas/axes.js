@@ -243,7 +243,8 @@ function drawGrid(ctx, axisSetup, isXAxis) {
         ctx.setLineDash([]);
     }
 
-    // Grid is drawn within drawing area bounds (0,0 to width,height for transformed context)
+    // Grid is drawn within drawing area bounds
+    // Use drawingArea.x and drawingArea.y as offsets
     for (var i = 0; i < ticks.length; i++) {
         var tick = ticks[i];
 
@@ -252,15 +253,17 @@ function drawGrid(ctx, axisSetup, isXAxis) {
             continue;
         }
 
-        // Draw grid lines relative to drawing area origin (0, 0 in transformed context)
+        // Draw grid lines with proper offset for drawing area position
         if (isXAxis) {
-            var x = tick.pixel;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, drawingArea.height);
+            var x = drawingArea.x + tick.pixel;
+            ctx.moveTo(x, drawingArea.y);
+            ctx.lineTo(x, drawingArea.y + drawingArea.height);
         } else {
-            var y = tick.pixel;
-            ctx.moveTo(0, y);
-            ctx.lineTo(drawingArea.width, y);
+            // Y-axis: tick.pixel is relative to drawingArea.height
+            // Need to add drawingArea.y offset
+            var y = drawingArea.y + tick.pixel;
+            ctx.moveTo(drawingArea.x, y);
+            ctx.lineTo(drawingArea.x + drawingArea.width, y);
         }
     }
 
