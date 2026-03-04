@@ -1,11 +1,17 @@
 'use strict';
 
 /**
- * ZRender path utilities for contour rendering
- * Using same rendering logic as canvas renderer for proper fill ordering
+ * Three.js path utilities for contour rendering
+ * Converts contour paths to Three.js Shape and geometry
  */
 
-var zrender = require('zrender');
+// Try to get THREE from require, fall back to global
+var THREE;
+try {
+    THREE = require('three');
+} catch (e) {
+    THREE = typeof window !== 'undefined' ? window.THREE : null;
+}
 var smooth = require('../../smooth');
 
 /**
@@ -23,24 +29,76 @@ function createPerimeter(style) {
     var yMin = padding;
     var yMax = height - padding;
 
-    // Clockwise perimeter starting from top-left
     return [
-        [xMin, yMin],  // 0: top-left
-        [xMax, yMin],  // 1: top-right
-        [xMax, yMax],  // 2: bottom-right
-        [xMin, yMax]   // 3: bottom-left
+        [xMin, yMin],
+        [xMax, yMin],
+        [xMax, yMax],
+        [xMin, yMax]
     ];
 }
 
 /**
+ * Scale point from DATA SPACE to CANVAS coordinates
+ */
+function scalePoint(style, pt) {
+    if (!pt || !Array.isArray(pt) || pt.length < 2) {
+        return [0, 0];
+    }
+
+    if (isNaN(pt[0]) || isNaN(pt[1])) {
+        return [0, 0];
+    }
+
+    var x = style.x || [];
+    var y = style.y || [];
+    var width = style.width || 500;
+    var height = style.height || 400;
+    var padding = style.padding || 30;
+
+    var xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
+    var xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
+    var yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
+    var yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+
+    var xRange = xMax - xMin || 1;
+    var yRange = yMax - yMin || 1;
+
+    var canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
+    var canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
+
+    canvasY = height - padding - (canvasY - padding);
+
+    return [canvasX, canvasY];
+}
+
+/**
+ * Convert canvas coordinates to Three.js world coordinates
+ */
+function canvasToWorld(x, y, width, height) {
+    // Convert from canvas (top-left origin) to Three.js world (center origin, Y up)
+    return {
+        x: x - width / 2,
+        y: -(y - height / 2)
+    };
+}
+
+/**
  * Join all edge paths into a single path with proper boundary connections
- * Works on SCALED coordinates (canvas space)
- * Same logic as canvas renderer
  */
 function joinAllPaths(pathInfo, perimeter, style) {
-    var allPoints = [];  // Array of point arrays for CompoundPath
+    var allPoints = [];
     var edgepaths = pathInfo.edgepaths || [];
     var paths = pathInfo.paths || [];
+
+    // Validate perimeter
+    if (!perimeter || perimeter.length < 4) {
+        return allPoints;
+    }
+
+    // Filter out invalid edgepaths
+    edgepaths = edgepaths.filter(function(ep) {
+        return ep && Array.isArray(ep) && ep.length > 0;
+    });
 
     if (edgepaths.length === 0 && paths.length === 0) {
         return allPoints;
@@ -73,11 +131,9 @@ function joinAllPaths(pathInfo, perimeter, style) {
         return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
     }
 
-    // Process edge paths
     while (startsleft.length > 0) {
         var currentPath = edgepaths[i];
 
-        // Skip invalid paths
         if (!currentPath || !Array.isArray(currentPath) || currentPath.length === 0) {
             startsleft.splice(startsleft.indexOf(i), 1);
             if (startsleft.length > 0) {
@@ -87,12 +143,10 @@ function joinAllPaths(pathInfo, perimeter, style) {
             continue;
         }
 
-        // Scale points
         var scaledPath = currentPath.map(function(pt) {
             return scalePoint(style, pt);
         });
 
-        // Add to current loop
         if (newloop) {
             if (currentLoopPoints.length > 0) {
                 allPoints.push(currentLoopPoints);
@@ -103,21 +157,17 @@ function joinAllPaths(pathInfo, perimeter, style) {
 
         startsleft.splice(startsleft.indexOf(i), 1);
 
-        // Use original path point for endpt (scaled)
         endpt = scalePoint(style, currentPath[currentPath.length - 1]);
         nexti = -1;
 
-        // Loop through sides to find next path
         for (cnt = 0; cnt < 4; cnt++) {
             if (!endpt) break;
 
-            // Determine corner to move to
             if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
             else if (isleft(endpt)) newendpt = perimeter[0];
             else if (isbottom(endpt)) newendpt = perimeter[3];
             else if (isright(endpt)) newendpt = perimeter[2];
 
-            // Find next path starting on this edge
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
                 if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) ||
                     edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
@@ -125,16 +175,13 @@ function joinAllPaths(pathInfo, perimeter, style) {
                 }
                 var ptNew = scalePoint(style, edgepaths[possiblei][0]);
 
-                // Check if ptNew is on the segment
                 if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
-                    // Vertical edge
                     if (Math.abs(endpt[0] - ptNew[0]) < 0.1 &&
                         (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
                         newendpt = ptNew;
                         nexti = possiblei;
                     }
                 } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
-                    // Horizontal edge
                     if (Math.abs(endpt[1] - ptNew[1]) < 0.1 &&
                         (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
                         newendpt = ptNew;
@@ -143,7 +190,6 @@ function joinAllPaths(pathInfo, perimeter, style) {
                 }
             }
 
-            // Add corner point if no path found
             if (nexti < 0) {
                 if (newendpt) {
                     currentLoopPoints.push(newendpt);
@@ -163,12 +209,10 @@ function joinAllPaths(pathInfo, perimeter, style) {
         }
     }
 
-    // Add final loop
     if (currentLoopPoints.length > 0) {
         allPoints.push(currentLoopPoints);
     }
 
-    // Add interior closed paths
     var interiorPaths = pathInfo.paths || [];
     for (i = 0; i < interiorPaths.length; i++) {
         if (!interiorPaths[i] || !Array.isArray(interiorPaths[i]) ||
@@ -213,14 +257,13 @@ function interpolateColor(color1, color2, t) {
  */
 function getColorForValue(value, colorScale) {
     if (!colorScale || !Array.isArray(colorScale)) {
-        return 'rgba(100, 100, 100, 0.5)';
+        return '#646464';
     }
 
     var n = colorScale.length;
-    if (n === 0) return 'rgba(100, 100, 100, 0.5)';
+    if (n === 0) return '#646464';
     if (n === 1) return colorScale[0][1];
 
-    // Find interpolation interval
     for (var i = 0; i < n - 1; i++) {
         if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
             var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
@@ -228,18 +271,17 @@ function getColorForValue(value, colorScale) {
         }
     }
 
-    // Clamp to range
     if (value < colorScale[0][0]) return colorScale[0][1];
     if (value > colorScale[n - 1][0]) return colorScale[n - 1][1];
     return colorScale[Math.floor(n / 2)][1];
 }
 
 /**
- * Get color for a value using segmented color mapping (valueColorMap)
+ * Get color for a value using segmented color mapping
  */
 function getColorForSegmentedValue(value, valueColorMap) {
     if (!valueColorMap || !Array.isArray(valueColorMap) || valueColorMap.length === 0) {
-        return 'rgba(100, 100, 100, 0.5)';
+        return '#646464';
     }
 
     if (value < valueColorMap[0][0]) {
@@ -259,7 +301,6 @@ function getColorForSegmentedValue(value, valueColorMap) {
  * Get color for a contour level
  */
 function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
-    // PRIORITY 1: Use valueColorMap (segmented color mapping) if provided
     if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
         var segmentValue;
         if (levelIndex < valueColorMap.length - 1) {
@@ -273,16 +314,15 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
     }
 
     if (!colorScale || colorScale.length === 0) {
-        return 'rgba(100, 100, 100, 0.5)';
+        return '#646464';
     }
 
     if (!levels || levels.length === 0) {
-        return colorScale[0][1] || 'rgba(100, 100, 100, 0.5)';
+        return colorScale[0][1] || '#646464';
     }
 
     var firstVal = colorScale[0][0];
 
-    // If first value is close to the first level, assume [[level, color], ...] format
     if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
         for (var i = 0; i < colorScale.length; i++) {
             if (Math.abs(colorScale[i][0] - level) < 0.01) {
@@ -319,7 +359,7 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
     var range = maxVal - minVal;
 
     if (range === 0) {
-        return colorScale[0][1] || 'rgba(100, 100, 100, 0.5)';
+        return colorScale[0][1] || '#646464';
     }
 
     var normalizedValue = (value - minVal) / range;
@@ -329,112 +369,198 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
 }
 
 /**
- * Scale point from DATA SPACE to CANVAS coordinates
+ * Convert hex color to THREE.Color
  */
-function scalePoint(style, pt) {
-    if (!pt || !Array.isArray(pt) || pt.length < 2) {
-        return [0, 0];
+function hexToThreeColor(hexColor) {
+    if (!hexColor || typeof hexColor !== 'string') {
+        return new THREE.Color(0x646464);
     }
 
-    if (isNaN(pt[0]) || isNaN(pt[1])) {
-        return [0, 0];
+    // Handle rgba format
+    if (hexColor.startsWith('rgba') || hexColor.startsWith('rgb')) {
+        var match = hexColor.match(/[\d.]+/g);
+        if (match && match.length >= 3) {
+            return new THREE.Color(
+                parseInt(match[0]) / 255,
+                parseInt(match[1]) / 255,
+                parseInt(match[2]) / 255
+            );
+        }
     }
 
-    var x = style.x || [];
-    var y = style.y || [];
-    var width = style.width || 500;
-    var height = style.height || 400;
-    var padding = style.padding || 30;
+    // Handle hex format
+    var hex = hexColor.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
 
-    var xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
-    var xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
-    var yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
-    var yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
-
-    var xRange = xMax - xMin || 1;
-    var yRange = yMax - yMin || 1;
-
-    var canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
-    var canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
-
-    canvasY = height - padding - (canvasY - padding);
-
-    return [canvasX, canvasY];
+    return new THREE.Color(parseInt(hex, 16));
 }
 
 /**
- * Scale a point from grid coordinates to canvas coordinates
+ * Create a Three.js Shape from points array
  */
-function scalePointData(pt, n, m, width, height, padding) {
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
-
-    return {
-        x: padding + pt.x * scaleX,
-        y: padding + (m - 1 - pt.y) * scaleY
-    };
-}
-
-/**
- * Convert array [x, y] to object {x, y} for zrender
- */
-function arrayToObject(pt) {
-    return { x: pt[0], y: pt[1] };
-}
-
-/**
- * Create a Polygon element from points array
- */
-function createPolygonElement(points, color, style, isBackground) {
-    if (!points || points.length === 0) {
+function createShapeFromPoints(points, width, height) {
+    if (!points || points.length < 3) {
         return null;
     }
 
-    return new zrender.Polygon({
-        shape: {
-            points: points,
-            smooth: isBackground ? 0 : (style.smoothing || 0)
-        },
-        style: {
-            fill: color,
-            stroke: isBackground ? 'none' : (style.lineColor || '#666'),
-            lineWidth: isBackground ? 0 : (style.lineWidth || 1.5),
-            opacity: style.opacity !== undefined ? style.opacity : 1,
-            lineJoin: 'round',
-            lineCap: 'round'
-        },
-        silent: isBackground
-    });
+    var shape = new THREE.Shape();
+    var firstPt = canvasToWorld(points[0][0], points[0][1], width, height);
+
+    shape.moveTo(firstPt.x, firstPt.y);
+
+    for (var i = 1; i < points.length; i++) {
+        var pt = canvasToWorld(points[i][0], points[i][1], width, height);
+        shape.lineTo(pt.x, pt.y);
+    }
+
+    shape.closePath();
+    return shape;
 }
 
 /**
- * Create background rect element
+ * Create background plane mesh
  */
-function createBackgroundRect(perimeter, color, style) {
-    return new zrender.Rect({
-        shape: {
-            x: perimeter[0][0],
-            y: perimeter[0][1],
-            width: perimeter[1][0] - perimeter[0][0],
-            height: perimeter[2][1] - perimeter[0][1]
-        },
-        style: {
-            fill: color,
-            stroke: 'none',
-            opacity: style.opacity !== undefined ? style.opacity : 1
-        },
-        silent: true
+function createBackgroundMesh(perimeter, color, style, renderer) {
+    var width = style.width || 500;
+    var height = style.height || 400;
+    var threeColor = hexToThreeColor(color);
+
+    if (!perimeter || perimeter.length < 4 || !perimeter[0] || !perimeter[2]) {
+        return null;
+    }
+
+    var worldP0 = canvasToWorld(perimeter[0][0], perimeter[0][1], width, height);
+    var worldP2 = canvasToWorld(perimeter[2][0], perimeter[2][1], width, height);
+
+    var planeWidth = worldP2.x - worldP0.x;
+    var planeHeight = worldP2.y - worldP0.y;
+
+    var geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+    var material = new THREE.MeshBasicMaterial({
+        color: threeColor,
+        side: THREE.DoubleSide
     });
+
+    var mesh = new THREE.Mesh(geometry, material);
+
+    // Position at center of perimeter
+    mesh.position.set(
+        (worldP0.x + worldP2.x) / 2,
+        (worldP0.y + worldP2.y) / 2,
+        0
+    );
+
+    return mesh;
 }
 
 /**
- * Create all contour path elements
- * Uses same rendering logic as canvas renderer:
- * 1. Draw background layer first
- * 2. Draw each contour level from lowest to highest
- * 3. Each level uses joined paths with proper boundary handling
+ * Create contour fill mesh from points
  */
-function createContourPaths(result, style, options) {
+function createContourMesh(pointsArray, color, style, renderer) {
+    if (!pointsArray || pointsArray.length === 0 || !pointsArray[0]) {
+        return null;
+    }
+
+    var width = style.width || 500;
+    var height = style.height || 400;
+    var threeColor = hexToThreeColor(color);
+
+    // Create main shape from first path
+    var mainShape = createShapeFromPoints(pointsArray[0], width, height);
+    if (!mainShape) return null;
+
+    // Add holes from subsequent paths
+    for (var i = 1; i < pointsArray.length; i++) {
+        var holePath = new THREE.Path();
+        var holePoints = pointsArray[i];
+        if (!holePoints || holePoints.length < 3) continue;
+
+        var firstHolePt = canvasToWorld(holePoints[0][0], holePoints[0][1], width, height);
+        holePath.moveTo(firstHolePt.x, firstHolePt.y);
+
+        for (var j = 1; j < holePoints.length; j++) {
+            var holePt = canvasToWorld(holePoints[j][0], holePoints[j][1], width, height);
+            holePath.lineTo(holePt.x, holePt.y);
+        }
+
+        holePath.closePath();
+        mainShape.holes.push(holePath);
+    }
+
+    // Create geometry
+    var geometry = new THREE.ShapeGeometry(mainShape);
+
+    // Create material
+    var material = new THREE.MeshBasicMaterial({
+        color: threeColor,
+        side: THREE.DoubleSide,
+        transparent: style.opacity !== undefined && style.opacity < 1,
+        opacity: style.opacity !== undefined ? style.opacity : 1
+    });
+
+    var mesh = new THREE.Mesh(geometry, material);
+    return mesh;
+}
+
+/**
+ * Create contour line mesh
+ */
+function createContourLineMesh(pointsArray, color, style, renderer) {
+    if (!pointsArray || pointsArray.length === 0) {
+        return null;
+    }
+
+    var width = style.width || 500;
+    var height = style.height || 400;
+    var threeColor = hexToThreeColor(color);
+    var lineWidth = style.lineWidth || 1.5;
+
+    var lineGeometries = [];
+
+    for (var i = 0; i < pointsArray.length; i++) {
+        var points = pointsArray[i];
+        if (!points || points.length < 2) continue;
+
+        var vertices = [];
+        for (var j = 0; j < points.length; j++) {
+            var worldPt = canvasToWorld(points[j][0], points[j][1], width, height);
+            vertices.push(worldPt.x, worldPt.y, 0);
+        }
+        // Close the loop
+        if (points.length > 2) {
+            var firstWorldPt = canvasToWorld(points[0][0], points[0][1], width, height);
+            vertices.push(firstWorldPt.x, firstWorldPt.y, 0);
+        }
+
+        var geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        lineGeometries.push(geometry);
+    }
+
+    if (lineGeometries.length === 0) return null;
+
+    // Merge all line geometries
+    var mergedGeometry = lineGeometries.length === 1
+        ? lineGeometries[0]
+        : THREE.BufferGeometryUtils
+            ? THREE.BufferGeometryUtils.mergeBufferGeometries(lineGeometries)
+            : lineGeometries[0]; // Fallback if utils not available
+
+    var material = new THREE.LineBasicMaterial({
+        color: threeColor,
+        linewidth: lineWidth
+    });
+
+    var line = new THREE.LineLoop(mergedGeometry, material);
+    return line;
+}
+
+/**
+ * Create all contour path meshes
+ */
+function createContourPaths(result, style, renderer) {
     var elements = [];
     var paths = result.paths;
     var levels = result.levels;
@@ -448,6 +574,8 @@ function createContourPaths(result, style, options) {
     var stepSize = (!hasCustomLevels && levels.length > 1) ? levels[1] - levels[0] : 0;
     var colorScale = style.colorScale;
     var valueColorMap = style.valueColorMap;
+    var width = style.width || 500;
+    var height = style.height || 400;
 
     // 1. Create background layer
     var bgColor;
@@ -476,11 +604,10 @@ function createContourPaths(result, style, options) {
         bgColor = getColorForValue(normalizedBg, colorScale);
     }
 
-    // Add background rect
-    var bgRect = createBackgroundRect(perimeter, bgColor, style);
-    if (bgRect) {
+    var bgMesh = createBackgroundMesh(perimeter, bgColor, style, renderer);
+    if (bgMesh) {
         elements.push({
-            element: bgRect,
+            mesh: bgMesh,
             level: null,
             index: -1,
             type: 'background'
@@ -492,79 +619,53 @@ function createContourPaths(result, style, options) {
         var pathInfo = paths[i];
         var level = pathInfo.level;
 
-        // Get color for this level
         var fillColor = getColorForLevel(level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
 
-        // Join all paths for this level (same logic as canvas renderer)
         var allPathPoints = joinAllPaths(pathInfo, perimeter, style);
 
-        // Add boundary path if needed (prefixBoundary)
         if (pathInfo.prefixBoundary) {
-            // Add perimeter as first path
             allPathPoints.unshift(perimeter.slice());
         }
 
-        // Create a group containing all polygon elements for this level
-        // Note: zrender's CompoundPath expects Path objects, not Polygon objects
-        // So we use a Group with multiple Polygon elements instead
         if (allPathPoints.length > 0) {
-            var fillGroup = new zrender.Group();
-
-            for (var p = 0; p < allPathPoints.length; p++) {
-                var pts = allPathPoints[p];
-                if (!pts || pts.length < 3) continue;
-
-                var polygon = new zrender.Polygon({
-                    shape: {
-                        points: pts,
-                        smooth: style.smoothing || 0
-                    },
-                    style: {
-                        fill: fillColor,
-                        stroke: style.showLines !== false ? (style.lineColor || '#666') : 'none',
-                        lineWidth: style.lineWidth || 1.5,
-                        opacity: style.opacity !== undefined ? style.opacity : 1,
-                        lineJoin: 'round',
-                        lineCap: 'round'
-                    },
-                    silent: false
+            var fillMesh = createContourMesh(allPathPoints, fillColor, style, renderer);
+            if (fillMesh) {
+                elements.push({
+                    mesh: fillMesh,
+                    level: level,
+                    index: i,
+                    type: 'fill'
                 });
-                fillGroup.add(polygon);
             }
 
-            // Store the level info on the group for event handling
-            fillGroup.__level = level;
-            fillGroup.__index = i;
-
-            elements.push({
-                element: fillGroup,
-                level: level,
-                index: i,
-                type: 'fill'
-            });
+            // Create contour lines if needed
+            if (style.showLines !== false) {
+                var lineColor = style.lineColor || '#666666';
+                var lineMesh = createContourLineMesh(allPathPoints, lineColor, style, renderer);
+                if (lineMesh) {
+                    elements.push({
+                        mesh: lineMesh,
+                        level: level,
+                        index: i,
+                        type: 'line'
+                    });
+                }
+            }
         }
     }
 
     return elements;
 }
 
-/**
- * Update path style for hover effects
- */
-function updatePathStyle(element, newStyle) {
-    element.attr({
-        style: newStyle
-    });
-}
-
 module.exports = {
     createContourPaths: createContourPaths,
-    createPolygonElement: createPolygonElement,
-    updatePathStyle: updatePathStyle,
+    createShapeFromPoints: createShapeFromPoints,
+    createContourMesh: createContourMesh,
+    createContourLineMesh: createContourLineMesh,
     getColorForLevel: getColorForLevel,
+    hexToThreeColor: hexToThreeColor,
     scalePoint: scalePoint,
-    scalePointData: scalePointData,
-    arrayToObject: arrayToObject,
+    canvasToWorld: canvasToWorld,
     createPerimeter: createPerimeter,
     joinAllPaths: joinAllPaths
 };

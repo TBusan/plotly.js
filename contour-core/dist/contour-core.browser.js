@@ -1,7 +1,14 @@
 "use strict";
 var contourCore = (() => {
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
 
@@ -4763,8 +4770,8 @@ var contourCore = (() => {
           }
           return obj;
         }
-        function disableUserSelect(dom) {
-          var domStyle = dom.style;
+        function disableUserSelect(dom2) {
+          var domStyle = dom2.style;
           domStyle.webkitUserSelect = "none";
           domStyle.userSelect = "none";
           domStyle.webkitTapHighlightColor = "rgba(0,0,0,0)";
@@ -6880,11 +6887,11 @@ var contourCore = (() => {
           };
           return Storage2;
         }();
-        var requestAnimationFrame;
-        requestAnimationFrame = env.hasGlobalWindow && (window.requestAnimationFrame && window.requestAnimationFrame.bind(window) || window.msRequestAnimationFrame && window.msRequestAnimationFrame.bind(window) || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame) || function(func) {
+        var requestAnimationFrame2;
+        requestAnimationFrame2 = env.hasGlobalWindow && (window.requestAnimationFrame && window.requestAnimationFrame.bind(window) || window.msRequestAnimationFrame && window.msRequestAnimationFrame.bind(window) || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame) || function(func) {
           return setTimeout(func, 16);
         };
-        var requestAnimationFrame$1 = requestAnimationFrame;
+        var requestAnimationFrame$1 = requestAnimationFrame2;
         var easingFuncs = {
           linear: function(k) {
             return k;
@@ -9290,12 +9297,12 @@ var contourCore = (() => {
         }();
         var HandlerDomProxy = function(_super) {
           __extends(HandlerDomProxy2, _super);
-          function HandlerDomProxy2(dom, painterRoot) {
+          function HandlerDomProxy2(dom2, painterRoot) {
             var _this = _super.call(this) || this;
             _this.__pointerCapturing = false;
-            _this.dom = dom;
+            _this.dom = dom2;
             _this.painterRoot = painterRoot;
-            _this._localHandlerScope = new DOMHandlerScope(dom, localDOMHandlers);
+            _this._localHandlerScope = new DOMHandlerScope(dom2, localDOMHandlers);
             if (globalEventSupported) {
               _this._globalHandlerScope = new DOMHandlerScope(document, globalDOMHandlers);
             }
@@ -10904,7 +10911,7 @@ var contourCore = (() => {
           return false;
         }
         var ZRender = function() {
-          function ZRender2(id, dom, opts) {
+          function ZRender2(id, dom2, opts) {
             var _this = this;
             this._sleepAfterStill = 10;
             this._stillFrameAccum = 0;
@@ -10912,7 +10919,7 @@ var contourCore = (() => {
             this._needsRefreshHover = true;
             this._darkMode = false;
             opts = opts || {};
-            this.dom = dom;
+            this.dom = dom2;
             this.id = id;
             var storage = new Storage();
             var rendererType = opts.renderer || "canvas";
@@ -10925,7 +10932,7 @@ var contourCore = (() => {
               }
             }
             opts.useDirtyRect = opts.useDirtyRect == null ? false : opts.useDirtyRect;
-            var painter = new painterCtors[rendererType](dom, storage, opts, id);
+            var painter = new painterCtors[rendererType](dom2, storage, opts, id);
             var ssrMode = opts.ssr || painter.ssrOnly;
             this.storage = storage;
             this.painter = painter;
@@ -11148,8 +11155,8 @@ var contourCore = (() => {
           };
           return ZRender2;
         }();
-        function init(dom, opts) {
-          var zr = new ZRender(guid(), dom, opts);
+        function init(dom2, opts) {
+          var zr = new ZRender(guid(), dom2, opts);
           instances[zr.id] = zr;
           return zr;
         }
@@ -17724,17 +17731,17 @@ var contourCore = (() => {
         }();
         var DebugRect = function() {
           function DebugRect2(style) {
-            var dom = this.dom = document.createElement("div");
-            dom.className = "ec-debug-dirty-rect";
+            var dom2 = this.dom = document.createElement("div");
+            dom2.className = "ec-debug-dirty-rect";
             style = extend({}, style);
             extend(style, {
               backgroundColor: "rgba(0, 0, 255, 0.2)",
               border: "1px solid #00f"
             });
-            dom.style.cssText = "\nposition: absolute;\nopacity: 0;\ntransition: opacity 0.5s linear;\npointer-events: none;\n";
+            dom2.style.cssText = "\nposition: absolute;\nopacity: 0;\ntransition: opacity 0.5s linear;\npointer-events: none;\n";
             for (var key in style) {
               if (style.hasOwnProperty(key)) {
-                dom.style[key] = style[key];
+                dom2.style[key] = style[key];
               }
             }
           }
@@ -17771,11 +17778,11 @@ var contourCore = (() => {
           debugViewRoot.style.cssText = "\nposition:absolute;\nleft:0;\ntop:0;\nright:0;\nbottom:0;\npointer-events:none;\n";
           debugViewRoot.className = "ec-debug-dirty-rect-container";
           var debugRects = [];
-          var dom = zr.dom;
-          dom.appendChild(debugViewRoot);
-          var computedStyle = getComputedStyle(dom);
+          var dom2 = zr.dom;
+          dom2.appendChild(debugViewRoot);
+          var computedStyle = getComputedStyle(dom2);
           if (computedStyle.position === "static") {
-            dom.style.position = "relative";
+            dom2.style.position = "relative";
           }
           zr.on("rendered", function() {
             if (painter.getLayers) {
@@ -18442,20 +18449,20 @@ var contourCore = (() => {
             _this.__endIndex = 0;
             _this.__prevStartIndex = null;
             _this.__prevEndIndex = null;
-            var dom;
+            var dom2;
             dpr2 = dpr2 || devicePixelRatio;
             if (typeof id === "string") {
-              dom = createDom(id, painter, dpr2);
+              dom2 = createDom(id, painter, dpr2);
             } else if (isObject(id)) {
-              dom = id;
-              id = dom.id;
+              dom2 = id;
+              id = dom2.id;
             }
             _this.id = id;
-            _this.dom = dom;
-            var domStyle = dom.style;
+            _this.dom = dom2;
+            var domStyle = dom2.style;
             if (domStyle) {
-              disableUserSelect(dom);
-              dom.onselectstart = function() {
+              disableUserSelect(dom2);
+              dom2.onselectstart = function() {
                 return false;
               };
               domStyle.padding = "0";
@@ -18597,15 +18604,15 @@ var contourCore = (() => {
           };
           Layer2.prototype.resize = function(width, height) {
             var dpr2 = this.dpr;
-            var dom = this.dom;
-            var domStyle = dom.style;
+            var dom2 = this.dom;
+            var domStyle = dom2.style;
             var domBack = this.domBack;
             if (domStyle) {
               domStyle.width = width + "px";
               domStyle.height = height + "px";
             }
-            dom.width = width * dpr2;
-            dom.height = height * dpr2;
+            dom2.width = width * dpr2;
+            dom2.height = height * dpr2;
             if (domBack) {
               domBack.width = width * dpr2;
               domBack.height = height * dpr2;
@@ -18615,10 +18622,10 @@ var contourCore = (() => {
             }
           };
           Layer2.prototype.clear = function(clearAll, clearColor, repaintRects) {
-            var dom = this.dom;
+            var dom2 = this.dom;
             var ctx = this.ctx;
-            var width = dom.width;
-            var height = dom.height;
+            var width = dom2.width;
+            var height = dom2.height;
             clearColor = clearColor || this.clearColor;
             var haveMotionBLur = this.motionBlur && !clearAll;
             var lastFrameAlpha = this.lastFrameAlpha;
@@ -18629,7 +18636,7 @@ var contourCore = (() => {
                 this.createBackBuffer();
               }
               this.ctxBack.globalCompositeOperation = "copy";
-              this.ctxBack.drawImage(dom, 0, 0, width / dpr2, height / dpr2);
+              this.ctxBack.drawImage(dom2, 0, 0, width / dpr2, height / dpr2);
             }
             var domBack = this.domBack;
             function doClear(x, y, width2, height2) {
@@ -20956,7 +20963,7 @@ var contourCore = (() => {
             else if (isright(endpt))
               newendpt = perimeter[2];
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
-              if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0) {
+              if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
                 continue;
               }
               var ptNew = scalePoint(style, edgepaths[possiblei][0]);
@@ -21239,29 +21246,32 @@ var contourCore = (() => {
             allPathPoints.unshift(perimeter.slice());
           }
           if (allPathPoints.length > 0) {
-            var compoundPath = new zrender.CompoundPath({
-              shape: {
-                paths: allPathPoints.map(function(pts) {
-                  return new zrender.Polygon({
-                    shape: {
-                      points: pts,
-                      smooth: style.smoothing || 0
-                    }
-                  });
-                })
-              },
-              style: {
-                fill: fillColor,
-                stroke: style.showLines !== false ? style.lineColor || "#666" : "none",
-                lineWidth: style.lineWidth || 1.5,
-                opacity: style.opacity !== void 0 ? style.opacity : 1,
-                lineJoin: "round",
-                lineCap: "round"
-              },
-              silent: false
-            });
+            var fillGroup = new zrender.Group();
+            for (var p = 0; p < allPathPoints.length; p++) {
+              var pts = allPathPoints[p];
+              if (!pts || pts.length < 3)
+                continue;
+              var polygon = new zrender.Polygon({
+                shape: {
+                  points: pts,
+                  smooth: style.smoothing || 0
+                },
+                style: {
+                  fill: fillColor,
+                  stroke: style.showLines !== false ? style.lineColor || "#666" : "none",
+                  lineWidth: style.lineWidth || 1.5,
+                  opacity: style.opacity !== void 0 ? style.opacity : 1,
+                  lineJoin: "round",
+                  lineCap: "round"
+                },
+                silent: false
+              });
+              fillGroup.add(polygon);
+            }
+            fillGroup.__level = level;
+            fillGroup.__index = i;
             elements.push({
-              element: compoundPath,
+              element: fillGroup,
               level,
               index: i,
               type: "fill"
@@ -21525,6 +21535,7 @@ var contourCore = (() => {
     "renderers/zrender/axes.js"(exports, module) {
       "use strict";
       var zrender = require_zrender();
+      var axesCore = require_axes();
       function drawXAxis(container, config, style) {
         var width = config.width || 600;
         var height = config.height || 500;
@@ -21756,11 +21767,299 @@ var contourCore = (() => {
         }
         return ticks;
       }
+      function setupAxes(config) {
+        return axesCore.setupAxes(config);
+      }
+      function drawAxesFromSetup(container, axisSetup, style) {
+        style = style || {};
+        if (!axisSetup)
+          return;
+        var drawingArea = axisSetup.drawingArea;
+        if (axisSetup.x && axisSetup.x.config.show !== false) {
+          drawXAxisFromSetup(container, axisSetup, style);
+        }
+        if (axisSetup.y && axisSetup.y.config.show !== false) {
+          drawYAxisFromSetup(container, axisSetup, style);
+        }
+      }
+      function drawXAxisFromSetup(container, axisSetup, style) {
+        var xAxis = axisSetup.x;
+        var config = xAxis.config;
+        var ticks = xAxis.ticks;
+        var drawingArea = axisSetup.drawingArea;
+        var axisGroup = new zrender.Group();
+        var side = config.side || "bottom";
+        var tickLength = config.ticklen || 5;
+        var tickColor = config.tickcolor || "#666666";
+        var showLabels = config.showticklabels !== false;
+        var axisY, labelY, labelBaseline;
+        if (side === "top") {
+          axisY = drawingArea.margins.top;
+          labelY = axisY - tickLength - 5;
+          labelBaseline = "bottom";
+        } else {
+          axisY = drawingArea.y + drawingArea.height;
+          labelY = axisY + tickLength + 5;
+          labelBaseline = "top";
+        }
+        var line = new zrender.Line({
+          shape: {
+            x1: drawingArea.x,
+            y1: axisY,
+            x2: drawingArea.x + drawingArea.width,
+            y2: axisY
+          },
+          style: {
+            stroke: config.linecolor || "#333",
+            lineWidth: config.linewidth || 1
+          }
+        });
+        axisGroup.add(line);
+        for (var i = 0; i < ticks.length; i++) {
+          var tick = ticks[i];
+          var x = drawingArea.x + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea.width + 10)
+            continue;
+          var tickLine = new zrender.Line({
+            shape: {
+              x1: x,
+              y1: axisY,
+              x2: x,
+              y2: side === "top" ? axisY - tickLength : axisY + tickLength
+            },
+            style: {
+              stroke: tickColor,
+              lineWidth: config.tickwidth || 1
+            }
+          });
+          axisGroup.add(tickLine);
+          if (showLabels) {
+            var text = new zrender.Text({
+              style: {
+                text: tick.text,
+                x,
+                y: labelY,
+                textAlign: "center",
+                textVerticalAlign: labelBaseline,
+                fill: config.tickfontcolor || "#333",
+                fontSize: parseInt(config.tickfont) || 12
+              }
+            });
+            axisGroup.add(text);
+          }
+        }
+        if (config.title) {
+          var title = new zrender.Text({
+            style: {
+              text: config.title,
+              x: drawingArea.x + drawingArea.width / 2,
+              y: side === "top" ? labelY - 25 : labelY + 20,
+              textAlign: "center",
+              textVerticalAlign: "middle",
+              fill: config.titlefontcolor || "#000",
+              fontSize: parseInt(config.titlefont) || 14,
+              fontWeight: "bold"
+            }
+          });
+          axisGroup.add(title);
+        }
+        container.add(axisGroup);
+        return axisGroup;
+      }
+      function drawYAxisFromSetup(container, axisSetup, style) {
+        var yAxis = axisSetup.y;
+        var config = yAxis.config;
+        var ticks = yAxis.ticks;
+        var drawingArea = axisSetup.drawingArea;
+        var axisGroup = new zrender.Group();
+        var side = config.side || "left";
+        var tickLength = config.ticklen || 5;
+        var tickColor = config.tickcolor || "#666666";
+        var showLabels = config.showticklabels !== false;
+        var axisX, labelX, labelAlign;
+        if (side === "right") {
+          axisX = drawingArea.x + drawingArea.width;
+          labelX = axisX + tickLength + 5;
+          labelAlign = "start";
+        } else {
+          axisX = drawingArea.margins.left;
+          labelX = axisX - tickLength - 5;
+          labelAlign = "end";
+        }
+        var line = new zrender.Line({
+          shape: {
+            x1: axisX,
+            y1: drawingArea.y,
+            x2: axisX,
+            y2: drawingArea.y + drawingArea.height
+          },
+          style: {
+            stroke: config.linecolor || "#333",
+            lineWidth: config.linewidth || 1
+          }
+        });
+        axisGroup.add(line);
+        for (var i = 0; i < ticks.length; i++) {
+          var tick = ticks[i];
+          var y = drawingArea.y + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea.height + 10)
+            continue;
+          var tickLine = new zrender.Line({
+            shape: {
+              x1: side === "right" ? axisX : axisX - tickLength,
+              y1: y,
+              x2: side === "right" ? axisX + tickLength : axisX,
+              y2: y
+            },
+            style: {
+              stroke: tickColor,
+              lineWidth: config.tickwidth || 1
+            }
+          });
+          axisGroup.add(tickLine);
+          if (showLabels) {
+            var text = new zrender.Text({
+              style: {
+                text: tick.text,
+                x: labelX,
+                y,
+                textAlign: labelAlign,
+                textVerticalAlign: "middle",
+                fill: config.tickfontcolor || "#333",
+                fontSize: parseInt(config.tickfont) || 12
+              }
+            });
+            axisGroup.add(text);
+          }
+        }
+        if (config.title) {
+          var titleGroup = new zrender.Group();
+          var titleY = drawingArea.y + drawingArea.height / 2;
+          var titleXPos = side === "right" ? labelX + 30 : labelX - 25;
+          var title = new zrender.Text({
+            style: {
+              text: config.title,
+              x: 0,
+              y: 0,
+              textAlign: "center",
+              textVerticalAlign: "middle",
+              fill: config.titlefontcolor || "#000",
+              fontSize: parseInt(config.titlefont) || 14,
+              fontWeight: "bold"
+            }
+          });
+          titleGroup.add(title);
+          titleGroup.attr({
+            x: titleXPos,
+            y: titleY,
+            rotation: -Math.PI / 2
+          });
+          axisGroup.add(titleGroup);
+        }
+        container.add(axisGroup);
+        return axisGroup;
+      }
+      function drawGridFromSetup(container, axisSetup, style) {
+        style = style || {};
+        if (!axisSetup)
+          return;
+        if (axisSetup.x && axisSetup.x.config.showgrid) {
+          drawXGridFromSetup(container, axisSetup, style);
+        }
+        if (axisSetup.y && axisSetup.y.config.showgrid) {
+          drawYGridFromSetup(container, axisSetup, style);
+        }
+      }
+      function drawXGridFromSetup(container, axisSetup, style) {
+        var xAxis = axisSetup.x;
+        var config = xAxis.config;
+        var ticks = xAxis.ticks;
+        var drawingArea = axisSetup.drawingArea;
+        var gridGroup = new zrender.Group();
+        var gridColor = config.gridcolor || "#e0e0e0";
+        var gridWidth = config.gridwidth || 1;
+        var gridDash = config.griddash ? parseDashArray(config.griddash) : [5, 5];
+        for (var i = 0; i < ticks.length; i++) {
+          var tick = ticks[i];
+          var x = drawingArea.x + tick.pixel;
+          if (tick.pixel < 0 || tick.pixel > drawingArea.width)
+            continue;
+          var gridLine = new zrender.Line({
+            shape: {
+              x1: x,
+              y1: drawingArea.y,
+              x2: x,
+              y2: drawingArea.y + drawingArea.height
+            },
+            style: {
+              stroke: gridColor,
+              lineWidth: gridWidth,
+              lineDash: gridDash
+            },
+            silent: true
+          });
+          gridGroup.add(gridLine);
+        }
+        container.add(gridGroup);
+        return gridGroup;
+      }
+      function drawYGridFromSetup(container, axisSetup, style) {
+        var yAxis = axisSetup.y;
+        var config = yAxis.config;
+        var ticks = yAxis.ticks;
+        var drawingArea = axisSetup.drawingArea;
+        var gridGroup = new zrender.Group();
+        var gridColor = config.gridcolor || "#e0e0e0";
+        var gridWidth = config.gridwidth || 1;
+        var gridDash = config.griddash ? parseDashArray(config.griddash) : [5, 5];
+        for (var i = 0; i < ticks.length; i++) {
+          var tick = ticks[i];
+          var y = drawingArea.y + tick.pixel;
+          if (tick.pixel < 0 || tick.pixel > drawingArea.height)
+            continue;
+          var gridLine = new zrender.Line({
+            shape: {
+              x1: drawingArea.x,
+              y1: y,
+              x2: drawingArea.x + drawingArea.width,
+              y2: y
+            },
+            style: {
+              stroke: gridColor,
+              lineWidth: gridWidth,
+              lineDash: gridDash
+            },
+            silent: true
+          });
+          gridGroup.add(gridLine);
+        }
+        container.add(gridGroup);
+        return gridGroup;
+      }
+      function parseDashArray(dash) {
+        if (Array.isArray(dash))
+          return dash;
+        if (typeof dash === "string") {
+          return dash.split(",").map(function(s) {
+            return parseFloat(s.trim()) || 0;
+          });
+        }
+        return [5, 5];
+      }
       module.exports = {
+        // Original simple functions
         drawXAxis,
         drawYAxis,
         drawXGrid,
-        drawYGrid
+        drawYGrid,
+        // Enhanced functions using core axes module
+        setupAxes,
+        drawAxesFromSetup,
+        drawGridFromSetup,
+        drawXAxisFromSetup,
+        drawYAxisFromSetup,
+        drawXGridFromSetup,
+        drawYGridFromSetup
       };
     }
   });
@@ -21854,6 +22153,963 @@ var contourCore = (() => {
     }
   });
 
+  // renderers/zrender/nulls.js
+  var require_nulls2 = __commonJS({
+    "renderers/zrender/nulls.js"(exports, module) {
+      "use strict";
+      var zrender = require_zrender();
+      var nullHandling = require_null_handling();
+      function createNullElements(contourResult, style) {
+        var elements = [];
+        var nullMask = contourResult.nullMask;
+        if (!nullMask)
+          return elements;
+        style = style || {};
+        var nullRegion = style.nullRegion || {};
+        var visible = nullRegion.visible !== false;
+        if (!visible)
+          return elements;
+        var m = nullMask.length;
+        var n = nullMask[0].length;
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var scaleX = (width - 2 * padding) / (n - 1);
+        var scaleY = (height - 2 * padding) / (m - 1);
+        var nullCells = [];
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            if (nullMask[i][j]) {
+              nullCells.push({ i, j });
+            }
+          }
+        }
+        if (nullCells.length === 0)
+          return elements;
+        var mergedRects = mergeNullCells(nullCells, m, n);
+        var fillColor = nullRegion.fill || nullRegion.bgColor || "#ffffff";
+        var useTransparent = fillColor === "transparent";
+        if (!useTransparent) {
+          var fillGroup = new zrender.Group();
+          for (var r = 0; r < mergedRects.length; r++) {
+            var rect = mergedRects[r];
+            var rectElement = createNullRect(rect, scaleX, scaleY, padding, m, fillColor, nullRegion);
+            fillGroup.add(rectElement);
+          }
+          elements.push({
+            element: fillGroup,
+            type: "fill"
+          });
+        }
+        var strokeColor = nullRegion.stroke;
+        var showStroke = nullRegion.showStroke !== void 0 ? nullRegion.showStroke : true;
+        if (strokeColor && showStroke) {
+          var strokeGroup = new zrender.Group();
+          var strokeWidth = nullRegion.strokeWidth !== void 0 ? nullRegion.strokeWidth : 1;
+          var strokeDash = nullRegion.strokeDash || [];
+          for (var r = 0; r < mergedRects.length; r++) {
+            var rect = mergedRects[r];
+            var borderElement = createNullBorder(rect, scaleX, scaleY, padding, m, strokeColor, strokeWidth, strokeDash);
+            strokeGroup.add(borderElement);
+          }
+          elements.push({
+            element: strokeGroup,
+            type: "stroke"
+          });
+        }
+        if (useTransparent) {
+          elements.push({
+            element: null,
+            type: "mask",
+            maskData: {
+              nullMask,
+              mergedRects,
+              scaleX,
+              scaleY,
+              padding,
+              m
+            }
+          });
+        }
+        return elements;
+      }
+      function mergeNullCells(nullCells, m, n) {
+        if (nullCells.length === 0)
+          return [];
+        var grid = [];
+        for (var i = 0; i < m; i++) {
+          grid[i] = [];
+          for (var j = 0; j < n; j++) {
+            grid[i][j] = false;
+          }
+        }
+        for (var k = 0; k < nullCells.length; k++) {
+          var cell = nullCells[k];
+          grid[cell.i][cell.j] = true;
+        }
+        var mergedRects = [];
+        var visited = [];
+        for (var i = 0; i < m; i++) {
+          visited[i] = [];
+          for (var j = 0; j < n; j++) {
+            visited[i][j] = false;
+          }
+        }
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            if (grid[i][j] && !visited[i][j]) {
+              var component = [];
+              var queue = [{ i, j }];
+              visited[i][j] = true;
+              while (queue.length > 0) {
+                var cell = queue.shift();
+                component.push(cell);
+                var neighbors = [
+                  { i: cell.i - 1, j: cell.j },
+                  { i: cell.i + 1, j: cell.j },
+                  { i: cell.i, j: cell.j - 1 },
+                  { i: cell.i, j: cell.j + 1 }
+                ];
+                for (var ni = 0; ni < neighbors.length; ni++) {
+                  var neighbor = neighbors[ni];
+                  if (neighbor.i >= 0 && neighbor.i < m && neighbor.j >= 0 && neighbor.j < n && grid[neighbor.i][neighbor.j] && !visited[neighbor.i][neighbor.j]) {
+                    visited[neighbor.i][neighbor.j] = true;
+                    queue.push(neighbor);
+                  }
+                }
+              }
+              if (component.length > 0) {
+                var minI = Infinity, maxI = -Infinity;
+                var minJ = Infinity, maxJ = -Infinity;
+                for (var c = 0; c < component.length; c++) {
+                  var cell = component[c];
+                  minI = Math.min(minI, cell.i);
+                  maxI = Math.max(maxI, cell.i);
+                  minJ = Math.min(minJ, cell.j);
+                  maxJ = Math.max(maxJ, cell.j);
+                }
+                mergedRects.push({
+                  minI,
+                  maxI,
+                  minJ,
+                  maxJ,
+                  cells: component
+                });
+              }
+            }
+          }
+        }
+        return mergedRects;
+      }
+      function createNullRect(rect, scaleX, scaleY, padding, m, fillColor, nullRegion) {
+        var x1 = padding + rect.minJ * scaleX;
+        var x2 = padding + rect.maxJ * scaleX;
+        var y1 = padding + (m - 1 - rect.maxI) * scaleY;
+        var y2 = padding + (m - 1 - rect.minI) * scaleY;
+        var rectWidth = x2 - x1 + scaleX;
+        var rectHeight = y2 - y1 + scaleY;
+        return new zrender.Rect({
+          shape: {
+            x: x1 - scaleX / 2,
+            y: y1 - scaleY / 2,
+            width: rectWidth,
+            height: rectHeight
+          },
+          style: {
+            fill: fillColor,
+            opacity: nullRegion.opacity !== void 0 ? nullRegion.opacity : 1
+          },
+          silent: true,
+          z: 100
+          // Ensure null regions are drawn on top of contours
+        });
+      }
+      function createNullBorder(rect, scaleX, scaleY, padding, m, strokeColor, strokeWidth, strokeDash) {
+        var x1 = padding + rect.minJ * scaleX;
+        var x2 = padding + rect.maxJ * scaleX;
+        var y1 = padding + (m - 1 - rect.maxI) * scaleY;
+        var y2 = padding + (m - 1 - rect.minI) * scaleY;
+        var rectWidth = x2 - x1 + scaleX;
+        var rectHeight = y2 - y1 + scaleY;
+        return new zrender.Rect({
+          shape: {
+            x: x1 - scaleX / 2,
+            y: y1 - scaleY / 2,
+            width: rectWidth,
+            height: rectHeight
+          },
+          style: {
+            fill: "none",
+            stroke: strokeColor,
+            lineWidth: strokeWidth,
+            lineDash: strokeDash
+          },
+          silent: true,
+          z: 101
+          // Borders on top of fill
+        });
+      }
+      function createNullClipPath(contourResult, style) {
+        var nullMask = contourResult.nullMask;
+        if (!nullMask)
+          return null;
+        style = style || {};
+        var nullRegion = style.nullRegion || {};
+        if (nullRegion.visible === false)
+          return null;
+        var svgPathData = nullHandling.generateClipPath(contourResult, style);
+        if (!svgPathData)
+          return null;
+        return svgPathToZRender(svgPathData);
+      }
+      function svgPathToZRender(svgPathData) {
+        if (!svgPathData || typeof svgPathData !== "string")
+          return null;
+        var subPaths = parseSVGToSubPaths(svgPathData);
+        if (subPaths.length === 0)
+          return null;
+        var pathElements = [];
+        for (var i = 0; i < subPaths.length; i++) {
+          var points = subPaths[i];
+          if (points.length < 3)
+            continue;
+          var polygon = new zrender.Polygon({
+            shape: {
+              points
+            }
+          });
+          pathElements.push(polygon);
+        }
+        if (pathElements.length === 0)
+          return null;
+        if (pathElements.length === 1) {
+          return pathElements[0];
+        }
+        return new zrender.CompoundPath({
+          shape: {
+            paths: pathElements
+          }
+        });
+      }
+      function parseSVGToSubPaths(svgPathData) {
+        var subPaths = [];
+        var currentPath = [];
+        var currentX = 0, currentY = 0;
+        var startX = 0, startY = 0;
+        var commands = svgPathData.match(/[MmLlHhVvAaQqTtCcSsZz][^MmLlHhVvAaQqTtCcSsZz]*/g) || [];
+        for (var i = 0; i < commands.length; i++) {
+          var cmd = commands[i];
+          var type = cmd[0];
+          var args = cmd.slice(1).trim().split(/[\s,]+/).map(parseFloat).filter(function(n) {
+            return !isNaN(n);
+          });
+          switch (type) {
+            case "M":
+              if (currentPath.length > 0) {
+                subPaths.push(currentPath);
+              }
+              currentPath = [];
+              currentX = args[0];
+              currentY = args[1];
+              startX = currentX;
+              startY = currentY;
+              currentPath.push([currentX, currentY]);
+              for (var j = 2; j < args.length; j += 2) {
+                currentX = args[j];
+                currentY = args[j + 1];
+                currentPath.push([currentX, currentY]);
+              }
+              break;
+            case "m":
+              if (currentPath.length > 0) {
+                subPaths.push(currentPath);
+              }
+              currentPath = [];
+              currentX += args[0];
+              currentY += args[1];
+              startX = currentX;
+              startY = currentY;
+              currentPath.push([currentX, currentY]);
+              break;
+            case "L":
+              for (var j = 0; j < args.length; j += 2) {
+                currentX = args[j];
+                currentY = args[j + 1];
+                currentPath.push([currentX, currentY]);
+              }
+              break;
+            case "l":
+              for (var j = 0; j < args.length; j += 2) {
+                currentX += args[j];
+                currentY += args[j + 1];
+                currentPath.push([currentX, currentY]);
+              }
+              break;
+            case "H":
+              currentX = args[0];
+              currentPath.push([currentX, currentY]);
+              break;
+            case "h":
+              currentX += args[0];
+              currentPath.push([currentX, currentY]);
+              break;
+            case "V":
+              currentY = args[0];
+              currentPath.push([currentX, currentY]);
+              break;
+            case "v":
+              currentY += args[0];
+              currentPath.push([currentX, currentY]);
+              break;
+            case "Z":
+            case "z":
+              currentX = startX;
+              currentY = startY;
+              break;
+            case "C":
+            case "c":
+            case "S":
+            case "s":
+            case "Q":
+            case "q":
+            case "T":
+            case "t":
+            case "A":
+            case "a":
+              if (args.length >= 2) {
+                var lastIdx = args.length - 2;
+                if (type === type.toLowerCase()) {
+                  currentX += args[lastIdx];
+                  currentY += args[lastIdx + 1];
+                } else {
+                  currentX = args[lastIdx];
+                  currentY = args[lastIdx + 1];
+                }
+                currentPath.push([currentX, currentY]);
+              }
+              break;
+          }
+        }
+        if (currentPath.length > 0) {
+          subPaths.push(currentPath);
+        }
+        return subPaths;
+      }
+      function generateNullBoundaryPaths(nullMask, m, n) {
+        var paths = [];
+        var edges = [];
+        for (var i = 0; i < m - 1; i++) {
+          for (var j = 0; j < n - 1; j++) {
+            var tl = nullMask[i][j] ? 1 : 0;
+            var tr = nullMask[i][j + 1] ? 1 : 0;
+            var bl = nullMask[i + 1][j] ? 1 : 0;
+            var br = nullMask[i + 1][j + 1] ? 1 : 0;
+            var cellType = tl | tr << 1 | bl << 2 | br << 3;
+            var cellEdges = getMarchingSquareEdges(cellType, j, i);
+            for (var e = 0; e < cellEdges.length; e++) {
+              edges.push(cellEdges[e]);
+            }
+          }
+        }
+        if (edges.length === 0)
+          return paths;
+        paths = connectEdges(edges);
+        return paths;
+      }
+      function getMarchingSquareEdges(cellType, x, y) {
+        var top = { x: x + 0.5, y };
+        var right = { x: x + 1, y: y + 0.5 };
+        var bottom = { x: x + 0.5, y: y + 1 };
+        var left = { x, y: y + 0.5 };
+        var edges = [];
+        switch (cellType) {
+          case 1:
+          case 14:
+            edges.push({ x1: left.x, y1: left.y, x2: top.x, y2: top.y });
+            break;
+          case 2:
+          case 13:
+            edges.push({ x1: top.x, y1: top.y, x2: right.x, y2: right.y });
+            break;
+          case 3:
+          case 12:
+            edges.push({ x1: left.x, y1: left.y, x2: right.x, y2: right.y });
+            break;
+          case 4:
+          case 11:
+            edges.push({ x1: bottom.x, y1: bottom.y, x2: left.x, y2: left.y });
+            break;
+          case 5:
+            edges.push({ x1: top.x, y1: top.y, x2: bottom.x, y2: bottom.y });
+            break;
+          case 6:
+          case 9:
+            edges.push({ x1: top.x, y1: top.y, x2: right.x, y2: right.y });
+            edges.push({ x1: bottom.x, y1: bottom.y, x2: left.x, y2: left.y });
+            break;
+          case 7:
+          case 8:
+            edges.push({ x1: bottom.x, y1: bottom.y, x2: right.x, y2: right.y });
+            break;
+          case 10:
+            edges.push({ x1: top.x, y1: top.y, x2: bottom.x, y2: bottom.y });
+            break;
+        }
+        return edges;
+      }
+      function connectEdges(edges) {
+        if (edges.length === 0)
+          return [];
+        var paths = [];
+        var used = new Array(edges.length).fill(false);
+        for (var startIdx = 0; startIdx < edges.length; startIdx++) {
+          if (used[startIdx])
+            continue;
+          var path = [];
+          var currentEdge = edges[startIdx];
+          used[startIdx] = true;
+          path.push({ x: currentEdge.x1, y: currentEdge.y1 });
+          path.push({ x: currentEdge.x2, y: currentEdge.y2 });
+          var currentEnd = { x: currentEdge.x2, y: currentEdge.y2 };
+          var found = true;
+          while (found) {
+            found = false;
+            for (var i = 0; i < edges.length; i++) {
+              if (used[i])
+                continue;
+              var edge = edges[i];
+              if (Math.abs(edge.x1 - currentEnd.x) < 0.01 && Math.abs(edge.y1 - currentEnd.y) < 0.01) {
+                path.push({ x: edge.x2, y: edge.y2 });
+                currentEnd = { x: edge.x2, y: edge.y2 };
+                used[i] = true;
+                found = true;
+                break;
+              } else if (Math.abs(edge.x2 - currentEnd.x) < 0.01 && Math.abs(edge.y2 - currentEnd.y) < 0.01) {
+                path.push({ x: edge.x1, y: edge.y1 });
+                currentEnd = { x: edge.x1, y: edge.y1 };
+                used[i] = true;
+                found = true;
+                break;
+              }
+            }
+          }
+          if (path.length >= 3) {
+            paths.push(path);
+          }
+        }
+        return paths;
+      }
+      function drawNulls(container, contourResult, style) {
+        var elements = createNullElements(contourResult, style);
+        for (var i = 0; i < elements.length; i++) {
+          var item = elements[i];
+          if (item.type === "fill" || item.type === "stroke") {
+            container.add(item.element);
+          }
+        }
+      }
+      function applyNullClip(element, contourResult, style) {
+        var clipPath = createNullClipPath(contourResult, style);
+        if (clipPath) {
+          element.setClipPath(clipPath);
+        }
+      }
+      module.exports = {
+        createNullElements,
+        createNullClipPath,
+        drawNulls,
+        applyNullClip,
+        mergeNullCells,
+        generateNullBoundaryPaths
+      };
+    }
+  });
+
+  // renderers/zrender/heatmap.js
+  var require_heatmap2 = __commonJS({
+    "renderers/zrender/heatmap.js"(exports, module) {
+      "use strict";
+      var zrender = require_zrender();
+      var colors = require_colors();
+      function createHeatmapBackground(grid, style) {
+        style = style || {};
+        var group = new zrender.Group();
+        if (!grid || !grid.z) {
+          return group;
+        }
+        var z = grid.z;
+        var m = z.length;
+        var n = z[0].length;
+        if (m === 0 || n === 0) {
+          return group;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var plotWidth = width - 2 * padding;
+        var plotHeight = height - 2 * padding;
+        var cellWidth = plotWidth / (n - 1);
+        var cellHeight = plotHeight / (m - 1);
+        var colorscale = style.colorscale || "Viridis";
+        var zmin, zmax;
+        if (style.dataRange && style.dataRange.min !== void 0) {
+          zmin = style.dataRange.min;
+          zmax = style.dataRange.max;
+        } else {
+          var range = calculateDataRange(z, m, n);
+          zmin = range.min;
+          zmax = range.max;
+        }
+        if (!isFinite(zmin) || !isFinite(zmax)) {
+          return group;
+        }
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            var value = z[i][j];
+            if (typeof value !== "number" || !isFinite(value)) {
+              continue;
+            }
+            var color = colors.mapColors(
+              value,
+              zmin,
+              zmax,
+              colorscale,
+              {
+                reverse: style.reverse,
+                dataMin: style.dataRange ? style.dataRange.min : void 0,
+                dataMax: style.dataRange ? style.dataRange.max : void 0
+              }
+            );
+            var x = padding + j * cellWidth;
+            var y = padding + (m - 1 - i) * cellHeight;
+            var rect = new zrender.Rect({
+              shape: {
+                x: x - cellWidth / 2,
+                y: y - cellHeight / 2,
+                width: cellWidth + 1,
+                // +1 to overlap slightly
+                height: cellHeight + 1
+              },
+              style: {
+                fill: color,
+                stroke: "none"
+              },
+              silent: true,
+              z: 0
+            });
+            group.add(rect);
+          }
+        }
+        return group;
+      }
+      function createInterpolatedHeatmap(grid, style) {
+        style = style || {};
+        if (!grid || !grid.z) {
+          return null;
+        }
+        var z = grid.z;
+        var m = z.length;
+        var n = z[0].length;
+        if (m === 0 || n === 0) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var plotWidth = width - 2 * padding;
+        var plotHeight = height - 2 * padding;
+        var zmin, zmax;
+        if (style.dataRange && style.dataRange.min !== void 0) {
+          zmin = style.dataRange.min;
+          zmax = style.dataRange.max;
+        } else {
+          var range = calculateDataRange(z, m, n);
+          zmin = range.min;
+          zmax = range.max;
+        }
+        if (!isFinite(zmin) || !isFinite(zmax)) {
+          return null;
+        }
+        var colorscale = style.colorscale || "Viridis";
+        var heatmapCanvas = createOffscreenCanvas(n, m);
+        if (!heatmapCanvas) {
+          return createHeatmapBackground(grid, style);
+        }
+        var heatmapCtx = heatmapCanvas.getContext("2d");
+        var imageData = heatmapCtx.createImageData(n, m);
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            var value = z[i][j];
+            var pixelIndex = ((m - 1 - i) * n + j) * 4;
+            if (typeof value === "number" && isFinite(value)) {
+              var color = colors.mapColors(
+                value,
+                zmin,
+                zmax,
+                colorscale,
+                {
+                  reverse: style.reverse
+                }
+              );
+              var rgb = parseHexColor(color);
+              imageData.data[pixelIndex] = rgb.r;
+              imageData.data[pixelIndex + 1] = rgb.g;
+              imageData.data[pixelIndex + 2] = rgb.b;
+              imageData.data[pixelIndex + 3] = 255;
+            } else {
+              imageData.data[pixelIndex + 3] = 0;
+            }
+          }
+        }
+        heatmapCtx.putImageData(imageData, 0, 0);
+        return new zrender.Image({
+          style: {
+            x: padding,
+            y: padding,
+            width: plotWidth,
+            height: plotHeight,
+            image: heatmapCanvas
+          },
+          silent: true,
+          z: 0
+        });
+      }
+      function createSmoothHeatmap(grid, style) {
+        style = style || {};
+        if (!grid || !grid.z) {
+          return null;
+        }
+        var z = grid.z;
+        var m = z.length;
+        var n = z[0].length;
+        if (m === 0 || n === 0) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var plotWidth = width - 2 * padding;
+        var plotHeight = height - 2 * padding;
+        var scaleFactor = Math.max(1, Math.min(10, Math.ceil(100 / Math.max(n, m))));
+        var hiresCanvas = createOffscreenCanvas(n * scaleFactor, m * scaleFactor);
+        if (!hiresCanvas) {
+          return createInterpolatedHeatmap(grid, style);
+        }
+        var hiresCtx = hiresCanvas.getContext("2d");
+        var zmin, zmax;
+        if (style.dataRange && style.dataRange.min !== void 0) {
+          zmin = style.dataRange.min;
+          zmax = style.dataRange.max;
+        } else {
+          var range = calculateDataRange(z, m, n);
+          zmin = range.min;
+          zmax = range.max;
+        }
+        if (!isFinite(zmin) || !isFinite(zmax)) {
+          return null;
+        }
+        var colorscale = style.colorscale || "Viridis";
+        var imageData = hiresCtx.createImageData(n * scaleFactor, m * scaleFactor);
+        var totalRows = m * scaleFactor;
+        for (var i = 0; i < m * scaleFactor; i++) {
+          for (var j = 0; j < n * scaleFactor; j++) {
+            var gridI = i / scaleFactor;
+            var gridJ = j / scaleFactor;
+            var value = interpolateValue(z, m, n, gridI, gridJ);
+            var pixelIndex = ((totalRows - 1 - i) * n * scaleFactor + j) * 4;
+            if (typeof value === "number" && isFinite(value)) {
+              var color = colors.mapColors(
+                value,
+                zmin,
+                zmax,
+                colorscale,
+                {
+                  reverse: style.reverse
+                }
+              );
+              var rgb = parseHexColor(color);
+              imageData.data[pixelIndex] = rgb.r;
+              imageData.data[pixelIndex + 1] = rgb.g;
+              imageData.data[pixelIndex + 2] = rgb.b;
+              imageData.data[pixelIndex + 3] = 255;
+            } else {
+              imageData.data[pixelIndex + 3] = 0;
+            }
+          }
+        }
+        hiresCtx.putImageData(imageData, 0, 0);
+        return new zrender.Image({
+          style: {
+            x: padding,
+            y: padding,
+            width: plotWidth,
+            height: plotHeight,
+            image: hiresCanvas
+          },
+          silent: true,
+          z: 0
+        });
+      }
+      function createBicubicHeatmap(grid, style) {
+        style = style || {};
+        if (!grid || !grid.z) {
+          return null;
+        }
+        var z = grid.z;
+        var m = z.length;
+        var n = z[0].length;
+        if (m === 0 || n === 0) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var plotWidth = width - 2 * padding;
+        var plotHeight = height - 2 * padding;
+        var scaleFactor = Math.max(2, Math.min(10, Math.ceil(200 / Math.max(n, m))));
+        var hiresCanvas = createOffscreenCanvas(n * scaleFactor, m * scaleFactor);
+        if (!hiresCanvas) {
+          return createSmoothHeatmap(grid, style);
+        }
+        var hiresCtx = hiresCanvas.getContext("2d");
+        var zmin, zmax;
+        if (style.dataRange && style.dataRange.min !== void 0) {
+          zmin = style.dataRange.min;
+          zmax = style.dataRange.max;
+        } else {
+          var range = calculateDataRange(z, m, n);
+          zmin = range.min;
+          zmax = range.max;
+        }
+        if (!isFinite(zmin) || !isFinite(zmax)) {
+          return null;
+        }
+        var colorscale = style.colorscale || "Viridis";
+        var imageData = hiresCtx.createImageData(n * scaleFactor, m * scaleFactor);
+        var totalRows = m * scaleFactor;
+        for (var i = 0; i < m * scaleFactor; i++) {
+          for (var j = 0; j < n * scaleFactor; j++) {
+            var gridI = i / scaleFactor;
+            var gridJ = j / scaleFactor;
+            var value = bicubicInterpolate(z, m, n, gridI, gridJ);
+            var pixelIndex = ((totalRows - 1 - i) * n * scaleFactor + j) * 4;
+            if (typeof value === "number" && isFinite(value)) {
+              var color = colors.mapColors(value, zmin, zmax, colorscale, { reverse: style.reverse });
+              var rgb = parseHexColor(color);
+              imageData.data[pixelIndex] = rgb.r;
+              imageData.data[pixelIndex + 1] = rgb.g;
+              imageData.data[pixelIndex + 2] = rgb.b;
+              imageData.data[pixelIndex + 3] = 255;
+            } else {
+              imageData.data[pixelIndex + 3] = 0;
+            }
+          }
+        }
+        hiresCtx.putImageData(imageData, 0, 0);
+        return new zrender.Image({
+          style: {
+            x: padding,
+            y: padding,
+            width: plotWidth,
+            height: plotHeight,
+            image: hiresCanvas
+          },
+          silent: true,
+          z: 0
+        });
+      }
+      function calculateDataRange(z, m, n) {
+        var minVal = Infinity;
+        var maxVal = -Infinity;
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            var val = z[i][j];
+            if (typeof val === "number" && isFinite(val)) {
+              if (val < minVal)
+                minVal = val;
+              if (val > maxVal)
+                maxVal = val;
+            }
+          }
+        }
+        return { min: minVal, max: maxVal };
+      }
+      function createOffscreenCanvas(width, height) {
+        if (typeof document !== "undefined" && document.createElement) {
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          return canvas;
+        }
+        try {
+          var nodeCanvas = __require("canvas");
+          if (nodeCanvas && nodeCanvas.createCanvas) {
+            return nodeCanvas.createCanvas(width, height);
+          }
+        } catch (e) {
+        }
+        return null;
+      }
+      function parseHexColor(hex) {
+        if (!hex || typeof hex !== "string") {
+          return { r: 128, g: 128, b: 128 };
+        }
+        if (hex.startsWith("rgba")) {
+          var match = hex.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            return {
+              r: parseInt(match[1], 10),
+              g: parseInt(match[2], 10),
+              b: parseInt(match[3], 10)
+            };
+          }
+        }
+        if (hex.startsWith("#")) {
+          hex = hex.slice(1);
+          if (hex.length === 3) {
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+          }
+          return {
+            r: parseInt(hex.slice(0, 2), 16) || 0,
+            g: parseInt(hex.slice(2, 4), 16) || 0,
+            b: parseInt(hex.slice(4, 6), 16) || 0
+          };
+        }
+        return { r: 128, g: 128, b: 128 };
+      }
+      function interpolateValue(z, m, n, i, j) {
+        var i0 = Math.floor(i);
+        var j0 = Math.floor(j);
+        var i1 = Math.min(i0 + 1, m - 1);
+        var j1 = Math.min(j0 + 1, n - 1);
+        var di = i - i0;
+        var dj = j - j0;
+        var v00 = z[i0][j0];
+        var v01 = z[i0][j1];
+        var v10 = z[i1][j0];
+        var v11 = z[i1][j1];
+        var valid00 = typeof v00 === "number" && isFinite(v00);
+        var valid01 = typeof v01 === "number" && isFinite(v01);
+        var valid10 = typeof v10 === "number" && isFinite(v10);
+        var valid11 = typeof v11 === "number" && isFinite(v11);
+        if (valid00 && valid01 && valid10 && valid11) {
+          return v00 * (1 - di) * (1 - dj) + v10 * di * (1 - dj) + v01 * (1 - di) * dj + v11 * di * dj;
+        }
+        var sum = 0;
+        var weight = 0;
+        if (valid00) {
+          sum += v00 * (1 - di) * (1 - dj);
+          weight += (1 - di) * (1 - dj);
+        }
+        if (valid01) {
+          sum += v01 * (1 - di) * dj;
+          weight += (1 - di) * dj;
+        }
+        if (valid10) {
+          sum += v10 * di * (1 - dj);
+          weight += di * (1 - dj);
+        }
+        if (valid11) {
+          sum += v11 * di * dj;
+          weight += di * dj;
+        }
+        return weight > 0 ? sum / weight : NaN;
+      }
+      function bicubicInterpolate(z, m, n, i, j) {
+        var i0 = Math.floor(i);
+        var j0 = Math.floor(j);
+        var values = [];
+        for (var di = -1; di <= 2; di++) {
+          values[di + 1] = [];
+          for (var dj = -1; dj <= 2; dj++) {
+            var ii = Math.max(0, Math.min(m - 1, i0 + di));
+            var jj = Math.max(0, Math.min(n - 1, j0 + dj));
+            var v = z[ii][jj];
+            values[di + 1][dj + 1] = typeof v === "number" && isFinite(v) ? v : NaN;
+          }
+        }
+        var fi = i - i0;
+        var fj = j - j0;
+        var rowValues = [];
+        for (var row = 0; row < 4; row++) {
+          rowValues[row] = cubicInterpolate1D(
+            values[row][0],
+            values[row][1],
+            values[row][2],
+            values[row][3],
+            fj
+          );
+        }
+        return cubicInterpolate1D(
+          rowValues[0],
+          rowValues[1],
+          rowValues[2],
+          rowValues[3],
+          fi
+        );
+      }
+      function cubicInterpolate1D(v0, v1, v2, v3, t) {
+        var valid0 = !isNaN(v0);
+        var valid1 = !isNaN(v1);
+        var valid2 = !isNaN(v2);
+        var valid3 = !isNaN(v3);
+        if (!valid1 && !valid2)
+          return NaN;
+        if (!valid1)
+          return v2;
+        if (!valid2)
+          return v1;
+        if (!valid0)
+          v0 = v1;
+        if (!valid3)
+          v3 = v2;
+        var t2 = t * t;
+        var t3 = t2 * t;
+        var a0 = -0.5 * v0 + 1.5 * v1 - 1.5 * v2 + 0.5 * v3;
+        var a1 = v0 - 2.5 * v1 + 2 * v2 - 0.5 * v3;
+        var a2 = -0.5 * v0 + 0.5 * v2;
+        var a3 = v1;
+        return a0 * t3 + a1 * t2 + a2 * t + a3;
+      }
+      function drawHeatmap(container, grid, style) {
+        style = style || {};
+        var mode = style.heatmapMode || "interpolated";
+        var element = null;
+        switch (mode) {
+          case "basic":
+            element = createHeatmapBackground(grid, style);
+            break;
+          case "bicubic":
+            element = createBicubicHeatmap(grid, style);
+            break;
+          case "smooth":
+            element = createSmoothHeatmap(grid, style);
+            break;
+          case "interpolated":
+          default:
+            element = createInterpolatedHeatmap(grid, style);
+            break;
+        }
+        if (element) {
+          container.add(element);
+        }
+        return element;
+      }
+      module.exports = {
+        createHeatmapBackground,
+        createInterpolatedHeatmap,
+        createSmoothHeatmap,
+        createBicubicHeatmap,
+        drawHeatmap,
+        // Utilities
+        calculateDataRange,
+        parseHexColor,
+        interpolateValue,
+        bicubicInterpolate
+      };
+    }
+  });
+
   // renderers/zrender/index.js
   var require_zrender2 = __commonJS({
     "renderers/zrender/index.js"(exports, module) {
@@ -21863,6 +23119,8 @@ var contourCore = (() => {
       var labelUtils = require_labels3();
       var axesUtils = require_axes3();
       var colorbarUtils = require_colorbar3();
+      var nullUtils = require_nulls2();
+      var heatmapUtils = require_heatmap2();
       function ZRenderContourRenderer(container, options) {
         options = options || {};
         this.zr = zrender.init(container, {
@@ -21878,6 +23136,8 @@ var contourCore = (() => {
           grid: new zrender.Group(),
           fills: new zrender.Group(),
           lines: new zrender.Group(),
+          nullOverlay: new zrender.Group(),
+          // Null region overlay (on top of fills)
           axes: new zrender.Group(),
           labels: new zrender.Group(),
           overlay: new zrender.Group()
@@ -21886,6 +23146,7 @@ var contourCore = (() => {
         this.mainGroup.add(this.layers.grid);
         this.mainGroup.add(this.layers.fills);
         this.mainGroup.add(this.layers.lines);
+        this.mainGroup.add(this.layers.nullOverlay);
         this.mainGroup.add(this.layers.axes);
         this.mainGroup.add(this.layers.labels);
         this.mainGroup.add(this.layers.overlay);
@@ -21899,9 +23160,19 @@ var contourCore = (() => {
         this.layers.background.removeAll();
         this.layers.fills.removeAll();
         this.layers.lines.removeAll();
+        this.layers.nullOverlay.removeAll();
         this.layers.labels.removeAll();
         this.contourResult = result;
         this.style = style;
+        var connectGaps = result.connectgaps !== void 0 ? result.connectgaps : true;
+        var needsNullHandling = !connectGaps && result.nullMask && result.nullCount > 0;
+        var coloring = style.coloring || "fill";
+        if (needsNullHandling && style.useClipMask !== false) {
+          this.applyNullClipToLayer(result, style);
+        }
+        if (coloring === "heatmap") {
+          this.renderHeatmap(result, style);
+        }
         var contourElements = pathUtils.createContourPaths(result, style, this.options);
         for (var i = 0; i < contourElements.length; i++) {
           var item = contourElements[i];
@@ -21913,9 +23184,81 @@ var contourCore = (() => {
             this.layers.fills.add(element);
           }
         }
+        if (needsNullHandling && style.useClipMask === false) {
+          this.renderNulls(result, style);
+        }
         this.attachContourEvents(contourElements.filter(function(item2) {
           return item2.type === "fill";
         }));
+      };
+      ZRenderContourRenderer.prototype.renderNulls = function(contourResult, style) {
+        this.layers.nullOverlay.removeAll();
+        if (!contourResult || !contourResult.nullMask) {
+          return;
+        }
+        var nullElements = nullUtils.createNullElements(contourResult, style);
+        for (var i = 0; i < nullElements.length; i++) {
+          var item = nullElements[i];
+          if (item.type === "fill") {
+            this.layers.nullOverlay.add(item.element);
+          } else if (item.type === "stroke") {
+            this.layers.nullOverlay.add(item.element);
+          }
+        }
+        this.zr.flush();
+      };
+      ZRenderContourRenderer.prototype.applyNullClipToLayer = function(contourResult, style) {
+        if (!contourResult || !contourResult.nullMask) {
+          return;
+        }
+        var clipPath = nullUtils.createNullClipPath(contourResult, style);
+        if (clipPath && this.layers.fills) {
+          this.layers.fills.setClipPath(clipPath);
+        }
+      };
+      ZRenderContourRenderer.prototype.clearNullClip = function() {
+        if (this.layers.fills) {
+          this.layers.fills.setClipPath(null);
+        }
+      };
+      ZRenderContourRenderer.prototype.renderHeatmap = function(contourResult, style) {
+        this.layers.background.removeAll();
+        if (!contourResult || !contourResult.pathinfo || !contourResult.pathinfo[0]) {
+          return;
+        }
+        var pathInfo = contourResult.pathinfo[0];
+        var grid = {
+          z: pathInfo.z,
+          x: pathInfo.x,
+          y: pathInfo.y
+        };
+        var heatmapMode = style.heatmapMode || "interpolated";
+        var colorscale = style.colorscale || style.colorScale || "Viridis";
+        var heatmapStyle = {
+          width: style.width || this.options.width || 600,
+          height: style.height || this.options.height || 500,
+          padding: style.padding || 30,
+          colorscale,
+          dataRange: style.dataRange || {
+            min: contourResult.zmin,
+            max: contourResult.zmax
+          },
+          reverse: style.reverse || false,
+          heatmapMode
+        };
+        var heatmapElement = heatmapUtils.createInterpolatedHeatmap(grid, heatmapStyle);
+        if (heatmapElement) {
+          this.layers.background.add(heatmapElement);
+        } else {
+          var heatmapGroup = heatmapUtils.createHeatmapBackground(grid, heatmapStyle);
+          if (heatmapGroup) {
+            this.layers.background.add(heatmapGroup);
+          }
+        }
+        this.zr.flush();
+      };
+      ZRenderContourRenderer.prototype.clearHeatmap = function() {
+        this.layers.background.removeAll();
       };
       ZRenderContourRenderer.prototype.renderLabels = function(contourResult, style) {
         this.layers.labels.removeAll();
@@ -21963,19 +23306,22 @@ var contourCore = (() => {
           var item = elements[i];
           var element = item.element;
           var level = item.level;
-          element.on("mouseover", /* @__PURE__ */ function(lvl, el) {
-            return function(e) {
-              self2.handleContourHover(e, el, lvl);
-            };
-          }(level, element));
-          element.on("mouseout", function(e) {
+          if (element.isGroup) {
+            attachEventsToElement(element, level, element);
+          } else {
+            attachEventsToElement(element, level, element);
+          }
+        }
+        function attachEventsToElement(el, lvl, originalElement) {
+          el.on("mouseover", function(e) {
+            self2.handleContourHover(e, originalElement, lvl);
+          });
+          el.on("mouseout", function(e) {
             self2.handleContourHoverEnd(e);
           });
-          element.on("click", /* @__PURE__ */ function(lvl) {
-            return function(e) {
-              self2.handleContourClick(e, lvl);
-            };
-          }(level));
+          el.on("click", function(e) {
+            self2.handleContourClick(e, lvl);
+          });
         }
       };
       ZRenderContourRenderer.prototype.handleContourHover = function(e, element, level) {
@@ -21984,12 +23330,9 @@ var contourCore = (() => {
         if (level === null)
           return;
         this.layers.overlay.removeAll();
-        var currentStyle = element.style || {};
-        var originalLineWidth = currentStyle.lineWidth || 1.5;
-        var zrender2 = require_zrender();
         var rect = element.getBoundingRect();
         var padding = 5;
-        var highlight = new zrender2.Rect({
+        var highlight = new zrender.Rect({
           shape: {
             x: rect.x - padding,
             y: rect.y - padding,
@@ -22121,7 +23464,7 @@ var contourCore = (() => {
           startX: 0,
           startY: 0
         };
-        var dom = this.zr.dom;
+        var dom2 = this.zr.dom;
         this.zr.on("mousedown", function(e) {
           if (!self2.interactionEnabled)
             return;
@@ -22132,8 +23475,8 @@ var contourCore = (() => {
           self2.panState.lastY = e.offsetY;
           self2.panState.startX = e.offsetX;
           self2.panState.startY = e.offsetY;
-          if (dom) {
-            dom.style.cursor = "grabbing";
+          if (dom2) {
+            dom2.style.cursor = "grabbing";
           }
           if (options.onPanStart) {
             options.onPanStart(e);
@@ -22173,8 +23516,8 @@ var contourCore = (() => {
         function endPan() {
           if (self2.panState.isDragging) {
             self2.panState.isDragging = false;
-            if (dom) {
-              dom.style.cursor = "default";
+            if (dom2) {
+              dom2.style.cursor = "default";
             }
             if (options.onPanEnd) {
               options.onPanEnd();
@@ -23578,7 +24921,7 @@ var contourCore = (() => {
   });
 
   // renderers/svg/nulls.js
-  var require_nulls2 = __commonJS({
+  var require_nulls3 = __commonJS({
     "renderers/svg/nulls.js"(exports, module) {
       "use strict";
       function createNullRegions(contourResult, options) {
@@ -23813,7 +25156,7 @@ var contourCore = (() => {
       var createPaths = require_paths3();
       var createLabels = require_labels4();
       var createColorbar = require_colorbar4();
-      var createNulls = require_nulls2();
+      var createNulls = require_nulls3();
       var createAxes = require_axes4();
       var nullHandling = require_null_handling();
       function renderSVG(contourResult, options) {
@@ -23883,6 +25226,1619 @@ var contourCore = (() => {
     }
   });
 
+  // renderers/three/paths.js
+  var require_paths4 = __commonJS({
+    "renderers/three/paths.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      var smooth = require_smooth();
+      function createPerimeter(style) {
+        var m = style.z ? style.z.length : 10;
+        var n = style.z && style.z[0] ? style.z[0].length : 10;
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var xMin = padding;
+        var xMax = width - padding;
+        var yMin = padding;
+        var yMax = height - padding;
+        return [
+          [xMin, yMin],
+          [xMax, yMin],
+          [xMax, yMax],
+          [xMin, yMax]
+        ];
+      }
+      function scalePoint(style, pt) {
+        if (!pt || !Array.isArray(pt) || pt.length < 2) {
+          return [0, 0];
+        }
+        if (isNaN(pt[0]) || isNaN(pt[1])) {
+          return [0, 0];
+        }
+        var x = style.x || [];
+        var y = style.y || [];
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var xMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
+        var xMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
+        var yMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
+        var yMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+        var xRange = xMax - xMin || 1;
+        var yRange = yMax - yMin || 1;
+        var canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
+        var canvasY = padding + (pt[1] - yMin) / yRange * (height - 2 * padding);
+        canvasY = height - padding - (canvasY - padding);
+        return [canvasX, canvasY];
+      }
+      function canvasToWorld(x, y, width, height) {
+        return {
+          x: x - width / 2,
+          y: -(y - height / 2)
+        };
+      }
+      function joinAllPaths(pathInfo, perimeter, style) {
+        var allPoints = [];
+        var edgepaths = pathInfo.edgepaths || [];
+        var paths = pathInfo.paths || [];
+        if (!perimeter || perimeter.length < 4) {
+          return allPoints;
+        }
+        edgepaths = edgepaths.filter(function(ep) {
+          return ep && Array.isArray(ep) && ep.length > 0;
+        });
+        if (edgepaths.length === 0 && paths.length === 0) {
+          return allPoints;
+        }
+        var i = 0;
+        var startsleft = edgepaths.map(function(v, i2) {
+          return i2;
+        });
+        var newloop = true;
+        var endpt;
+        var newendpt;
+        var cnt;
+        var nexti;
+        var possiblei;
+        var currentLoopPoints = [];
+        function istop(pt) {
+          if (!pt || !perimeter || !perimeter[0])
+            return false;
+          return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
+        }
+        function isbottom(pt) {
+          if (!pt || !perimeter || !perimeter[2])
+            return false;
+          return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
+        }
+        function isleft(pt) {
+          if (!pt || !perimeter || !perimeter[0])
+            return false;
+          return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
+        }
+        function isright(pt) {
+          if (!pt || !perimeter || !perimeter[2])
+            return false;
+          return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
+        }
+        while (startsleft.length > 0) {
+          var currentPath = edgepaths[i];
+          if (!currentPath || !Array.isArray(currentPath) || currentPath.length === 0) {
+            startsleft.splice(startsleft.indexOf(i), 1);
+            if (startsleft.length > 0) {
+              i = startsleft[0];
+              newloop = true;
+            }
+            continue;
+          }
+          var scaledPath = currentPath.map(function(pt) {
+            return scalePoint(style, pt);
+          });
+          if (newloop) {
+            if (currentLoopPoints.length > 0) {
+              allPoints.push(currentLoopPoints);
+            }
+            currentLoopPoints = [];
+          }
+          currentLoopPoints = currentLoopPoints.concat(scaledPath);
+          startsleft.splice(startsleft.indexOf(i), 1);
+          endpt = scalePoint(style, currentPath[currentPath.length - 1]);
+          nexti = -1;
+          for (cnt = 0; cnt < 4; cnt++) {
+            if (!endpt)
+              break;
+            if (istop(endpt) && !isright(endpt))
+              newendpt = perimeter[1];
+            else if (isleft(endpt))
+              newendpt = perimeter[0];
+            else if (isbottom(endpt))
+              newendpt = perimeter[3];
+            else if (isright(endpt))
+              newendpt = perimeter[2];
+            for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
+              if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
+                continue;
+              }
+              var ptNew = scalePoint(style, edgepaths[possiblei][0]);
+              if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
+                if (Math.abs(endpt[0] - ptNew[0]) < 0.1 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
+                if (Math.abs(endpt[1] - ptNew[1]) < 0.1 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              }
+            }
+            if (nexti < 0) {
+              if (newendpt) {
+                currentLoopPoints.push(newendpt);
+              }
+            }
+            if (!newendpt)
+              break;
+            endpt = newendpt;
+            if (nexti >= 0)
+              break;
+          }
+          if (nexti === edgepaths.length || nexti < 0)
+            break;
+          i = nexti;
+          newloop = startsleft.indexOf(i) === -1;
+          if (newloop && startsleft.length > 0) {
+            i = startsleft[0];
+          }
+        }
+        if (currentLoopPoints.length > 0) {
+          allPoints.push(currentLoopPoints);
+        }
+        var interiorPaths = pathInfo.paths || [];
+        for (i = 0; i < interiorPaths.length; i++) {
+          if (!interiorPaths[i] || !Array.isArray(interiorPaths[i]) || interiorPaths[i].length === 0) {
+            continue;
+          }
+          var scaledPath = interiorPaths[i].map(function(pt) {
+            return scalePoint(style, pt);
+          });
+          allPoints.push(scaledPath);
+        }
+        return allPoints;
+      }
+      function interpolateColor(color1, color2, t) {
+        var r1 = parseInt(color1.slice(1, 3), 16);
+        var g1 = parseInt(color1.slice(3, 5), 16);
+        var b1 = parseInt(color1.slice(5, 7), 16);
+        var r2 = parseInt(color2.slice(1, 3), 16);
+        var g2 = parseInt(color2.slice(3, 5), 16);
+        var b2 = parseInt(color2.slice(5, 7), 16);
+        t = Math.max(0, Math.min(1, t));
+        var r = Math.round(r1 + (r2 - r1) * t);
+        var g = Math.round(g1 + (g2 - g1) * t);
+        var b = Math.round(b1 + (b2 - b1) * t);
+        return "#" + [r, g, b].map(function(x) {
+          var hex = x.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        }).join("");
+      }
+      function getColorForValue(value, colorScale) {
+        if (!colorScale || !Array.isArray(colorScale)) {
+          return "#646464";
+        }
+        var n = colorScale.length;
+        if (n === 0)
+          return "#646464";
+        if (n === 1)
+          return colorScale[0][1];
+        for (var i = 0; i < n - 1; i++) {
+          if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
+            var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
+            return interpolateColor(colorScale[i][1], colorScale[i + 1][1], t);
+          }
+        }
+        if (value < colorScale[0][0])
+          return colorScale[0][1];
+        if (value > colorScale[n - 1][0])
+          return colorScale[n - 1][1];
+        return colorScale[Math.floor(n / 2)][1];
+      }
+      function getColorForSegmentedValue(value, valueColorMap) {
+        if (!valueColorMap || !Array.isArray(valueColorMap) || valueColorMap.length === 0) {
+          return "#646464";
+        }
+        if (value < valueColorMap[0][0]) {
+          return valueColorMap[0][1];
+        }
+        for (var i = 0; i < valueColorMap.length - 1; i++) {
+          if (value >= valueColorMap[i][0] && value < valueColorMap[i + 1][0]) {
+            return valueColorMap[i][1];
+          }
+        }
+        return valueColorMap[valueColorMap.length - 1][1];
+      }
+      function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
+        if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
+          var segmentValue;
+          if (levelIndex < valueColorMap.length - 1) {
+            segmentValue = (valueColorMap[levelIndex][0] + valueColorMap[levelIndex + 1][0]) / 2;
+          } else if (levelIndex === valueColorMap.length - 1) {
+            segmentValue = valueColorMap[levelIndex][0] + 1;
+          } else {
+            segmentValue = level;
+          }
+          return getColorForSegmentedValue(segmentValue, valueColorMap);
+        }
+        if (!colorScale || colorScale.length === 0) {
+          return "#646464";
+        }
+        if (!levels || levels.length === 0) {
+          return colorScale[0][1] || "#646464";
+        }
+        var firstVal = colorScale[0][0];
+        if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
+          for (var i = 0; i < colorScale.length; i++) {
+            if (Math.abs(colorScale[i][0] - level) < 0.01) {
+              return colorScale[i][1];
+            }
+          }
+          var closestIdx = 0;
+          var closestDist = Math.abs(colorScale[0][0] - level);
+          for (var j = 1; j < colorScale.length; j++) {
+            var dist = Math.abs(colorScale[j][0] - level);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestIdx = j;
+            }
+          }
+          return colorScale[closestIdx][1];
+        }
+        var value;
+        if (hasCustomLevels) {
+          if (levelIndex < levels.length - 1) {
+            value = (levels[levelIndex] + levels[levelIndex + 1]) / 2;
+          } else {
+            var lastStep = levels.length > 1 ? levels[levels.length - 1] - levels[levels.length - 2] : 1;
+            value = levels[levelIndex] + lastStep / 2;
+          }
+        } else {
+          value = level + 0.5 * stepSize;
+        }
+        var minVal = levels[0];
+        var maxVal = levels[levels.length - 1];
+        var range = maxVal - minVal;
+        if (range === 0) {
+          return colorScale[0][1] || "#646464";
+        }
+        var normalizedValue = (value - minVal) / range;
+        normalizedValue = Math.max(0, Math.min(1, normalizedValue));
+        return getColorForValue(normalizedValue, colorScale);
+      }
+      function hexToThreeColor(hexColor) {
+        if (!hexColor || typeof hexColor !== "string") {
+          return new THREE.Color(6579300);
+        }
+        if (hexColor.startsWith("rgba") || hexColor.startsWith("rgb")) {
+          var match = hexColor.match(/[\d.]+/g);
+          if (match && match.length >= 3) {
+            return new THREE.Color(
+              parseInt(match[0]) / 255,
+              parseInt(match[1]) / 255,
+              parseInt(match[2]) / 255
+            );
+          }
+        }
+        var hex = hexColor.replace("#", "");
+        if (hex.length === 3) {
+          hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        }
+        return new THREE.Color(parseInt(hex, 16));
+      }
+      function createShapeFromPoints(points, width, height) {
+        if (!points || points.length < 3) {
+          return null;
+        }
+        var shape = new THREE.Shape();
+        var firstPt = canvasToWorld(points[0][0], points[0][1], width, height);
+        shape.moveTo(firstPt.x, firstPt.y);
+        for (var i = 1; i < points.length; i++) {
+          var pt = canvasToWorld(points[i][0], points[i][1], width, height);
+          shape.lineTo(pt.x, pt.y);
+        }
+        shape.closePath();
+        return shape;
+      }
+      function createBackgroundMesh(perimeter, color, style, renderer) {
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var threeColor = hexToThreeColor(color);
+        if (!perimeter || perimeter.length < 4 || !perimeter[0] || !perimeter[2]) {
+          return null;
+        }
+        var worldP0 = canvasToWorld(perimeter[0][0], perimeter[0][1], width, height);
+        var worldP2 = canvasToWorld(perimeter[2][0], perimeter[2][1], width, height);
+        var planeWidth = worldP2.x - worldP0.x;
+        var planeHeight = worldP2.y - worldP0.y;
+        var geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+        var material = new THREE.MeshBasicMaterial({
+          color: threeColor,
+          side: THREE.DoubleSide
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(
+          (worldP0.x + worldP2.x) / 2,
+          (worldP0.y + worldP2.y) / 2,
+          0
+        );
+        return mesh;
+      }
+      function createContourMesh(pointsArray, color, style, renderer) {
+        if (!pointsArray || pointsArray.length === 0 || !pointsArray[0]) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var threeColor = hexToThreeColor(color);
+        var mainShape = createShapeFromPoints(pointsArray[0], width, height);
+        if (!mainShape)
+          return null;
+        for (var i = 1; i < pointsArray.length; i++) {
+          var holePath = new THREE.Path();
+          var holePoints = pointsArray[i];
+          if (!holePoints || holePoints.length < 3)
+            continue;
+          var firstHolePt = canvasToWorld(holePoints[0][0], holePoints[0][1], width, height);
+          holePath.moveTo(firstHolePt.x, firstHolePt.y);
+          for (var j = 1; j < holePoints.length; j++) {
+            var holePt = canvasToWorld(holePoints[j][0], holePoints[j][1], width, height);
+            holePath.lineTo(holePt.x, holePt.y);
+          }
+          holePath.closePath();
+          mainShape.holes.push(holePath);
+        }
+        var geometry = new THREE.ShapeGeometry(mainShape);
+        var material = new THREE.MeshBasicMaterial({
+          color: threeColor,
+          side: THREE.DoubleSide,
+          transparent: style.opacity !== void 0 && style.opacity < 1,
+          opacity: style.opacity !== void 0 ? style.opacity : 1
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        return mesh;
+      }
+      function createContourLineMesh(pointsArray, color, style, renderer) {
+        if (!pointsArray || pointsArray.length === 0) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var threeColor = hexToThreeColor(color);
+        var lineWidth = style.lineWidth || 1.5;
+        var lineGeometries = [];
+        for (var i = 0; i < pointsArray.length; i++) {
+          var points = pointsArray[i];
+          if (!points || points.length < 2)
+            continue;
+          var vertices = [];
+          for (var j = 0; j < points.length; j++) {
+            var worldPt = canvasToWorld(points[j][0], points[j][1], width, height);
+            vertices.push(worldPt.x, worldPt.y, 0);
+          }
+          if (points.length > 2) {
+            var firstWorldPt = canvasToWorld(points[0][0], points[0][1], width, height);
+            vertices.push(firstWorldPt.x, firstWorldPt.y, 0);
+          }
+          var geometry = new THREE.BufferGeometry();
+          geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+          lineGeometries.push(geometry);
+        }
+        if (lineGeometries.length === 0)
+          return null;
+        var mergedGeometry = lineGeometries.length === 1 ? lineGeometries[0] : THREE.BufferGeometryUtils ? THREE.BufferGeometryUtils.mergeBufferGeometries(lineGeometries) : lineGeometries[0];
+        var material = new THREE.LineBasicMaterial({
+          color: threeColor,
+          linewidth: lineWidth
+        });
+        var line = new THREE.LineLoop(mergedGeometry, material);
+        return line;
+      }
+      function createContourPaths(result, style, renderer) {
+        var elements = [];
+        var paths = result.paths;
+        var levels = result.levels;
+        if (!paths || paths.length === 0) {
+          return elements;
+        }
+        var perimeter = createPerimeter(style);
+        var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
+        var stepSize = !hasCustomLevels && levels.length > 1 ? levels[1] - levels[0] : 0;
+        var colorScale = style.colorScale;
+        var valueColorMap = style.valueColorMap;
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var bgColor;
+        if (valueColorMap) {
+          bgColor = valueColorMap[0][1];
+        } else if (hasCustomLevels) {
+          if (levels.length > 1) {
+            var firstInterval = levels[1] - levels[0];
+            var bgValue = levels[0] - firstInterval / 2;
+            var minVal = levels[0];
+            var maxVal = levels[levels.length - 1];
+            var range = maxVal - minVal;
+            var normalizedBg = (bgValue - minVal) / range;
+            normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+            bgColor = getColorForValue(normalizedBg, colorScale);
+          } else {
+            bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize, null);
+          }
+        } else {
+          var bgValue = levels[0] - 0.5 * stepSize;
+          var minVal = levels[0];
+          var maxVal = levels[levels.length - 1];
+          var range = maxVal - minVal;
+          var normalizedBg = (bgValue - minVal) / range;
+          normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+          bgColor = getColorForValue(normalizedBg, colorScale);
+        }
+        var bgMesh = createBackgroundMesh(perimeter, bgColor, style, renderer);
+        if (bgMesh) {
+          elements.push({
+            mesh: bgMesh,
+            level: null,
+            index: -1,
+            type: "background"
+          });
+        }
+        for (var i = 0; i < paths.length; i++) {
+          var pathInfo = paths[i];
+          var level = pathInfo.level;
+          var fillColor = getColorForLevel(level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
+          var allPathPoints = joinAllPaths(pathInfo, perimeter, style);
+          if (pathInfo.prefixBoundary) {
+            allPathPoints.unshift(perimeter.slice());
+          }
+          if (allPathPoints.length > 0) {
+            var fillMesh = createContourMesh(allPathPoints, fillColor, style, renderer);
+            if (fillMesh) {
+              elements.push({
+                mesh: fillMesh,
+                level,
+                index: i,
+                type: "fill"
+              });
+            }
+            if (style.showLines !== false) {
+              var lineColor = style.lineColor || "#666666";
+              var lineMesh = createContourLineMesh(allPathPoints, lineColor, style, renderer);
+              if (lineMesh) {
+                elements.push({
+                  mesh: lineMesh,
+                  level,
+                  index: i,
+                  type: "line"
+                });
+              }
+            }
+          }
+        }
+        return elements;
+      }
+      module.exports = {
+        createContourPaths,
+        createShapeFromPoints,
+        createContourMesh,
+        createContourLineMesh,
+        getColorForLevel,
+        hexToThreeColor,
+        scalePoint,
+        canvasToWorld,
+        createPerimeter,
+        joinAllPaths
+      };
+    }
+  });
+
+  // renderers/three/labels.js
+  var require_labels5 = __commonJS({
+    "renderers/three/labels.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      var paths = require_paths4();
+      function createLabelSprite(text, options) {
+        options = options || {};
+        var fontSize = options.fontSize || 14;
+        var fontFamily = options.fontFamily || "Arial, sans-serif";
+        var fontColor = options.fontColor || "#333333";
+        var fontWeight = options.fontWeight || "normal";
+        var backgroundColor = options.backgroundColor || "rgba(255, 255, 255, 0.8)";
+        var padding = options.padding || 4;
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.font = fontWeight + " " + fontSize + "px " + fontFamily;
+        var metrics = ctx.measureText(text);
+        var textWidth = metrics.width;
+        var textHeight = fontSize;
+        canvas.width = textWidth + padding * 2;
+        canvas.height = textHeight + padding * 2;
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = fontWeight + " " + fontSize + "px " + fontFamily;
+        ctx.fillStyle = fontColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        var texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        var material = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true
+        });
+        var sprite = new THREE.Sprite(material);
+        var scale = options.scale || 1;
+        sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
+        return sprite;
+      }
+      function findLabelPositions(points, style) {
+        if (!points || points.length < 3) {
+          return [];
+        }
+        var positions = [];
+        var minLen = style.minLabelSpacing || 100;
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var totalLen = 0;
+        for (var i = 1; i < points.length; i++) {
+          var dx = points[i][0] - points[i - 1][0];
+          var dy = points[i][1] - points[i - 1][1];
+          totalLen += Math.sqrt(dx * dx + dy * dy);
+        }
+        var numLabels = Math.max(1, Math.floor(totalLen / minLen));
+        var stepLen = totalLen / numLabels;
+        var currentLen = 0;
+        var nextLabelLen = stepLen / 2;
+        var segmentIndex = 0;
+        for (var i = 1; i < points.length && positions.length < numLabels; i++) {
+          var dx = points[i][0] - points[i - 1][0];
+          var dy = points[i][1] - points[i - 1][1];
+          var segmentLen = Math.sqrt(dx * dx + dy * dy);
+          while (currentLen + segmentLen >= nextLabelLen && positions.length < numLabels) {
+            var t = (nextLabelLen - currentLen) / segmentLen;
+            var x = points[i - 1][0] + t * dx;
+            var y = points[i - 1][1] + t * dy;
+            positions.push({ x, y });
+            nextLabelLen += stepLen;
+          }
+          currentLen += segmentLen;
+        }
+        return positions;
+      }
+      function createLabels(contourResult, style, renderer) {
+        var labels = [];
+        var paths2 = contourResult.paths;
+        var levels = contourResult.levels;
+        if (!paths2 || !style.showLabels) {
+          return labels;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        for (var i = 0; i < paths2.length; i++) {
+          var pathInfo = paths2[i];
+          var level = pathInfo.level;
+          var allPoints = [];
+          if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
+            for (var e = 0; e < pathInfo.edgepaths.length; e++) {
+              var scaledPath = pathInfo.edgepaths[e].map(function(pt) {
+                return paths2.scalePoint ? paths2.scalePoint(style, pt) : pt;
+              });
+              allPoints = allPoints.concat(scaledPath);
+            }
+          }
+          if (pathInfo.paths && pathInfo.paths.length > 0) {
+            for (var p = 0; p < pathInfo.paths.length; p++) {
+              var scaledPath = pathInfo.paths[p].map(function(pt) {
+                return paths2.scalePoint ? paths2.scalePoint(style, pt) : pt;
+              });
+              var positions = findLabelPositions(scaledPath, style);
+              for (var j = 0; j < positions.length; j++) {
+                var worldPos = paths2.canvasToWorld ? paths2.canvasToWorld(positions[j].x, positions[j].y, width, height) : { x: positions[j].x, y: positions[j].y };
+                var labelText = typeof level === "number" ? level.toFixed(1) : String(level);
+                var sprite = createLabelSprite(labelText, {
+                  fontSize: style.labelFontSize || 12,
+                  fontColor: style.labelColor || "#333333",
+                  backgroundColor: style.labelBackground || "rgba(255,255,255,0.7)",
+                  scale: 0.5
+                });
+                sprite.position.set(worldPos.x, worldPos.y, 1);
+                labels.push(sprite);
+              }
+            }
+          }
+        }
+        return labels;
+      }
+      module.exports = {
+        createLabels,
+        createLabelSprite,
+        findLabelPositions
+      };
+    }
+  });
+
+  // renderers/three/axes.js
+  var require_axes5 = __commonJS({
+    "renderers/three/axes.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      var paths = require_paths4();
+      function createAxisLine(x1, y1, x2, y2, color, lineWidth) {
+        var geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute([
+          x1,
+          y1,
+          0,
+          x2,
+          y2,
+          0
+        ], 3));
+        var material = new THREE.LineBasicMaterial({
+          color,
+          linewidth: lineWidth || 1
+        });
+        return new THREE.Line(geometry, material);
+      }
+      function createTickLine(x1, y1, x2, y2, color, lineWidth) {
+        return createAxisLine(x1, y1, x2, y2, color, lineWidth || 1);
+      }
+      function createTickLabel(text, x, y, options) {
+        options = options || {};
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+        var fontSize = options.fontSize || 12;
+        var fontFamily = options.fontFamily || "Arial, sans-serif";
+        var fontColor = options.fontColor || "#333333";
+        ctx.font = fontSize + "px " + fontFamily;
+        var metrics = ctx.measureText(text);
+        canvas.width = metrics.width + 10;
+        canvas.height = fontSize + 6;
+        ctx.font = fontSize + "px " + fontFamily;
+        ctx.fillStyle = fontColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        var texture = new THREE.CanvasTexture(canvas);
+        var material = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true
+        });
+        var sprite = new THREE.Sprite(material);
+        sprite.scale.set(canvas.width * 0.5, canvas.height * 0.5, 1);
+        sprite.position.set(x, y, 1);
+        return sprite;
+      }
+      function createGridLines(axesConfig, style, axisType, renderer) {
+        var meshes = [];
+        var config = axesConfig[axisType];
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        if (!config || !config.showgrid) {
+          return meshes;
+        }
+        var gridColor = style.gridColor || "#e0e0e0";
+        var threeGridColor = new THREE.Color(gridColor);
+        var lineWidth = style.gridLineWidth || 1;
+        var xMin = padding;
+        var xMax = width - padding;
+        var yMin = padding;
+        var yMax = height - padding;
+        var ticks = config.ticks || [];
+        var range = config.range || [0, 10];
+        if (axisType === "x") {
+          for (var i = 0; i < ticks.length; i++) {
+            var tickVal = ticks[i];
+            var x = padding + (tickVal - range[0]) / (range[1] - range[0]) * (width - 2 * padding);
+            var worldX = x - width / 2;
+            var worldY1 = -(yMin - height / 2);
+            var worldY2 = -(yMax - height / 2);
+            var line = createAxisLine(worldX, worldY1, worldX, worldY2, threeGridColor, lineWidth);
+            meshes.push(line);
+          }
+        } else if (axisType === "y") {
+          for (var i = 0; i < ticks.length; i++) {
+            var tickVal = ticks[i];
+            var y = padding + (tickVal - range[0]) / (range[1] - range[0]) * (height - 2 * padding);
+            y = height - y;
+            var worldY = -(y - height / 2);
+            var worldX1 = xMin - width / 2;
+            var worldX2 = xMax - width / 2;
+            var line = createAxisLine(worldX1, worldY, worldX2, worldY, threeGridColor, lineWidth);
+            meshes.push(line);
+          }
+        }
+        return meshes;
+      }
+      function createAxis(axesConfig, style, axisType, renderer) {
+        var meshes = [];
+        var config = axesConfig[axisType];
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        if (!config) {
+          return meshes;
+        }
+        var axisColor = style.axisColor || "#333333";
+        var threeAxisColor = new THREE.Color(axisColor);
+        var lineWidth = style.axisLineWidth || 2;
+        var xMin = padding;
+        var xMax = width - padding;
+        var yMin = padding;
+        var yMax = height - padding;
+        if (axisType === "x") {
+          var worldX1 = xMin - width / 2;
+          var worldX2 = xMax - width / 2;
+          var worldY = -(yMin - height / 2);
+          var axisLine = createAxisLine(worldX1, worldY, worldX2, worldY, threeAxisColor, lineWidth);
+          meshes.push(axisLine);
+          var ticks = config.ticks || [];
+          var tickLabels = config.ticklabels || ticks;
+          var range = config.range || [0, 10];
+          var tickLen = style.tickLength || 5;
+          for (var i = 0; i < ticks.length; i++) {
+            var tickVal = ticks[i];
+            var x = padding + (tickVal - range[0]) / (range[1] - range[0]) * (width - 2 * padding);
+            var worldX = x - width / 2;
+            var tickLine = createTickLine(worldX, worldY, worldX, worldY - tickLen, threeAxisColor, 1);
+            meshes.push(tickLine);
+            if (tickLabels[i] !== void 0) {
+              var label = createTickLabel(String(tickLabels[i]), worldX, worldY - tickLen - 15, {
+                fontSize: style.tickFontSize || 11,
+                fontColor: style.tickColor || "#333333"
+              });
+              meshes.push(label);
+            }
+          }
+        } else if (axisType === "y") {
+          var worldY1 = -(yMin - height / 2);
+          var worldY2 = -(yMax - height / 2);
+          var worldX = xMin - width / 2;
+          var axisLine = createAxisLine(worldX, worldY1, worldX, worldY2, threeAxisColor, lineWidth);
+          meshes.push(axisLine);
+          var ticks = config.ticks || [];
+          var tickLabels = config.ticklabels || ticks;
+          var range = config.range || [0, 10];
+          var tickLen = style.tickLength || 5;
+          for (var i = 0; i < ticks.length; i++) {
+            var tickVal = ticks[i];
+            var y = padding + (tickVal - range[0]) / (range[1] - range[0]) * (height - 2 * padding);
+            y = height - y;
+            var worldY = -(y - height / 2);
+            var tickLine = createTickLine(worldX, worldY, worldX - tickLen, worldY, threeAxisColor, 1);
+            meshes.push(tickLine);
+            if (tickLabels[i] !== void 0) {
+              var label = createTickLabel(String(tickLabels[i]), worldX - tickLen - 20, worldY, {
+                fontSize: style.tickFontSize || 11,
+                fontColor: style.tickColor || "#333333"
+              });
+              meshes.push(label);
+            }
+          }
+        }
+        return meshes;
+      }
+      module.exports = {
+        createAxis,
+        createGridLines,
+        createAxisLine,
+        createTickLabel
+      };
+    }
+  });
+
+  // renderers/three/colorbar.js
+  var require_colorbar5 = __commonJS({
+    "renderers/three/colorbar.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      var paths = require_paths4();
+      function createColorbar(result, colors, config, renderer) {
+        if (!config || config.show === false) {
+          return null;
+        }
+        var width = renderer.width;
+        var height = renderer.height;
+        var style = renderer.style || {};
+        var barWidth = config.width || 20;
+        var barHeight = config.height || height - 100;
+        var barX = config.x || width - 60;
+        var barY = config.y || 50;
+        var canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 256;
+        var ctx = canvas.getContext("2d");
+        var gradient = ctx.createLinearGradient(0, 256, 0, 0);
+        var colorScale = style.colorScale || colors;
+        if (Array.isArray(colorScale)) {
+          for (var i = 0; i < colorScale.length; i++) {
+            var stop = colorScale[i];
+            gradient.addColorStop(stop[0], stop[1]);
+          }
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 1, 256);
+        var texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        var worldX = barX - width / 2;
+        var worldY = -(barY - height / 2);
+        var worldBarWidth = barWidth;
+        var worldBarHeight = barHeight;
+        var geometry = new THREE.PlaneGeometry(worldBarWidth, worldBarHeight);
+        var material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(worldX + worldBarWidth / 2, worldY - worldBarHeight / 2, 0);
+        var group = new THREE.Group();
+        group.add(mesh);
+        var borderGeometry = new THREE.EdgesGeometry(geometry);
+        var borderMaterial = new THREE.LineBasicMaterial({ color: 3355443 });
+        var border = new THREE.LineSegments(borderGeometry, borderMaterial);
+        border.position.copy(mesh.position);
+        group.add(border);
+        var levels = result.levels || [];
+        var zmin = result.zmin || (levels.length > 0 ? levels[0] : 0);
+        var zmax = result.zmax || (levels.length > 0 ? levels[levels.length - 1] : 10);
+        var numTicks = config.numTicks || 5;
+        for (var i = 0; i <= numTicks; i++) {
+          var t = i / numTicks;
+          var value = zmin + t * (zmax - zmin);
+          var yPos = worldY - t * worldBarHeight;
+          var labelCanvas = document.createElement("canvas");
+          var labelCtx = labelCanvas.getContext("2d");
+          labelCanvas.width = 50;
+          labelCanvas.height = 20;
+          labelCtx.fillStyle = "#333333";
+          labelCtx.font = "11px Arial";
+          labelCtx.textAlign = "left";
+          labelCtx.textBaseline = "middle";
+          labelCtx.fillText(value.toFixed(1), 5, 10);
+          var labelTexture = new THREE.CanvasTexture(labelCanvas);
+          var labelMaterial = new THREE.SpriteMaterial({
+            map: labelTexture,
+            transparent: true
+          });
+          var labelSprite = new THREE.Sprite(labelMaterial);
+          labelSprite.scale.set(25, 10, 1);
+          labelSprite.position.set(worldX + worldBarWidth + 15, yPos, 1);
+          group.add(labelSprite);
+        }
+        if (config.title) {
+          var titleCanvas = document.createElement("canvas");
+          var titleCtx = titleCanvas.getContext("2d");
+          titleCanvas.width = 100;
+          titleCanvas.height = 20;
+          titleCtx.fillStyle = "#333333";
+          titleCtx.font = "bold 12px Arial";
+          titleCtx.textAlign = "center";
+          titleCtx.textBaseline = "middle";
+          titleCtx.fillText(config.title, 50, 10);
+          var titleTexture = new THREE.CanvasTexture(titleCanvas);
+          var titleMaterial = new THREE.SpriteMaterial({
+            map: titleTexture,
+            transparent: true
+          });
+          var titleSprite = new THREE.Sprite(titleMaterial);
+          titleSprite.scale.set(50, 10, 1);
+          titleSprite.position.set(worldX + worldBarWidth / 2, worldY + 15, 1);
+          group.add(titleSprite);
+        }
+        return group;
+      }
+      module.exports = {
+        createColorbar
+      };
+    }
+  });
+
+  // renderers/three/nulls.js
+  var require_nulls4 = __commonJS({
+    "renderers/three/nulls.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      var paths = require_paths4();
+      function createNullMeshes(contourResult, style, renderer) {
+        var meshes = [];
+        if (!contourResult || !contourResult.nullMask) {
+          return meshes;
+        }
+        var nullMask = contourResult.nullMask;
+        var m = nullMask.length;
+        var n = nullMask[0] ? nullMask[0].length : 0;
+        if (m === 0 || n === 0) {
+          return meshes;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var cellWidth = (width - 2 * padding) / (n - 1);
+        var cellHeight = (height - 2 * padding) / (m - 1);
+        var nullColor = style.nullColor || "#d0d0d0";
+        var threeNullColor = new THREE.Color(nullColor);
+        var nullOpacity = style.nullOpacity !== void 0 ? style.nullOpacity : 0.7;
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            if (nullMask[i][j]) {
+              var x = padding + j * cellWidth;
+              var y = padding + (m - 1 - i) * cellHeight;
+              var worldX = x - width / 2;
+              var worldY = -(y - height / 2);
+              var geometry = new THREE.PlaneGeometry(cellWidth, cellHeight);
+              var material = new THREE.MeshBasicMaterial({
+                color: threeNullColor,
+                transparent: true,
+                opacity: nullOpacity,
+                side: THREE.DoubleSide
+              });
+              var mesh = new THREE.Mesh(geometry, material);
+              mesh.position.set(worldX + cellWidth / 2, worldY - cellHeight / 2, 0.5);
+              meshes.push(mesh);
+            }
+          }
+        }
+        return meshes;
+      }
+      function createClipMesh(contourResult, style, renderer) {
+        if (!contourResult || !contourResult.nullMask) {
+          return null;
+        }
+        return null;
+      }
+      function createNullBoundaryPath(contourResult, style) {
+        return null;
+      }
+      module.exports = {
+        createNullMeshes,
+        createClipMesh,
+        createNullBoundaryPath
+      };
+    }
+  });
+
+  // renderers/three/heatmap.js
+  var require_heatmap3 = __commonJS({
+    "renderers/three/heatmap.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      function getColorFromScale(value, colorScale) {
+        if (!colorScale || !Array.isArray(colorScale) || colorScale.length === 0) {
+          return [128, 128, 128, 255];
+        }
+        if (colorScale.length === 1) {
+          return hexToRgba(colorScale[0][1]);
+        }
+        for (var i = 0; i < colorScale.length - 1; i++) {
+          if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
+            var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
+            return interpolateRgba(
+              hexToRgba(colorScale[i][1]),
+              hexToRgba(colorScale[i + 1][1]),
+              t
+            );
+          }
+        }
+        if (value < colorScale[0][0]) {
+          return hexToRgba(colorScale[0][1]);
+        }
+        return hexToRgba(colorScale[colorScale.length - 1][1]);
+      }
+      function hexToRgba(hex) {
+        if (!hex || typeof hex !== "string") {
+          return [128, 128, 128, 255];
+        }
+        if (hex.startsWith("rgba")) {
+          var match = hex.match(/[\d.]+/g);
+          if (match && match.length >= 3) {
+            return [
+              parseInt(match[0]),
+              parseInt(match[1]),
+              parseInt(match[2]),
+              match.length > 3 ? Math.round(parseFloat(match[3]) * 255) : 255
+            ];
+          }
+        }
+        var h = hex.replace("#", "");
+        if (h.length === 3) {
+          h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        }
+        return [
+          parseInt(h.slice(0, 2), 16),
+          parseInt(h.slice(2, 4), 16),
+          parseInt(h.slice(4, 6), 16),
+          255
+        ];
+      }
+      function interpolateRgba(rgba1, rgba2, t) {
+        return [
+          Math.round(rgba1[0] + (rgba2[0] - rgba1[0]) * t),
+          Math.round(rgba1[1] + (rgba2[1] - rgba1[1]) * t),
+          Math.round(rgba1[2] + (rgba2[2] - rgba1[2]) * t),
+          Math.round(rgba1[3] + (rgba2[3] - rgba1[3]) * t)
+        ];
+      }
+      function createHeatmapMesh(contourResult, style, renderer) {
+        if (!contourResult || !contourResult.pathinfo || !contourResult.pathinfo[0]) {
+          return null;
+        }
+        var pathInfo = contourResult.pathinfo[0];
+        var z = pathInfo.z;
+        var x = pathInfo.x;
+        var y = pathInfo.y;
+        if (!z || !Array.isArray(z) || z.length === 0) {
+          return null;
+        }
+        var m = z.length;
+        var n = z[0] ? z[0].length : 0;
+        if (m === 0 || n === 0) {
+          return null;
+        }
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        var colorScale = style.colorScale || style.colorscale || [
+          [0, "#313695"],
+          [0.25, "#4575b4"],
+          [0.5, "#fee090"],
+          [0.75, "#f46d43"],
+          [1, "#a50026"]
+        ];
+        var dataRange = style.dataRange || {
+          min: contourResult.zmin,
+          max: contourResult.zmax
+        };
+        var zmin = dataRange.min;
+        var zmax = dataRange.max;
+        var zrange = zmax - zmin || 1;
+        var canvas = document.createElement("canvas");
+        var texWidth = n;
+        var texHeight = m;
+        canvas.width = texWidth;
+        canvas.height = texHeight;
+        var ctx = canvas.getContext("2d");
+        var imageData = ctx.createImageData(texWidth, texHeight);
+        var data = imageData.data;
+        for (var i = 0; i < m; i++) {
+          for (var j = 0; j < n; j++) {
+            var zVal = z[i][j];
+            var normalized = (zVal - zmin) / zrange;
+            normalized = Math.max(0, Math.min(1, normalized));
+            var color = getColorFromScale(normalized, colorScale);
+            var idx = ((texHeight - 1 - i) * texWidth + j) * 4;
+            data[idx] = color[0];
+            data[idx + 1] = color[1];
+            data[idx + 2] = color[2];
+            data[idx + 3] = color[3];
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        var texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+        var planeWidth = width - 2 * padding;
+        var planeHeight = height - 2 * padding;
+        var geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+        var material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(0, 0, -1);
+        return mesh;
+      }
+      function createInterpolatedHeatmap(grid, style, renderer) {
+        return createHeatmapMesh({ pathinfo: [grid] }, style, renderer);
+      }
+      module.exports = {
+        createHeatmapMesh,
+        createInterpolatedHeatmap,
+        getColorFromScale
+      };
+    }
+  });
+
+  // renderers/three/index.js
+  var require_three = __commonJS({
+    "renderers/three/index.js"(exports, module) {
+      "use strict";
+      var THREE;
+      try {
+        THREE = __require("three");
+      } catch (e) {
+        THREE = typeof window !== "undefined" ? window.THREE : null;
+      }
+      function checkThree() {
+        if (!THREE) {
+          throw new Error("Three.js is required for the three renderer. Please include Three.js via npm or CDN.");
+        }
+      }
+      var pathUtils = require_paths4();
+      var labelUtils = require_labels5();
+      var axesUtils = require_axes5();
+      var colorbarUtils = require_colorbar5();
+      var nullUtils = require_nulls4();
+      var heatmapUtils = require_heatmap3();
+      function ThreeContourRenderer(container, options) {
+        checkThree();
+        options = options || {};
+        this.container = container;
+        this.width = options.width || 600;
+        this.height = options.height || 500;
+        this.options = options;
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(options.backgroundColor || 16777215);
+        this.initCamera();
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: options.antialias !== false,
+          alpha: options.alpha || false
+        });
+        this.renderer.setSize(this.width, this.height);
+        this.renderer.setPixelRatio(options.devicePixelRatio || (typeof window !== "undefined" ? window.devicePixelRatio : 1));
+        if (typeof container === "string") {
+          container = document.getElementById(container);
+        }
+        if (container && container.appendChild) {
+          container.appendChild(this.renderer.domElement);
+        }
+        this.layers = {
+          background: new THREE.Group(),
+          heatmap: new THREE.Group(),
+          fills: new THREE.Group(),
+          lines: new THREE.Group(),
+          nullOverlay: new THREE.Group(),
+          grid: new THREE.Group(),
+          axes: new THREE.Group(),
+          labels: new THREE.Group(),
+          overlay: new THREE.Group()
+        };
+        for (var key in this.layers) {
+          this.scene.add(this.layers[key]);
+        }
+        this.contourResult = null;
+        this.style = null;
+        this.interactionEnabled = true;
+        this.zoomState = {
+          scale: 1,
+          minScale: options.minScale || 0.1,
+          maxScale: options.maxScale || 10
+        };
+        this.panState = {
+          isDragging: false,
+          lastX: 0,
+          lastY: 0
+        };
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.elementLevelMap = /* @__PURE__ */ new Map();
+      }
+      ThreeContourRenderer.prototype.initCamera = function() {
+        var halfWidth = this.width / 2;
+        var halfHeight = this.height / 2;
+        this.camera = new THREE.OrthographicCamera(
+          -halfWidth,
+          halfWidth,
+          halfHeight,
+          -halfHeight,
+          0.1,
+          1e4
+        );
+        this.camera.position.z = 1e3;
+        this.camera.lookAt(0, 0, 0);
+      };
+      ThreeContourRenderer.prototype.screenToWorld = function(x, y) {
+        var worldX = x - this.width / 2;
+        var worldY = -(y - this.height / 2);
+        return { x: worldX, y: worldY };
+      };
+      ThreeContourRenderer.prototype.renderContours = function(result, style) {
+        style = style || {};
+        this.clearLayer(this.layers.background);
+        this.clearLayer(this.layers.fills);
+        this.clearLayer(this.layers.lines);
+        this.clearLayer(this.layers.nullOverlay);
+        this.clearLayer(this.layers.labels);
+        this.elementLevelMap.clear();
+        this.contourResult = result;
+        this.style = style;
+        var coloring = style.coloring || "fill";
+        var connectGaps = result.connectgaps !== void 0 ? result.connectgaps : true;
+        var needsNullHandling = !connectGaps && result.nullMask && result.nullCount > 0;
+        if (coloring === "heatmap") {
+          this.renderHeatmap(result, style);
+        }
+        var pathElements = pathUtils.createContourPaths(result, style, this);
+        for (var i = 0; i < pathElements.length; i++) {
+          var item = pathElements[i];
+          var mesh = item.mesh;
+          var type = item.type;
+          var level = item.level;
+          if (type === "background") {
+            this.layers.background.add(mesh);
+          } else if (type === "fill") {
+            this.layers.fills.add(mesh);
+            if (level !== null && level !== void 0) {
+              this.elementLevelMap.set(mesh.uuid, level);
+            }
+          } else if (type === "line") {
+            this.layers.lines.add(mesh);
+          }
+        }
+        if (needsNullHandling && style.useClipMask === false) {
+          this.renderNulls(result, style);
+        }
+        if (needsNullHandling && style.useClipMask !== false) {
+          this.applyNullClip(result, style);
+        }
+        this.render();
+      };
+      ThreeContourRenderer.prototype.renderNulls = function(contourResult, style) {
+        this.clearLayer(this.layers.nullOverlay);
+        if (!contourResult || !contourResult.nullMask)
+          return;
+        var nullMeshes = nullUtils.createNullMeshes(contourResult, style, this);
+        for (var i = 0; i < nullMeshes.length; i++) {
+          this.layers.nullOverlay.add(nullMeshes[i]);
+        }
+        this.render();
+      };
+      ThreeContourRenderer.prototype.applyNullClip = function(contourResult, style) {
+        if (!contourResult || !contourResult.nullMask)
+          return;
+        var clipMesh = nullUtils.createClipMesh(contourResult, style, this);
+        if (clipMesh && this.layers.fills) {
+          this.layers.fills.userData.clipMesh = clipMesh;
+        }
+      };
+      ThreeContourRenderer.prototype.renderHeatmap = function(contourResult, style) {
+        this.clearLayer(this.layers.heatmap);
+        if (!contourResult || !contourResult.pathinfo || !contourResult.pathinfo[0])
+          return;
+        var heatmapMesh = heatmapUtils.createHeatmapMesh(contourResult, style, this);
+        if (heatmapMesh) {
+          this.layers.heatmap.add(heatmapMesh);
+        }
+        this.render();
+      };
+      ThreeContourRenderer.prototype.renderLabels = function(contourResult, style) {
+        this.clearLayer(this.layers.labels);
+        if (!contourResult || !contourResult.paths)
+          return;
+        var labelSprites = labelUtils.createLabels(contourResult, style, this);
+        for (var i = 0; i < labelSprites.length; i++) {
+          this.layers.labels.add(labelSprites[i]);
+        }
+        this.render();
+      };
+      ThreeContourRenderer.prototype.renderAxes = function(axesConfig, style) {
+        this.clearLayer(this.layers.axes);
+        this.clearLayer(this.layers.grid);
+        if (!axesConfig)
+          return;
+        if (axesConfig.x && axesConfig.x.showgrid) {
+          var xGridMeshes = axesUtils.createGridLines(axesConfig, style, "x", this);
+          for (var i = 0; i < xGridMeshes.length; i++) {
+            this.layers.grid.add(xGridMeshes[i]);
+          }
+        }
+        if (axesConfig.y && axesConfig.y.showgrid) {
+          var yGridMeshes = axesUtils.createGridLines(axesConfig, style, "y", this);
+          for (var i = 0; i < yGridMeshes.length; i++) {
+            this.layers.grid.add(yGridMeshes[i]);
+          }
+        }
+        if (axesConfig.x) {
+          var xAxisMeshes = axesUtils.createAxis(axesConfig, style, "x", this);
+          for (var i = 0; i < xAxisMeshes.length; i++) {
+            this.layers.axes.add(xAxisMeshes[i]);
+          }
+        }
+        if (axesConfig.y) {
+          var yAxisMeshes = axesUtils.createAxis(axesConfig, style, "y", this);
+          for (var i = 0; i < yAxisMeshes.length; i++) {
+            this.layers.axes.add(yAxisMeshes[i]);
+          }
+        }
+        this.render();
+      };
+      ThreeContourRenderer.prototype.renderColorbar = function(result, colors, config) {
+        if (this.colorbarMesh) {
+          this.scene.remove(this.colorbarMesh);
+        }
+        if (!config || config.show === false)
+          return;
+        var colorbarGroup = colorbarUtils.createColorbar(result, colors, config, this);
+        this.colorbarMesh = colorbarGroup;
+        this.scene.add(colorbarGroup);
+        this.render();
+      };
+      ThreeContourRenderer.prototype.clearLayer = function(layer) {
+        while (layer.children.length > 0) {
+          var child = layer.children[0];
+          layer.remove(child);
+          if (child.geometry)
+            child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(function(m) {
+                m.dispose();
+              });
+            } else {
+              child.material.dispose();
+            }
+          }
+        }
+      };
+      ThreeContourRenderer.prototype.render = function() {
+        this.renderer.render(this.scene, this.camera);
+      };
+      ThreeContourRenderer.prototype.initZoom = function(options) {
+        var self2 = this;
+        options = options || {};
+        if (options.wheelEnabled === false)
+          return;
+        this.domElement().addEventListener("wheel", function(e) {
+          if (!self2.interactionEnabled)
+            return;
+          e.preventDefault();
+          var zoomFactor = options.zoomFactor || 1e-3;
+          var delta = 1 - e.deltaY * zoomFactor;
+          var newScale = self2.zoomState.scale * delta;
+          newScale = Math.max(self2.zoomState.minScale, Math.min(self2.zoomState.maxScale, newScale));
+          var rect = self2.renderer.domElement.getBoundingClientRect();
+          var mouseX = e.clientX - rect.left;
+          var mouseY = e.clientY - rect.top;
+          var worldPos = self2.screenToWorld(mouseX, mouseY);
+          self2.applyZoom(newScale, worldPos.x, worldPos.y);
+          if (options.onZoom) {
+            options.onZoom({ scale: newScale, centerX: mouseX, centerY: mouseY });
+          }
+          self2.zoomState.scale = newScale;
+          self2.render();
+        }, { passive: false });
+      };
+      ThreeContourRenderer.prototype.applyZoom = function(scale, centerX, centerY) {
+        var halfWidth = this.width / 2 / scale;
+        var halfHeight = this.height / 2 / scale;
+        var offsetX = centerX * (1 - 1 / scale);
+        var offsetY = centerY * (1 - 1 / scale);
+        this.camera.left = -halfWidth + offsetX;
+        this.camera.right = halfWidth + offsetX;
+        this.camera.top = halfHeight - offsetY;
+        this.camera.bottom = -halfHeight - offsetY;
+        this.camera.updateProjectionMatrix();
+      };
+      ThreeContourRenderer.prototype.initPan = function(options) {
+        var self2 = this;
+        options = options || {};
+        if (options.dragEnabled === false)
+          return;
+        var dom2 = this.domElement();
+        dom2.addEventListener("mousedown", function(e) {
+          if (!self2.interactionEnabled)
+            return;
+          self2.panState.isDragging = true;
+          self2.panState.lastX = e.clientX;
+          self2.panState.lastY = e.clientY;
+          dom2.style.cursor = "grabbing";
+          if (options.onPanStart)
+            options.onPanStart(e);
+        });
+        dom2.addEventListener("mousemove", function(e) {
+          if (!self2.panState.isDragging)
+            return;
+          var dx = e.clientX - self2.panState.lastX;
+          var dy = e.clientY - self2.panState.lastY;
+          self2.camera.left -= dx;
+          self2.camera.right -= dx;
+          self2.camera.top += dy;
+          self2.camera.bottom += dy;
+          self2.camera.updateProjectionMatrix();
+          self2.panState.lastX = e.clientX;
+          self2.panState.lastY = e.clientY;
+          self2.render();
+          if (options.onPan) {
+            options.onPan({ dx, dy });
+          }
+        });
+        var endPan = function() {
+          if (self2.panState.isDragging) {
+            self2.panState.isDragging = false;
+            dom2.style.cursor = "default";
+            if (options.onPanEnd)
+              options.onPanEnd();
+          }
+        };
+        dom2.addEventListener("mouseup", endPan);
+        dom2.addEventListener("mouseleave", endPan);
+      };
+      ThreeContourRenderer.prototype.initHover = function(options) {
+        var self2 = this;
+        options = options || {};
+        this.domElement().addEventListener("mousemove", function(e) {
+          if (self2.panState.isDragging || !self2.interactionEnabled)
+            return;
+          var rect = self2.renderer.domElement.getBoundingClientRect();
+          self2.mouse.x = (e.clientX - rect.left) / rect.width * 2 - 1;
+          self2.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          self2.raycaster.setFromCamera(self2.mouse, self2.camera);
+          var intersects = self2.raycaster.intersectObjects(self2.layers.fills.children, true);
+          self2.clearLayer(self2.layers.overlay);
+          if (intersects.length > 0) {
+            var mesh = intersects[0].object;
+            var level = self2.elementLevelMap.get(mesh.uuid);
+            if (level !== void 0) {
+              var highlight = self2.createHighlight(mesh);
+              if (highlight) {
+                self2.layers.overlay.add(highlight);
+              }
+              dom.style.cursor = "pointer";
+              if (options.onHover) {
+                options.onHover({ level, event: e });
+              }
+            }
+          } else {
+            dom.style.cursor = "default";
+          }
+          self2.render();
+        }.bind({ dom: this.domElement() }));
+      };
+      ThreeContourRenderer.prototype.createHighlight = function(mesh) {
+        if (!mesh.geometry)
+          return null;
+        var edges = new THREE.EdgesGeometry(mesh.geometry);
+        var highlightLine = new THREE.LineSegments(
+          edges,
+          new THREE.LineBasicMaterial({ color: 16776960, linewidth: 2 })
+        );
+        return highlightLine;
+      };
+      ThreeContourRenderer.prototype.initClick = function(options) {
+        var self2 = this;
+        options = options || {};
+        this.domElement().addEventListener("click", function(e) {
+          if (!self2.interactionEnabled)
+            return;
+          var rect = self2.renderer.domElement.getBoundingClientRect();
+          self2.mouse.x = (e.clientX - rect.left) / rect.width * 2 - 1;
+          self2.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          self2.raycaster.setFromCamera(self2.mouse, self2.camera);
+          var intersects = self2.raycaster.intersectObjects(self2.layers.fills.children, true);
+          if (intersects.length > 0) {
+            var mesh = intersects[0].object;
+            var level = self2.elementLevelMap.get(mesh.uuid);
+            if (level !== void 0 && options.onClick) {
+              options.onClick({ level, event: e });
+            }
+          }
+        });
+      };
+      ThreeContourRenderer.prototype.resetView = function(animate) {
+        var self2 = this;
+        if (animate) {
+          let animateStep = function() {
+            var elapsed = Date.now() - startTime;
+            var t = Math.min(elapsed / duration, 1);
+            var ease = 1 - Math.pow(1 - t, 3);
+            self2.camera.left = startLeft + (-targetHalfW - startLeft) * ease;
+            self2.camera.right = startRight + (targetHalfW - startRight) * ease;
+            self2.camera.top = startTop + (targetHalfH - startTop) * ease;
+            self2.camera.bottom = startBottom + (-targetHalfH - startBottom) * ease;
+            self2.camera.updateProjectionMatrix();
+            self2.render();
+            if (t < 1) {
+              requestAnimationFrame(animateStep);
+            } else {
+              self2.zoomState.scale = 1;
+            }
+          };
+          var startLeft = this.camera.left;
+          var startRight = this.camera.right;
+          var startTop = this.camera.top;
+          var startBottom = this.camera.bottom;
+          var targetHalfW = this.width / 2;
+          var targetHalfH = this.height / 2;
+          var duration = 300;
+          var startTime = Date.now();
+          animateStep();
+        } else {
+          var halfWidth = this.width / 2;
+          var halfHeight = this.height / 2;
+          this.camera.left = -halfWidth;
+          this.camera.right = halfWidth;
+          this.camera.top = halfHeight;
+          this.camera.bottom = -halfHeight;
+          this.camera.updateProjectionMatrix();
+          this.zoomState.scale = 1;
+          this.render();
+        }
+      };
+      ThreeContourRenderer.prototype.domElement = function() {
+        return this.renderer.domElement;
+      };
+      ThreeContourRenderer.prototype.setInteractionEnabled = function(enabled) {
+        this.interactionEnabled = enabled;
+      };
+      ThreeContourRenderer.prototype.resize = function(width, height) {
+        this.width = width;
+        this.height = height;
+        this.camera.left = -width / 2;
+        this.camera.right = width / 2;
+        this.camera.top = height / 2;
+        this.camera.bottom = -height / 2;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+        this.render();
+      };
+      ThreeContourRenderer.prototype.getState = function() {
+        return {
+          scale: this.zoomState.scale,
+          cameraLeft: this.camera.left,
+          cameraRight: this.camera.right,
+          cameraTop: this.camera.top,
+          cameraBottom: this.camera.bottom
+        };
+      };
+      ThreeContourRenderer.prototype.dispose = function() {
+        for (var key in this.layers) {
+          this.clearLayer(this.layers[key]);
+        }
+        this.renderer.dispose();
+        if (this.renderer.domElement.parentNode) {
+          this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+        }
+      };
+      function createRenderer(container, options) {
+        return new ThreeContourRenderer(container, options);
+      }
+      module.exports = {
+        ThreeContourRenderer,
+        createRenderer
+      };
+    }
+  });
+
   // renderers/index.js
   var require_renderers = __commonJS({
     "renderers/index.js"(exports, module) {
@@ -23890,7 +26846,8 @@ var contourCore = (() => {
       module.exports = {
         canvas: require_canvas(),
         svg: require_svg(),
-        zrender: require_zrender2()
+        zrender: require_zrender2(),
+        three: require_three()
       };
     }
   });

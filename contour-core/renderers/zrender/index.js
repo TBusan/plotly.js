@@ -10,6 +10,8 @@ var pathUtils = require('./paths');
 var labelUtils = require('./labels');
 var axesUtils = require('./axes');
 var colorbarUtils = require('./colorbar');
+var nullUtils = require('./nulls');
+var heatmapUtils = require('./heatmap');
 
 /**
  * ZRenderContourRenderer - Main renderer class
@@ -35,6 +37,7 @@ function ZRenderContourRenderer(container, options) {
         grid: new zrender.Group(),
         fills: new zrender.Group(),
         lines: new zrender.Group(),
+        nullOverlay: new zrender.Group(),  // Null region overlay (on top of fills)
         axes: new zrender.Group(),
         labels: new zrender.Group(),
         overlay: new zrender.Group()
@@ -45,6 +48,7 @@ function ZRenderContourRenderer(container, options) {
     this.mainGroup.add(this.layers.grid);
     this.mainGroup.add(this.layers.fills);
     this.mainGroup.add(this.layers.lines);
+    this.mainGroup.add(this.layers.nullOverlay);  // Null overlay after fills
     this.mainGroup.add(this.layers.axes);
     this.mainGroup.add(this.layers.labels);
     this.mainGroup.add(this.layers.overlay);
@@ -63,17 +67,37 @@ function ZRenderContourRenderer(container, options) {
  * Render contours
  * Uses same rendering logic as canvas renderer:
  * 1. Background layer first
- * 2. Fill layers from lowest to highest (each layer covers previous)
+ * 2. Heatmap background (if coloring mode is 'heatmap')
+ * 3. Fill layers from lowest to highest (each layer covers previous)
+ * 4. Null regions overlay (if connectgaps is false)
  */
 ZRenderContourRenderer.prototype.renderContours = function(result, style) {
     // Clear existing elements
     this.layers.background.removeAll();
     this.layers.fills.removeAll();
     this.layers.lines.removeAll();
+    this.layers.nullOverlay.removeAll();  // Clear null overlay
     this.layers.labels.removeAll();  // Also clear labels when re-rendering contours
 
     this.contourResult = result;
     this.style = style;
+
+    // Check if we need null handling
+    var connectGaps = result.connectgaps !== undefined ? result.connectgaps : true;
+    var needsNullHandling = !connectGaps && result.nullMask && result.nullCount > 0;
+
+    // Get coloring mode
+    var coloring = style.coloring || 'fill';
+
+    // If null handling with clip path, apply clip to fills layer
+    if (needsNullHandling && style.useClipMask !== false) {
+        this.applyNullClipToLayer(result, style);
+    }
+
+    // Render heatmap background if coloring mode is 'heatmap'
+    if (coloring === 'heatmap') {
+        this.renderHeatmap(result, style);
+    }
 
     // Create path elements using same logic as canvas renderer
     var contourElements = pathUtils.createContourPaths(result, style, this.options);
@@ -93,10 +117,141 @@ ZRenderContourRenderer.prototype.renderContours = function(result, style) {
         }
     }
 
+    // Render null regions as fallback when clipPath is not used
+    // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
+    if (needsNullHandling && style.useClipMask === false) {
+        this.renderNulls(result, style);
+    }
+
     // Attach events to fill elements only (not background)
     this.attachContourEvents(contourElements.filter(function(item) {
         return item.type === 'fill';
     }));
+};
+
+/**
+ * Render null regions
+ * Handles areas with null/missing data by overlaying masks
+ *
+ * @param {Object} contourResult - Contour computation result
+ * @param {Object} style - Style options
+ */
+ZRenderContourRenderer.prototype.renderNulls = function(contourResult, style) {
+    this.layers.nullOverlay.removeAll();
+
+    if (!contourResult || !contourResult.nullMask) {
+        return;
+    }
+
+    var nullElements = nullUtils.createNullElements(contourResult, style);
+
+    for (var i = 0; i < nullElements.length; i++) {
+        var item = nullElements[i];
+
+        if (item.type === 'fill') {
+            this.layers.nullOverlay.add(item.element);
+        } else if (item.type === 'stroke') {
+            this.layers.nullOverlay.add(item.element);
+        }
+        // Note: 'mask' type is handled separately via applyNullClipToLayer
+    }
+
+    this.zr.flush();
+};
+
+/**
+ * Apply null region clipping to the fills layer
+ * Uses zrender's clip path for smooth null boundaries
+ *
+ * @param {Object} contourResult - Contour computation result
+ * @param {Object} style - Style options
+ */
+ZRenderContourRenderer.prototype.applyNullClipToLayer = function(contourResult, style) {
+    if (!contourResult || !contourResult.nullMask) {
+        return;
+    }
+
+    var clipPath = nullUtils.createNullClipPath(contourResult, style);
+
+    if (clipPath && this.layers.fills) {
+        // Create inverse clip: we want to show data areas, not null areas
+        // zrender clip shows content inside the path, so we need the data boundary
+        this.layers.fills.setClipPath(clipPath);
+    }
+};
+
+/**
+ * Clear null region clipping
+ */
+ZRenderContourRenderer.prototype.clearNullClip = function() {
+    if (this.layers.fills) {
+        this.layers.fills.setClipPath(null);
+    }
+};
+
+/**
+ * Render heatmap background
+ * Draws heatmap image below contour lines when coloring mode is 'heatmap'
+ *
+ * @param {Object} contourResult - Contour computation result
+ * @param {Object} style - Style options
+ */
+ZRenderContourRenderer.prototype.renderHeatmap = function(contourResult, style) {
+    this.layers.background.removeAll();
+
+    if (!contourResult || !contourResult.pathinfo || !contourResult.pathinfo[0]) {
+        return;
+    }
+
+    // Get grid data from pathinfo
+    var pathInfo = contourResult.pathinfo[0];
+    var grid = {
+        z: pathInfo.z,
+        x: pathInfo.x,
+        y: pathInfo.y
+    };
+
+    // Determine heatmap mode
+    var heatmapMode = style.heatmapMode || 'interpolated';
+
+    // Get colorscale
+    var colorscale = style.colorscale || style.colorScale || 'Viridis';
+
+    // Build heatmap style
+    var heatmapStyle = {
+        width: style.width || this.options.width || 600,
+        height: style.height || this.options.height || 500,
+        padding: style.padding || 30,
+        colorscale: colorscale,
+        dataRange: style.dataRange || {
+            min: contourResult.zmin,
+            max: contourResult.zmax
+        },
+        reverse: style.reverse || false,
+        heatmapMode: heatmapMode
+    };
+
+    // Create heatmap element
+    var heatmapElement = heatmapUtils.createInterpolatedHeatmap(grid, heatmapStyle);
+
+    if (heatmapElement) {
+        this.layers.background.add(heatmapElement);
+    } else {
+        // Fallback to basic rects if canvas not available
+        var heatmapGroup = heatmapUtils.createHeatmapBackground(grid, heatmapStyle);
+        if (heatmapGroup) {
+            this.layers.background.add(heatmapGroup);
+        }
+    }
+
+    this.zr.flush();
+};
+
+/**
+ * Clear heatmap
+ */
+ZRenderContourRenderer.prototype.clearHeatmap = function() {
+    this.layers.background.removeAll();
 };
 
 /**
@@ -169,6 +324,7 @@ ZRenderContourRenderer.prototype.renderColorbar = function(result, colors, confi
 
 /**
  * Attach events to contour elements
+ * Works with both individual elements and Groups
  */
 ZRenderContourRenderer.prototype.attachContourEvents = function(elements) {
     var self = this;
@@ -178,28 +334,35 @@ ZRenderContourRenderer.prototype.attachContourEvents = function(elements) {
         var element = item.element;
         var level = item.level;
 
-        // Hover events
-        element.on('mouseover', (function(lvl, el) {
-            return function(e) {
-                self.handleContourHover(e, el, lvl);
-            };
-        })(level, element));
+        // For Group elements, we need to attach events to each child
+        // and also to the group itself for proper hit detection
+        if (element.isGroup) {
+            // Attach events to group (catches events from any child)
+            attachEventsToElement(element, level, element);
+        } else {
+            // Single element
+            attachEventsToElement(element, level, element);
+        }
+    }
 
-        element.on('mouseout', function(e) {
+    function attachEventsToElement(el, lvl, originalElement) {
+        el.on('mouseover', function(e) {
+            self.handleContourHover(e, originalElement, lvl);
+        });
+
+        el.on('mouseout', function(e) {
             self.handleContourHoverEnd(e);
         });
 
-        element.on('click', (function(lvl) {
-            return function(e) {
-                self.handleContourClick(e, lvl);
-            };
-        })(level));
+        el.on('click', function(e) {
+            self.handleContourClick(e, lvl);
+        });
     }
 };
 
 /**
  * Handle contour hover
- * Works with both Polygon and CompoundPath elements
+ * Works with both Polygon and Group elements
  */
 ZRenderContourRenderer.prototype.handleContourHover = function(e, element, level) {
     if (!this.interactionEnabled) return;
@@ -208,16 +371,11 @@ ZRenderContourRenderer.prototype.handleContourHover = function(e, element, level
     // Clear previous highlight
     this.layers.overlay.removeAll();
 
-    // Get current style
-    var currentStyle = element.style || {};
-    var originalLineWidth = currentStyle.lineWidth || 1.5;
-
-    // Create highlight effect
-    // For CompoundPath, we create a simple highlight border around the bounding box
-    var zrender = require('zrender');
+    // Get bounding rect (works for both single elements and Groups)
     var rect = element.getBoundingRect();
     var padding = 5;
 
+    // Create highlight effect as a bounding box
     var highlight = new zrender.Rect({
         shape: {
             x: rect.x - padding,
