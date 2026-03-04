@@ -44,8 +44,9 @@ var COLOR_SCALES = {
  * @param {HTMLCanvasElement} canvas - Canvas element to render on
  * @param {Object} config - Configuration object
  * @param {Array} config.z - 2D array of z values (supports null/undefined/NaN)
- * @param {Array} config.x - Optional x coordinates
- * @param {Array} config.y - Optional y coordinates
+ *                           If config is a 2D array directly, it will be treated as z values
+ * @param {Array} config.x - Optional x coordinates (auto-generated as [0,1,2,...] if not provided)
+ * @param {Array} config.y - Optional y coordinates (auto-generated as [0,1,2,...] if not provided)
  * @param {Object} config.contours - Contour configuration
  * @param {String} config.contours.type - 'fill', 'lines', 'heatmap', or 'none'
  * @param {Boolean} config.contours.showlabels - Show contour labels (future)
@@ -106,12 +107,19 @@ function render(canvas, config) {
 
     config = config || {};
 
-    // Extract data
-    var grid = {
-        z: config.z,
-        x: config.x,
-        y: config.y
-    };
+    // Support direct z array as config (if config is an array, treat it as z values)
+    var grid;
+    if (Array.isArray(config)) {
+        // Direct z array passed
+        grid = config;
+    } else {
+        // Object format
+        grid = {
+            z: config.z,
+            x: config.x,
+            y: config.y
+        };
+    }
 
     // Compute options
     var options = {
@@ -405,7 +413,7 @@ function drawColorbar(ctx, result, colors, config, canvasWidth, canvasHeight) {
 /**
  * Create interactive contour using zrender
  * @param {String|HTMLElement} container - Container selector or element
- * @param {Object} config - Configuration object
+ * @param {Object|Array} config - Configuration object or direct z array
  * @returns {Object} Interactive contour instance with control methods
  */
 function createInteractive(container, config) {
@@ -417,7 +425,13 @@ function createInteractive(container, config) {
         throw new Error('Container element not found');
     }
 
-    config = config || {};
+    // Support direct z array as config
+    var isDirectArray = Array.isArray(config);
+    if (isDirectArray) {
+        config = { z: config };
+    } else {
+        config = config || {};
+    }
 
     // Get or infer dimensions
     var width = config.width || container.clientWidth || 600;
@@ -430,7 +444,7 @@ function createInteractive(container, config) {
         devicePixelRatio: config.devicePixelRatio
     });
 
-    // Compute contours
+    // Compute contours - support both direct z array and {z, x, y} object
     var grid = {
         z: config.z,
         x: config.x,

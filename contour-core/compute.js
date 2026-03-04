@@ -16,21 +16,36 @@ var interp2d = require('./null_handling/interp2d');
 /**
  * Compute contours from a 2D grid of values
  *
- * @param {Object} grid - Input data with z (2D array), x, y (optional 1D arrays)
+ * @param {Object|Array} grid - Input data:
+ *   - Object with z (2D array), x, y (optional 1D arrays)
+ *   - Or directly a 2D array (z values), x and y will be auto-generated as [0, 1, 2, ...]
  * @param {Object} options - Contour options (thresholds, autocontour, start, end, size, ncontours, smoothing)
  * @returns {Object} Contour result with levels, paths, pathinfo, nullMask, nullCount, validCount
  */
 function computeContours(grid, options) {
     options = options || {};
 
-    // Validate and extract grid data
-    if (!grid || !grid.z || !Array.isArray(grid.z)) {
-        throw new Error('Invalid grid: must have z property as 2D array');
+    // Support both direct z array and {z, x, y} object format
+    var z, x, y;
+    if (Array.isArray(grid)) {
+        // Direct z array passed - auto-generate x and y coordinates
+        z = grid;
+        var m = z.length;
+        var n = z[0] ? z[0].length : 0;
+        x = createIndexArray(n);
+        y = createIndexArray(m);
+    } else if (grid && grid.z && Array.isArray(grid.z)) {
+        // Object format with z property
+        z = grid.z;
+        var m = z.length;
+        var n = z[0] ? z[0].length : 0;
+        x = grid.x || createIndexArray(n);
+        y = grid.y || createIndexArray(m);
+    } else {
+        throw new Error('Invalid grid: must be a 2D array or an object with z property as 2D array');
     }
 
-    var z = grid.z;
-    var m = z.length;
-    var n = z[0].length;
+    // Validate grid dimensions
     if (m < 2 || n < 2) {
         throw new Error('Invalid grid: must have at least 2x2 data points');
     }
@@ -39,8 +54,6 @@ function computeContours(grid, options) {
     var normalization = nullHandling.normalizeNullValues(z);
     var cleanedZ = normalization.cleanedGrid;
     var nullMask = normalization.nullMask;
-    var x = grid.x || createIndexArray(n);
-    var y = grid.y || createIndexArray(m);
 
     // Interpolate to fill in null values (like plotly.js does)
     // IMPORTANT: In plotly.js, contours ALWAYS interpolate, regardless of connectgaps setting

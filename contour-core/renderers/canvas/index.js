@@ -18,6 +18,8 @@ var nullHandling = require('../../null_handling');
  * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
  * @param {Object} contourResult - Result from computeContours()
  * @param {Object} style - Rendering options
+ * @param {boolean} style.showAxes - Show X/Y axes (default: false)
+ * @param {Object} style.axes - Axes configuration (optional, used when showAxes is true)
  */
 function drawContours(ctx, contourResult, style) {
     style = style || {};
@@ -28,9 +30,16 @@ function drawContours(ctx, contourResult, style) {
     var showLines = style.showLines !== false;
     var smoothing = style.smoothing || 0;
     var useClipMask = style.useClipMask !== false; // Enable clipPath by default for smoother null masking
+    var showAxes = style.showAxes === true;
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
+
+    // Draw grid lines first (behind everything) if axes are enabled
+    if (showAxes) {
+        var axesConfig = buildAxesConfig(style, contourResult, width, height);
+        axesRenderer.drawAxes(ctx, Object.assign({}, axesConfig, { drawGridOnly: true }));
+    }
 
     var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
     var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
@@ -85,6 +94,45 @@ function drawContours(ctx, contourResult, style) {
     if (needsClip && !useClipMask) {
         drawNulls(ctx, contourResult, style);
     }
+
+    // Draw axes on top (axis lines, ticks, labels) if enabled
+    if (showAxes) {
+        var axesConfig = buildAxesConfig(style, contourResult, width, height);
+        axesRenderer.drawAxes(ctx, axesConfig);
+    }
+}
+
+/**
+ * Build axes configuration from style and contour result
+ * @private
+ */
+function buildAxesConfig(style, contourResult, width, height) {
+    var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+
+    // Base axes config from style
+    var axesConfig = style.axes || {};
+
+    // Set dimensions
+    axesConfig.width = width;
+    axesConfig.height = height;
+
+    // Auto-infer data ranges from contour result if not provided
+    if (pathInfo) {
+        if (!axesConfig.xData && pathInfo.x) {
+            axesConfig.xData = pathInfo.x;
+        }
+        if (!axesConfig.yData && pathInfo.y) {
+            axesConfig.yData = pathInfo.y;
+        }
+    }
+
+    // Default axis visibility
+    if (!axesConfig.x) axesConfig.x = {};
+    if (!axesConfig.y) axesConfig.y = {};
+    if (axesConfig.x.show === undefined) axesConfig.x.show = true;
+    if (axesConfig.y.show === undefined) axesConfig.y.show = true;
+
+    return axesConfig;
 }
 
 /**

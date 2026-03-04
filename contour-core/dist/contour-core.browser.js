@@ -1164,20 +1164,28 @@ var contourCore = (() => {
       var interp2d = require_interp2d();
       function computeContours(grid, options) {
         options = options || {};
-        if (!grid || !grid.z || !Array.isArray(grid.z)) {
-          throw new Error("Invalid grid: must have z property as 2D array");
+        var z, x, y;
+        if (Array.isArray(grid)) {
+          z = grid;
+          var m = z.length;
+          var n = z[0] ? z[0].length : 0;
+          x = createIndexArray(n);
+          y = createIndexArray(m);
+        } else if (grid && grid.z && Array.isArray(grid.z)) {
+          z = grid.z;
+          var m = z.length;
+          var n = z[0] ? z[0].length : 0;
+          x = grid.x || createIndexArray(n);
+          y = grid.y || createIndexArray(m);
+        } else {
+          throw new Error("Invalid grid: must be a 2D array or an object with z property as 2D array");
         }
-        var z = grid.z;
-        var m = z.length;
-        var n = z[0].length;
         if (m < 2 || n < 2) {
           throw new Error("Invalid grid: must have at least 2x2 data points");
         }
         var normalization = nullHandling.normalizeNullValues(z);
         var cleanedZ = normalization.cleanedGrid;
         var nullMask = normalization.nullMask;
-        var x = grid.x || createIndexArray(n);
-        var y = grid.y || createIndexArray(m);
         var connectGaps = options.connectgaps !== void 0 ? options.connectgaps : true;
         var emptyPoints = findEmpties(cleanedZ);
         if (emptyPoints.length > 0) {
@@ -4008,7 +4016,12 @@ var contourCore = (() => {
         var showLines = style.showLines !== false;
         var smoothing = style.smoothing || 0;
         var useClipMask = style.useClipMask !== false;
+        var showAxes = style.showAxes === true;
         ctx.clearRect(0, 0, width, height);
+        if (showAxes) {
+          var axesConfig = buildAxesConfig(style, contourResult, width, height);
+          axesRenderer.drawAxes(ctx, Object.assign({}, axesConfig, { drawGridOnly: true }));
+        }
         var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
         var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
         if (needsClip && useClipMask) {
@@ -4042,6 +4055,33 @@ var contourCore = (() => {
         if (needsClip && !useClipMask) {
           drawNulls(ctx, contourResult, style);
         }
+        if (showAxes) {
+          var axesConfig = buildAxesConfig(style, contourResult, width, height);
+          axesRenderer.drawAxes(ctx, axesConfig);
+        }
+      }
+      function buildAxesConfig(style, contourResult, width, height) {
+        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+        var axesConfig = style.axes || {};
+        axesConfig.width = width;
+        axesConfig.height = height;
+        if (pathInfo) {
+          if (!axesConfig.xData && pathInfo.x) {
+            axesConfig.xData = pathInfo.x;
+          }
+          if (!axesConfig.yData && pathInfo.y) {
+            axesConfig.yData = pathInfo.y;
+          }
+        }
+        if (!axesConfig.x)
+          axesConfig.x = {};
+        if (!axesConfig.y)
+          axesConfig.y = {};
+        if (axesConfig.x.show === void 0)
+          axesConfig.x.show = true;
+        if (axesConfig.y.show === void 0)
+          axesConfig.y.show = true;
+        return axesConfig;
       }
       function applyCanvasClip(ctx, pathData, width, height) {
         ctx.save();
@@ -4216,11 +4256,16 @@ var contourCore = (() => {
           throw new Error("Failed to get 2D context from canvas");
         }
         config = config || {};
-        var grid = {
-          z: config.z,
-          x: config.x,
-          y: config.y
-        };
+        var grid;
+        if (Array.isArray(config)) {
+          grid = config;
+        } else {
+          grid = {
+            z: config.z,
+            x: config.x,
+            y: config.y
+          };
+        }
         var options = {
           autocontour: config.autocontour !== false,
           ncontours: config.ncontours || 15,
@@ -4425,7 +4470,12 @@ var contourCore = (() => {
         if (!container) {
           throw new Error("Container element not found");
         }
-        config = config || {};
+        var isDirectArray = Array.isArray(config);
+        if (isDirectArray) {
+          config = { z: config };
+        } else {
+          config = config || {};
+        }
         var width = config.width || container.clientWidth || 600;
         var height = config.height || container.clientHeight || 500;
         var renderer = zrenderRenderer.createRenderer(container, {
