@@ -49,12 +49,6 @@ var contourCore = {
     axes: require('./axes'),
 
     // ============================================
-    // ZRender interaction layer
-    // ============================================
-    zrender: require('./renderers/zrender'),
-    createInteractive: require('./api').createInteractive,
-
-    // ============================================
     // Utilities
     // ============================================
     COLOR_SCALES: api.COLOR_SCALES

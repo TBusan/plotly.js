@@ -765,9 +765,6 @@
                 if (!svg) return null;
 
                 var rect = svg.getBoundingClientRect();
-                var x = (clientX - rect.left - viewState.offsetX) / viewState.scale;
-                var y = (clientY - rect.top - viewState.offsetY) / viewState.scale;
-
                 var margins = getMargins();
                 var dims = getDimensions();
                 var drawArea = {
@@ -777,13 +774,26 @@
                     height: dims.height - margins.top - margins.bottom
                 };
 
-                if (x < drawArea.x || x > drawArea.x + drawArea.width ||
-                    y < drawArea.y || y > drawArea.y + drawArea.height) {
+                // Get screen coordinates relative to SVG
+                var screenX = clientX - rect.left;
+                var screenY = clientY - rect.top;
+
+                // Reverse the SVG group transformation:
+                // transform="translate(transformOriginX, transformOriginY) scale(scale) translate(-width/2 + offsetX, -height/2 + offsetY)"
+                // where transformOriginX = drawArea.x + drawArea.width/2
+                var transformOriginX = drawArea.x + drawArea.width / 2;
+                var transformOriginY = drawArea.y + drawArea.height / 2;
+
+                var x = (screenX - transformOriginX) / viewState.scale + drawArea.width / 2 - viewState.offsetX;
+                var y = (screenY - transformOriginY) / viewState.scale + drawArea.height / 2 - viewState.offsetY;
+
+                // Check if within drawing area (in local coordinates, origin at 0,0)
+                if (x < 0 || x > drawArea.width || y < 0 || y > drawArea.height) {
                     return null;
                 }
 
-                var dataX = Math.round((x - drawArea.x) / drawArea.width * (data.x.length - 1));
-                var dataY = Math.round((y - drawArea.y) / drawArea.height * (data.y.length - 1));
+                var dataX = Math.round(x / drawArea.width * (data.x.length - 1));
+                var dataY = Math.round(y / drawArea.height * (data.y.length - 1));
 
                 if (dataX >= 0 && dataX < data.x.length && dataY >= 0 && dataY < data.y.length) {
                     return {

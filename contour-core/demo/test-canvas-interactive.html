@@ -760,11 +760,18 @@
                     height: canvas.height - margins.top - margins.bottom
                 };
 
-                // Calculate position in transformed canvas coordinates
-                var x = (clientX - rect.left - drawArea.x - drawArea.width / 2) / viewState.scale - viewState.offsetX + drawArea.width / 2;
-                var y = (clientY - rect.top - drawArea.y - drawArea.height / 2) / viewState.scale - viewState.offsetY + drawArea.height / 2;
+                // Get screen coordinates relative to canvas
+                var screenX = clientX - rect.left;
+                var screenY = clientY - rect.top;
 
-                // Check if within drawing area
+                // Reverse the canvas transformation:
+                // ctx.translate(drawArea.x + drawArea.width / 2, drawArea.y + drawArea.height / 2);
+                // ctx.scale(viewState.scale, viewState.scale);
+                // ctx.translate(-drawArea.width / 2 + viewState.offsetX, -drawArea.height / 2 + viewState.offsetY);
+                var x = (screenX - drawArea.x - drawArea.width / 2) / viewState.scale + drawArea.width / 2 - viewState.offsetX;
+                var y = (screenY - drawArea.y - drawArea.height / 2) / viewState.scale + drawArea.height / 2 - viewState.offsetY;
+
+                // Check if within drawing area (in data/local coordinates)
                 if (x < 0 || x > drawArea.width || y < 0 || y > drawArea.height) {
                     return null;
                 }

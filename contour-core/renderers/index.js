@@ -2,12 +2,10 @@
 
 /**
  * Renderers module for contour visualization
- * Provides Canvas, SVG, ZRender, and Three.js rendering capabilities
+ * Provides Canvas and SVG rendering capabilities
  */
 
 module.exports = {
     canvas: require('./canvas'),
-    svg: require('./svg'),
-    zrender: require('./zrender'),
-    three: require('./three')
+    svg: require('./svg')
 };

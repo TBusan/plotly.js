@@ -7,7 +7,6 @@
 
 var compute = require('./compute');
 var canvasRenderer = require('./renderers/canvas');
-var zrenderRenderer = require('./renderers/zrender');
 var labelUtils = require('./labels');
 
 // Preset color scales
