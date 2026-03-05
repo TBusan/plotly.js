@@ -4486,7 +4486,8 @@ var contourCore = (() => {
           if (coloring === "fill" || coloring === "heatmap") {
             drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
           }
-          if (showLines && (coloring === "lines" || coloring === "fill" || coloring === "heatmap")) {
+          var shouldDrawLines = coloring === "lines" || showLines && (coloring === "fill" || coloring === "heatmap");
+          if (shouldDrawLines) {
             drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
           }
           if (needsClip && !style.useClipMask) {
@@ -4906,7 +4907,8 @@ var contourCore = (() => {
         if (coloring === "fill" || coloring === "heatmap") {
           drawPaths.drawFilledPaths(ctx, contourResult, style);
         }
-        if (showLines && (coloring === "lines" || coloring === "fill" || coloring === "heatmap")) {
+        var shouldDrawLines = coloring === "lines" || showLines && (coloring === "fill" || coloring === "heatmap");
+        if (shouldDrawLines) {
           drawPaths.drawStrokePaths(ctx, contourResult, style);
         }
         if (needsClip && useClipMask) {
@@ -5035,7 +5037,11 @@ var contourCore = (() => {
         var style = config.style || {};
         var axesConfig = config.axes || {};
         var interactionConfig = config.interaction || {};
-        var contourResult = compute.computeContours(data, contourOptions);
+        var mergedContourOptions = Object.assign({}, contourOptions);
+        if (style.smoothing !== void 0 && mergedContourOptions.smoothing === void 0) {
+          mergedContourOptions.smoothing = style.smoothing;
+        }
+        var contourResult = compute.computeContours(data, mergedContourOptions);
         var renderer = layers.createLayeredRenderer(canvas, {
           width: config.width || canvas.width,
           height: config.height || canvas.height,

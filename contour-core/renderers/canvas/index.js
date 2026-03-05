@@ -78,9 +78,10 @@ function drawContours(ctx, contourResult, style) {
     }
 
     // Draw contour lines
-    // For 'lines' mode: draw lines only
+    // For 'lines' mode: ALWAYS draw lines
     // For 'fill'/'heatmap' mode: draw lines on top of fills if showLines is true
-    if (showLines && (coloring === 'lines' || coloring === 'fill' || coloring === 'heatmap')) {
+    var shouldDrawLines = (coloring === 'lines') || (showLines && (coloring === 'fill' || coloring === 'heatmap'));
+    if (shouldDrawLines) {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
     }
 
@@ -276,8 +277,15 @@ function createInteractiveRenderer(canvas, config) {
     var axesConfig = config.axes || {};
     var interactionConfig = config.interaction || {};
 
+    // Merge smoothing from style into contourOptions if not already set
+    // This ensures smoothing is applied during contour computation
+    var mergedContourOptions = Object.assign({}, contourOptions);
+    if (style.smoothing !== undefined && mergedContourOptions.smoothing === undefined) {
+        mergedContourOptions.smoothing = style.smoothing;
+    }
+
     // Compute contours
-    var contourResult = compute.computeContours(data, contourOptions);
+    var contourResult = compute.computeContours(data, mergedContourOptions);
 
     // Create layered renderer
     var renderer = layers.createLayeredRenderer(canvas, {
