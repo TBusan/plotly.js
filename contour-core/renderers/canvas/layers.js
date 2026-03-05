@@ -227,6 +227,7 @@ function createLayeredRenderer(canvas, config) {
         // Create style with visibleRange and data for proper coordinate scaling
         var renderStyle = Object.assign({}, style, {
             visibleRange: visibleRange,
+            fullRange: fullRange,  // Add fullRange for boundary checks in joinAllPaths
             width: width,
             height: height,
             padding: padding,

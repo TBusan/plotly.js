@@ -1603,29 +1603,47 @@ var contourCore = (() => {
         if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
           return "";
         }
+        var x = style.x || [];
+        var y = style.y || [];
+        var dataXMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
+        var dataXMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
+        var dataYMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
+        var dataYMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+        var tolX = (dataXMax - dataXMin) * 1e-3;
+        var tolY = (dataYMax - dataYMin) * 1e-3;
+        function isDataTop(pt) {
+          return pt && Math.abs(pt[1] - dataYMax) < tolY;
+        }
+        function isDataBottom(pt) {
+          return pt && Math.abs(pt[1] - dataYMin) < tolY;
+        }
+        function isDataLeft(pt) {
+          return pt && Math.abs(pt[0] - dataXMin) < tolX;
+        }
+        function isDataRight(pt) {
+          return pt && Math.abs(pt[0] - dataXMax) < tolX;
+        }
+        var dataCorners = [
+          [dataXMin, dataYMax],
+          // 0: top-left (data coords)
+          [dataXMax, dataYMax],
+          // 1: top-right
+          [dataXMax, dataYMin],
+          // 2: bottom-right
+          [dataXMin, dataYMin]
+          // 3: bottom-left
+        ];
         var i = 0;
         var startsleft = edgepaths.map(function(v, i2) {
           return i2;
         });
         var newloop = true;
-        var endpt;
-        var newendpt;
+        var endptData;
+        var newendptData;
         var cnt;
         var nexti;
         var possiblei;
         var addpath;
-        function istop(pt) {
-          return pt && Math.abs(pt[1] - perimeter[0][1]) < 0.1;
-        }
-        function isbottom(pt) {
-          return pt && Math.abs(pt[1] - perimeter[2][1]) < 0.1;
-        }
-        function isleft(pt) {
-          return pt && Math.abs(pt[0] - perimeter[0][0]) < 0.1;
-        }
-        function isright(pt) {
-          return pt && Math.abs(pt[0] - perimeter[2][0]) < 0.1;
-        }
         while (startsleft.length > 0) {
           var currentPath = edgepaths[i];
           if (!currentPath || !Array.isArray(currentPath) || currentPath.length === 0) {
@@ -1654,50 +1672,53 @@ var contourCore = (() => {
           addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
           fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
           startsleft.splice(startsleft.indexOf(i), 1);
-          endpt = scalePoint(style, currentPath[currentPath.length - 1]);
+          endptData = currentPath[currentPath.length - 1];
           nexti = -1;
           for (cnt = 0; cnt < 4; cnt++) {
-            if (!endpt)
+            if (!endptData)
               break;
-            newendpt = null;
-            if (istop(endpt) && !isright(endpt))
-              newendpt = perimeter[1];
-            else if (isleft(endpt))
-              newendpt = perimeter[0];
-            else if (isbottom(endpt))
-              newendpt = perimeter[3];
-            else if (isright(endpt))
-              newendpt = perimeter[2];
+            newendptData = null;
+            if (isDataTop(endptData) && !isDataRight(endptData))
+              newendptData = dataCorners[1];
+            else if (isDataLeft(endptData))
+              newendptData = dataCorners[0];
+            else if (isDataBottom(endptData))
+              newendptData = dataCorners[3];
+            else if (isDataRight(endptData))
+              newendptData = dataCorners[2];
             else {
               break;
             }
-            if (!newendpt)
+            if (!newendptData)
               break;
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
               if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) || edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
                 continue;
               }
-              var ptNew = scalePoint(style, edgepaths[possiblei][0]);
-              if (!ptNew || isNaN(ptNew[0]) || isNaN(ptNew[1]))
+              var ptNewData = edgepaths[possiblei][0];
+              if (!ptNewData || isNaN(ptNewData[0]) || isNaN(ptNewData[1]))
                 continue;
-              if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
-                if (Math.abs(endpt[0] - ptNew[0]) < 0.1 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
-                  newendpt = ptNew;
+              if (Math.abs(endptData[0] - newendptData[0]) < tolX) {
+                if (Math.abs(endptData[0] - ptNewData[0]) < tolX && (ptNewData[1] - endptData[1]) * (newendptData[1] - ptNewData[1]) >= 0) {
+                  newendptData = ptNewData;
                   nexti = possiblei;
                 }
-              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
-                if (Math.abs(endpt[1] - ptNew[1]) < 0.1 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
-                  newendpt = ptNew;
+              } else if (Math.abs(endptData[1] - newendptData[1]) < tolY) {
+                if (Math.abs(endptData[1] - ptNewData[1]) < tolY && (ptNewData[0] - endptData[0]) * (newendptData[0] - ptNewData[0]) >= 0) {
+                  newendptData = ptNewData;
                   nexti = possiblei;
                 }
               }
             }
-            if (!newendpt)
+            if (!newendptData)
               break;
-            endpt = newendpt;
+            endptData = newendptData;
             if (nexti >= 0)
               break;
-            fullpath += "L" + newendpt[0] + " " + newendpt[1];
+            var canvasPt = scalePoint(style, newendptData);
+            if (canvasPt && !isNaN(canvasPt[0]) && !isNaN(canvasPt[1])) {
+              fullpath += "L" + canvasPt[0] + " " + canvasPt[1];
+            }
           }
           if (nexti === edgepaths.length || nexti < 0)
             break;
@@ -1714,10 +1735,16 @@ var contourCore = (() => {
           if (!pathInfo.paths[i] || !Array.isArray(pathInfo.paths[i]) || pathInfo.paths[i].length === 0) {
             continue;
           }
-          var scaledPath = pathInfo.paths[i].map(function(pt) {
+          var scaledPath = pathInfo.paths[i].filter(function(pt) {
+            return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+          }).map(function(pt) {
             return scalePoint(style, pt);
+          }).filter(function(pt) {
+            return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
           });
-          fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+          if (scaledPath.length >= 3) {
+            fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+          }
         }
         return fullpath;
       }
@@ -4443,6 +4470,8 @@ var contourCore = (() => {
           var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
           var renderStyle = Object.assign({}, style, {
             visibleRange,
+            fullRange,
+            // Add fullRange for boundary checks in joinAllPaths
             width,
             height,
             padding,

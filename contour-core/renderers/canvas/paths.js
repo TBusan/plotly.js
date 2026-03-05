@@ -32,7 +32,7 @@ function createPerimeter(style) {
 
 /**
  * Join all edge paths into a single path with proper boundary connections
- * Works on SCALED coordinates (canvas space)
+ * Uses DATA coordinates for boundary checking, CANVAS coordinates for rendering
  */
 function joinAllPaths(pathInfo, perimeter, style) {
     var fullpath = '';
@@ -56,20 +56,41 @@ function joinAllPaths(pathInfo, perimeter, style) {
         return '';
     }
 
+    // Get DATA coordinate boundaries for edge detection
+    var x = style.x || [];
+    var y = style.y || [];
+    var dataXMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
+    var dataXMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
+    var dataYMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
+    var dataYMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+
+    // Tolerance for boundary detection (relative to data range)
+    var tolX = (dataXMax - dataXMin) * 0.001;
+    var tolY = (dataYMax - dataYMin) * 0.001;
+
+    // DATA coordinate boundary check functions
+    function isDataTop(pt) { return pt && Math.abs(pt[1] - dataYMax) < tolY; }
+    function isDataBottom(pt) { return pt && Math.abs(pt[1] - dataYMin) < tolY; }
+    function isDataLeft(pt) { return pt && Math.abs(pt[0] - dataXMin) < tolX; }
+    function isDataRight(pt) { return pt && Math.abs(pt[0] - dataXMax) < tolX; }
+
+    // Data boundary corners
+    var dataCorners = [
+        [dataXMin, dataYMax],  // 0: top-left (data coords)
+        [dataXMax, dataYMax],  // 1: top-right
+        [dataXMax, dataYMin],  // 2: bottom-right
+        [dataXMin, dataYMin]   // 3: bottom-left
+    ];
+
     var i = 0;
     var startsleft = edgepaths.map(function(v, i) { return i; });
     var newloop = true;
-    var endpt;
-    var newendpt;
+    var endptData;  // Current endpoint in DATA coordinates
+    var newendptData;  // Next endpoint in DATA coordinates
     var cnt;
     var nexti;
     var possiblei;
     var addpath;
-
-    function istop(pt) { return pt && Math.abs(pt[1] - perimeter[0][1]) < 0.1; }
-    function isbottom(pt) { return pt && Math.abs(pt[1] - perimeter[2][1]) < 0.1; }
-    function isleft(pt) { return pt && Math.abs(pt[0] - perimeter[0][0]) < 0.1; }
-    function isright(pt) { return pt && Math.abs(pt[0] - perimeter[2][0]) < 0.1; }
 
     // Process edge paths
     while (startsleft.length > 0) {
@@ -85,7 +106,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
             continue;
         }
 
-        // Generate smooth SVG path string
+        // Generate smooth SVG path string using canvas coordinates
         var scaledPath = currentPath.filter(function(pt) {
             return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
         }).map(function(pt) {
@@ -107,64 +128,66 @@ function joinAllPaths(pathInfo, perimeter, style) {
         fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
         startsleft.splice(startsleft.indexOf(i), 1);
 
-        // Use original path point for endpt (scaled)
-        endpt = scalePoint(style, currentPath[currentPath.length - 1]);
+        // Use DATA coordinate for boundary checking
+        endptData = currentPath[currentPath.length - 1];
         nexti = -1;
 
-        // Loop through sides to find next path
+        // Loop through sides to find next path (using DATA coordinates)
         for (cnt = 0; cnt < 4; cnt++) {
-            if (!endpt) break;
+            if (!endptData) break;
 
-            // Determine corner to move to - initialize newendpt first
-            newendpt = null;
+            // Determine corner to move to in DATA coordinates
+            newendptData = null;
 
-            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
-            else if (isleft(endpt)) newendpt = perimeter[0];
-            else if (isbottom(endpt)) newendpt = perimeter[3];
-            else if (isright(endpt)) newendpt = perimeter[2];
+            if (isDataTop(endptData) && !isDataRight(endptData)) newendptData = dataCorners[1];
+            else if (isDataLeft(endptData)) newendptData = dataCorners[0];
+            else if (isDataBottom(endptData)) newendptData = dataCorners[3];
+            else if (isDataRight(endptData)) newendptData = dataCorners[2];
             else {
-                // If endpt is not on any edge, break
+                // If endptData is not on any data edge, break
                 break;
             }
 
-            // Validate newendpt
-            if (!newendpt) break;
+            if (!newendptData) break;
 
-            // Find next path starting on this edge
+            // Find next path starting on this edge (in DATA coordinates)
             for (possiblei = 0; possiblei < edgepaths.length; possiblei++) {
                 if (!edgepaths[possiblei] || !Array.isArray(edgepaths[possiblei]) ||
                     edgepaths[possiblei].length === 0 || !edgepaths[possiblei][0]) {
                     continue;
                 }
-                var ptNew = scalePoint(style, edgepaths[possiblei][0]);
+                var ptNewData = edgepaths[possiblei][0];
 
-                // Validate ptNew
-                if (!ptNew || isNaN(ptNew[0]) || isNaN(ptNew[1])) continue;
+                if (!ptNewData || isNaN(ptNewData[0]) || isNaN(ptNewData[1])) continue;
 
-                // Check if ptNew is on the segment
-                if (Math.abs(endpt[0] - newendpt[0]) < 0.1) {
-                    // Vertical edge
-                    if (Math.abs(endpt[0] - ptNew[0]) < 0.1 &&
-                        (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
-                        newendpt = ptNew;
+                // Check if ptNewData is on the segment (in DATA coordinates)
+                if (Math.abs(endptData[0] - newendptData[0]) < tolX) {
+                    // Vertical edge (left or right)
+                    if (Math.abs(endptData[0] - ptNewData[0]) < tolX &&
+                        (ptNewData[1] - endptData[1]) * (newendptData[1] - ptNewData[1]) >= 0) {
+                        newendptData = ptNewData;
                         nexti = possiblei;
                     }
-                } else if (Math.abs(endpt[1] - newendpt[1]) < 0.1) {
-                    // Horizontal edge
-                    if (Math.abs(endpt[1] - ptNew[1]) < 0.1 &&
-                        (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
-                        newendpt = ptNew;
+                } else if (Math.abs(endptData[1] - newendptData[1]) < tolY) {
+                    // Horizontal edge (top or bottom)
+                    if (Math.abs(endptData[1] - ptNewData[1]) < tolY &&
+                        (ptNewData[0] - endptData[0]) * (newendptData[0] - ptNewData[0]) >= 0) {
+                        newendptData = ptNewData;
                         nexti = possiblei;
                     }
                 }
             }
 
-            // If newendpt was not set, break out of the loop
-            if (!newendpt) break;
+            if (!newendptData) break;
 
-            endpt = newendpt;
+            // Add line to newendpt in CANVAS coordinates
+            endptData = newendptData;
             if (nexti >= 0) break;
-            fullpath += 'L' + newendpt[0] + ' ' + newendpt[1];
+
+            var canvasPt = scalePoint(style, newendptData);
+            if (canvasPt && !isNaN(canvasPt[0]) && !isNaN(canvasPt[1])) {
+                fullpath += 'L' + canvasPt[0] + ' ' + canvasPt[1];
+            }
         }
 
         if (nexti === edgepaths.length || nexti < 0) break;
@@ -185,10 +208,17 @@ function joinAllPaths(pathInfo, perimeter, style) {
             pathInfo.paths[i].length === 0) {
             continue;
         }
-        var scaledPath = pathInfo.paths[i].map(function(pt) {
+        var scaledPath = pathInfo.paths[i].filter(function(pt) {
+            return pt && Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]);
+        }).map(function(pt) {
             return scalePoint(style, pt);
+        }).filter(function(pt) {
+            return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
         });
-        fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+
+        if (scaledPath.length >= 3) {
+            fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+        }
     }
 
     return fullpath;
