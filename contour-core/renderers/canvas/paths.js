@@ -423,10 +423,6 @@ function drawFilledPaths(ctx, contourResult, style) {
         return;
     }
 
-    var showLines = style.showLines !== false;
-    var lineColor = style.lineColor || '#333';
-    var lineWidth = style.lineWidth || 1.5;
-
     if (paths.length === 0) return;
 
     // Determine thresholds and color scale
@@ -504,19 +500,13 @@ function drawFilledPaths(ctx, contourResult, style) {
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = pathInfo.prefixBoundary ? (boundaryPath + joinedPaths) : joinedPaths;
 
-        // Draw path with fill and optional stroke
+        // Draw path with fill only
+        // NOTE: Contour lines are drawn separately via drawStrokePaths to avoid
+        // drawing boundary connection lines that are part of joinAllPaths result
         if (fullpath) {
             ctx.beginPath();
             drawSVGPath(ctx, fullpath);
             ctx.fill();
-
-            if (showLines) {
-                ctx.strokeStyle = lineColor;
-                ctx.lineWidth = lineWidth;
-                ctx.lineJoin = 'round';
-                ctx.lineCap = 'round';
-                ctx.stroke();
-            }
         }
     }
 }

@@ -1876,9 +1876,6 @@ var contourCore = (() => {
           console.warn("drawFilledPaths: Invalid perimeter points");
           return;
         }
-        var showLines = style.showLines !== false;
-        var lineColor = style.lineColor || "#333";
-        var lineWidth = style.lineWidth || 1.5;
         if (paths.length === 0)
           return;
         var hasCustomLevels = style.thresholds && Array.isArray(style.thresholds);
@@ -1946,13 +1943,6 @@ var contourCore = (() => {
             ctx.beginPath();
             drawSVGPath(ctx, fullpath);
             ctx.fill();
-            if (showLines) {
-              ctx.strokeStyle = lineColor;
-              ctx.lineWidth = lineWidth;
-              ctx.lineJoin = "round";
-              ctx.lineCap = "round";
-              ctx.stroke();
-            }
           }
         }
       }
@@ -4496,7 +4486,7 @@ var contourCore = (() => {
           if (coloring === "fill" || coloring === "heatmap") {
             drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
           }
-          if (showLines && coloring === "lines") {
+          if (showLines && (coloring === "lines" || coloring === "fill" || coloring === "heatmap")) {
             drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
           }
           if (needsClip && !style.useClipMask) {
@@ -4885,6 +4875,14 @@ var contourCore = (() => {
         var smoothing = style.smoothing || 0;
         var useClipMask = style.useClipMask !== false;
         var showAxes = style.showAxes === true;
+        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+        if (pathInfo) {
+          style = Object.assign({
+            x: pathInfo.x,
+            y: pathInfo.y,
+            z: pathInfo.z
+          }, style);
+        }
         ctx.clearRect(0, 0, width, height);
         if (showAxes) {
           var axesConfig = buildAxesConfig(style, contourResult, width, height);
@@ -4908,7 +4906,7 @@ var contourCore = (() => {
         if (coloring === "fill" || coloring === "heatmap") {
           drawPaths.drawFilledPaths(ctx, contourResult, style);
         }
-        if (showLines && coloring === "lines") {
+        if (showLines && (coloring === "lines" || coloring === "fill" || coloring === "heatmap")) {
           drawPaths.drawStrokePaths(ctx, contourResult, style);
         }
         if (needsClip && useClipMask) {

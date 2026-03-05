@@ -260,8 +260,10 @@ function createLayeredRenderer(canvas, config) {
             drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
         }
 
-        // Draw contour lines (ONLY for lines mode)
-        if (showLines && coloring === 'lines') {
+        // Draw contour lines
+        // For 'lines' mode: draw lines only
+        // For 'fill'/'heatmap' mode: draw lines on top of fills if showLines is true
+        if (showLines && (coloring === 'lines' || coloring === 'fill' || coloring === 'heatmap')) {
             drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
         }
 

@@ -32,6 +32,17 @@ function drawContours(ctx, contourResult, style) {
     var useClipMask = style.useClipMask !== false; // Enable clipPath by default for smoother null masking
     var showAxes = style.showAxes === true;
 
+    // Extract data coordinates from contourResult for scalePoint function
+    var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+    if (pathInfo) {
+        // Merge x, y, z into style if not already provided
+        style = Object.assign({
+            x: pathInfo.x,
+            y: pathInfo.y,
+            z: pathInfo.z
+        }, style);
+    }
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
@@ -62,15 +73,14 @@ function drawContours(ctx, contourResult, style) {
     }
 
     // Draw filled contours
-    // NOTE: drawFilledPaths now also draws stroke lines when showLines is true
-    // This avoids double-smoothing and ensures lines match fills exactly
     if (coloring === 'fill' || coloring === 'heatmap') {
         drawPaths.drawFilledPaths(ctx, contourResult, style);
     }
 
-    // Draw contour lines (ONLY for lines mode, NOT for fill mode)
-    // For fill mode, lines are already drawn in drawFilledPaths
-    if (showLines && coloring === 'lines') {
+    // Draw contour lines
+    // For 'lines' mode: draw lines only
+    // For 'fill'/'heatmap' mode: draw lines on top of fills if showLines is true
+    if (showLines && (coloring === 'lines' || coloring === 'fill' || coloring === 'heatmap')) {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
     }
 
