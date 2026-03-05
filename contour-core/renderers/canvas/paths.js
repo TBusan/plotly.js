@@ -468,8 +468,19 @@ function drawFilledPaths(ctx, contourResult, style) {
     }
 
     // Draw background layer only within data area (perimeter)
-    // This prevents filling outside the data bounds
-    ctx.fillStyle = bgColor;
+    // Strategy:
+    // - When connectgaps=false: use white background so null regions appear transparent (clip mask will reveal canvas background)
+    // - When connectgaps=true: use user's backgroundColor if set, otherwise white (to show canvas background)
+    // - First level color is only used for actual contour fill, not background
+    var bgFillColor;
+    if (style.connectgaps === false) {
+        // White background for null regions to appear transparent when clip mask is applied
+        bgFillColor = '#ffffff';
+    } else {
+        // Use user's backgroundColor setting, default to white (transparent to show canvas background)
+        bgFillColor = style.backgroundColor || '#ffffff';
+    }
+    ctx.fillStyle = bgFillColor;
     ctx.beginPath();
     ctx.rect(perimeter[0][0], perimeter[0][1],
              perimeter[1][0] - perimeter[0][0],
@@ -479,6 +490,13 @@ function drawFilledPaths(ctx, contourResult, style) {
     // Draw each contour fill layer (LOWEST to HIGHEST)
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
+
+        // When user sets backgroundColor and this is first level with prefixBoundary,
+        // skip the entire first level fill to let background color show through
+        // in the "boundary to first contour" region
+        if (i === 0 && pathInfo.prefixBoundary && style.backgroundColor) {
+            continue; // Skip first level fill, background layer will show through
+        }
 
         // Get color and build path
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);

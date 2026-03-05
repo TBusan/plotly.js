@@ -1913,7 +1913,13 @@ var require_paths = __commonJS({
         normalizedBg = Math.max(0, Math.min(1, normalizedBg));
         bgColor = getColorForValue(normalizedBg, colorScale);
       }
-      ctx.fillStyle = bgColor;
+      var bgFillColor;
+      if (style.connectgaps === false) {
+        bgFillColor = "#ffffff";
+      } else {
+        bgFillColor = style.backgroundColor || "#ffffff";
+      }
+      ctx.fillStyle = bgFillColor;
       ctx.beginPath();
       ctx.rect(
         perimeter[0][0],
@@ -1924,6 +1930,9 @@ var require_paths = __commonJS({
       ctx.fill();
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
+        if (i === 0 && pathInfo.prefixBoundary && style.backgroundColor) {
+          continue;
+        }
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
         var boundaryPath = "M" + perimeter.map(function(pt) {
