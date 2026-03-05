@@ -439,11 +439,6 @@ function drawFilledPaths(ctx, contourResult, style) {
         }
     }
 
-    // Debug: Log colorScale info
-    if (typeof window !== 'undefined' && window.console) {
-        console.log('[drawFilledPaths] colorScale:', colorScale ? colorScale.slice(0, 3) : null);
-    }
-
     // Draw background layer
     var bgColor;
     if (valueColorMap) {
@@ -489,13 +484,6 @@ function drawFilledPaths(ctx, contourResult, style) {
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
 
-        // Debug log
-        if (typeof window !== 'undefined' && window.console && i < 3) {
-            console.log('[drawFilledPaths] Path ' + i + ' level=' + pathInfo.level + ' fillColor=' + fillColor +
-                        ' edgepaths=' + pathInfo.edgepaths.length + ' paths=' + pathInfo.paths.length +
-                        ' prefixBoundary=' + pathInfo.prefixBoundary);
-        }
-
         var boundaryPath = 'M' + perimeter.map(function(pt) { return pt.join(' '); }).join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = pathInfo.prefixBoundary ? (boundaryPath + joinedPaths) : joinedPaths;
@@ -520,17 +508,30 @@ function drawStrokePaths(ctx, contourResult, style) {
     var smoothing = style.smoothing || 0;
     var colorScale = style.colorScale;
     var useColorScale = colorScale && Array.isArray(colorScale) && colorScale.length > 0;
+    var coloring = style.coloring || 'lines';
 
     ctx.lineWidth = style.lineWidth || 1.5;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
+    if (!paths || paths.length === 0) {
+        return;
+    }
+
+    // Determine line color strategy:
+    // - For 'lines' mode: use colorScale if available (colored contour lines)
+    // - For 'fill', 'fill+lines', 'heatmap' modes: use fixed dark color for contrast
+    var useFixedLineColor = coloring !== 'lines';
+
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
 
         // Set color for this level
-        if (useColorScale) {
-            // Find color for this level
+        if (useFixedLineColor) {
+            // Use fixed line color for fill modes (better contrast against fill colors)
+            ctx.strokeStyle = style.lineColor || '#333';
+        } else if (useColorScale) {
+            // Find color for this level (for pure lines mode)
             var level = pathInfo.level;
             var color = '#333'; // default
 

@@ -1888,9 +1888,6 @@ var require_paths = __commonJS({
           colorScale = [[0, "blue"], [1, "red"]];
         }
       }
-      if (typeof window !== "undefined" && window.console) {
-        console.log("[drawFilledPaths] colorScale:", colorScale ? colorScale.slice(0, 3) : null);
-      }
       var bgColor;
       if (valueColorMap) {
         bgColor = valueColorMap[0][1];
@@ -1929,9 +1926,6 @@ var require_paths = __commonJS({
         var pathInfo = paths[i];
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
-        if (typeof window !== "undefined" && window.console && i < 3) {
-          console.log("[drawFilledPaths] Path " + i + " level=" + pathInfo.level + " fillColor=" + fillColor + " edgepaths=" + pathInfo.edgepaths.length + " paths=" + pathInfo.paths.length + " prefixBoundary=" + pathInfo.prefixBoundary);
-        }
         var boundaryPath = "M" + perimeter.map(function(pt) {
           return pt.join(" ");
         }).join("L") + "Z";
@@ -1950,12 +1944,19 @@ var require_paths = __commonJS({
       var smoothing = style.smoothing || 0;
       var colorScale = style.colorScale;
       var useColorScale = colorScale && Array.isArray(colorScale) && colorScale.length > 0;
+      var coloring = style.coloring || "lines";
       ctx.lineWidth = style.lineWidth || 1.5;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
+      if (!paths || paths.length === 0) {
+        return;
+      }
+      var useFixedLineColor = coloring !== "lines";
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
-        if (useColorScale) {
+        if (useFixedLineColor) {
+          ctx.strokeStyle = style.lineColor || "#333";
+        } else if (useColorScale) {
           var level = pathInfo.level;
           var color = "#333";
           for (var j = 0; j < colorScale.length; j++) {
@@ -2663,9 +2664,12 @@ var require_labels2 = __commonJS({
           }
         }
       }
+      var xData = style.x;
+      var yData = style.y;
+      var visibleRange = style.visibleRange;
       for (var i = 0; i < labelsToDraw.length; i++) {
         var label = labelsToDraw[i];
-        var scaled = scalePoint(label.pos, n, m, width, height, padding);
+        var scaled = scalePoint(label.pos, n, m, width, height, padding, visibleRange, xData, yData);
         ctx.save();
         ctx.translate(scaled.x, scaled.y);
         ctx.rotate(label.pos.theta || 0);
@@ -2686,9 +2690,50 @@ var require_labels2 = __commonJS({
         ctx.restore();
       }
     }
-    function scalePoint(pt, n, m, width, height, padding) {
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+    function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData) {
+      var plotWidth = width - 2 * padding;
+      var plotHeight = height - 2 * padding;
+      if (visibleRange) {
+        var dataX, dataY;
+        if (xData && xData.length > 0) {
+          var xIdx = pt.x;
+          var xIdx0 = Math.floor(xIdx);
+          var xFrac = xIdx - xIdx0;
+          if (xIdx0 >= xData.length - 1) {
+            dataX = xData[xData.length - 1];
+          } else if (xIdx0 < 0) {
+            dataX = xData[0];
+          } else {
+            dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
+          }
+        } else {
+          dataX = pt.x;
+        }
+        if (yData && yData.length > 0) {
+          var yIdx = pt.y;
+          var yIdx0 = Math.floor(yIdx);
+          var yFrac = yIdx - yIdx0;
+          if (yIdx0 >= yData.length - 1) {
+            dataY = yData[yData.length - 1];
+          } else if (yIdx0 < 0) {
+            dataY = yData[0];
+          } else {
+            dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
+          }
+        } else {
+          dataY = pt.y;
+        }
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
+        var canvasX = padding + (dataX - visibleRange.xMin) / xRange * plotWidth;
+        var canvasY = padding + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
+        return {
+          x: canvasX,
+          y: canvasY
+        };
+      }
+      var scaleX = plotWidth / (n - 1);
+      var scaleY = plotHeight / (m - 1);
       return {
         x: padding + pt.x * scaleX,
         y: padding + (m - 1 - pt.y) * scaleY
@@ -4403,7 +4448,7 @@ var require_layers = __commonJS({
         if (style.showAxes !== false) {
           renderAxes(drawingArea, visibleRange);
         }
-        if (style.colorbar !== false && (style.coloring === "fill" || style.coloring === "heatmap")) {
+        if (style.colorbar !== false && (style.coloring === "fill" || style.coloring === "fill+lines" || style.coloring === "heatmap")) {
           drawColorbar(ctx, contourResult, style);
         }
       }
@@ -4481,10 +4526,10 @@ var require_layers = __commonJS({
             y: pathInfo.y
           }, renderStyle);
         }
-        if (coloring === "fill" || coloring === "heatmap") {
+        if (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap") {
           drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
         }
-        var shouldDrawLines = coloring === "lines" || showLines && (coloring === "fill" || coloring === "heatmap");
+        var shouldDrawLines = coloring === "lines" || coloring === "fill+lines";
         if (shouldDrawLines) {
           drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
         }
@@ -4902,10 +4947,10 @@ var require_canvas = __commonJS({
           y: contourResult.pathinfo[0].y
         }, style);
       }
-      if (coloring === "fill" || coloring === "heatmap") {
+      if (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap") {
         drawPaths.drawFilledPaths(ctx, contourResult, style);
       }
-      var shouldDrawLines = coloring === "lines" || showLines && (coloring === "fill" || coloring === "heatmap");
+      var shouldDrawLines = coloring === "lines" || coloring === "fill+lines";
       if (shouldDrawLines) {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
       }
@@ -4915,7 +4960,7 @@ var require_canvas = __commonJS({
       if (style.showLabels) {
         drawLabels(ctx, contourResult, style);
       }
-      if (style.colorbar !== false && coloring !== "lines") {
+      if (style.colorbar !== false && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
         drawColorbar(ctx, contourResult, style);
       }
       if (needsClip && !useClipMask) {

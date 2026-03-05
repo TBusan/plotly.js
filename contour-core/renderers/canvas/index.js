@@ -72,15 +72,17 @@ function drawContours(ctx, contourResult, style) {
         }, style);
     }
 
-    // Draw filled contours
-    if (coloring === 'fill' || coloring === 'heatmap') {
+    // Draw filled contours (for fill, fill+lines, or heatmap modes)
+    if (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap') {
         drawPaths.drawFilledPaths(ctx, contourResult, style);
     }
 
     // Draw contour lines
-    // For 'lines' mode: ALWAYS draw lines
-    // For 'fill'/'heatmap' mode: draw lines on top of fills if showLines is true
-    var shouldDrawLines = (coloring === 'lines') || (showLines && (coloring === 'fill' || coloring === 'heatmap'));
+    // - 'lines' mode: ALWAYS draw lines
+    // - 'fill+lines' mode: ALWAYS draw lines on top of fills
+    // - 'fill' mode: NO lines (just fill)
+    // - 'heatmap' mode: NO lines (just heatmap + optional fill)
+    var shouldDrawLines = (coloring === 'lines') || (coloring === 'fill+lines');
     if (shouldDrawLines) {
         drawPaths.drawStrokePaths(ctx, contourResult, style);
     }
@@ -96,7 +98,7 @@ function drawContours(ctx, contourResult, style) {
     }
 
     // Draw colorbar (if enabled)
-    if (style.colorbar !== false && coloring !== 'lines') {
+    if (style.colorbar !== false && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
         drawColorbar(ctx, contourResult, style);
     }
 

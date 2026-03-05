@@ -164,9 +164,14 @@ function drawLabels(ctx, contourResult, style) {
     }
 
     // Now render all labels
+    // Get x, y data for coordinate mapping
+    var xData = style.x;
+    var yData = style.y;
+    var visibleRange = style.visibleRange;
+
     for (var i = 0; i < labelsToDraw.length; i++) {
         var label = labelsToDraw[i];
-        var scaled = scalePoint(label.pos, n, m, width, height, padding);
+        var scaled = scalePoint(label.pos, n, m, width, height, padding, visibleRange, xData, yData);
 
         // Draw label
         ctx.save();
@@ -195,17 +200,77 @@ function drawLabels(ctx, contourResult, style) {
 
 /**
  * Scale a point from grid coordinates to canvas coordinates
+ * Now supports visibleRange for zoom/pan interaction
  * @param {Object} pt - Point with {x, y} in grid coordinates
  * @param {number} n - Number of columns in grid
  * @param {number} m - Number of rows in grid
  * @param {number} width - Canvas width
  * @param {number} height - Canvas height
  * @param {number} padding - Canvas padding
+ * @param {Object} visibleRange - Optional visible range {xMin, xMax, yMin, yMax} in data coordinates
+ * @param {Object} xData - Optional x data array for coordinate mapping
+ * @param {Object} yData - Optional y data array for coordinate mapping
  * @returns {Object} Scaled point with {x, y}
  */
-function scalePoint(pt, n, m, width, height, padding) {
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData) {
+    var plotWidth = width - 2 * padding;
+    var plotHeight = height - 2 * padding;
+
+    // If visibleRange is provided, use it for coordinate transformation
+    if (visibleRange) {
+        // Convert grid coordinates to data coordinates first
+        // Grid x (0 to n-1) maps to data x (xData[0] to xData[n-1])
+        // Grid y (0 to m-1) maps to data y (yData[0] to yData[m-1])
+        var dataX, dataY;
+
+        if (xData && xData.length > 0) {
+            // Interpolate to get data coordinate
+            var xIdx = pt.x;
+            var xIdx0 = Math.floor(xIdx);
+            var xFrac = xIdx - xIdx0;
+            if (xIdx0 >= xData.length - 1) {
+                dataX = xData[xData.length - 1];
+            } else if (xIdx0 < 0) {
+                dataX = xData[0];
+            } else {
+                dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
+            }
+        } else {
+            // Fallback: assume grid coordinates equal data coordinates
+            dataX = pt.x;
+        }
+
+        if (yData && yData.length > 0) {
+            var yIdx = pt.y;
+            var yIdx0 = Math.floor(yIdx);
+            var yFrac = yIdx - yIdx0;
+            if (yIdx0 >= yData.length - 1) {
+                dataY = yData[yData.length - 1];
+            } else if (yIdx0 < 0) {
+                dataY = yData[0];
+            } else {
+                dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
+            }
+        } else {
+            dataY = pt.y;
+        }
+
+        // Now convert data coordinates to canvas coordinates using visibleRange
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
+
+        var canvasX = padding + (dataX - visibleRange.xMin) / xRange * plotWidth;
+        var canvasY = padding + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
+
+        return {
+            x: canvasX,
+            y: canvasY
+        };
+    }
+
+    // Fallback to original behavior (no visibleRange)
+    var scaleX = plotWidth / (n - 1);
+    var scaleY = plotHeight / (m - 1);
 
     return {
         x: padding + pt.x * scaleX,
