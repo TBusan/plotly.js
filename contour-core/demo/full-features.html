@@ -5376,6 +5376,7 @@
             switch (dataset) {
                 case 'complex':
                     var result = generateComplexData(rows, cols, nullRatio);
+                    debugger;
                     currentData = result.z;
                     break;
                 case 'wave':
@@ -5427,6 +5428,14 @@
             var yTitle = document.getElementById('yTitle').value;
 
             // 计算等值线
+            // var options = {
+            //     autocontour: true,
+            //     ncontours: ncontours,
+            //     smoothing: 0.3,
+            //     mode: mode,
+            //     colorscale: colorscale,
+            //     connectgaps: connectGaps
+            // }
             var result = contourCore.computeContours(currentData, {
                 autocontour: true,
                 ncontours: ncontours,
