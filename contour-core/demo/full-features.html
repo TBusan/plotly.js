@@ -5389,8 +5389,8 @@
                     break;
                 case 'sparse':
                     // 稀疏大矩阵（101x101，与 data-samples.html 中的 data2 类似）
-                    rows = 101;
-                    cols = 101;
+                    // rows = 101;
+                    // cols = 101;
                     currentData = generateSparseData();
                     break;
             }
@@ -5461,7 +5461,7 @@
                         showLabels: showLabels,
                         colorbar: showColorbar,
                         padding: 70,
-                        useClipMask: true,  // 启用平滑遮罩（当 connectgaps=false 时）
+                        // useClipMask: true,  // 启用平滑遮罩（当 connectgaps=false 时）
                         backgroundColor: backgroundColor
                     },
                     axes: {
