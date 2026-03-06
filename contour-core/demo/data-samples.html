@@ -6775,7 +6775,7 @@
         function drawContours(canvasId, grid, options, width, height) {
             var canvas = document.getElementById(canvasId);
             var ctx = canvas.getContext('2d');
-
+            debugger
             var result = contourCore.computeContours(grid, options);
 
             var colorScale = parseColorScale(options.colorscale || 'Viridis');
@@ -6802,6 +6802,8 @@
                 x: grid.x,
                 y: grid.y
             };
+
+            debugger
 
             ctx.clearRect(0, 0, width, height);
             contourCore.renderers.canvas.drawContours(ctx, result, style);
