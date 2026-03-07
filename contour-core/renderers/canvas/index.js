@@ -12,6 +12,7 @@ var drawNulls = require('./nulls');
 var drawHeatmap = require('./heatmap');
 var axesRenderer = require('./axes');
 var nullHandling = require('../../null_handling');
+var axes = require('../../axes');
 
 /**
  * Draw contours on a canvas context
@@ -19,8 +20,14 @@ var nullHandling = require('../../null_handling');
  * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
  * @param {Object} contourResult - Result from computeContours()
  * @param {Object} style - Rendering options
- * @param {boolean} style.showAxes - Show X/Y axes (default: false)
- * @param {Object} style.axes - Axes configuration (optional, used when showAxes is true)
+ * @param {Object} style.axes - Axes configuration (when provided, axes will be shown)
+ * @param {string} style.axes.x.title - X axis title
+ * @param {string} style.axes.y.title - Y axis title
+ * @param {string} style.axes.x.color - X axis color
+ * @param {string} style.axes.y.color - Y axis color
+ * @param {boolean} style.showGrid - Show grid lines (default: true when axes is provided)
+ * @param {string} style.gridColor - Grid line color (default: '#e0e0e0')
+ * @param {number} style.gridWidth - Grid line width (default: 1)
  * @param {Object} style.interaction - Interaction configuration (optional, enables interactive mode when provided)
  * @param {boolean} style.interaction.zoom - Enable zoom (default: true)
  * @param {boolean} style.interaction.pan - Enable pan (default: true)
@@ -41,13 +48,12 @@ function drawContours(ctx, contourResult, style) {
     var coloring = style.coloring || 'lines';
     var showLines = style.showLines !== false;
     var smoothing = style.smoothing || 0;
-    var useClipMask = style.useClipMask !== false; // Enable clipPath by default for smoother null masking
-    var showAxes = style.showAxes === true;
+    var useClipMask = style.useClipMask !== false;
+    var hasAxes = style.axes !== undefined && style.axes !== null;
 
     // Extract data coordinates from contourResult for scalePoint function
     var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
     if (pathInfo) {
-        // Merge x, y, z into style if not already provided
         style = Object.assign({
             x: pathInfo.x,
             y: pathInfo.y,
@@ -58,101 +64,74 @@ function drawContours(ctx, contourResult, style) {
     // Check if interaction is enabled
     var interactionConfig = style.interaction;
     if (interactionConfig) {
-        // Use layered renderer for interactive mode
-        return createInteractiveFromStyle(ctx.canvas, contourResult, style, interactionConfig);
+        // Use interactive renderer
+        return createInteractiveRenderer(ctx.canvas, contourResult, style, interactionConfig);
     }
 
     // Static rendering mode
-    renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, showAxes, pathInfo);
+    renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo);
 
     return null;
 }
 
 /**
- * Static rendering (original drawContours logic)
+ * Static rendering
  * @private
  */
-function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, showAxes, pathInfo) {
+function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
+    var padding = style.padding || 50;
+
+    // Calculate drawing area
+    var drawingArea = {
+        x: padding,
+        y: padding,
+        width: width - 2 * padding,
+        height: height - 2 * padding,
+        margins: {
+            left: padding,
+            right: padding,
+            top: padding,
+            bottom: padding
+        }
+    };
+
+    // Get full data range from contour result
+    var fullRange = getFullRange(pathInfo);
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Draw grid lines first (behind everything) if axes are enabled
-    if (showAxes) {
-        var axesConfig = buildAxesConfig(style, contourResult, width, height);
-        axesRenderer.drawAxes(ctx, Object.assign({}, axesConfig, { drawGridOnly: true }));
+    // Draw background
+    if (style.backgroundColor) {
+        ctx.fillStyle = style.backgroundColor;
+        ctx.fillRect(0, 0, width, height);
     }
 
-    var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
-    var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
-
-    // Apply clip path if needed (using marching squares for smooth boundary)
-    if (needsClip && useClipMask) {
-        var clipPathData = nullHandling.generateClipPath(contourResult, style);
-        if (clipPathData) {
-            applyCanvasClip(ctx, clipPathData, width, height);
-        }
+    // Layer 1: Grid (if axes configured and showGrid is true)
+    var showGrid = style.showGrid !== false && hasAxes;
+    if (showGrid) {
+        renderGridLayer(ctx, drawingArea, fullRange, style);
     }
 
-    // Draw heatmap background if coloring mode is 'heatmap'
-    if (coloring === 'heatmap') {
-        drawHeatmap.drawInterpolatedHeatmap(ctx, {
-            z: contourResult.pathinfo[0].z,
-            x: contourResult.pathinfo[0].x,
-            y: contourResult.pathinfo[0].y
-        }, style);
-    }
+    // Layer 2: Contour content
+    renderContourLayer(ctx, drawingArea, fullRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo);
 
-    // Draw filled contours (for fill, fill+lines, or heatmap modes)
-    if (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap') {
-        drawPaths.drawFilledPaths(ctx, contourResult, style);
-    }
-
-    // Draw contour lines
-    // - 'lines' mode: ALWAYS draw lines
-    // - 'fill+lines' mode: ALWAYS draw lines on top of fills
-    // - 'fill' mode: NO lines (just fill)
-    // - 'heatmap' mode: NO lines (just heatmap + optional fill)
-    var shouldDrawLines = (coloring === 'lines') || (coloring === 'fill+lines');
-    if (shouldDrawLines) {
-        drawPaths.drawStrokePaths(ctx, contourResult, style);
-    }
-
-    // Restore context (remove clip)
-    if (needsClip && useClipMask) {
-        ctx.restore();
-    }
-
-    // Draw labels (if enabled)
-    if (style.showLabels) {
-        drawLabels(ctx, contourResult, style);
+    // Layer 3: Axes (if configured)
+    if (hasAxes) {
+        renderAxesLayer(ctx, drawingArea, fullRange, fullRange, style);
     }
 
     // Draw colorbar (if enabled)
     if (style.colorbar !== false && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
         drawColorbar(ctx, contourResult, style);
     }
-
-    // Draw null regions as fallback (rectangles) when clipPath is not used
-    // IMPORTANT: Only mask when connectgaps is false (like plotly.js does)
-    if (needsClip && !useClipMask) {
-        drawNulls(ctx, contourResult, style);
-    }
-
-    // Draw axes on top (axis lines, ticks, labels) if enabled
-    if (showAxes) {
-        var axesConfig = buildAxesConfig(style, contourResult, width, height);
-        axesRenderer.drawAxes(ctx, axesConfig);
-    }
 }
 
 /**
- * Create interactive renderer from style configuration
+ * Create interactive renderer
  * @private
  */
-function createInteractiveFromStyle(canvas, contourResult, style, interactionConfig) {
-    var layers = require('./layers');
-    var interactionManager = require('../../interaction/interaction_manager');
-
+function createInteractiveRenderer(canvas, contourResult, style, interactionConfig) {
     var width = style.width || canvas.width;
     var height = style.height || canvas.height;
     var padding = style.padding || 50;
@@ -173,19 +152,7 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
 
     // Get full data range from contour result
     var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-    var fullRange;
-    if (pathInfo) {
-        var xData = pathInfo.x || [];
-        var yData = pathInfo.y || [];
-        fullRange = {
-            xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
-            xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
-            yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
-            yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
-        };
-    } else {
-        fullRange = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
-    }
+    var fullRange = getFullRange(pathInfo);
 
     // Create view state manager
     var viewState = require('../../interaction/view_state');
@@ -196,6 +163,7 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
 
     // Store state
     var currentStyle = Object.assign({}, style);
+    var hasAxes = currentStyle.axes !== undefined && currentStyle.axes !== null;
 
     /**
      * Render all layers
@@ -213,20 +181,22 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
             ctx.fillRect(0, 0, width, height);
         }
 
-        // Layer 1: Grid (transforms with content)
-        if (currentStyle.showGrid !== false && currentStyle.showAxes !== false) {
-            renderGrid(ctx, drawingArea, visibleRange, currentStyle);
+        // Layer 1: Grid (if showGrid is true)
+        // Grid can be shown independently of axes
+        var showGrid = currentStyle.showGrid === true;
+        if (showGrid) {
+            renderGridLayer(ctx, drawingArea, visibleRange, currentStyle);
         }
 
-        // Layer 2: Contour content (transforms with zoom/pan)
-        renderContours(ctx, drawingArea, visibleRange, fullRange, contourResult, currentStyle);
+        // Layer 2: Contour content
+        renderContourLayer(ctx, drawingArea, visibleRange, fullRange, contourResult, currentStyle, currentStyle.useClipMask !== false, currentStyle.coloring || 'lines', currentStyle.showLines !== false, pathInfo);
 
-        // Layer 3: Axes (fixed position, dynamic ticks)
-        if (currentStyle.showAxes !== false) {
+        // Layer 3: Axes (if configured)
+        if (hasAxes) {
             renderAxesLayer(ctx, drawingArea, visibleRange, fullRange, currentStyle);
         }
 
-        // Draw colorbar (always fixed position)
+        // Draw colorbar
         if (currentStyle.colorbar !== false &&
             (currentStyle.coloring === 'fill' || currentStyle.coloring === 'fill+lines' || currentStyle.coloring === 'heatmap')) {
             drawColorbar(ctx, contourResult, currentStyle);
@@ -241,29 +211,15 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
 
     // Return controller API
     return {
-        /**
-         * Get current view state
-         * @returns {Object} {xMin, xMax, yMin, yMax, zoom}
-         */
         getViewState: function() {
             return viewManager.getState();
         },
 
-        /**
-         * Set view range programmatically
-         * @param {number} xMin - X minimum
-         * @param {number} xMax - X maximum
-         * @param {number} yMin - Y minimum
-         * @param {number} yMax - Y maximum
-         */
         setViewRange: function(xMin, xMax, yMin, yMax) {
             viewManager.setRange(xMin, xMax, yMin, yMax);
             render();
         },
 
-        /**
-         * Reset view to full range
-         */
         resetView: function() {
             viewManager.reset();
             render();
@@ -272,20 +228,12 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
             }
         },
 
-        /**
-         * Update style and re-render
-         * @param {Object} newStyle - New style options
-         */
         updateStyle: function(newStyle) {
             currentStyle = Object.assign(currentStyle, newStyle);
+            hasAxes = currentStyle.axes !== undefined && currentStyle.axes !== null;
             render();
         },
 
-        /**
-         * Resize canvas
-         * @param {number} newWidth - New width
-         * @param {number} newHeight - New height
-         */
         resize: function(newWidth, newHeight) {
             width = newWidth;
             height = newHeight;
@@ -298,122 +246,125 @@ function createInteractiveFromStyle(canvas, contourResult, style, interactionCon
             render();
         },
 
-        /**
-         * Get contour result
-         * @returns {Object} Contour computation result
-         */
         getContourResult: function() {
             return contourResult;
         },
 
-        /**
-         * Get view manager
-         * @returns {Object} View manager instance
-         */
         getViewManager: function() {
             return viewManager;
         },
 
-        /**
-         * Get drawing area
-         * @returns {Object} Drawing area {x, y, width, height}
-         */
         getDrawingArea: function() {
             return drawingArea;
         },
 
-        /**
-         * Destroy the renderer and cleanup
-         */
         destroy: function() {
             interaction.destroy();
         },
 
-        /**
-         * Re-render
-         */
         render: render
     };
 }
 
 /**
- * Render grid layer for interactive mode
+ * Get full data range from path info
  * @private
  */
-function renderGrid(ctx, drawArea, visibleRange, style) {
-    var axes = require('../../axes');
+function getFullRange(pathInfo) {
+    if (pathInfo) {
+        var xData = pathInfo.x || [];
+        var yData = pathInfo.y || [];
+        return {
+            xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
+            xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
+            yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
+            yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
+        };
+    }
+    return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+}
 
-    var axesConfig = style.axes || {};
-    var xOptions = axesConfig.x || {};
-    var yOptions = axesConfig.y || {};
+/**
+ * Render grid layer
+ * @private
+ */
+function renderGridLayer(ctx, drawArea, visibleRange, style) {
+    var gridColor = style.gridColor || '#e0e0e0';
+    var gridWidth = style.gridWidth || 1;
 
-    var axisSetup = axes.setupAxes({
-        width: drawArea.width + 2 * drawArea.x,
-        height: drawArea.height + 2 * drawArea.y,
-        margins: drawArea.margins,
-        visibleRange: visibleRange,
-        fullRange: visibleRange, // Use visible range for grid
-        x: xOptions,
-        y: yOptions
-    });
-
-    var xTicks = axisSetup.x.ticks;
-    var yTicks = axisSetup.y.ticks;
-    var xConfig = axisSetup.x.config;
-    var yConfig = axisSetup.y.config;
-
+    // Calculate grid lines based on visible range
     var xRange = visibleRange.xMax - visibleRange.xMin;
     var yRange = visibleRange.yMax - visibleRange.yMin;
 
+    // Generate tick values for grid lines
+    var numXLines = 10;
+    var numYLines = 10;
+
+    var xStep = xRange / numXLines;
+    var yStep = yRange / numYLines;
+
+    // Round step to nice values
+    xStep = Math.pow(10, Math.floor(Math.log10(xStep))) * Math.ceil(xStep / Math.pow(10, Math.floor(Math.log10(xStep))));
+    yStep = Math.pow(10, Math.floor(Math.log10(yStep))) * Math.ceil(yStep / Math.pow(10, Math.floor(Math.log10(yStep))));
+
+    // Generate tick values
+    var xTicks = [];
+    var yTicks = [];
+
+    var xStart = Math.ceil(visibleRange.xMin / xStep) * xStep;
+    for (var x = xStart; x <= visibleRange.xMax; x += xStep) {
+        xTicks.push(x);
+    }
+
+    var yStart = Math.ceil(visibleRange.yMin / yStep) * yStep;
+    for (var y = yStart; y <= visibleRange.yMax; y += yStep) {
+        yTicks.push(y);
+    }
+
     ctx.save();
 
-    if (xConfig.showgrid) {
-        ctx.beginPath();
-        ctx.strokeStyle = xConfig.gridcolor || '#e0e0e0';
-        ctx.lineWidth = xConfig.gridwidth || 1;
+    // Draw X grid lines
+    ctx.beginPath();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = gridWidth;
 
-        for (var i = 0; i < xTicks.length; i++) {
-            var dataX = xTicks[i].value;
-            var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
+    for (var i = 0; i < xTicks.length; i++) {
+        var dataX = xTicks[i];
+        var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
 
-            if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
-                ctx.moveTo(canvasX, drawArea.y);
-                ctx.lineTo(canvasX, drawArea.y + drawArea.height);
-            }
+        if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
+            ctx.moveTo(canvasX, drawArea.y);
+            ctx.lineTo(canvasX, drawArea.y + drawArea.height);
         }
-        ctx.stroke();
     }
+    ctx.stroke();
 
-    if (yConfig.showgrid) {
-        ctx.beginPath();
-        ctx.strokeStyle = yConfig.gridcolor || '#e0e0e0';
-        ctx.lineWidth = yConfig.gridwidth || 1;
+    // Draw Y grid lines
+    ctx.beginPath();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = gridWidth;
 
-        for (var i = 0; i < yTicks.length; i++) {
-            var dataY = yTicks[i].value;
-            var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
+    for (var i = 0; i < yTicks.length; i++) {
+        var dataY = yTicks[i];
+        var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
 
-            if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
-                ctx.moveTo(drawArea.x, canvasY);
-                ctx.lineTo(drawArea.x + drawArea.width, canvasY);
-            }
+        if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
+            ctx.moveTo(drawArea.x, canvasY);
+            ctx.lineTo(drawArea.x + drawArea.width, canvasY);
         }
-        ctx.stroke();
     }
+    ctx.stroke();
 
     ctx.restore();
 }
 
 /**
- * Render contour content layer for interactive mode
+ * Render contour content layer
  * @private
  */
-function renderContours(ctx, drawArea, visibleRange, fullRange, contourResult, style) {
-    var coloring = style.coloring || 'lines';
+function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo) {
     var connectGaps = contourResult.connectgaps !== undefined ? contourResult.connectgaps : true;
     var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
-
-    var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
 
     // Create style with visibleRange for proper coordinate scaling
     var renderStyle = Object.assign({}, style, {
@@ -435,15 +386,15 @@ function renderContours(ctx, drawArea, visibleRange, fullRange, contourResult, s
     ctx.clip();
 
     // Apply clip path for null handling (if needed)
-    if (needsClip && style.useClipMask !== false) {
+    if (needsClip && useClipMask) {
         var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
         if (clipPathData) {
-            applyCanvasClipPathInteractive(ctx, clipPathData, renderStyle, drawArea, visibleRange);
+            applyCanvasClipPathInteractive(ctx, clipPathData, drawArea, visibleRange);
         }
     }
 
     // Draw heatmap background if coloring mode is 'heatmap'
-    if (coloring === 'heatmap') {
+    if (coloring === 'heatmap' && pathInfo) {
         drawHeatmap.drawInterpolatedHeatmap(ctx, {
             z: pathInfo.z,
             x: pathInfo.x,
@@ -463,7 +414,7 @@ function renderContours(ctx, drawArea, visibleRange, fullRange, contourResult, s
     }
 
     // Draw null regions as fallback
-    if (needsClip && !style.useClipMask) {
+    if (needsClip && !useClipMask) {
         drawNulls(ctx, contourResult, renderStyle);
     }
 
@@ -476,12 +427,10 @@ function renderContours(ctx, drawArea, visibleRange, fullRange, contourResult, s
 }
 
 /**
- * Render axes layer for interactive mode
+ * Render axes layer
  * @private
  */
 function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
-    var axes = require('../../axes');
-
     var axesConfig = style.axes || {};
     var xOptions = axesConfig.x || {};
     var yOptions = axesConfig.y || {};
@@ -500,10 +449,10 @@ function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
 }
 
 /**
- * Apply clip path in canvas coordinates for interactive mode
+ * Apply clip path in canvas coordinates
  * @private
  */
-function applyCanvasClipPathInteractive(ctx, pathData, renderStyle, drawArea, visibleRange) {
+function applyCanvasClipPathInteractive(ctx, pathData, drawArea, visibleRange) {
     var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
     var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
 
@@ -830,56 +779,8 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
 }
 
 /**
- * Build axes configuration from style and contour result
+ * Apply SVG path data as a clipping region to canvas context (for static mode)
  * @private
- */
-function buildAxesConfig(style, contourResult, width, height) {
-    var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-
-    // Get padding from style (same as used by contour rendering)
-    var padding = style.padding || 50;
-
-    // Base axes config from style
-    var axesConfig = style.axes || {};
-
-    // Set dimensions
-    axesConfig.width = width;
-    axesConfig.height = height;
-
-    // Override margins to match contour rendering area
-    // This ensures axes align with the contour plot
-    axesConfig.margins = {
-        left: padding,
-        right: padding,
-        top: padding,
-        bottom: padding
-    };
-
-    // Auto-infer data ranges from contour result if not provided
-    if (pathInfo) {
-        if (!axesConfig.xData && pathInfo.x) {
-            axesConfig.xData = pathInfo.x;
-        }
-        if (!axesConfig.yData && pathInfo.y) {
-            axesConfig.yData = pathInfo.y;
-        }
-    }
-
-    // Default axis visibility
-    if (!axesConfig.x) axesConfig.x = {};
-    if (!axesConfig.y) axesConfig.y = {};
-    if (axesConfig.x.show === undefined) axesConfig.x.show = true;
-    if (axesConfig.y.show === undefined) axesConfig.y.show = true;
-
-    return axesConfig;
-}
-
-/**
- * Apply SVG path data as a clipping region to canvas context
- * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
- * @param {String} pathData - SVG path data string
- * @param {Number} width - Canvas width
- * @param {Number} height - Canvas height
  */
 function applyCanvasClip(ctx, pathData, width, height) {
     ctx.save();
@@ -893,8 +794,7 @@ function applyCanvasClip(ctx, pathData, width, height) {
 
 /**
  * Parse SVG path data and draw it on canvas
- * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
- * @param {String} pathData - SVG path data string
+ * @private
  */
 function parseSVGPathToCanvas(ctx, pathData) {
     var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
@@ -957,7 +857,6 @@ function parseSVGPathToCanvas(ctx, pathData) {
                 currentY = startY;
                 break;
             default:
-                // For arc and bezier commands, simplify to line to for now
                 if (args.length >= 2) {
                     ctx.lineTo(args[args.length - 2], args[args.length - 1]);
                 }
@@ -977,4 +876,3 @@ module.exports = {
     drawAxesFromSetup: axesRenderer.drawAxesFromSetup,
     drawGrid: axesRenderer.drawGrid
 };
-

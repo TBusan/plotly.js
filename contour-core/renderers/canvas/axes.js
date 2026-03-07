@@ -315,14 +315,18 @@ function drawAxes(ctx, axesConfig) {
 /**
  * Draw axes with existing axis setup
  * Use this when you've already called setupAxes and just need to draw
+ * Note: This does NOT draw grid lines - use drawGrid separately if needed
  *
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Object} axisSetup - Axis setup result from axes.setupAxes()
+ * @param {boolean} includeGrid - Whether to include grid lines (default: false)
  */
-function drawAxesFromSetup(ctx, axisSetup) {
-    // Draw grid lines first
-    drawGrid(ctx, axisSetup, true);
-    drawGrid(ctx, axisSetup, false);
+function drawAxesFromSetup(ctx, axisSetup, includeGrid) {
+    // Draw grid lines first if requested
+    if (includeGrid) {
+        drawGrid(ctx, axisSetup, true);
+        drawGrid(ctx, axisSetup, false);
+    }
 
     // Draw axes
     drawXAxis(ctx, axisSetup);

@@ -1669,7 +1669,8 @@ var contourCore = (() => {
             }
             continue;
           }
-          addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
+          var smoothingValue = style.smoothing !== void 0 ? style.smoothing : pathInfo.smoothing || 0;
+          addpath = smooth.smoothopen(scaledPath, smoothingValue);
           fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
           startsleft.splice(startsleft.indexOf(i), 1);
           endptData = currentPath[currentPath.length - 1];
@@ -1743,7 +1744,8 @@ var contourCore = (() => {
             return pt && !isNaN(pt[0]) && !isNaN(pt[1]);
           });
           if (scaledPath.length >= 3) {
-            fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+            var smoothingValue = style.smoothing !== void 0 ? style.smoothing : pathInfo.smoothing || 0;
+            fullpath += smooth.smoothclosed(scaledPath, smoothingValue);
           }
         }
         return fullpath;
@@ -1915,21 +1917,23 @@ var contourCore = (() => {
           normalizedBg = Math.max(0, Math.min(1, normalizedBg));
           bgColor = getColorForValue(normalizedBg, colorScale);
         }
-        var bgFillColor;
-        if (style.connectgaps === false) {
-          bgFillColor = "#ffffff";
-        } else {
-          bgFillColor = style.backgroundColor || "#ffffff";
+        if (style.showGrid !== true) {
+          var bgFillColor;
+          if (style.connectgaps === false) {
+            bgFillColor = "#ffffff";
+          } else {
+            bgFillColor = style.backgroundColor || "#ffffff";
+          }
+          ctx.fillStyle = bgFillColor;
+          ctx.beginPath();
+          ctx.rect(
+            perimeter[0][0],
+            perimeter[0][1],
+            perimeter[1][0] - perimeter[0][0],
+            perimeter[2][1] - perimeter[0][1]
+          );
+          ctx.fill();
         }
-        ctx.fillStyle = bgFillColor;
-        ctx.beginPath();
-        ctx.rect(
-          perimeter[0][0],
-          perimeter[0][1],
-          perimeter[1][0] - perimeter[0][0],
-          perimeter[2][1] - perimeter[0][1]
-        );
-        ctx.fill();
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
           if (i === 0 && pathInfo.prefixBoundary && style.backgroundColor) {
@@ -4209,9 +4213,11 @@ var contourCore = (() => {
         drawYAxis(ctx, axisSetup);
         return axisSetup;
       }
-      function drawAxesFromSetup(ctx, axisSetup) {
-        drawGrid(ctx, axisSetup, true);
-        drawGrid(ctx, axisSetup, false);
+      function drawAxesFromSetup(ctx, axisSetup, includeGrid) {
+        if (includeGrid) {
+          drawGrid(ctx, axisSetup, true);
+          drawGrid(ctx, axisSetup, false);
+        }
         drawXAxis(ctx, axisSetup);
         drawYAxis(ctx, axisSetup);
       }
@@ -4379,9 +4385,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/layers.js
-  var require_layers = __commonJS({
-    "renderers/canvas/layers.js"(exports, module) {
+  // renderers/canvas/index.js
+  var require_canvas = __commonJS({
+    "renderers/canvas/index.js"(exports, module) {
       "use strict";
       var drawPaths = require_paths();
       var drawLabels = require_labels2();
@@ -4389,18 +4395,34 @@ var contourCore = (() => {
       var drawNulls = require_nulls();
       var drawHeatmap = require_heatmap();
       var axesRenderer = require_axes2();
-      var axes = require_axes();
       var nullHandling = require_null_handling();
-      var viewState = require_view_state();
-      function createLayeredRenderer(canvas, config) {
-        config = config || {};
-        var ctx = canvas.getContext("2d");
-        var width = config.width || canvas.width;
-        var height = config.height || canvas.height;
-        var padding = config.padding || 50;
-        var contourResult = null;
-        var style = config.style || {};
-        var axesConfig = config.axes || {};
+      var axes = require_axes();
+      function drawContours(ctx, contourResult, style) {
+        style = style || {};
+        var width = style.width || ctx.canvas.width;
+        var height = style.height || ctx.canvas.height;
+        var coloring = style.coloring || "lines";
+        var showLines = style.showLines !== false;
+        var smoothing = style.smoothing || 0;
+        var useClipMask = style.useClipMask !== false;
+        var hasAxes = style.axes !== void 0 && style.axes !== null;
+        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+        if (pathInfo) {
+          style = Object.assign({
+            x: pathInfo.x,
+            y: pathInfo.y,
+            z: pathInfo.z
+          }, style);
+        }
+        var interactionConfig = style.interaction;
+        if (interactionConfig) {
+          return createInteractiveRenderer(ctx.canvas, contourResult, style, interactionConfig);
+        }
+        renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo);
+        return null;
+      }
+      function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
+        var padding = style.padding || 50;
         var drawingArea = {
           x: padding,
           y: padding,
@@ -4413,586 +4435,25 @@ var contourCore = (() => {
             bottom: padding
           }
         };
-        var viewManager = null;
-        var fullRange = null;
-        function init(result) {
-          contourResult = result;
-          var pathInfo = result.pathinfo && result.pathinfo[0];
-          if (pathInfo) {
-            var xData = pathInfo.x || [];
-            var yData = pathInfo.y || [];
-            fullRange = {
-              xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
-              xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
-              yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
-              yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
-            };
-          } else {
-            fullRange = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
-          }
-          viewManager = viewState.createViewManager(fullRange, {
-            minZoom: config.interaction ? config.interaction.minZoom : 0.1,
-            maxZoom: config.interaction ? config.interaction.maxZoom : 10
-          });
-        }
-        function render(result, renderStyle) {
-          if (result) {
-            contourResult = result;
-          }
-          if (renderStyle) {
-            style = renderStyle;
-          }
-          if (!contourResult || !viewManager) {
-            console.warn("LayeredRenderer: Not initialized");
-            return;
-          }
-          var visibleRange = viewManager.getState();
-          ctx.clearRect(0, 0, width, height);
-          if (style.backgroundColor) {
-            ctx.fillStyle = style.backgroundColor;
-            ctx.fillRect(0, 0, width, height);
-          }
-          if (style.showGrid !== false && style.showAxes !== false) {
-            renderGrid(drawingArea, visibleRange);
-          }
-          renderContours(drawingArea, visibleRange);
-          if (style.showAxes !== false) {
-            renderAxes(drawingArea, visibleRange);
-          }
-          if (style.colorbar !== false && (style.coloring === "fill" || style.coloring === "fill+lines" || style.coloring === "heatmap")) {
-            drawColorbar(ctx, contourResult, style);
-          }
-        }
-        function renderGrid(drawArea, visibleRange) {
-          var axisSetup = setupAxesForRange(visibleRange);
-          ctx.save();
-          var xTicks = axisSetup.x.ticks;
-          var yTicks = axisSetup.y.ticks;
-          var xConfig = axisSetup.x.config;
-          var yConfig = axisSetup.y.config;
-          var xRange = visibleRange.xMax - visibleRange.xMin;
-          var yRange = visibleRange.yMax - visibleRange.yMin;
-          if (xConfig.showgrid) {
-            ctx.beginPath();
-            ctx.strokeStyle = xConfig.gridcolor || "#e0e0e0";
-            ctx.lineWidth = xConfig.gridwidth || 1;
-            for (var i = 0; i < xTicks.length; i++) {
-              var dataX = xTicks[i].value;
-              var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
-              if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
-                ctx.moveTo(canvasX, drawArea.y);
-                ctx.lineTo(canvasX, drawArea.y + drawArea.height);
-              }
-            }
-            ctx.stroke();
-          }
-          if (yConfig.showgrid) {
-            ctx.beginPath();
-            ctx.strokeStyle = yConfig.gridcolor || "#e0e0e0";
-            ctx.lineWidth = yConfig.gridwidth || 1;
-            for (var i = 0; i < yTicks.length; i++) {
-              var dataY = yTicks[i].value;
-              var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
-              if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
-                ctx.moveTo(drawArea.x, canvasY);
-                ctx.lineTo(drawArea.x + drawArea.width, canvasY);
-              }
-            }
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-        function renderContours(drawArea, visibleRange) {
-          var coloring = style.coloring || "lines";
-          var showLines = style.showLines !== false;
-          var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
-          var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
-          ctx.clip();
-          var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-          var renderStyle = Object.assign({}, style, {
-            visibleRange,
-            fullRange,
-            // Add fullRange for boundary checks in joinAllPaths
-            width,
-            height,
-            padding,
-            // Ensure z, x, y are available for scalePoint and createPerimeter
-            z: style.z || (pathInfo ? pathInfo.z : null),
-            x: style.x || (pathInfo ? pathInfo.x : null),
-            y: style.y || (pathInfo ? pathInfo.y : null)
-          });
-          if (needsClip && style.useClipMask !== false) {
-            var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
-            if (clipPathData) {
-              applyCanvasClipPath(ctx, clipPathData, renderStyle);
-            }
-          }
-          if (coloring === "heatmap") {
-            drawHeatmap.drawInterpolatedHeatmap(ctx, {
-              z: pathInfo.z,
-              x: pathInfo.x,
-              y: pathInfo.y
-            }, renderStyle);
-          }
-          if (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap") {
-            drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
-          }
-          var shouldDrawLines = coloring === "lines" || coloring === "fill+lines";
-          if (shouldDrawLines) {
-            drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
-          }
-          if (needsClip && !style.useClipMask) {
-            drawNulls(ctx, contourResult, renderStyle);
-          }
-          if (style.showLabels) {
-            drawLabels(ctx, contourResult, renderStyle);
-          }
-          ctx.restore();
-        }
-        function renderAxes(drawArea, visibleRange) {
-          var axisSetup = setupAxesForRange(visibleRange);
-          axesRenderer.drawAxesFromSetup(ctx, axisSetup);
-        }
-        function applyContentTransform(ctx2, drawArea, visibleRange) {
-          var xRange = visibleRange.xMax - visibleRange.xMin;
-          var yRange = visibleRange.yMax - visibleRange.yMin;
-          var scaleX = drawArea.width / xRange;
-          var scaleY = drawArea.height / yRange;
-          ctx2.translate(drawArea.x, drawArea.y + drawArea.height);
-          ctx2.scale(scaleX, -scaleY);
-          ctx2.translate(-visibleRange.xMin, -visibleRange.yMin);
-        }
-        function setupAxesForRange(visibleRange) {
-          var xOptions = axesConfig.x || {};
-          var yOptions = axesConfig.y || {};
-          return axes.setupAxes({
-            width,
-            height,
-            margins: drawingArea.margins,
-            visibleRange,
-            fullRange,
-            x: xOptions,
-            y: yOptions
-          });
-        }
-        function applyCanvasClipPath(ctx2, pathData, renderStyle) {
-          var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
-          var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
-          var currentX = 0, currentY = 0;
-          var startX = 0, startY = 0;
-          var vr = renderStyle.visibleRange || fullRange;
-          var xRange = vr.xMax - vr.xMin;
-          var yRange = vr.yMax - vr.yMin;
-          ctx2.beginPath();
-          for (var i = 0; i < types.length; i++) {
-            let toCanvas = function(dx, dy) {
-              var cx = drawingArea.x + (dx - vr.xMin) / xRange * drawingArea.width;
-              var cy = drawingArea.y + drawingArea.height - (dy - vr.yMin) / yRange * drawingArea.height;
-              return [cx, cy];
-            };
-            var type = types[i];
-            var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
-            switch (type) {
-              case "M":
-                var pt = toCanvas(args[0], args[1]);
-                ctx2.moveTo(pt[0], pt[1]);
-                currentX = args[0];
-                currentY = args[1];
-                startX = args[0];
-                startY = args[1];
-                break;
-              case "m":
-                currentX += args[0];
-                currentY += args[1];
-                var pt = toCanvas(currentX, currentY);
-                ctx2.moveTo(pt[0], pt[1]);
-                startX = currentX;
-                startY = currentY;
-                break;
-              case "L":
-                var pt = toCanvas(args[0], args[1]);
-                ctx2.lineTo(pt[0], pt[1]);
-                currentX = args[0];
-                currentY = args[1];
-                break;
-              case "l":
-                currentX += args[0];
-                currentY += args[1];
-                var pt = toCanvas(currentX, currentY);
-                ctx2.lineTo(pt[0], pt[1]);
-                break;
-              case "H":
-                var pt = toCanvas(args[0], currentY);
-                ctx2.lineTo(pt[0], pt[1]);
-                currentX = args[0];
-                break;
-              case "h":
-                currentX += args[0];
-                var pt = toCanvas(currentX, currentY);
-                ctx2.lineTo(pt[0], pt[1]);
-                break;
-              case "V":
-                var pt = toCanvas(currentX, args[0]);
-                ctx2.lineTo(pt[0], pt[1]);
-                currentY = args[0];
-                break;
-              case "v":
-                currentY += args[0];
-                var pt = toCanvas(currentX, currentY);
-                ctx2.lineTo(pt[0], pt[1]);
-                break;
-              case "Z":
-              case "z":
-                ctx2.closePath();
-                currentX = startX;
-                currentY = startY;
-                break;
-              default:
-                if (args.length >= 2) {
-                  var pt = toCanvas(args[args.length - 2], args[args.length - 1]);
-                  ctx2.lineTo(pt[0], pt[1]);
-                }
-                break;
-            }
-          }
-          ctx2.clip();
-        }
-        function getViewManager() {
-          return viewManager;
-        }
-        function getDrawingArea() {
-          return drawingArea;
-        }
-        function updateStyle(newStyle) {
-          style = Object.assign(style, newStyle);
-        }
-        function resize(newWidth, newHeight) {
-          width = newWidth;
-          height = newHeight;
-          canvas.width = width;
-          canvas.height = height;
-          drawingArea.width = width - 2 * padding;
-          drawingArea.height = height - 2 * padding;
-          if (contourResult) {
-            render();
-          }
-        }
-        return {
-          init,
-          render,
-          renderGrid,
-          renderContours,
-          renderAxes,
-          getViewManager,
-          getDrawingArea,
-          updateStyle,
-          resize
-        };
-      }
-      module.exports = {
-        createLayeredRenderer
-      };
-    }
-  });
-
-  // interaction/interaction_manager.js
-  var require_interaction_manager = __commonJS({
-    "interaction/interaction_manager.js"(exports, module) {
-      "use strict";
-      function createInteractionManager(canvas, layeredRenderer, config) {
-        config = config || {};
-        var viewManager = layeredRenderer.getViewManager();
-        var drawingArea = layeredRenderer.getDrawingArea();
-        var isDragging = false;
-        var isBoxZooming = false;
-        var lastX = 0;
-        var lastY = 0;
-        var boxStartX = 0;
-        var boxStartY = 0;
-        var zoomEnabled = config.zoom !== false;
-        var panEnabled = config.pan !== false;
-        var dblclickReset = config.dblclickReset !== false;
-        var boxZoomEnabled = config.boxZoom === true;
-        var zoomSensitivity = 1e-3;
-        var boundHandlers = {};
-        function getMousePos(e) {
-          var rect = canvas.getBoundingClientRect();
-          return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-          };
-        }
-        function isInDrawingArea(pos) {
-          return pos.x >= drawingArea.x && pos.x <= drawingArea.x + drawingArea.width && pos.y >= drawingArea.y && pos.y <= drawingArea.y + drawingArea.height;
-        }
-        function handleWheel(e) {
-          if (!zoomEnabled)
-            return;
-          var pos = getMousePos(e);
-          if (!isInDrawingArea(pos))
-            return;
-          e.preventDefault();
-          var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
-          var delta = -e.deltaY;
-          var factor = 1 + delta * zoomSensitivity;
-          factor = Math.max(0.5, Math.min(2, factor));
-          viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
-          layeredRenderer.render();
-          if (config.onZoom) {
-            config.onZoom(viewManager.getState());
-          }
-        }
-        function handleMouseDown(e) {
-          var pos = getMousePos(e);
-          if (!isInDrawingArea(pos))
-            return;
-          if (e.button === 0) {
-            if (e.shiftKey && boxZoomEnabled) {
-              isBoxZooming = true;
-              boxStartX = pos.x;
-              boxStartY = pos.y;
-            } else if (panEnabled) {
-              isDragging = true;
-              lastX = pos.x;
-              lastY = pos.y;
-              canvas.style.cursor = "grabbing";
-            }
-          }
-        }
-        function handleMouseMove(e) {
-          var pos = getMousePos(e);
-          if (isDragging) {
-            e.preventDefault();
-            var dx = pos.x - lastX;
-            var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
-            lastX = pos.x;
-            lastY = pos.y;
-            layeredRenderer.render();
-            if (config.onPan) {
-              config.onPan(viewManager.getState());
-            }
-          } else if (isBoxZooming) {
-          } else if (isInDrawingArea(pos)) {
-            canvas.style.cursor = "grab";
-          } else {
-            canvas.style.cursor = "default";
-          }
-        }
-        function handleMouseUp(e) {
-          if (isDragging) {
-            isDragging = false;
-            canvas.style.cursor = "grab";
-          }
-          if (isBoxZooming) {
-            isBoxZooming = false;
-            var pos = getMousePos(e);
-            var x1 = Math.min(boxStartX, pos.x);
-            var x2 = Math.max(boxStartX, pos.x);
-            var y1 = Math.min(boxStartY, pos.y);
-            var y2 = Math.max(boxStartY, pos.y);
-            if (x2 - x1 > 10 && y2 - y1 > 10) {
-              var dataStart = viewManager.pixelToData(x1, y2, drawingArea);
-              var dataEnd = viewManager.pixelToData(x2, y1, drawingArea);
-              viewManager.setRange(dataStart.x, dataEnd.x, dataStart.y, dataEnd.y);
-              layeredRenderer.render();
-              if (config.onZoom) {
-                config.onZoom(viewManager.getState());
-              }
-            }
-          }
-        }
-        function handleDblClick(e) {
-          if (!dblclickReset)
-            return;
-          var pos = getMousePos(e);
-          if (!isInDrawingArea(pos))
-            return;
-          e.preventDefault();
-          viewManager.reset();
-          layeredRenderer.render();
-          if (config.onReset) {
-            config.onReset();
-          }
-        }
-        function handleTouchStart(e) {
-          if (e.touches.length === 1) {
-            var touch = e.touches[0];
-            var pos = getMousePos(touch);
-            if (isInDrawingArea(pos)) {
-              isDragging = true;
-              lastX = pos.x;
-              lastY = pos.y;
-            }
-          }
-        }
-        function handleTouchMove(e) {
-          if (e.touches.length === 1 && isDragging) {
-            e.preventDefault();
-            var touch = e.touches[0];
-            var pos = getMousePos(touch);
-            var dx = pos.x - lastX;
-            var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
-            lastX = pos.x;
-            lastY = pos.y;
-            layeredRenderer.render();
-            if (config.onPan) {
-              config.onPan(viewManager.getState());
-            }
-          }
-        }
-        function handleTouchEnd(e) {
-          isDragging = false;
-        }
-        function getViewState() {
-          return viewManager.getState();
-        }
-        function setViewRange(xMin, xMax, yMin, yMax) {
-          viewManager.setRange(xMin, xMax, yMin, yMax);
-          layeredRenderer.render();
-        }
-        function resetView() {
-          viewManager.reset();
-          layeredRenderer.render();
-          if (config.onReset) {
-            config.onReset();
-          }
-        }
-        function bindEvents() {
-          boundHandlers.wheel = handleWheel.bind(this);
-          boundHandlers.mousedown = handleMouseDown.bind(this);
-          boundHandlers.mousemove = handleMouseMove.bind(this);
-          boundHandlers.mouseup = handleMouseUp.bind(this);
-          boundHandlers.mouseleave = handleMouseUp.bind(this);
-          boundHandlers.dblclick = handleDblClick.bind(this);
-          boundHandlers.touchstart = handleTouchStart.bind(this);
-          boundHandlers.touchmove = handleTouchMove.bind(this);
-          boundHandlers.touchend = handleTouchEnd.bind(this);
-          canvas.addEventListener("wheel", boundHandlers.wheel, { passive: false });
-          canvas.addEventListener("mousedown", boundHandlers.mousedown);
-          canvas.addEventListener("mousemove", boundHandlers.mousemove);
-          canvas.addEventListener("mouseup", boundHandlers.mouseup);
-          canvas.addEventListener("mouseleave", boundHandlers.mouseleave);
-          canvas.addEventListener("dblclick", boundHandlers.dblclick);
-          canvas.addEventListener("touchstart", boundHandlers.touchstart, { passive: false });
-          canvas.addEventListener("touchmove", boundHandlers.touchmove, { passive: false });
-          canvas.addEventListener("touchend", boundHandlers.touchend);
-        }
-        function unbindEvents() {
-          canvas.removeEventListener("wheel", boundHandlers.wheel);
-          canvas.removeEventListener("mousedown", boundHandlers.mousedown);
-          canvas.removeEventListener("mousemove", boundHandlers.mousemove);
-          canvas.removeEventListener("mouseup", boundHandlers.mouseup);
-          canvas.removeEventListener("mouseleave", boundHandlers.mouseleave);
-          canvas.removeEventListener("dblclick", boundHandlers.dblclick);
-          canvas.removeEventListener("touchstart", boundHandlers.touchstart);
-          canvas.removeEventListener("touchmove", boundHandlers.touchmove);
-          canvas.removeEventListener("touchend", boundHandlers.touchend);
-        }
-        function destroy() {
-          unbindEvents();
-        }
-        bindEvents();
-        return {
-          getViewState,
-          setViewRange,
-          resetView,
-          destroy
-        };
-      }
-      module.exports = {
-        createInteractionManager
-      };
-    }
-  });
-
-  // renderers/canvas/index.js
-  var require_canvas = __commonJS({
-    "renderers/canvas/index.js"(exports, module) {
-      "use strict";
-      var drawPaths = require_paths();
-      var drawLabels = require_labels2();
-      var drawColorbar = require_colorbar2();
-      var drawNulls = require_nulls();
-      var drawHeatmap = require_heatmap();
-      var axesRenderer = require_axes2();
-      var nullHandling = require_null_handling();
-      function drawContours(ctx, contourResult, style) {
-        style = style || {};
-        var width = style.width || ctx.canvas.width;
-        var height = style.height || ctx.canvas.height;
-        var coloring = style.coloring || "lines";
-        var showLines = style.showLines !== false;
-        var smoothing = style.smoothing || 0;
-        var useClipMask = style.useClipMask !== false;
-        var showAxes = style.showAxes === true;
-        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-        if (pathInfo) {
-          style = Object.assign({
-            x: pathInfo.x,
-            y: pathInfo.y,
-            z: pathInfo.z
-          }, style);
-        }
-        var interactionConfig = style.interaction;
-        if (interactionConfig) {
-          return createInteractiveFromStyle(ctx.canvas, contourResult, style, interactionConfig);
-        }
-        renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, showAxes, pathInfo);
-        return null;
-      }
-      function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, showAxes, pathInfo) {
+        var fullRange = getFullRange(pathInfo);
         ctx.clearRect(0, 0, width, height);
-        if (showAxes) {
-          var axesConfig = buildAxesConfig(style, contourResult, width, height);
-          axesRenderer.drawAxes(ctx, Object.assign({}, axesConfig, { drawGridOnly: true }));
+        if (style.backgroundColor) {
+          ctx.fillStyle = style.backgroundColor;
+          ctx.fillRect(0, 0, width, height);
         }
-        var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
-        var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
-        if (needsClip && useClipMask) {
-          var clipPathData = nullHandling.generateClipPath(contourResult, style);
-          if (clipPathData) {
-            applyCanvasClip(ctx, clipPathData, width, height);
-          }
+        var showGrid = style.showGrid !== false && hasAxes;
+        if (showGrid) {
+          renderGridLayer(ctx, drawingArea, fullRange, style);
         }
-        if (coloring === "heatmap") {
-          drawHeatmap.drawInterpolatedHeatmap(ctx, {
-            z: contourResult.pathinfo[0].z,
-            x: contourResult.pathinfo[0].x,
-            y: contourResult.pathinfo[0].y
-          }, style);
-        }
-        if (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap") {
-          drawPaths.drawFilledPaths(ctx, contourResult, style);
-        }
-        var shouldDrawLines = coloring === "lines" || coloring === "fill+lines";
-        if (shouldDrawLines) {
-          drawPaths.drawStrokePaths(ctx, contourResult, style);
-        }
-        if (needsClip && useClipMask) {
-          ctx.restore();
-        }
-        if (style.showLabels) {
-          drawLabels(ctx, contourResult, style);
+        renderContourLayer(ctx, drawingArea, fullRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo);
+        if (hasAxes) {
+          renderAxesLayer(ctx, drawingArea, fullRange, fullRange, style);
         }
         if (style.colorbar !== false && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
           drawColorbar(ctx, contourResult, style);
         }
-        if (needsClip && !useClipMask) {
-          drawNulls(ctx, contourResult, style);
-        }
-        if (showAxes) {
-          var axesConfig = buildAxesConfig(style, contourResult, width, height);
-          axesRenderer.drawAxes(ctx, axesConfig);
-        }
       }
-      function createInteractiveFromStyle(canvas, contourResult, style, interactionConfig) {
-        var layers = require_layers();
-        var interactionManager = require_interaction_manager();
+      function createInteractiveRenderer(canvas, contourResult, style, interactionConfig) {
         var width = style.width || canvas.width;
         var height = style.height || canvas.height;
         var padding = style.padding || 50;
@@ -5009,25 +4470,14 @@ var contourCore = (() => {
           }
         };
         var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-        var fullRange;
-        if (pathInfo) {
-          var xData = pathInfo.x || [];
-          var yData = pathInfo.y || [];
-          fullRange = {
-            xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
-            xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
-            yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
-            yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
-          };
-        } else {
-          fullRange = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
-        }
+        var fullRange = getFullRange(pathInfo);
         var viewState = require_view_state();
         var viewManager = viewState.createViewManager(fullRange, {
           minZoom: interactionConfig.minZoom || 0.1,
           maxZoom: interactionConfig.maxZoom || 10
         });
         var currentStyle = Object.assign({}, style);
+        var hasAxes = currentStyle.axes !== void 0 && currentStyle.axes !== null;
         function render() {
           var ctx = canvas.getContext("2d");
           var visibleRange = viewManager.getState();
@@ -5036,11 +4486,12 @@ var contourCore = (() => {
             ctx.fillStyle = currentStyle.backgroundColor;
             ctx.fillRect(0, 0, width, height);
           }
-          if (currentStyle.showGrid !== false && currentStyle.showAxes !== false) {
-            renderGrid(ctx, drawingArea, visibleRange, currentStyle);
+          var showGrid = currentStyle.showGrid === true;
+          if (showGrid) {
+            renderGridLayer(ctx, drawingArea, visibleRange, currentStyle);
           }
-          renderContours(ctx, drawingArea, visibleRange, fullRange, contourResult, currentStyle);
-          if (currentStyle.showAxes !== false) {
+          renderContourLayer(ctx, drawingArea, visibleRange, fullRange, contourResult, currentStyle, currentStyle.useClipMask !== false, currentStyle.coloring || "lines", currentStyle.showLines !== false, pathInfo);
+          if (hasAxes) {
             renderAxesLayer(ctx, drawingArea, visibleRange, fullRange, currentStyle);
           }
           if (currentStyle.colorbar !== false && (currentStyle.coloring === "fill" || currentStyle.coloring === "fill+lines" || currentStyle.coloring === "heatmap")) {
@@ -5050,27 +4501,13 @@ var contourCore = (() => {
         render();
         var interaction = createInteractionManagerInternal(canvas, drawingArea, viewManager, render, interactionConfig);
         return {
-          /**
-           * Get current view state
-           * @returns {Object} {xMin, xMax, yMin, yMax, zoom}
-           */
           getViewState: function() {
             return viewManager.getState();
           },
-          /**
-           * Set view range programmatically
-           * @param {number} xMin - X minimum
-           * @param {number} xMax - X maximum
-           * @param {number} yMin - Y minimum
-           * @param {number} yMax - Y maximum
-           */
           setViewRange: function(xMin, xMax, yMin, yMax) {
             viewManager.setRange(xMin, xMax, yMin, yMax);
             render();
           },
-          /**
-           * Reset view to full range
-           */
           resetView: function() {
             viewManager.reset();
             render();
@@ -5078,19 +4515,11 @@ var contourCore = (() => {
               interactionConfig.onReset();
             }
           },
-          /**
-           * Update style and re-render
-           * @param {Object} newStyle - New style options
-           */
           updateStyle: function(newStyle) {
             currentStyle = Object.assign(currentStyle, newStyle);
+            hasAxes = currentStyle.axes !== void 0 && currentStyle.axes !== null;
             render();
           },
-          /**
-           * Resize canvas
-           * @param {number} newWidth - New width
-           * @param {number} newHeight - New height
-           */
           resize: function(newWidth, newHeight) {
             width = newWidth;
             height = newHeight;
@@ -5100,96 +4529,85 @@ var contourCore = (() => {
             drawingArea.height = height - 2 * padding;
             render();
           },
-          /**
-           * Get contour result
-           * @returns {Object} Contour computation result
-           */
           getContourResult: function() {
             return contourResult;
           },
-          /**
-           * Get view manager
-           * @returns {Object} View manager instance
-           */
           getViewManager: function() {
             return viewManager;
           },
-          /**
-           * Get drawing area
-           * @returns {Object} Drawing area {x, y, width, height}
-           */
           getDrawingArea: function() {
             return drawingArea;
           },
-          /**
-           * Destroy the renderer and cleanup
-           */
           destroy: function() {
             interaction.destroy();
           },
-          /**
-           * Re-render
-           */
           render
         };
       }
-      function renderGrid(ctx, drawArea, visibleRange, style) {
-        var axes = require_axes();
-        var axesConfig = style.axes || {};
-        var xOptions = axesConfig.x || {};
-        var yOptions = axesConfig.y || {};
-        var axisSetup = axes.setupAxes({
-          width: drawArea.width + 2 * drawArea.x,
-          height: drawArea.height + 2 * drawArea.y,
-          margins: drawArea.margins,
-          visibleRange,
-          fullRange: visibleRange,
-          // Use visible range for grid
-          x: xOptions,
-          y: yOptions
-        });
-        var xTicks = axisSetup.x.ticks;
-        var yTicks = axisSetup.y.ticks;
-        var xConfig = axisSetup.x.config;
-        var yConfig = axisSetup.y.config;
+      function getFullRange(pathInfo) {
+        if (pathInfo) {
+          var xData = pathInfo.x || [];
+          var yData = pathInfo.y || [];
+          return {
+            xMin: xData.length > 0 ? Math.min.apply(Math, xData) : 0,
+            xMax: xData.length > 0 ? Math.max.apply(Math, xData) : 1,
+            yMin: yData.length > 0 ? Math.min.apply(Math, yData) : 0,
+            yMax: yData.length > 0 ? Math.max.apply(Math, yData) : 1
+          };
+        }
+        return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+      }
+      function renderGridLayer(ctx, drawArea, visibleRange, style) {
+        var gridColor = style.gridColor || "#e0e0e0";
+        var gridWidth = style.gridWidth || 1;
         var xRange = visibleRange.xMax - visibleRange.xMin;
         var yRange = visibleRange.yMax - visibleRange.yMin;
+        var numXLines = 10;
+        var numYLines = 10;
+        var xStep = xRange / numXLines;
+        var yStep = yRange / numYLines;
+        xStep = Math.pow(10, Math.floor(Math.log10(xStep))) * Math.ceil(xStep / Math.pow(10, Math.floor(Math.log10(xStep))));
+        yStep = Math.pow(10, Math.floor(Math.log10(yStep))) * Math.ceil(yStep / Math.pow(10, Math.floor(Math.log10(yStep))));
+        var xTicks = [];
+        var yTicks = [];
+        var xStart = Math.ceil(visibleRange.xMin / xStep) * xStep;
+        for (var x = xStart; x <= visibleRange.xMax; x += xStep) {
+          xTicks.push(x);
+        }
+        var yStart = Math.ceil(visibleRange.yMin / yStep) * yStep;
+        for (var y = yStart; y <= visibleRange.yMax; y += yStep) {
+          yTicks.push(y);
+        }
         ctx.save();
-        if (xConfig.showgrid) {
-          ctx.beginPath();
-          ctx.strokeStyle = xConfig.gridcolor || "#e0e0e0";
-          ctx.lineWidth = xConfig.gridwidth || 1;
-          for (var i = 0; i < xTicks.length; i++) {
-            var dataX = xTicks[i].value;
-            var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
-            if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
-              ctx.moveTo(canvasX, drawArea.y);
-              ctx.lineTo(canvasX, drawArea.y + drawArea.height);
-            }
+        ctx.beginPath();
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = gridWidth;
+        for (var i = 0; i < xTicks.length; i++) {
+          var dataX = xTicks[i];
+          var canvasX = drawArea.x + (dataX - visibleRange.xMin) / xRange * drawArea.width;
+          if (canvasX >= drawArea.x && canvasX <= drawArea.x + drawArea.width) {
+            ctx.moveTo(canvasX, drawArea.y);
+            ctx.lineTo(canvasX, drawArea.y + drawArea.height);
           }
-          ctx.stroke();
         }
-        if (yConfig.showgrid) {
-          ctx.beginPath();
-          ctx.strokeStyle = yConfig.gridcolor || "#e0e0e0";
-          ctx.lineWidth = yConfig.gridwidth || 1;
-          for (var i = 0; i < yTicks.length; i++) {
-            var dataY = yTicks[i].value;
-            var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
-            if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
-              ctx.moveTo(drawArea.x, canvasY);
-              ctx.lineTo(drawArea.x + drawArea.width, canvasY);
-            }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = gridWidth;
+        for (var i = 0; i < yTicks.length; i++) {
+          var dataY = yTicks[i];
+          var canvasY = drawArea.y + drawArea.height - (dataY - visibleRange.yMin) / yRange * drawArea.height;
+          if (canvasY >= drawArea.y && canvasY <= drawArea.y + drawArea.height) {
+            ctx.moveTo(drawArea.x, canvasY);
+            ctx.lineTo(drawArea.x + drawArea.width, canvasY);
           }
-          ctx.stroke();
         }
+        ctx.stroke();
         ctx.restore();
       }
-      function renderContours(ctx, drawArea, visibleRange, fullRange, contourResult, style) {
-        var coloring = style.coloring || "lines";
+      function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo) {
         var connectGaps = contourResult.connectgaps !== void 0 ? contourResult.connectgaps : true;
         var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
-        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
         var renderStyle = Object.assign({}, style, {
           visibleRange,
           fullRange,
@@ -5204,13 +4622,13 @@ var contourCore = (() => {
         ctx.beginPath();
         ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
         ctx.clip();
-        if (needsClip && style.useClipMask !== false) {
+        if (needsClip && useClipMask) {
           var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
           if (clipPathData) {
-            applyCanvasClipPathInteractive(ctx, clipPathData, renderStyle, drawArea, visibleRange);
+            applyCanvasClipPathInteractive(ctx, clipPathData, drawArea, visibleRange);
           }
         }
-        if (coloring === "heatmap") {
+        if (coloring === "heatmap" && pathInfo) {
           drawHeatmap.drawInterpolatedHeatmap(ctx, {
             z: pathInfo.z,
             x: pathInfo.x,
@@ -5224,7 +4642,7 @@ var contourCore = (() => {
         if (shouldDrawLines) {
           drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
         }
-        if (needsClip && !style.useClipMask) {
+        if (needsClip && !useClipMask) {
           drawNulls(ctx, contourResult, renderStyle);
         }
         if (style.showLabels) {
@@ -5233,7 +4651,6 @@ var contourCore = (() => {
         ctx.restore();
       }
       function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
-        var axes = require_axes();
         var axesConfig = style.axes || {};
         var xOptions = axesConfig.x || {};
         var yOptions = axesConfig.y || {};
@@ -5248,7 +4665,7 @@ var contourCore = (() => {
         });
         axesRenderer.drawAxesFromSetup(ctx, axisSetup);
       }
-      function applyCanvasClipPathInteractive(ctx, pathData, renderStyle, drawArea, visibleRange) {
+      function applyCanvasClipPathInteractive(ctx, pathData, drawArea, visibleRange) {
         var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
         var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
         var currentX = 0, currentY = 0;
@@ -5512,105 +4929,6 @@ var contourCore = (() => {
         return {
           destroy
         };
-      }
-      function buildAxesConfig(style, contourResult, width, height) {
-        var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
-        var padding = style.padding || 50;
-        var axesConfig = style.axes || {};
-        axesConfig.width = width;
-        axesConfig.height = height;
-        axesConfig.margins = {
-          left: padding,
-          right: padding,
-          top: padding,
-          bottom: padding
-        };
-        if (pathInfo) {
-          if (!axesConfig.xData && pathInfo.x) {
-            axesConfig.xData = pathInfo.x;
-          }
-          if (!axesConfig.yData && pathInfo.y) {
-            axesConfig.yData = pathInfo.y;
-          }
-        }
-        if (!axesConfig.x)
-          axesConfig.x = {};
-        if (!axesConfig.y)
-          axesConfig.y = {};
-        if (axesConfig.x.show === void 0)
-          axesConfig.x.show = true;
-        if (axesConfig.y.show === void 0)
-          axesConfig.y.show = true;
-        return axesConfig;
-      }
-      function applyCanvasClip(ctx, pathData, width, height) {
-        ctx.save();
-        parseSVGPathToCanvas(ctx, pathData);
-        ctx.clip();
-      }
-      function parseSVGPathToCanvas(ctx, pathData) {
-        var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
-        var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
-        var currentX = 0, currentY = 0;
-        var startX = 0, startY = 0;
-        ctx.beginPath();
-        for (var i = 0; i < types.length; i++) {
-          var type = types[i];
-          var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
-          switch (type) {
-            case "M":
-              ctx.moveTo(args[0], args[1]);
-              currentX = args[0];
-              currentY = args[1];
-              startX = args[0];
-              startY = args[1];
-              break;
-            case "m":
-              ctx.moveTo(currentX + args[0], currentY + args[1]);
-              currentX += args[0];
-              currentY += args[1];
-              startX = currentX;
-              startY = currentY;
-              break;
-            case "L":
-              ctx.lineTo(args[0], args[1]);
-              currentX = args[0];
-              currentY = args[1];
-              break;
-            case "l":
-              ctx.lineTo(currentX + args[0], currentY + args[1]);
-              currentX += args[0];
-              currentY += args[1];
-              break;
-            case "H":
-              ctx.lineTo(args[0], currentY);
-              currentX = args[0];
-              break;
-            case "h":
-              ctx.lineTo(currentX + args[0], currentY);
-              currentX += args[0];
-              break;
-            case "V":
-              ctx.lineTo(currentX, args[0]);
-              currentY = args[0];
-              break;
-            case "v":
-              ctx.lineTo(currentX, currentY + args[0]);
-              currentY += args[0];
-              break;
-            case "Z":
-            case "z":
-              ctx.closePath();
-              currentX = startX;
-              currentY = startY;
-              break;
-            default:
-              if (args.length >= 2) {
-                ctx.lineTo(args[args.length - 2], args[args.length - 1]);
-              }
-              break;
-          }
-        }
       }
       module.exports = {
         drawContours,
@@ -7283,6 +6601,218 @@ var contourCore = (() => {
       module.exports = {
         canvas: require_canvas(),
         svg: require_svg()
+      };
+    }
+  });
+
+  // interaction/interaction_manager.js
+  var require_interaction_manager = __commonJS({
+    "interaction/interaction_manager.js"(exports, module) {
+      "use strict";
+      function createInteractionManager(canvas, layeredRenderer, config) {
+        config = config || {};
+        var viewManager = layeredRenderer.getViewManager();
+        var drawingArea = layeredRenderer.getDrawingArea();
+        var isDragging = false;
+        var isBoxZooming = false;
+        var lastX = 0;
+        var lastY = 0;
+        var boxStartX = 0;
+        var boxStartY = 0;
+        var zoomEnabled = config.zoom !== false;
+        var panEnabled = config.pan !== false;
+        var dblclickReset = config.dblclickReset !== false;
+        var boxZoomEnabled = config.boxZoom === true;
+        var zoomSensitivity = 1e-3;
+        var boundHandlers = {};
+        function getMousePos(e) {
+          var rect = canvas.getBoundingClientRect();
+          return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+          };
+        }
+        function isInDrawingArea(pos) {
+          return pos.x >= drawingArea.x && pos.x <= drawingArea.x + drawingArea.width && pos.y >= drawingArea.y && pos.y <= drawingArea.y + drawingArea.height;
+        }
+        function handleWheel(e) {
+          if (!zoomEnabled)
+            return;
+          var pos = getMousePos(e);
+          if (!isInDrawingArea(pos))
+            return;
+          e.preventDefault();
+          var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
+          var delta = -e.deltaY;
+          var factor = 1 + delta * zoomSensitivity;
+          factor = Math.max(0.5, Math.min(2, factor));
+          viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
+          layeredRenderer.render();
+          if (config.onZoom) {
+            config.onZoom(viewManager.getState());
+          }
+        }
+        function handleMouseDown(e) {
+          var pos = getMousePos(e);
+          if (!isInDrawingArea(pos))
+            return;
+          if (e.button === 0) {
+            if (e.shiftKey && boxZoomEnabled) {
+              isBoxZooming = true;
+              boxStartX = pos.x;
+              boxStartY = pos.y;
+            } else if (panEnabled) {
+              isDragging = true;
+              lastX = pos.x;
+              lastY = pos.y;
+              canvas.style.cursor = "grabbing";
+            }
+          }
+        }
+        function handleMouseMove(e) {
+          var pos = getMousePos(e);
+          if (isDragging) {
+            e.preventDefault();
+            var dx = pos.x - lastX;
+            var dy = pos.y - lastY;
+            viewManager.pan(dx, dy, drawingArea);
+            lastX = pos.x;
+            lastY = pos.y;
+            layeredRenderer.render();
+            if (config.onPan) {
+              config.onPan(viewManager.getState());
+            }
+          } else if (isBoxZooming) {
+          } else if (isInDrawingArea(pos)) {
+            canvas.style.cursor = "grab";
+          } else {
+            canvas.style.cursor = "default";
+          }
+        }
+        function handleMouseUp(e) {
+          if (isDragging) {
+            isDragging = false;
+            canvas.style.cursor = "grab";
+          }
+          if (isBoxZooming) {
+            isBoxZooming = false;
+            var pos = getMousePos(e);
+            var x1 = Math.min(boxStartX, pos.x);
+            var x2 = Math.max(boxStartX, pos.x);
+            var y1 = Math.min(boxStartY, pos.y);
+            var y2 = Math.max(boxStartY, pos.y);
+            if (x2 - x1 > 10 && y2 - y1 > 10) {
+              var dataStart = viewManager.pixelToData(x1, y2, drawingArea);
+              var dataEnd = viewManager.pixelToData(x2, y1, drawingArea);
+              viewManager.setRange(dataStart.x, dataEnd.x, dataStart.y, dataEnd.y);
+              layeredRenderer.render();
+              if (config.onZoom) {
+                config.onZoom(viewManager.getState());
+              }
+            }
+          }
+        }
+        function handleDblClick(e) {
+          if (!dblclickReset)
+            return;
+          var pos = getMousePos(e);
+          if (!isInDrawingArea(pos))
+            return;
+          e.preventDefault();
+          viewManager.reset();
+          layeredRenderer.render();
+          if (config.onReset) {
+            config.onReset();
+          }
+        }
+        function handleTouchStart(e) {
+          if (e.touches.length === 1) {
+            var touch = e.touches[0];
+            var pos = getMousePos(touch);
+            if (isInDrawingArea(pos)) {
+              isDragging = true;
+              lastX = pos.x;
+              lastY = pos.y;
+            }
+          }
+        }
+        function handleTouchMove(e) {
+          if (e.touches.length === 1 && isDragging) {
+            e.preventDefault();
+            var touch = e.touches[0];
+            var pos = getMousePos(touch);
+            var dx = pos.x - lastX;
+            var dy = pos.y - lastY;
+            viewManager.pan(dx, dy, drawingArea);
+            lastX = pos.x;
+            lastY = pos.y;
+            layeredRenderer.render();
+            if (config.onPan) {
+              config.onPan(viewManager.getState());
+            }
+          }
+        }
+        function handleTouchEnd(e) {
+          isDragging = false;
+        }
+        function getViewState() {
+          return viewManager.getState();
+        }
+        function setViewRange(xMin, xMax, yMin, yMax) {
+          viewManager.setRange(xMin, xMax, yMin, yMax);
+          layeredRenderer.render();
+        }
+        function resetView() {
+          viewManager.reset();
+          layeredRenderer.render();
+          if (config.onReset) {
+            config.onReset();
+          }
+        }
+        function bindEvents() {
+          boundHandlers.wheel = handleWheel.bind(this);
+          boundHandlers.mousedown = handleMouseDown.bind(this);
+          boundHandlers.mousemove = handleMouseMove.bind(this);
+          boundHandlers.mouseup = handleMouseUp.bind(this);
+          boundHandlers.mouseleave = handleMouseUp.bind(this);
+          boundHandlers.dblclick = handleDblClick.bind(this);
+          boundHandlers.touchstart = handleTouchStart.bind(this);
+          boundHandlers.touchmove = handleTouchMove.bind(this);
+          boundHandlers.touchend = handleTouchEnd.bind(this);
+          canvas.addEventListener("wheel", boundHandlers.wheel, { passive: false });
+          canvas.addEventListener("mousedown", boundHandlers.mousedown);
+          canvas.addEventListener("mousemove", boundHandlers.mousemove);
+          canvas.addEventListener("mouseup", boundHandlers.mouseup);
+          canvas.addEventListener("mouseleave", boundHandlers.mouseleave);
+          canvas.addEventListener("dblclick", boundHandlers.dblclick);
+          canvas.addEventListener("touchstart", boundHandlers.touchstart, { passive: false });
+          canvas.addEventListener("touchmove", boundHandlers.touchmove, { passive: false });
+          canvas.addEventListener("touchend", boundHandlers.touchend);
+        }
+        function unbindEvents() {
+          canvas.removeEventListener("wheel", boundHandlers.wheel);
+          canvas.removeEventListener("mousedown", boundHandlers.mousedown);
+          canvas.removeEventListener("mousemove", boundHandlers.mousemove);
+          canvas.removeEventListener("mouseup", boundHandlers.mouseup);
+          canvas.removeEventListener("mouseleave", boundHandlers.mouseleave);
+          canvas.removeEventListener("dblclick", boundHandlers.dblclick);
+          canvas.removeEventListener("touchstart", boundHandlers.touchstart);
+          canvas.removeEventListener("touchmove", boundHandlers.touchmove);
+          canvas.removeEventListener("touchend", boundHandlers.touchend);
+        }
+        function destroy() {
+          unbindEvents();
+        }
+        bindEvents();
+        return {
+          getViewState,
+          setViewRange,
+          resetView,
+          destroy
+        };
+      }
+      module.exports = {
+        createInteractionManager
       };
     }
   });

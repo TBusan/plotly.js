@@ -5473,29 +5473,23 @@
                     smoothing: smoothing,
                     showLines: coloring === 'fill+lines',
                     lineWidth: lineWidth,
-                    showAxes: showAxes,
                     showLabels: showLabels,
                     colorbar: showColorbar,
                     padding: 70,
+                    showGrid: showGrid,
+                    gridColor: '#e0e0e0',
 
                     // z: currentData,
                     // x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
                     // y: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
-                    
+
                     useClipMask: true,  // 启用平滑遮罩（当 connectgaps=false 时）
                     backgroundColor: backgroundColor,
-                    // axes: {
-                    //     x: {
-                    //         title: xTitle,
-                    //         showgrid: showGrid,
-                    //         gridcolor: '#e0e0e0'
-                    //     },
-                    //     y: {
-                    //         title: yTitle,
-                    //         showgrid: showGrid,
-                    //         gridcolor: '#e0e0e0'
-                    //     }
-                    // },
+                    // 只有配置了 axes 才会显示坐标轴
+                    axes: showAxes ? {
+                        x: { title: xTitle },
+                        y: { title: yTitle }
+                    } : undefined,
                     interaction: {
                         zoom: true,
                         pan: true,

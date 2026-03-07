@@ -179,7 +179,7 @@
         var colorScale = parseColorScale('Viridis');
 
         // ==========================================
-        // 方式1: 使用 createInteractiveRenderer（新功能）
+        // 方式1: 使用 drawContours 的 interaction 参数（新功能）
         // ==========================================
         var interactiveRenderer;
         var canvas1 = document.getElementById('canvas1');
@@ -193,27 +193,22 @@
 
             var mappedColors = buildColorScale(result1.levels, colorScale);
 
-            // 创建交互式渲染器
-            interactiveRenderer = contourCore.renderers.canvas.createInteractiveRenderer(canvas1, {
+            // 使用 drawContours 配合 interaction 参数创建交互式渲染
+            var ctx1 = canvas1.getContext('2d');
+            interactiveRenderer = contourCore.renderers.canvas.drawContours(ctx1, result1, {
                 width: 500,
                 height: 450,
-                data: largeZ,
-                contourOptions: {
-                    autocontour: true,
-                    ncontours: 15
-                },
-                style: {
-                    coloring: 'fill',
-                    colorScale: mappedColors,
-                    smoothing: 0.3,
-                    showLines: true,
-                    lineWidth: 1,
-                    showAxes: true,
-                    padding: 60
-                },
+                coloring: 'fill',
+                colorScale: mappedColors,
+                smoothing: 0.3,
+                showLines: true,
+                lineWidth: 1,
+                padding: 60,
+                showGrid: true,
+                gridColor: '#ddd',
                 axes: {
-                    x: { title: 'X 坐标', showgrid: true, gridcolor: '#ddd' },
-                    y: { title: 'Y 坐标', showgrid: true, gridcolor: '#ddd' }
+                    x: { title: 'X 坐标' },
+                    y: { title: 'Y 坐标' }
                 },
                 interaction: {
                     zoom: true,
@@ -272,10 +267,11 @@
                 smoothing: 0.3,
                 showLines: true,
                 lineWidth: 1.5,
-                showAxes: true,
+                showGrid: true,
+                gridColor: '#e0e0e0',
                 axes: {
-                    x: { title: 'X', showgrid: true, gridcolor: '#e0e0e0' },
-                    y: { title: 'Y', showgrid: true, gridcolor: '#e0e0e0' }
+                    x: { title: 'X' },
+                    y: { title: 'Y' }
                 }
             });
 

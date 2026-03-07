@@ -124,7 +124,9 @@ function joinAllPaths(pathInfo, perimeter, style) {
             continue;
         }
 
-        addpath = smooth.smoothopen(scaledPath, pathInfo.smoothing || 0);
+        // Use style.smoothing if provided, otherwise fall back to pathInfo.smoothing
+        var smoothingValue = style.smoothing !== undefined ? style.smoothing : (pathInfo.smoothing || 0);
+        addpath = smooth.smoothopen(scaledPath, smoothingValue);
         fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
         startsleft.splice(startsleft.indexOf(i), 1);
 
@@ -217,7 +219,9 @@ function joinAllPaths(pathInfo, perimeter, style) {
         });
 
         if (scaledPath.length >= 3) {
-            fullpath += smooth.smoothclosed(scaledPath, pathInfo.smoothing || 0);
+            // Use style.smoothing if provided, otherwise fall back to pathInfo.smoothing
+            var smoothingValue = style.smoothing !== undefined ? style.smoothing : (pathInfo.smoothing || 0);
+            fullpath += smooth.smoothclosed(scaledPath, smoothingValue);
         }
     }
 
@@ -469,23 +473,27 @@ function drawFilledPaths(ctx, contourResult, style) {
 
     // Draw background layer only within data area (perimeter)
     // Strategy:
+    // - When showGrid=true: skip background fill so grid lines are visible
     // - When connectgaps=false: use white background so null regions appear transparent (clip mask will reveal canvas background)
     // - When connectgaps=true: use user's backgroundColor if set, otherwise white (to show canvas background)
     // - First level color is only used for actual contour fill, not background
-    var bgFillColor;
-    if (style.connectgaps === false) {
-        // White background for null regions to appear transparent when clip mask is applied
-        bgFillColor = '#ffffff';
-    } else {
-        // Use user's backgroundColor setting, default to white (transparent to show canvas background)
-        bgFillColor = style.backgroundColor || '#ffffff';
+    if (style.showGrid !== true) {
+        // Only draw solid background if grid is not shown
+        var bgFillColor;
+        if (style.connectgaps === false) {
+            // White background for null regions to appear transparent when clip mask is applied
+            bgFillColor = '#ffffff';
+        } else {
+            // Use user's backgroundColor setting, default to white (transparent to show canvas background)
+            bgFillColor = style.backgroundColor || '#ffffff';
+        }
+        ctx.fillStyle = bgFillColor;
+        ctx.beginPath();
+        ctx.rect(perimeter[0][0], perimeter[0][1],
+                 perimeter[1][0] - perimeter[0][0],
+                 perimeter[2][1] - perimeter[0][1]);
+        ctx.fill();
     }
-    ctx.fillStyle = bgFillColor;
-    ctx.beginPath();
-    ctx.rect(perimeter[0][0], perimeter[0][1],
-             perimeter[1][0] - perimeter[0][0],
-             perimeter[2][1] - perimeter[0][1]);
-    ctx.fill();
 
     // Draw each contour fill layer (LOWEST to HIGHEST)
     for (var i = 0; i < paths.length; i++) {
