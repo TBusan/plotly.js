@@ -25,12 +25,52 @@ function drawNulls(ctx, contourResult, style) {
     var m = nullMask.length;
     var n = nullMask[0].length;
 
+    // Get visible range for coordinate transformation (interactive mode)
+    var visibleRange = style.visibleRange;
+    var fullRange = style.fullRange || visibleRange;
+
     var width = style.width || 500;
     var height = style.height || 400;
     var padding = style.padding || 30;
 
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    // Calculate drawing area
+    var drawArea = {
+        x: padding,
+        y: padding,
+        width: width - 2 * padding,
+        height: height - 2 * padding
+    };
+
+    // Calculate scale based on visible range
+    var scaleX, scaleY, offsetX, offsetY;
+
+    if (visibleRange && fullRange) {
+        // Interactive mode: scale based on visible range
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
+
+        scaleX = drawArea.width / xRange;
+        scaleY = drawArea.height / yRange;
+
+        // Calculate offset to shift data coordinates to visible range
+        offsetX = drawArea.x - (visibleRange.xMin - fullRange.xMin) * scaleX;
+        offsetY = drawArea.y + drawArea.height + (visibleRange.yMin - fullRange.yMin) * scaleY;
+    } else {
+        // Static mode: use original calculation
+        scaleX = drawArea.width / (n - 1);
+        scaleY = drawArea.height / (m - 1);
+        offsetX = drawArea.x;
+        offsetY = drawArea.y + drawArea.height;
+    }
+
+    // Helper function to convert grid coordinates to canvas coordinates
+    function gridToCanvas(j, i) {
+        // j is column (x direction), i is row (y direction from top)
+        // Canvas y is inverted (0 at top)
+        var canvasX = offsetX + j * scaleX;
+        var canvasY = offsetY - i * scaleY;
+        return [canvasX, canvasY];
+    }
 
     // Save context state
     ctx.save();
@@ -42,10 +82,11 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var x = padding + j * scaleX;
-                    var y = padding + (m - 1 - i) * scaleY;
-                    var sizeX = scaleX + 1;
-                    var sizeY = scaleY + 1;
+                    var pt = gridToCanvas(j, i);
+                    var x = pt[0];
+                    var y = pt[1];
+                    var sizeX = Math.abs(scaleX) + 1;
+                    var sizeY = Math.abs(scaleY) + 1;
 
                     // Draw filled rectangle to mask contour
                     ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
@@ -58,10 +99,11 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var x = padding + j * scaleX;
-                    var y = padding + (m - 1 - i) * scaleY;
-                    var sizeX = scaleX + 1;
-                    var sizeY = scaleY + 1;
+                    var pt = gridToCanvas(j, i);
+                    var x = pt[0];
+                    var y = pt[1];
+                    var sizeX = Math.abs(scaleX) + 1;
+                    var sizeY = Math.abs(scaleY) + 1;
 
                     ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
                 }
@@ -81,10 +123,11 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var x = padding + j * scaleX;
-                    var y = padding + (m - 1 - i) * scaleY;
-                    var sizeX = scaleX + 1;
-                    var sizeY = scaleY + 1;
+                    var pt = gridToCanvas(j, i);
+                    var x = pt[0];
+                    var y = pt[1];
+                    var sizeX = Math.abs(scaleX) + 1;
+                    var sizeY = Math.abs(scaleY) + 1;
 
                     ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
                 }

@@ -969,9 +969,6 @@ var contourCore = (() => {
           return null;
         var m = binaryMask.length;
         var n = binaryMask[0].length;
-        var width = options.width || 500;
-        var height = options.height || 400;
-        var padding = options.padding || 30;
         var x = [];
         var y = [];
         for (var i = 0; i < n; i++)
@@ -992,7 +989,117 @@ var contourCore = (() => {
         marchingSquares.makeCrossings([clipPathInfo]);
         pathFinding.findAllPaths([clipPathInfo], 0.01, 0.01);
         closeBoundaries([clipPathInfo], { type: "levels" });
+        if (options.useDataCoordinates) {
+          return createClipPathDataCoords(clipPathInfo, m, n);
+        }
+        var width = options.width || 500;
+        var height = options.height || 400;
+        var padding = options.padding || 30;
         return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
+      }
+      function createClipPathDataCoords(clipPathInfo, m, n) {
+        var perimeter = [
+          [0, m - 1],
+          // top-left (y is max in data coords = top)
+          [n - 1, m - 1],
+          // top-right
+          [n - 1, 0],
+          // bottom-right (y is min in data coords = bottom)
+          [0, 0]
+          // bottom-left
+        ];
+        var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, false);
+        return dataPaths || "";
+      }
+      function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
+        var fullpath = "";
+        var edgepaths = pathInfo.edgepaths || [];
+        if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
+          return "";
+        }
+        function istop(pt) {
+          return Math.abs(pt[1] - perimeter[0][1]) < 0.01;
+        }
+        function isbottom(pt) {
+          return Math.abs(pt[1] - perimeter[2][1]) < 0.01;
+        }
+        function isleft(pt) {
+          return Math.abs(pt[0] - perimeter[0][0]) < 0.01;
+        }
+        function isright(pt) {
+          return Math.abs(pt[0] - perimeter[2][0]) < 0.01;
+        }
+        function pathToSVGStr(path, isClosed) {
+          if (!path || path.length === 0)
+            return "";
+          var orderedPath = reverseWinding ? path.slice().reverse() : path;
+          var d = "M " + orderedPath[0][0] + " " + orderedPath[0][1];
+          for (var i2 = 1; i2 < orderedPath.length; i2++) {
+            d += " L " + orderedPath[i2][0] + " " + orderedPath[i2][1];
+          }
+          if (isClosed)
+            d += " Z";
+          return d;
+        }
+        var startsleft = edgepaths.map(function(v, idx) {
+          return idx;
+        });
+        var i = 0;
+        var newloop = true;
+        var endpt, newendpt, nexti, addpath;
+        while (startsleft.length > 0) {
+          addpath = pathToSVGStr(edgepaths[i], false);
+          fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+          startsleft.splice(startsleft.indexOf(i), 1);
+          endpt = reverseWinding ? edgepaths[i][0] : edgepaths[i][edgepaths[i].length - 1];
+          nexti = -1;
+          for (var cnt = 0; cnt < 4; cnt++) {
+            if (!endpt)
+              break;
+            if (istop(endpt) && !isright(endpt))
+              newendpt = perimeter[1];
+            else if (isleft(endpt))
+              newendpt = perimeter[0];
+            else if (isbottom(endpt))
+              newendpt = perimeter[3];
+            else if (isright(endpt))
+              newendpt = perimeter[2];
+            for (var possiblei = 0; possiblei < edgepaths.length; possiblei++) {
+              var ptNew = reverseWinding ? edgepaths[possiblei][edgepaths[possiblei].length - 1] : edgepaths[possiblei][0];
+              if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
+                if (Math.abs(endpt[0] - ptNew[0]) < 0.01 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
+                if (Math.abs(endpt[1] - ptNew[1]) < 0.01 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                  newendpt = ptNew;
+                  nexti = possiblei;
+                }
+              }
+            }
+            endpt = newendpt;
+            if (nexti >= 0)
+              break;
+            fullpath += "L" + newendpt[0] + " " + newendpt[1];
+          }
+          if (nexti === edgepaths.length || nexti < 0)
+            break;
+          i = nexti;
+          newloop = startsleft.indexOf(i) === -1;
+          if (newloop) {
+            if (startsleft.length > 0) {
+              i = startsleft[0];
+            }
+            fullpath += "Z";
+          }
+        }
+        if (pathInfo.paths) {
+          for (i = 0; i < pathInfo.paths.length; i++) {
+            fullpath += pathToSVGStr(pathInfo.paths[i], true);
+          }
+        }
+        return fullpath;
       }
       function pathToSVG(path, isClosed) {
         if (!path || path.length === 0)
@@ -1018,15 +1125,8 @@ var contourCore = (() => {
             ];
           });
         }
-        var boundaryPath = "M" + perimeter.join("L") + "Z";
         var joinedPaths = joinAllPaths(clipPathInfo, perimeter, scalePath, pathToSVG);
-        var fullpath = "";
-        if (clipPathInfo.prefixBoundary) {
-          fullpath = boundaryPath + joinedPaths;
-        } else {
-          fullpath = joinedPaths;
-        }
-        return fullpath;
+        return joinedPaths;
       }
       function createPerimeter(width, height, padding) {
         var xMin = padding;
@@ -3031,11 +3131,36 @@ var contourCore = (() => {
           return;
         var m = nullMask.length;
         var n = nullMask[0].length;
+        var visibleRange = style.visibleRange;
+        var fullRange = style.fullRange || visibleRange;
         var width = style.width || 500;
         var height = style.height || 400;
         var padding = style.padding || 30;
-        var scaleX = (width - 2 * padding) / (n - 1);
-        var scaleY = (height - 2 * padding) / (m - 1);
+        var drawArea = {
+          x: padding,
+          y: padding,
+          width: width - 2 * padding,
+          height: height - 2 * padding
+        };
+        var scaleX, scaleY, offsetX, offsetY;
+        if (visibleRange && fullRange) {
+          var xRange = visibleRange.xMax - visibleRange.xMin;
+          var yRange = visibleRange.yMax - visibleRange.yMin;
+          scaleX = drawArea.width / xRange;
+          scaleY = drawArea.height / yRange;
+          offsetX = drawArea.x - (visibleRange.xMin - fullRange.xMin) * scaleX;
+          offsetY = drawArea.y + drawArea.height + (visibleRange.yMin - fullRange.yMin) * scaleY;
+        } else {
+          scaleX = drawArea.width / (n - 1);
+          scaleY = drawArea.height / (m - 1);
+          offsetX = drawArea.x;
+          offsetY = drawArea.y + drawArea.height;
+        }
+        function gridToCanvas(j2, i2) {
+          var canvasX = offsetX + j2 * scaleX;
+          var canvasY = offsetY - i2 * scaleY;
+          return [canvasX, canvasY];
+        }
         ctx.save();
         var fillColor = nullRegion.fill || nullRegion.bgColor || "#ffffff";
         if (fillColor !== "transparent") {
@@ -3043,10 +3168,11 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var x = padding + j * scaleX;
-                var y = padding + (m - 1 - i) * scaleY;
-                var sizeX = scaleX + 1;
-                var sizeY = scaleY + 1;
+                var pt = gridToCanvas(j, i);
+                var x = pt[0];
+                var y = pt[1];
+                var sizeX = Math.abs(scaleX) + 1;
+                var sizeY = Math.abs(scaleY) + 1;
                 ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
               }
             }
@@ -3056,10 +3182,11 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var x = padding + j * scaleX;
-                var y = padding + (m - 1 - i) * scaleY;
-                var sizeX = scaleX + 1;
-                var sizeY = scaleY + 1;
+                var pt = gridToCanvas(j, i);
+                var x = pt[0];
+                var y = pt[1];
+                var sizeX = Math.abs(scaleX) + 1;
+                var sizeY = Math.abs(scaleY) + 1;
                 ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
               }
             }
@@ -3075,10 +3202,11 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var x = padding + j * scaleX;
-                var y = padding + (m - 1 - i) * scaleY;
-                var sizeX = scaleX + 1;
-                var sizeY = scaleY + 1;
+                var pt = gridToCanvas(j, i);
+                var x = pt[0];
+                var y = pt[1];
+                var sizeX = Math.abs(scaleX) + 1;
+                var sizeY = Math.abs(scaleY) + 1;
                 ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
               }
             }
@@ -4623,9 +4751,11 @@ var contourCore = (() => {
         ctx.rect(drawArea.x, drawArea.y, drawArea.width, drawArea.height);
         ctx.clip();
         if (needsClip && useClipMask) {
-          var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
+          var clipPathData = nullHandling.generateClipPath(contourResult, {
+            useDataCoordinates: true
+          });
           if (clipPathData) {
-            applyCanvasClipPathInteractive(ctx, clipPathData, drawArea, visibleRange);
+            applyCanvasClipPathFromData(ctx, clipPathData, drawArea, fullRange);
           }
         }
         if (coloring === "heatmap" && pathInfo) {
@@ -4650,6 +4780,53 @@ var contourCore = (() => {
         }
         ctx.restore();
       }
+      function applyCanvasClipPathFromData(ctx, pathData, drawArea, fullRange) {
+        var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
+        var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
+        var currentX = 0, currentY = 0;
+        var startX = 0, startY = 0;
+        var xRange = fullRange.xMax - fullRange.xMin;
+        var yRange = fullRange.yMax - fullRange.yMin;
+        ctx.beginPath();
+        function dataToCanvas(dataX, dataY) {
+          var cx = drawArea.x + (dataX - fullRange.xMin) / xRange * drawArea.width;
+          var cy = drawArea.y + drawArea.height - (dataY - fullRange.yMin) / yRange * drawArea.height;
+          return [cx, cy];
+        }
+        for (var i = 0; i < types.length; i++) {
+          var type = types[i];
+          var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
+          switch (type) {
+            case "M":
+              var pt = dataToCanvas(args[0], args[1]);
+              ctx.moveTo(pt[0], pt[1]);
+              currentX = args[0];
+              currentY = args[1];
+              startX = args[0];
+              startY = args[1];
+              break;
+            case "L":
+              var pt = dataToCanvas(args[0], args[1]);
+              ctx.lineTo(pt[0], pt[1]);
+              currentX = args[0];
+              currentY = args[1];
+              break;
+            case "Z":
+            case "z":
+              ctx.closePath();
+              currentX = startX;
+              currentY = startY;
+              break;
+            default:
+              if (args.length >= 2) {
+                var pt = dataToCanvas(args[args.length - 2], args[args.length - 1]);
+                ctx.lineTo(pt[0], pt[1]);
+              }
+              break;
+          }
+        }
+        ctx.clip();
+      }
       function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
         var axesConfig = style.axes || {};
         var xOptions = axesConfig.x || {};
@@ -4664,88 +4841,6 @@ var contourCore = (() => {
           y: yOptions
         });
         axesRenderer.drawAxesFromSetup(ctx, axisSetup);
-      }
-      function applyCanvasClipPathInteractive(ctx, pathData, drawArea, visibleRange) {
-        var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
-        var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
-        var currentX = 0, currentY = 0;
-        var startX = 0, startY = 0;
-        var vr = visibleRange;
-        var xRange = vr.xMax - vr.xMin;
-        var yRange = vr.yMax - vr.yMin;
-        ctx.beginPath();
-        for (var i = 0; i < types.length; i++) {
-          let toCanvas = function(dx, dy) {
-            var cx = drawArea.x + (dx - vr.xMin) / xRange * drawArea.width;
-            var cy = drawArea.y + drawArea.height - (dy - vr.yMin) / yRange * drawArea.height;
-            return [cx, cy];
-          };
-          var type = types[i];
-          var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
-          switch (type) {
-            case "M":
-              var pt = toCanvas(args[0], args[1]);
-              ctx.moveTo(pt[0], pt[1]);
-              currentX = args[0];
-              currentY = args[1];
-              startX = args[0];
-              startY = args[1];
-              break;
-            case "m":
-              currentX += args[0];
-              currentY += args[1];
-              var pt = toCanvas(currentX, currentY);
-              ctx.moveTo(pt[0], pt[1]);
-              startX = currentX;
-              startY = currentY;
-              break;
-            case "L":
-              var pt = toCanvas(args[0], args[1]);
-              ctx.lineTo(pt[0], pt[1]);
-              currentX = args[0];
-              currentY = args[1];
-              break;
-            case "l":
-              currentX += args[0];
-              currentY += args[1];
-              var pt = toCanvas(currentX, currentY);
-              ctx.lineTo(pt[0], pt[1]);
-              break;
-            case "H":
-              var pt = toCanvas(args[0], currentY);
-              ctx.lineTo(pt[0], pt[1]);
-              currentX = args[0];
-              break;
-            case "h":
-              currentX += args[0];
-              var pt = toCanvas(currentX, currentY);
-              ctx.lineTo(pt[0], pt[1]);
-              break;
-            case "V":
-              var pt = toCanvas(currentX, args[0]);
-              ctx.lineTo(pt[0], pt[1]);
-              currentY = args[0];
-              break;
-            case "v":
-              currentY += args[0];
-              var pt = toCanvas(currentX, currentY);
-              ctx.lineTo(pt[0], pt[1]);
-              break;
-            case "Z":
-            case "z":
-              ctx.closePath();
-              currentX = startX;
-              currentY = startY;
-              break;
-            default:
-              if (args.length >= 2) {
-                var pt = toCanvas(args[args.length - 2], args[args.length - 1]);
-                ctx.lineTo(pt[0], pt[1]);
-              }
-              break;
-          }
-        }
-        ctx.clip();
       }
       function createInteractionManagerInternal(canvas, drawingArea, viewManager, render, config) {
         config = config || {};

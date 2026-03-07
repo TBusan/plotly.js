@@ -386,10 +386,13 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
     ctx.clip();
 
     // Apply clip path for null handling (if needed)
+    // Always use data coordinates for clip path, then convert to canvas coordinates
     if (needsClip && useClipMask) {
-        var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
+        var clipPathData = nullHandling.generateClipPath(contourResult, {
+            useDataCoordinates: true
+        });
         if (clipPathData) {
-            applyCanvasClipPathInteractive(ctx, clipPathData, drawArea, visibleRange);
+            applyCanvasClipPathFromData(ctx, clipPathData, drawArea, fullRange);
         }
     }
 
@@ -427,6 +430,67 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
 }
 
 /**
+ * Apply clip path from data coordinates
+ * Uses regular clip (nonzero rule) to show the data region defined by the path
+ * @private
+ */
+function applyCanvasClipPathFromData(ctx, pathData, drawArea, fullRange) {
+    var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
+    var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
+
+    var currentX = 0, currentY = 0;
+    var startX = 0, startY = 0;
+
+    var xRange = fullRange.xMax - fullRange.xMin;
+    var yRange = fullRange.yMax - fullRange.yMin;
+
+    ctx.beginPath();
+
+    function dataToCanvas(dataX, dataY) {
+        var cx = drawArea.x + (dataX - fullRange.xMin) / xRange * drawArea.width;
+        var cy = drawArea.y + drawArea.height - (dataY - fullRange.yMin) / yRange * drawArea.height;
+        return [cx, cy];
+    }
+
+    for (var i = 0; i < types.length; i++) {
+        var type = types[i];
+        var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
+
+        switch (type) {
+            case 'M':
+                var pt = dataToCanvas(args[0], args[1]);
+                ctx.moveTo(pt[0], pt[1]);
+                currentX = args[0];
+                currentY = args[1];
+                startX = args[0];
+                startY = args[1];
+                break;
+            case 'L':
+                var pt = dataToCanvas(args[0], args[1]);
+                ctx.lineTo(pt[0], pt[1]);
+                currentX = args[0];
+                currentY = args[1];
+                break;
+            case 'Z':
+            case 'z':
+                ctx.closePath();
+                currentX = startX;
+                currentY = startY;
+                break;
+            default:
+                if (args.length >= 2) {
+                    var pt = dataToCanvas(args[args.length - 2], args[args.length - 1]);
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                break;
+        }
+    }
+
+    // Use regular clip (nonzero rule) - the path defines the visible data region
+    ctx.clip();
+}
+
+/**
  * Render axes layer
  * @private
  */
@@ -446,100 +510,6 @@ function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
     });
 
     axesRenderer.drawAxesFromSetup(ctx, axisSetup);
-}
-
-/**
- * Apply clip path in canvas coordinates
- * @private
- */
-function applyCanvasClipPathInteractive(ctx, pathData, drawArea, visibleRange) {
-    var commands = pathData.split(/[MmLlHhVvAaQqTtCcSsZz]/);
-    var types = pathData.match(/[MmLlHhVvAaQqTtCcSsZz]/g) || [];
-
-    var currentX = 0, currentY = 0;
-    var startX = 0, startY = 0;
-
-    var vr = visibleRange;
-    var xRange = vr.xMax - vr.xMin;
-    var yRange = vr.yMax - vr.yMin;
-
-    ctx.beginPath();
-
-    for (var i = 0; i < types.length; i++) {
-        var type = types[i];
-        var args = commands[i + 1] ? commands[i + 1].trim().split(/[\s,]+/).map(parseFloat) : [];
-
-        function toCanvas(dx, dy) {
-            var cx = drawArea.x + (dx - vr.xMin) / xRange * drawArea.width;
-            var cy = drawArea.y + drawArea.height - (dy - vr.yMin) / yRange * drawArea.height;
-            return [cx, cy];
-        }
-
-        switch (type) {
-            case 'M':
-                var pt = toCanvas(args[0], args[1]);
-                ctx.moveTo(pt[0], pt[1]);
-                currentX = args[0];
-                currentY = args[1];
-                startX = args[0];
-                startY = args[1];
-                break;
-            case 'm':
-                currentX += args[0];
-                currentY += args[1];
-                var pt = toCanvas(currentX, currentY);
-                ctx.moveTo(pt[0], pt[1]);
-                startX = currentX;
-                startY = currentY;
-                break;
-            case 'L':
-                var pt = toCanvas(args[0], args[1]);
-                ctx.lineTo(pt[0], pt[1]);
-                currentX = args[0];
-                currentY = args[1];
-                break;
-            case 'l':
-                currentX += args[0];
-                currentY += args[1];
-                var pt = toCanvas(currentX, currentY);
-                ctx.lineTo(pt[0], pt[1]);
-                break;
-            case 'H':
-                var pt = toCanvas(args[0], currentY);
-                ctx.lineTo(pt[0], pt[1]);
-                currentX = args[0];
-                break;
-            case 'h':
-                currentX += args[0];
-                var pt = toCanvas(currentX, currentY);
-                ctx.lineTo(pt[0], pt[1]);
-                break;
-            case 'V':
-                var pt = toCanvas(currentX, args[0]);
-                ctx.lineTo(pt[0], pt[1]);
-                currentY = args[0];
-                break;
-            case 'v':
-                currentY += args[0];
-                var pt = toCanvas(currentX, currentY);
-                ctx.lineTo(pt[0], pt[1]);
-                break;
-            case 'Z':
-            case 'z':
-                ctx.closePath();
-                currentX = startX;
-                currentY = startY;
-                break;
-            default:
-                if (args.length >= 2) {
-                    var pt = toCanvas(args[args.length - 2], args[args.length - 1]);
-                    ctx.lineTo(pt[0], pt[1]);
-                }
-                break;
-        }
-    }
-
-    ctx.clip();
 }
 
 /**

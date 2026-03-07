@@ -51,6 +51,7 @@ function makeBinaryMask(nullMask) {
  *
  * @param {Object} contourResult - Result from computeContours()
  * @param {Object} options - Options including width, height, padding
+ * @param {Boolean} options.useDataCoordinates - If true, return path in data coordinates (for interactive mode)
  * @returns {String} SVG path data string for the clip region
  */
 function generateClipPath(contourResult, options) {
@@ -66,10 +67,6 @@ function generateClipPath(contourResult, options) {
 
     var m = binaryMask.length;
     var n = binaryMask[0].length;
-
-    var width = options.width || 500;
-    var height = options.height || 400;
-    var padding = options.padding || 30;
 
     // Create x and y coordinate arrays
     var x = [];
@@ -98,8 +95,154 @@ function generateClipPath(contourResult, options) {
     // Close boundaries
     closeBoundaries([clipPathInfo], { type: 'levels' });
 
-    // Generate SVG path from the result
+    // For interactive mode, return path in data coordinates
+    // The renderer will convert to canvas coordinates based on visibleRange
+    if (options.useDataCoordinates) {
+        return createClipPathDataCoords(clipPathInfo, m, n);
+    }
+
+    // For static mode, convert to canvas coordinates
+    var width = options.width || 500;
+    var height = options.height || 400;
+    var padding = options.padding || 30;
     return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
+}
+
+/**
+ * Create clip path in data coordinates (for interactive mode)
+ * The clip path defines the VISIBLE region (valid data area, not null area)
+ *
+ * Strategy:
+ * Marching squares at level=0.9 on binary mask (data=1, null=0) traces the
+ * boundary where value crosses 0.9. This traces the DATA region boundary.
+ *
+ * We use these paths DIRECTLY as the clip path (without outer boundary).
+ * With regular clip (nonzero rule), points inside the data boundary are shown,
+ * points outside are hidden.
+ *
+ * NOTE: We do NOT use evenodd here because we're not adding an outer boundary.
+ * The marching squares paths alone define the visible (data) region.
+ *
+ * @private
+ */
+function createClipPathDataCoords(clipPathInfo, m, n) {
+    // Perimeter in data coordinates for boundary detection
+    // IMPORTANT: In data coordinates, y=0 is at the BOTTOM, y=max is at the TOP
+    var perimeter = [
+        [0, m - 1],       // top-left (y is max in data coords = top)
+        [n - 1, m - 1],   // top-right
+        [n - 1, 0],       // bottom-right (y is min in data coords = bottom)
+        [0, 0]            // bottom-left
+    ];
+
+    // Get the paths from marching squares - these trace the DATA region boundary
+    // Use them directly as the clip path (no outer boundary, no evenodd needed)
+    var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, false);
+
+    // Return just the data paths - they define the visible region
+    return dataPaths || '';
+}
+
+/**
+ * Join all paths in data coordinates (no scaling)
+ * @param {Object} pathInfo - Path info from marching squares
+ * @param {Array} perimeter - Perimeter points
+ * @param {Boolean} reverseWinding - If true, reverse path winding for evenodd rule
+ * @private
+ */
+function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
+    var fullpath = '';
+    var edgepaths = pathInfo.edgepaths || [];
+
+    if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
+        return '';
+    }
+
+    function istop(pt) { return Math.abs(pt[1] - perimeter[0][1]) < 0.01; }
+    function isbottom(pt) { return Math.abs(pt[1] - perimeter[2][1]) < 0.01; }
+    function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.01; }
+    function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.01; }
+
+    function pathToSVGStr(path, isClosed) {
+        if (!path || path.length === 0) return '';
+
+        // Reverse winding if needed (for evenodd rule)
+        var orderedPath = reverseWinding ? path.slice().reverse() : path;
+
+        var d = 'M ' + orderedPath[0][0] + ' ' + orderedPath[0][1];
+        for (var i = 1; i < orderedPath.length; i++) {
+            d += ' L ' + orderedPath[i][0] + ' ' + orderedPath[i][1];
+        }
+        if (isClosed) d += ' Z';
+        return d;
+    }
+
+    // Process edge paths
+    var startsleft = edgepaths.map(function(v, idx) { return idx; });
+    var i = 0;
+    var newloop = true;
+    var endpt, newendpt, nexti, addpath;
+
+    while (startsleft.length > 0) {
+        addpath = pathToSVGStr(edgepaths[i], false);
+        fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
+        startsleft.splice(startsleft.indexOf(i), 1);
+
+        // When reversed, we start from the "end" of the original path
+        endpt = reverseWinding ? edgepaths[i][0] : edgepaths[i][edgepaths[i].length - 1];
+        nexti = -1;
+
+        for (var cnt = 0; cnt < 4; cnt++) {
+            if (!endpt) break;
+
+            if (istop(endpt) && !isright(endpt)) newendpt = perimeter[1];
+            else if (isleft(endpt)) newendpt = perimeter[0];
+            else if (isbottom(endpt)) newendpt = perimeter[3];
+            else if (isright(endpt)) newendpt = perimeter[2];
+
+            for (var possiblei = 0; possiblei < edgepaths.length; possiblei++) {
+                // When reversed, we look for the "end" of the next path (which is the start when not reversed)
+                var ptNew = reverseWinding ? edgepaths[possiblei][edgepaths[possiblei].length - 1] : edgepaths[possiblei][0];
+                if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
+                    if (Math.abs(endpt[0] - ptNew[0]) < 0.01 &&
+                        (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+                        newendpt = ptNew;
+                        nexti = possiblei;
+                    }
+                } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
+                    if (Math.abs(endpt[1] - ptNew[1]) < 0.01 &&
+                        (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+                        newendpt = ptNew;
+                        nexti = possiblei;
+                    }
+                }
+            }
+
+            endpt = newendpt;
+            if (nexti >= 0) break;
+            fullpath += 'L' + newendpt[0] + ' ' + newendpt[1];
+        }
+
+        if (nexti === edgepaths.length || nexti < 0) break;
+
+        i = nexti;
+        newloop = (startsleft.indexOf(i) === -1);
+        if (newloop) {
+            if (startsleft.length > 0) {
+                i = startsleft[0];
+            }
+            fullpath += 'Z';
+        }
+    }
+
+    // Add interior closed paths
+    if (pathInfo.paths) {
+        for (i = 0; i < pathInfo.paths.length; i++) {
+            fullpath += pathToSVGStr(pathInfo.paths[i], true);
+        }
+    }
+
+    return fullpath;
 }
 
 /**
@@ -123,6 +266,7 @@ function pathToSVG(path, isClosed) {
 
 /**
  * Convert clip pathinfo to SVG path data
+ * The clip path defines the VISIBLE region (valid data area, not null area)
  *
  * @param {Object} clipPathInfo - Pathinfo from marching squares
  * @param {Number} width - Canvas/SVG width
@@ -148,19 +292,15 @@ function createClipPathSVG(clipPathInfo, width, height, padding, m, n) {
     }
 
     // Build the complete path string
-    var boundaryPath = 'M' + perimeter.join('L') + 'Z';
+    // The clip path should only contain the valid data region
+    // We don't include the boundary rectangle because:
+    // 1. The valid data region is already within the boundary
+    // 2. Using evenodd rule with two same-direction paths would create wrong effect
     var joinedPaths = joinAllPaths(clipPathInfo, perimeter, scalePath, pathToSVG);
 
-    // The clip path defines the VISIBLE region (data, not null)
-    // So we include the boundary and subtract the null region paths
-    var fullpath = '';
-    if (clipPathInfo.prefixBoundary) {
-        fullpath = boundaryPath + joinedPaths;
-    } else {
-        fullpath = joinedPaths;
-    }
-
-    return fullpath;
+    // Return only the joined paths (valid data region)
+    // The connecting boundary segments are already included by joinAllPaths
+    return joinedPaths;
 }
 
 /**

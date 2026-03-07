@@ -245,7 +245,23 @@
                 z: grid.z,
                 x: grid.x,
                 y: grid.y,
-                useClipMask: true  // 启用新的 clip mask
+                useClipMask: true,  // 启用新的 clip mask
+                        interaction: {
+                        zoom: true,
+                        pan: true,
+                        dblclickReset: true,
+                        minZoom: 0.1,
+                        maxZoom: 20,
+                        // onZoom: function(state) {
+                        //     updateViewState(state);
+                        // },
+                        // onPan: function(state) {
+                        //     updateViewState(state);
+                        // },
+                        // onReset: function() {
+                        //     updateViewState(interactiveRenderer.getViewState());
+                        // }
+                    }
             };
 
             // Canvas - 使用 clip mask
