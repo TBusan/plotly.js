@@ -4753,7 +4753,7 @@ var require_canvas = __commonJS({
           useDataCoordinates: true
         });
         if (clipPathData) {
-          applyCanvasClipPathFromData(ctx, clipPathData, drawArea, fullRange);
+          applyCanvasClipPathFromData(ctx, clipPathData, drawArea, visibleRange);
         }
       }
       if (coloring === "heatmap" && pathInfo) {
