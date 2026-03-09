@@ -371,6 +371,10 @@
                     <input type="checkbox" id="showColorbar" checked onchange="updateRender()">
                     <label for="showColorbar">显示颜色标尺</label>
                 </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="enableHover" onchange="updateRender()">
+                    <label for="enableHover">显示等值线 Tooltip</label>
+                </div>
             </div>
 
             <div class="control-group">
@@ -635,12 +639,17 @@
                 }
 
                 // 添加交互配置
+                var enableHover = document.getElementById('enableHover').checked;
+
                 options.interaction = {
                     zoom: true,
                     pan: true,
                     dblclickReset: true,
                     minZoom: 0.1,
                     maxZoom: 10,
+                    hover: enableHover,  // Enable hover functionality
+                    hoverHitRadius: 8,  // Pixel radius for hit detection
+                    contourResult: result,  // Pass contour result for hover detection
                     onZoom: function(state) {
                         updateViewState(state);
                     },

@@ -4746,6 +4746,10 @@ var contourCore = (() => {
           }
         }
         render();
+        var interactionConfig = Object.assign({}, interactionConfig, {
+          contourResult
+          // Pass contour result for hover detection
+        });
         var interaction = createInteractionManagerInternal(canvas, drawingArea, viewManager, render, interactionConfig);
         return {
           getViewState: function() {
@@ -4997,6 +5001,10 @@ var contourCore = (() => {
         var dblclickReset = config.dblclickReset !== false;
         var boxZoomEnabled = config.boxZoom === true;
         var zoomSensitivity = 1e-3;
+        var hoverEnabled = config.hover === true;
+        var hoverHitRadius = config.hoverHitRadius || 8;
+        var contourResult = config.contourResult;
+        var tooltipElement = null;
         var boundHandlers = {};
         function getMousePos(e) {
           var rect = canvas.getBoundingClientRect();
@@ -5058,8 +5066,120 @@ var contourCore = (() => {
           } else if (isBoxZooming) {
           } else if (isInDrawingArea(pos)) {
             canvas.style.cursor = "grab";
+            if (hoverEnabled && contourResult) {
+              var hoverData = detectContourAtPosition(pos.x, pos.y);
+              if (hoverData) {
+                showTooltip(pos.x, pos.y, hoverData);
+              } else {
+                hideTooltip();
+              }
+            }
           } else {
             canvas.style.cursor = "default";
+            hideTooltip();
+          }
+        }
+        function detectContourAtPosition(px, py) {
+          if (!contourResult || !contourResult.paths)
+            return null;
+          var paths = contourResult.paths;
+          var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+          if (!pathInfo)
+            return null;
+          var state = viewManager.getState();
+          var xMin = state.xMin;
+          var xMax = state.xMax;
+          var yMin = state.yMin;
+          var yMax = state.yMax;
+          var xRange = xMax - xMin || 1;
+          var yRange = yMax - yMin || 1;
+          for (var i = 0; i < paths.length; i++) {
+            var pathData = paths[i];
+            var level = pathData.level;
+            var allPaths = (pathData.paths || []).concat(pathData.edgepaths || []);
+            for (var j = 0; j < allPaths.length; j++) {
+              var path = allPaths[j];
+              if (!path || path.length < 2)
+                continue;
+              for (var k = 0; k < path.length - 1; k++) {
+                var p1 = path[k];
+                var p2 = path[k + 1];
+                var px1 = drawingArea.x + (p1[0] - xMin) / xRange * drawingArea.width;
+                var py1 = drawingArea.y + drawingArea.height - (p1[1] - yMin) / yRange * drawingArea.height;
+                var px2 = drawingArea.x + (p2[0] - xMin) / xRange * drawingArea.width;
+                var py2 = drawingArea.y + drawingArea.height - (p2[1] - yMin) / yRange * drawingArea.height;
+                var dist = pointToSegmentDistance(px, py, px1, py1, px2, py2);
+                if (dist <= hoverHitRadius) {
+                  var dataX = xMin + (px - drawingArea.x) / drawingArea.width * xRange;
+                  var dataY = yMin + (1 - (py - drawingArea.y) / drawingArea.height) * yRange;
+                  return {
+                    level,
+                    x: dataX,
+                    y: dataY,
+                    distance: dist
+                  };
+                }
+              }
+            }
+          }
+          return null;
+        }
+        function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+          var dx = x2 - x1;
+          var dy = y2 - y1;
+          var lengthSq = dx * dx + dy * dy;
+          if (lengthSq === 0) {
+            return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+          }
+          var t = ((px - x1) * dx + (py - y1) * dy) / lengthSq;
+          t = Math.max(0, Math.min(1, t));
+          var projX = x1 + t * dx;
+          var projY = y1 + t * dy;
+          return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+        }
+        function showTooltip(px, py, hoverData) {
+          if (!tooltipElement) {
+            tooltipElement = document.createElement("div");
+            tooltipElement.className = "contour-hover-tooltip";
+            tooltipElement.style.cssText = [
+              "position: absolute",
+              "pointer-events: none",
+              "display: none",
+              "background: rgba(255, 255, 255, 0.95)",
+              "border: 1px solid #333",
+              "border-radius: 4px",
+              "padding: 8px 12px",
+              "font-size: 12px",
+              "font-family: Arial, sans-serif",
+              "color: #333",
+              "white-space: nowrap",
+              "box-shadow: 0 2px 8px rgba(0,0,0,0.2)",
+              "z-index: 10000"
+            ].join(";");
+            document.body.appendChild(tooltipElement);
+          }
+          var content = "<strong>\u503C:</strong> " + hoverData.level.toFixed(2);
+          if (hoverData.x !== void 0 && hoverData.y !== void 0) {
+            content += "<br><strong>X:</strong> " + hoverData.x.toFixed(4);
+            content += "<br><strong>Y:</strong> " + hoverData.y.toFixed(4);
+          }
+          tooltipElement.innerHTML = content;
+          tooltipElement.style.display = "block";
+          var canvasRect = canvas.getBoundingClientRect();
+          var tooltipX = canvasRect.left + px + 15;
+          var tooltipY = canvasRect.top + py - 40;
+          if (tooltipX + 150 > window.innerWidth) {
+            tooltipX = canvasRect.left + px - 160;
+          }
+          if (tooltipY < 5) {
+            tooltipY = canvasRect.top + py + 20;
+          }
+          tooltipElement.style.left = tooltipX + "px";
+          tooltipElement.style.top = tooltipY + "px";
+        }
+        function hideTooltip() {
+          if (tooltipElement) {
+            tooltipElement.style.display = "none";
           }
         }
         function handleMouseUp(e) {
@@ -5161,6 +5281,10 @@ var contourCore = (() => {
         }
         function destroy() {
           unbindEvents();
+          if (tooltipElement) {
+            tooltipElement.parentNode.removeChild(tooltipElement);
+            tooltipElement = null;
+          }
         }
         bindEvents();
         return {
