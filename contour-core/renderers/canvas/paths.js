@@ -744,6 +744,7 @@ function drawPathStroke(ctx, path, smoothing, isClosed, style) {
 /**
  * Scale point from DATA SPACE to canvas coordinates
  * Supports visibleRange for zoom/pan functionality
+ * Supports drawArea for aspect ratio adjustment
  */
 function scalePoint(style, pt) {
     // Validate inputs
@@ -759,9 +760,6 @@ function scalePoint(style, pt) {
 
     var x = style.x || [];
     var y = style.y || [];
-    var width = style.width || 500;
-    var height = style.height || 400;
-    var padding = style.padding || 30;
 
     // Use visibleRange if provided (for interactive zoom/pan)
     // Otherwise use full data range
@@ -784,12 +782,28 @@ function scalePoint(style, pt) {
     var xRange = xMax - xMin || 1;
     var yRange = yMax - yMin || 1;
 
-    // Normalize to [0, 1] and scale to canvas
-    var canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
-    var canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
+    // If drawArea is provided (for aspect ratio adjustment), use it
+    // Otherwise fall back to padding-based calculation
+    var canvasX, canvasY;
 
-    // Flip Y axis (canvas Y increases downward)
-    canvasY = height - padding - (canvasY - padding);
+    if (style.drawArea) {
+        var drawArea = style.drawArea;
+        // Map data to adjusted drawing area
+        canvasX = drawArea.x + ((pt[0] - xMin) / xRange) * drawArea.width;
+        canvasY = drawArea.y + drawArea.height - ((pt[1] - yMin) / yRange) * drawArea.height;
+    } else {
+        // Legacy calculation using padding
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+
+        // Normalize to [0, 1] and scale to canvas
+        canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
+        canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
+
+        // Flip Y axis (canvas Y increases downward)
+        canvasY = height - padding - (canvasY - padding);
+    }
 
     return [canvasX, canvasY];
 }

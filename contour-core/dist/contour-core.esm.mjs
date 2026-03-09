@@ -2187,9 +2187,6 @@ var require_paths = __commonJS({
       }
       var x = style.x || [];
       var y = style.y || [];
-      var width = style.width || 500;
-      var height = style.height || 400;
-      var padding = style.padding || 30;
       var xMin, xMax, yMin, yMax;
       if (style.visibleRange) {
         xMin = style.visibleRange.xMin;
@@ -2204,9 +2201,19 @@ var require_paths = __commonJS({
       }
       var xRange = xMax - xMin || 1;
       var yRange = yMax - yMin || 1;
-      var canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
-      var canvasY = padding + (pt[1] - yMin) / yRange * (height - 2 * padding);
-      canvasY = height - padding - (canvasY - padding);
+      var canvasX, canvasY;
+      if (style.drawArea) {
+        var drawArea = style.drawArea;
+        canvasX = drawArea.x + (pt[0] - xMin) / xRange * drawArea.width;
+        canvasY = drawArea.y + drawArea.height - (pt[1] - yMin) / yRange * drawArea.height;
+      } else {
+        var width = style.width || 500;
+        var height = style.height || 400;
+        var padding = style.padding || 30;
+        canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
+        canvasY = padding + (pt[1] - yMin) / yRange * (height - 2 * padding);
+        canvasY = height - padding - (canvasY - padding);
+      }
       return [canvasX, canvasY];
     }
     function drawSVGPath(ctx, pathStr) {
@@ -4597,6 +4604,39 @@ var require_canvas = __commonJS({
     var axesRenderer = require_axes2();
     var nullHandling = require_null_handling();
     var axes = require_axes();
+    function calculateAspectRatioDrawingArea(baseArea, fullRange, aspectRatio) {
+      if (aspectRatio !== "equal" && aspectRatio !== 1 && aspectRatio !== "1:1") {
+        return baseArea;
+      }
+      var xRange = fullRange.xMax - fullRange.xMin;
+      var yRange = fullRange.yMax - fullRange.yMin;
+      if (xRange === 0 || yRange === 0) {
+        return baseArea;
+      }
+      var dataRatio = xRange / yRange;
+      var canvasRatio = baseArea.width / baseArea.height;
+      var adjustedArea = Object.assign({}, baseArea);
+      if (dataRatio > canvasRatio) {
+        var idealHeight = baseArea.width / dataRatio;
+        var heightDiff = baseArea.height - idealHeight;
+        adjustedArea.height = idealHeight;
+        adjustedArea.y = baseArea.y + heightDiff / 2;
+        adjustedArea.margins = Object.assign({}, baseArea.margins, {
+          top: baseArea.margins.top + heightDiff / 2,
+          bottom: baseArea.margins.bottom + heightDiff / 2
+        });
+      } else if (dataRatio < canvasRatio) {
+        var idealWidth = baseArea.height * dataRatio;
+        var widthDiff = baseArea.width - idealWidth;
+        adjustedArea.width = idealWidth;
+        adjustedArea.x = baseArea.x + widthDiff / 2;
+        adjustedArea.margins = Object.assign({}, baseArea.margins, {
+          left: baseArea.margins.left + widthDiff / 2,
+          right: baseArea.margins.right + widthDiff / 2
+        });
+      }
+      return adjustedArea;
+    }
     function drawContours(ctx, contourResult, style) {
       style = style || {};
       var width = style.width || ctx.canvas.width;
@@ -4623,7 +4663,7 @@ var require_canvas = __commonJS({
     }
     function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
       var padding = style.padding || 50;
-      var drawingArea = {
+      var baseDrawingArea = {
         x: padding,
         y: padding,
         width: width - 2 * padding,
@@ -4636,6 +4676,8 @@ var require_canvas = __commonJS({
         }
       };
       var fullRange = getFullRange(pathInfo);
+      var aspectRatio = style.aspectRatio || "auto";
+      var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
       ctx.clearRect(0, 0, width, height);
       if (style.backgroundColor) {
         ctx.fillStyle = style.backgroundColor;
@@ -4657,7 +4699,7 @@ var require_canvas = __commonJS({
       var width = style.width || canvas.width;
       var height = style.height || canvas.height;
       var padding = style.padding || 50;
-      var drawingArea = {
+      var baseDrawingArea = {
         x: padding,
         y: padding,
         width: width - 2 * padding,
@@ -4671,6 +4713,8 @@ var require_canvas = __commonJS({
       };
       var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
       var fullRange = getFullRange(pathInfo);
+      var aspectRatio = style.aspectRatio || "auto";
+      var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
       var viewState = require_view_state();
       var viewManager = viewState.createViewManager(fullRange, {
         minZoom: interactionConfig.minZoom || 0.1,
@@ -4678,6 +4722,7 @@ var require_canvas = __commonJS({
       });
       var currentStyle = Object.assign({}, style);
       var hasAxes = currentStyle.axes !== void 0 && currentStyle.axes !== null;
+      var currentAspectRatio = aspectRatio;
       function render() {
         var ctx = canvas.getContext("2d");
         var visibleRange = viewManager.getState();
@@ -4718,6 +4763,11 @@ var require_canvas = __commonJS({
         updateStyle: function(newStyle) {
           currentStyle = Object.assign(currentStyle, newStyle);
           hasAxes = currentStyle.axes !== void 0 && currentStyle.axes !== null;
+          var newAspectRatio = currentStyle.aspectRatio || "auto";
+          if (newAspectRatio !== currentAspectRatio) {
+            currentAspectRatio = newAspectRatio;
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+          }
           render();
         },
         resize: function(newWidth, newHeight) {
@@ -4725,8 +4775,19 @@ var require_canvas = __commonJS({
           height = newHeight;
           canvas.width = width;
           canvas.height = height;
-          drawingArea.width = width - 2 * padding;
-          drawingArea.height = height - 2 * padding;
+          baseDrawingArea = {
+            x: padding,
+            y: padding,
+            width: width - 2 * padding,
+            height: height - 2 * padding,
+            margins: {
+              left: padding,
+              right: padding,
+              top: padding,
+              bottom: padding
+            }
+          };
+          drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
           render();
         },
         getContourResult: function() {
@@ -4811,9 +4872,12 @@ var require_canvas = __commonJS({
       var renderStyle = Object.assign({}, style, {
         visibleRange,
         fullRange,
-        width: drawArea.width + 2 * drawArea.x,
-        height: drawArea.height + 2 * drawArea.y,
+        drawArea,
+        // Pass drawArea for scalePoint to use
+        width: drawArea.width + 2 * drawArea.margins.left,
+        height: drawArea.height + 2 * drawArea.margins.top,
         padding: drawArea.x,
+        // Keep for backward compatibility
         z: style.z || (pathInfo ? pathInfo.z : null),
         x: style.x || (pathInfo ? pathInfo.x : null),
         y: style.y || (pathInfo ? pathInfo.y : null),

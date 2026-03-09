@@ -15,6 +15,65 @@ var nullHandling = require('../../null_handling');
 var axes = require('../../axes');
 
 /**
+ * Calculate adjusted drawing area based on aspect ratio
+ * When aspectRatio is 'equal' or 1, the drawing area is adjusted so that
+ * one unit of data in X direction equals one unit of data in Y direction on screen
+ *
+ * @param {Object} baseArea - Base drawing area { x, y, width, height, margins }
+ * @param {Object} fullRange - Data range { xMin, xMax, yMin, yMax }
+ * @param {string|number} aspectRatio - 'equal' or 1 for 1:1 ratio, 'auto' or 0 for fill
+ * @returns {Object} Adjusted drawing area
+ */
+function calculateAspectRatioDrawingArea(baseArea, fullRange, aspectRatio) {
+    // If aspectRatio is not 'equal' or 1, return base area unchanged
+    if (aspectRatio !== 'equal' && aspectRatio !== 1 && aspectRatio !== '1:1') {
+        return baseArea;
+    }
+
+    var xRange = fullRange.xMax - fullRange.xMin;
+    var yRange = fullRange.yMax - fullRange.yMin;
+
+    // Avoid division by zero
+    if (xRange === 0 || yRange === 0) {
+        return baseArea;
+    }
+
+    // Data aspect ratio (width per unit / height per unit)
+    var dataRatio = xRange / yRange;
+
+    // Available canvas aspect ratio
+    var canvasRatio = baseArea.width / baseArea.height;
+
+    var adjustedArea = Object.assign({}, baseArea);
+
+    if (dataRatio > canvasRatio) {
+        // Data is wider than canvas - reduce height (add padding top/bottom)
+        var idealHeight = baseArea.width / dataRatio;
+        var heightDiff = baseArea.height - idealHeight;
+        adjustedArea.height = idealHeight;
+        adjustedArea.y = baseArea.y + heightDiff / 2;
+        // Update margins for axes positioning
+        adjustedArea.margins = Object.assign({}, baseArea.margins, {
+            top: baseArea.margins.top + heightDiff / 2,
+            bottom: baseArea.margins.bottom + heightDiff / 2
+        });
+    } else if (dataRatio < canvasRatio) {
+        // Data is taller than canvas - reduce width (add padding left/right)
+        var idealWidth = baseArea.height * dataRatio;
+        var widthDiff = baseArea.width - idealWidth;
+        adjustedArea.width = idealWidth;
+        adjustedArea.x = baseArea.x + widthDiff / 2;
+        // Update margins for axes positioning
+        adjustedArea.margins = Object.assign({}, baseArea.margins, {
+            left: baseArea.margins.left + widthDiff / 2,
+            right: baseArea.margins.right + widthDiff / 2
+        });
+    }
+
+    return adjustedArea;
+}
+
+/**
  * Draw contours on a canvas context
  *
  * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
@@ -81,8 +140,8 @@ function drawContours(ctx, contourResult, style) {
 function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
     var padding = style.padding || 50;
 
-    // Calculate drawing area
-    var drawingArea = {
+    // Calculate base drawing area
+    var baseDrawingArea = {
         x: padding,
         y: padding,
         width: width - 2 * padding,
@@ -97,6 +156,10 @@ function renderStatic(ctx, contourResult, style, width, height, coloring, showLi
 
     // Get full data range from contour result
     var fullRange = getFullRange(pathInfo);
+
+    // Apply aspect ratio adjustment if needed
+    var aspectRatio = style.aspectRatio || 'auto';
+    var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
@@ -136,8 +199,8 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var height = style.height || canvas.height;
     var padding = style.padding || 50;
 
-    // Calculate drawing area
-    var drawingArea = {
+    // Calculate base drawing area
+    var baseDrawingArea = {
         x: padding,
         y: padding,
         width: width - 2 * padding,
@@ -154,6 +217,10 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
     var fullRange = getFullRange(pathInfo);
 
+    // Apply aspect ratio adjustment if needed
+    var aspectRatio = style.aspectRatio || 'auto';
+    var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
+
     // Create view state manager
     var viewState = require('../../interaction/view_state');
     var viewManager = viewState.createViewManager(fullRange, {
@@ -164,6 +231,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     // Store state
     var currentStyle = Object.assign({}, style);
     var hasAxes = currentStyle.axes !== undefined && currentStyle.axes !== null;
+    var currentAspectRatio = aspectRatio;
 
     /**
      * Render all layers
@@ -231,6 +299,14 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
         updateStyle: function(newStyle) {
             currentStyle = Object.assign(currentStyle, newStyle);
             hasAxes = currentStyle.axes !== undefined && currentStyle.axes !== null;
+
+            // Recalculate drawing area if aspectRatio changed
+            var newAspectRatio = currentStyle.aspectRatio || 'auto';
+            if (newAspectRatio !== currentAspectRatio) {
+                currentAspectRatio = newAspectRatio;
+                drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            }
+
             render();
         },
 
@@ -240,8 +316,22 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             canvas.width = width;
             canvas.height = height;
 
-            drawingArea.width = width - 2 * padding;
-            drawingArea.height = height - 2 * padding;
+            // Recalculate base drawing area
+            baseDrawingArea = {
+                x: padding,
+                y: padding,
+                width: width - 2 * padding,
+                height: height - 2 * padding,
+                margins: {
+                    left: padding,
+                    right: padding,
+                    top: padding,
+                    bottom: padding
+                }
+            };
+
+            // Recalculate adjusted drawing area
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
 
             render();
         },
@@ -367,12 +457,14 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
     var needsClip = !connectGaps && contourResult.nullMask && contourResult.nullCount > 0;
 
     // Create style with visibleRange for proper coordinate scaling
+    // Include drawArea for correct coordinate transformation with aspect ratio
     var renderStyle = Object.assign({}, style, {
         visibleRange: visibleRange,
         fullRange: fullRange,
-        width: drawArea.width + 2 * drawArea.x,
-        height: drawArea.height + 2 * drawArea.y,
-        padding: drawArea.x,
+        drawArea: drawArea,  // Pass drawArea for scalePoint to use
+        width: drawArea.width + 2 * drawArea.margins.left,
+        height: drawArea.height + 2 * drawArea.margins.top,
+        padding: drawArea.x,  // Keep for backward compatibility
         z: style.z || (pathInfo ? pathInfo.z : null),
         x: style.x || (pathInfo ? pathInfo.x : null),
         y: style.y || (pathInfo ? pathInfo.y : null),

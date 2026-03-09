@@ -337,6 +337,13 @@
                     <label for="showGrid">显示网格线</label>
                 </div>
                 <div class="control-row">
+                    <label>比例模式</label>
+                    <select id="aspectRatio" onchange="updateRender()">
+                        <option value="auto">自动填充</option>
+                        <option value="equal">1:1 等比例</option>
+                    </select>
+                </div>
+                <div class="control-row">
                     <label>X轴标题</label>
                     <select id="xTitle" onchange="updateRender()">
                         <option value="X 坐标">X 坐标</option>
@@ -588,7 +595,6 @@
 
                 var mappedColors = buildColorScale(result.levels, colorScale);
 
-                debugger
                 // 销毁之前的渲染器
                 if (interactiveRenderer && interactiveRenderer.destroy) {
                     interactiveRenderer.destroy();
@@ -600,6 +606,8 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 // 渲染选项
+                var aspectRatio = document.getElementById('aspectRatio').value;
+
                 var options = {
                     width: canvas.width,
                     height: canvas.height,
@@ -609,6 +617,7 @@
                     showLines: coloringMode === 'lines' || coloringMode === 'fill+lines',
                     lineWidth: lineWidth,
                     padding: 60,
+                    aspectRatio: aspectRatio,
                     showGrid: showGrid,
                     gridColor: '#ddd',
                     backgroundColor: bgColor,
