@@ -984,12 +984,18 @@ var require_clip_mask = __commonJS({
         return null;
       var m = binaryMask.length;
       var n = binaryMask[0].length;
-      var x = [];
-      var y = [];
-      for (var i = 0; i < n; i++)
-        x.push(i);
-      for (var j = 0; j < m; j++)
-        y.push(j);
+      var x, y;
+      if (options.useDataCoordinates && options.dataX && options.dataY) {
+        x = options.dataX;
+        y = options.dataY;
+      } else {
+        x = [];
+        y = [];
+        for (var i = 0; i < n; i++)
+          x.push(i);
+        for (var j = 0; j < m; j++)
+          y.push(j);
+      }
       var clipPathInfo = {
         level: 0.9,
         crossings: {},
@@ -1002,7 +1008,11 @@ var require_clip_mask = __commonJS({
         smoothing: 0
       };
       marchingSquares.makeCrossings([clipPathInfo]);
-      pathFinding.findAllPaths([clipPathInfo], 0.01, 0.01);
+      var xRange = x.length > 1 ? x[x.length - 1] - x[0] : 1;
+      var yRange = y.length > 1 ? y[y.length - 1] - y[0] : 1;
+      var xTol = Math.max(1e-10, xRange * 1e-3);
+      var yTol = Math.max(1e-10, yRange * 1e-3);
+      pathFinding.findAllPaths([clipPathInfo], xTol, yTol);
       closeBoundaries([clipPathInfo], { type: "levels" });
       if (options.useDataCoordinates) {
         return createClipPathDataCoords(clipPathInfo, m, n);
@@ -1013,36 +1023,45 @@ var require_clip_mask = __commonJS({
       return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
     }
     function createClipPathDataCoords(clipPathInfo, m, n) {
+      var x = clipPathInfo.x || [];
+      var y = clipPathInfo.y || [];
+      var xMin = x.length > 0 ? Math.min.apply(Math, x) : 0;
+      var xMax = x.length > 0 ? Math.max.apply(Math, x) : n - 1;
+      var yMin = y.length > 0 ? Math.min.apply(Math, y) : 0;
+      var yMax = y.length > 0 ? Math.max.apply(Math, y) : m - 1;
+      var xRange = xMax - xMin || 1;
+      var yRange = yMax - yMin || 1;
+      var tol = Math.max(1e-10, Math.min(xRange, yRange) * 1e-3);
       var perimeter = [
-        [0, m - 1],
-        // top-left (y is max in data coords = top)
-        [n - 1, m - 1],
+        [xMin, yMax],
+        // top-left
+        [xMax, yMax],
         // top-right
-        [n - 1, 0],
-        // bottom-right (y is min in data coords = bottom)
-        [0, 0]
+        [xMax, yMin],
+        // bottom-right
+        [xMin, yMin]
         // bottom-left
       ];
-      var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, false);
+      var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, tol, false);
       return dataPaths || "";
     }
-    function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
+    function joinAllPathsDataCoords(pathInfo, perimeter, tol, reverseWinding) {
       var fullpath = "";
       var edgepaths = pathInfo.edgepaths || [];
       if (edgepaths.length === 0 && (!pathInfo.paths || pathInfo.paths.length === 0)) {
         return "";
       }
       function istop(pt) {
-        return Math.abs(pt[1] - perimeter[0][1]) < 0.01;
+        return pt && Math.abs(pt[1] - perimeter[0][1]) < tol;
       }
       function isbottom(pt) {
-        return Math.abs(pt[1] - perimeter[2][1]) < 0.01;
+        return pt && Math.abs(pt[1] - perimeter[2][1]) < tol;
       }
       function isleft(pt) {
-        return Math.abs(pt[0] - perimeter[0][0]) < 0.01;
+        return pt && Math.abs(pt[0] - perimeter[0][0]) < tol;
       }
       function isright(pt) {
-        return Math.abs(pt[0] - perimeter[2][0]) < 0.01;
+        return pt && Math.abs(pt[0] - perimeter[2][0]) < tol;
       }
       function pathToSVGStr(path, isClosed) {
         if (!path || path.length === 0)
@@ -1081,13 +1100,13 @@ var require_clip_mask = __commonJS({
             newendpt = perimeter[2];
           for (var possiblei = 0; possiblei < edgepaths.length; possiblei++) {
             var ptNew = reverseWinding ? edgepaths[possiblei][edgepaths[possiblei].length - 1] : edgepaths[possiblei][0];
-            if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
-              if (Math.abs(endpt[0] - ptNew[0]) < 0.01 && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
+            if (Math.abs(endpt[0] - newendpt[0]) < tol) {
+              if (Math.abs(endpt[0] - ptNew[0]) < tol && (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
                 newendpt = ptNew;
                 nexti = possiblei;
               }
-            } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
-              if (Math.abs(endpt[1] - ptNew[1]) < 0.01 && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
+            } else if (Math.abs(endpt[1] - newendpt[1]) < tol) {
+              if (Math.abs(endpt[1] - ptNew[1]) < tol && (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
                 newendpt = ptNew;
                 nexti = possiblei;
               }
@@ -1330,7 +1349,11 @@ var require_compute = __commonJS({
         };
       });
       marchingSquares.makeCrossings(pathinfo);
-      pathFinding.findAllPaths(pathinfo, 0.01, 0.01);
+      var xRange = x.length > 1 ? x[x.length - 1] - x[0] : 1;
+      var yRange = y.length > 1 ? y[y.length - 1] - y[0] : 1;
+      var xTol = Math.max(1e-10, xRange * 1e-3);
+      var yTol = Math.max(1e-10, yRange * 1e-3);
+      pathFinding.findAllPaths(pathinfo, xTol, yTol);
       var contourOptions = options.contours || {};
       if (!contourOptions.type && !contourOptions.coloring) {
         contourOptions.coloring = "fill";
@@ -1682,6 +1705,13 @@ var require_paths = __commonJS({
   "renderers/canvas/paths.js"(exports, module) {
     "use strict";
     var smooth = require_smooth();
+    function createIndexArray(length, offset) {
+      var arr = [];
+      for (var i = 0; i < length; i++) {
+        arr.push(offset !== void 0 ? offset + i : i);
+      }
+      return arr;
+    }
     function createPerimeter(style) {
       var m = style.z && style.z.length ? style.z.length : 10;
       var n = style.z && style.z[0] && style.z[0].length ? style.z[0].length : 10;
@@ -1746,10 +1776,14 @@ var require_paths = __commonJS({
       }
       var x = style.x || [];
       var y = style.y || [];
-      var dataXMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
-      var dataXMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
-      var dataYMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
-      var dataYMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+      if (!x || x.length === 0)
+        x = createIndexArray(style.z ? style.z.length : 10, 1);
+      if (!y || y.length === 0)
+        y = createIndexArray(style.z ? style.z[0].length : 10, 1);
+      var dataXMin = Math.min.apply(Math, x);
+      var dataXMax = Math.max.apply(Math, x);
+      var dataYMin = Math.min.apply(Math, y);
+      var dataYMax = Math.max.apply(Math, y);
       var tolX = (dataXMax - dataXMin) * 1e-3;
       var tolY = (dataYMax - dataYMin) * 1e-3;
       function isDataTop(pt) {
@@ -3559,6 +3593,12 @@ var require_tick_format = __commonJS({
       if (Math.floor(value) === value) {
         return 0;
       }
+      var absValue = Math.abs(value);
+      if (absValue > 0 && absValue < 1e10) {
+        var magnitude = Math.floor(Math.log10(absValue));
+        var precision = 10 - magnitude;
+        value = Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
+      }
       var str = value.toString();
       var decimalIndex = str.indexOf(".");
       if (decimalIndex === -1) {
@@ -4786,7 +4826,9 @@ var require_canvas = __commonJS({
       ctx.clip();
       if (needsClip && useClipMask) {
         var clipPathData = nullHandling.generateClipPath(contourResult, {
-          useDataCoordinates: true
+          useDataCoordinates: true,
+          dataX: pathInfo ? pathInfo.x : null,
+          dataY: pathInfo ? pathInfo.y : null
         });
         if (clipPathData) {
           applyCanvasClipPathFromData(ctx, clipPathData, drawArea, visibleRange);

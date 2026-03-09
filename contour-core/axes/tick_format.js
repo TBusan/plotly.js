@@ -8,6 +8,7 @@
 
 /**
  * Count decimal places in a number string
+ * Handles floating point precision issues by rounding to reasonable precision
  *
  * @param {number} value - The value to check
  * @returns {number} Number of decimal places
@@ -15,6 +16,15 @@
 function countDecimals(value) {
     if (Math.floor(value) === value) {
         return 0;
+    }
+
+    // Handle floating point precision by rounding to 10 significant digits
+    // This prevents issues like 0.0001 * 3 = 0.00030000000000000004
+    var absValue = Math.abs(value);
+    if (absValue > 0 && absValue < 1e10) {
+        var magnitude = Math.floor(Math.log10(absValue));
+        var precision = 10 - magnitude;
+        value = Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
     }
 
     var str = value.toString();

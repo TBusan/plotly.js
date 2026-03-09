@@ -31779,7 +31779,6 @@ export const data6 = {
         24.764334607142857,
     ],
     "z": [
-
     [
         null,
         null,

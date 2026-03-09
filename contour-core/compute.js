@@ -97,7 +97,21 @@ function computeContours(grid, options) {
 
     // Run marching squares and find all paths
     marchingSquares.makeCrossings(pathinfo);
-    pathFinding.findAllPaths(pathinfo, 0.01, 0.01);
+
+    // Calculate tolerance based on data range
+    // Use relative tolerance for better handling of real-world coordinates
+    // For very small data ranges (e.g., GPS coordinates), use a small fraction of the range
+    // For index-based data, use a reasonable absolute tolerance
+    var xRange = x.length > 1 ? (x[x.length - 1] - x[0]) : 1;
+    var yRange = y.length > 1 ? (y[y.length - 1] - y[0]) : 1;
+
+    // Use 0.1% of range as tolerance, with a very small minimum to handle edge cases
+    // The minimum is set to a tiny value (1e-10) to avoid issues with near-zero ranges
+    // while still allowing very small data ranges to work correctly
+    var xTol = Math.max(1e-10, xRange * 0.001);
+    var yTol = Math.max(1e-10, yRange * 0.001);
+
+    pathFinding.findAllPaths(pathinfo, xTol, yTol);
 
     // Close boundaries for proper fill rendering
     var contourOptions = options.contours || {};

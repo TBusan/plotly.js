@@ -7,6 +7,18 @@
 var smooth = require('../../smooth');
 
 /**
+ * Create index array for coordinate generation
+ * @private
+ */
+function createIndexArray(length, offset) {
+    var arr = [];
+    for (var i = 0; i < length; i++) {
+        arr.push(offset !== undefined ? offset + i : i);
+    }
+    return arr;
+}
+
+/**
  * Create perimeter path for boundary closing (CANVAS coordinates)
  * Used for clipping and not for fill boundary
  */
@@ -95,10 +107,15 @@ function joinAllPaths(pathInfo, perimeter, style) {
     // Get DATA coordinate boundaries for edge detection
     var x = style.x || [];
     var y = style.y || [];
-    var dataXMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
-    var dataXMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
-    var dataYMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
-    var dataYMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+
+    // 确保有有效的坐标数组
+    if (!x || x.length === 0) x = createIndexArray(style.z ? style.z.length : 10, 1);
+    if (!y || y.length === 0) y = createIndexArray(style.z ? style.z[0].length : 10, 1);
+
+    var dataXMin = Math.min.apply(Math, x);
+    var dataXMax = Math.max.apply(Math, x);
+    var dataYMin = Math.min.apply(Math, y);
+    var dataYMax = Math.max.apply(Math, y);
 
     // Tolerance for boundary detection (relative to data range)
     var tolX = (dataXMax - dataXMin) * 0.001;

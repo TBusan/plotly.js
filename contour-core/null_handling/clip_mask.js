@@ -52,6 +52,8 @@ function makeBinaryMask(nullMask) {
  * @param {Object} contourResult - Result from computeContours()
  * @param {Object} options - Options including width, height, padding
  * @param {Boolean} options.useDataCoordinates - If true, return path in data coordinates (for interactive mode)
+ * @param {Array} options.dataX - Optional real X coordinate array (for useDataCoordinates mode)
+ * @param {Array} options.dataY - Optional real Y coordinate array (for useDataCoordinates mode)
  * @returns {String} SVG path data string for the clip region
  */
 function generateClipPath(contourResult, options) {
@@ -69,10 +71,20 @@ function generateClipPath(contourResult, options) {
     var n = binaryMask[0].length;
 
     // Create x and y coordinate arrays
-    var x = [];
-    var y = [];
-    for (var i = 0; i < n; i++) x.push(i);
-    for (var j = 0; j < m; j++) y.push(j);
+    // For useDataCoordinates mode with real data coordinates provided, use them
+    // Otherwise use index coordinates (0, 1, 2, ...)
+    var x, y;
+    if (options.useDataCoordinates && options.dataX && options.dataY) {
+        // Use real data coordinates for proper coordinate transformation
+        x = options.dataX;
+        y = options.dataY;
+    } else {
+        // Use index coordinates
+        x = [];
+        y = [];
+        for (var i = 0; i < n; i++) x.push(i);
+        for (var j = 0; j < m; j++) y.push(j);
+    }
 
     // Create pathinfo for clip path generation
     // level = 0.9 means we draw boundary at 90% between null (0) and data (1)
@@ -90,7 +102,15 @@ function generateClipPath(contourResult, options) {
 
     // Run marching squares to find boundary
     marchingSquares.makeCrossings([clipPathInfo]);
-    pathFinding.findAllPaths([clipPathInfo], 0.01, 0.01);
+
+    // Calculate tolerance based on coordinate range
+    // Use relative tolerance for small data ranges (like GPS coordinates)
+    var xRange = x.length > 1 ? (x[x.length - 1] - x[0]) : 1;
+    var yRange = y.length > 1 ? (y[y.length - 1] - y[0]) : 1;
+    var xTol = Math.max(1e-10, xRange * 0.001);
+    var yTol = Math.max(1e-10, yRange * 0.001);
+
+    pathFinding.findAllPaths([clipPathInfo], xTol, yTol);
 
     // Close boundaries
     closeBoundaries([clipPathInfo], { type: 'levels' });
@@ -126,18 +146,32 @@ function generateClipPath(contourResult, options) {
  * @private
  */
 function createClipPathDataCoords(clipPathInfo, m, n) {
+    // Get coordinate arrays from pathInfo
+    var x = clipPathInfo.x || [];
+    var y = clipPathInfo.y || [];
+
     // Perimeter in data coordinates for boundary detection
-    // IMPORTANT: In data coordinates, y=0 is at the BOTTOM, y=max is at the TOP
+    // Use the actual data coordinates from x and y arrays
+    var xMin = x.length > 0 ? Math.min.apply(Math, x) : 0;
+    var xMax = x.length > 0 ? Math.max.apply(Math, x) : n - 1;
+    var yMin = y.length > 0 ? Math.min.apply(Math, y) : 0;
+    var yMax = y.length > 0 ? Math.max.apply(Math, y) : m - 1;
+
+    // Calculate tolerance based on data range
+    var xRange = xMax - xMin || 1;
+    var yRange = yMax - yMin || 1;
+    var tol = Math.max(1e-10, Math.min(xRange, yRange) * 0.001);
+
     var perimeter = [
-        [0, m - 1],       // top-left (y is max in data coords = top)
-        [n - 1, m - 1],   // top-right
-        [n - 1, 0],       // bottom-right (y is min in data coords = bottom)
-        [0, 0]            // bottom-left
+        [xMin, yMax],       // top-left
+        [xMax, yMax],       // top-right
+        [xMax, yMin],       // bottom-right
+        [xMin, yMin]        // bottom-left
     ];
 
     // Get the paths from marching squares - these trace the DATA region boundary
     // Use them directly as the clip path (no outer boundary, no evenodd needed)
-    var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, false);
+    var dataPaths = joinAllPathsDataCoords(clipPathInfo, perimeter, tol, false);
 
     // Return just the data paths - they define the visible region
     return dataPaths || '';
@@ -146,11 +180,12 @@ function createClipPathDataCoords(clipPathInfo, m, n) {
 /**
  * Join all paths in data coordinates (no scaling)
  * @param {Object} pathInfo - Path info from marching squares
- * @param {Array} perimeter - Perimeter points
+ * @param {Array} perimeter - Perimeter points in data coordinates
+ * @param {Number} tol - Tolerance for boundary detection
  * @param {Boolean} reverseWinding - If true, reverse path winding for evenodd rule
  * @private
  */
-function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
+function joinAllPathsDataCoords(pathInfo, perimeter, tol, reverseWinding) {
     var fullpath = '';
     var edgepaths = pathInfo.edgepaths || [];
 
@@ -158,10 +193,10 @@ function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
         return '';
     }
 
-    function istop(pt) { return Math.abs(pt[1] - perimeter[0][1]) < 0.01; }
-    function isbottom(pt) { return Math.abs(pt[1] - perimeter[2][1]) < 0.01; }
-    function isleft(pt) { return Math.abs(pt[0] - perimeter[0][0]) < 0.01; }
-    function isright(pt) { return Math.abs(pt[0] - perimeter[2][0]) < 0.01; }
+    function istop(pt) { return pt && Math.abs(pt[1] - perimeter[0][1]) < tol; }
+    function isbottom(pt) { return pt && Math.abs(pt[1] - perimeter[2][1]) < tol; }
+    function isleft(pt) { return pt && Math.abs(pt[0] - perimeter[0][0]) < tol; }
+    function isright(pt) { return pt && Math.abs(pt[0] - perimeter[2][0]) < tol; }
 
     function pathToSVGStr(path, isClosed) {
         if (!path || path.length === 0) return '';
@@ -203,14 +238,14 @@ function joinAllPathsDataCoords(pathInfo, perimeter, reverseWinding) {
             for (var possiblei = 0; possiblei < edgepaths.length; possiblei++) {
                 // When reversed, we look for the "end" of the next path (which is the start when not reversed)
                 var ptNew = reverseWinding ? edgepaths[possiblei][edgepaths[possiblei].length - 1] : edgepaths[possiblei][0];
-                if (Math.abs(endpt[0] - newendpt[0]) < 0.01) {
-                    if (Math.abs(endpt[0] - ptNew[0]) < 0.01 &&
+                if (Math.abs(endpt[0] - newendpt[0]) < tol) {
+                    if (Math.abs(endpt[0] - ptNew[0]) < tol &&
                         (ptNew[1] - endpt[1]) * (newendpt[1] - ptNew[1]) >= 0) {
                         newendpt = ptNew;
                         nexti = possiblei;
                     }
-                } else if (Math.abs(endpt[1] - newendpt[1]) < 0.01) {
-                    if (Math.abs(endpt[1] - ptNew[1]) < 0.01 &&
+                } else if (Math.abs(endpt[1] - newendpt[1]) < tol) {
+                    if (Math.abs(endpt[1] - ptNew[1]) < tol &&
                         (ptNew[0] - endpt[0]) * (newendpt[0] - ptNew[0]) >= 0) {
                         newendpt = ptNew;
                         nexti = possiblei;

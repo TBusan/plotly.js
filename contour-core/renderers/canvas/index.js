@@ -390,8 +390,11 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
     // Use visibleRange for coordinate conversion to match contour rendering
     // This ensures clip mask stays consistent with contours during zoom/pan
     if (needsClip && useClipMask) {
+        // Pass real data coordinates for proper coordinate transformation
         var clipPathData = nullHandling.generateClipPath(contourResult, {
-            useDataCoordinates: true
+            useDataCoordinates: true,
+            dataX: pathInfo ? pathInfo.x : null,
+            dataY: pathInfo ? pathInfo.y : null
         });
         if (clipPathData) {
             applyCanvasClipPathFromData(ctx, clipPathData, drawArea, visibleRange);

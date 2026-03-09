@@ -269,10 +269,13 @@
                 <div class="control-row">
                     <label>数据集</label>
                     <select id="dataset" onchange="changeDataset()">
-                        <option value="data1">data1 (仅 z, 含空值)</option>
+                        <option value="data1">data1 (含 x, y, z)</option>
                         <option value="data2">data2 (仅 z)</option>
                         <option value="data3">data3 (含 x, y, z)</option>
                         <option value="data4">data4 (仅 z)</option>
+                        <option value="data5">data5 (仅 z,data1)</option>
+                        <option value="data6">data6 (含 x, y, z)</option>
+                        <option value="data7">data7 (仅 z)</option>
                     </select>
                 </div>
                 <div id="dataInfo" class="info-box success">
@@ -394,10 +397,10 @@
     <!-- 加载 mockData -->
     <script type="module">
         // 由于 mockData.js 是 ES module，我们需要动态导入
-        import { data1, data2, data3,data4 } from '../data/mockData.js';
+        import { data1, data2, data3, data4 ,data5,data6,data7} from '../data/mockData.js';
 
         // 将数据暴露到全局作用域
-        window.mockData = { data1, data2, data3,data4 };
+        window.mockData = { data1, data2, data3, data4 ,data5,data6,data7};
 
         // 数据加载完成后初始化
         window.initDemo();
@@ -465,7 +468,6 @@
                     y = null;
                     break;
                 case 'data3':
-                    debugger
                     data = window.mockData.data3;
                     z = data.z;
                     x = data.x;
@@ -476,20 +478,33 @@
                     x = null;
                     y = null;
                     break;
-                default:
-                    debugger
-                    data = window.mockData.data1;
+                case 'data5':
+                    z = window.mockData.data5;
+                    x = null;
+                    y = null;
+                    break;
+                case 'data6':
+                    data = window.mockData.data6;
                     z = data.z;
                     x = data.x;
                     y = data.y;
+                    break;
+                case 'data7':
+                    z = window.mockData.data7;
+                    x = null;
+                    y = null;
+                    break;
+                default:
+                    data = window.mockData.data1;
+                    z = data.z;
+                    x = null;
+                    y = null;
             }
 
             currentDataset = name;
             currentData = z;
             currentX = x;
             currentY = y;
-
-            debugger
 
             // 更新数据信息显示
             updateDataInfo(z, x, y);
@@ -568,7 +583,7 @@
                 var result = contourCore.computeContours(gridData, {
                     autocontour: true,
                     ncontours: ncontours,
-                    // connectgaps: false,
+                    connectgaps: false,
                 });
 
                 var mappedColors = buildColorScale(result.levels, colorScale);
