@@ -873,10 +873,27 @@ var require_close_boundaries = __commonJS({
       switch (contours.type || contours.coloring) {
         case "levels":
         case "fill":
-          var edgeVal2 = Math.min(z[0][0], z[0][1]);
+          var na = pi0.x.length;
+          var nb = pi0.y.length;
+          var boundaryMin = Infinity;
+          for (i = 0; i < nb; i++) {
+            if (z[i][0] !== null && z[i][0] < boundaryMin)
+              boundaryMin = z[i][0];
+            if (z[i][na - 1] !== null && z[i][na - 1] < boundaryMin)
+              boundaryMin = z[i][na - 1];
+          }
+          for (i = 1; i < na - 1; i++) {
+            if (z[0][i] !== null && z[0][i] < boundaryMin)
+              boundaryMin = z[0][i];
+            if (z[nb - 1][i] !== null && z[nb - 1][i] < boundaryMin)
+              boundaryMin = z[nb - 1][i];
+          }
+          if (boundaryMin === Infinity) {
+            boundaryMin = Math.min(z[0][0] || Infinity, z[0][1] || Infinity);
+          }
           for (i = 0; i < pathinfo.length; i++) {
             var pi = pathinfo[i];
-            pi.prefixBoundary = !pi.edgepaths.length && (edgeVal2 > pi.level || pi.starts.length && edgeVal2 === pi.level);
+            pi.prefixBoundary = !pi.edgepaths.length && (boundaryMin > pi.level || pi.starts.length && boundaryMin === pi.level);
           }
           break;
         case "constraint":
@@ -1686,6 +1703,32 @@ var require_paths = __commonJS({
         // 3: bottom-left
       ];
     }
+    function createDataPerimeter(style) {
+      var x = style.x || [];
+      var y = style.y || [];
+      var xMin, xMax, yMin, yMax;
+      if (style.fullRange) {
+        xMin = style.fullRange.xMin;
+        xMax = style.fullRange.xMax;
+        yMin = style.fullRange.yMin;
+        yMax = style.fullRange.yMax;
+      } else {
+        xMin = x && x.length > 0 ? Math.min.apply(Math, x) : 0;
+        xMax = x && x.length > 0 ? Math.max.apply(Math, x) : 10;
+        yMin = y && y.length > 0 ? Math.min.apply(Math, y) : 0;
+        yMax = y && y.length > 0 ? Math.max.apply(Math, y) : 10;
+      }
+      return [
+        [xMin, yMax],
+        // 0: top-left (data coords, Y decreases upward)
+        [xMax, yMax],
+        // 1: top-right
+        [xMax, yMin],
+        // 2: bottom-right
+        [xMin, yMin]
+        // 3: bottom-left
+      ];
+    }
     function joinAllPaths(pathInfo, perimeter, style) {
       var fullpath = "";
       var edgepaths = pathInfo.edgepaths || [];
@@ -2010,30 +2053,14 @@ var require_paths = __commonJS({
         normalizedBg = Math.max(0, Math.min(1, normalizedBg));
         bgColor = getColorForValue(normalizedBg, colorScale);
       }
-      var shouldDrawBackground = style.showGrid !== true || style.connectgaps === true || style.backgroundColor;
-      if (shouldDrawBackground) {
-        var bgFillColor;
-        if (style.connectgaps === false) {
-          bgFillColor = "#ffffff";
-        } else {
-          bgFillColor = style.backgroundColor || "#ffffff";
-        }
-        ctx.fillStyle = bgFillColor;
-        ctx.beginPath();
-        ctx.rect(
-          perimeter[0][0],
-          perimeter[0][1],
-          perimeter[1][0] - perimeter[0][0],
-          perimeter[2][1] - perimeter[0][1]
-        );
-        ctx.fill();
-      }
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
-        var boundaryPath = "M" + perimeter.map(function(pt) {
-          return pt.join(" ");
+        var dataPerimeter = createDataPerimeter(style);
+        var boundaryPath = "M" + dataPerimeter.map(function(pt) {
+          var canvasPt = scalePoint(style, pt);
+          return canvasPt.join(" ");
         }).join("L") + "Z";
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = pathInfo.prefixBoundary ? boundaryPath + joinedPaths : joinedPaths;

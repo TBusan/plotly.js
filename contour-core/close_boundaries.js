@@ -19,16 +19,31 @@ function closeBoundaries(pathinfo, contours) {
     switch(contours.type || contours.coloring) {
         case 'levels':
         case 'fill':
-            // Why (just) use z[0][0] and z[0][1]?
-            //
-            // N.B. using boundaryMin instead of edgeVal2 here makes the
-            //      `contour_scatter` mock fail
-            var edgeVal2 = Math.min(z[0][0], z[0][1]);
+            // Find the minimum non-null value on the data boundary
+            // This is needed for proper prefixBoundary calculation when data has nulls
+            var na = pi0.x.length;
+            var nb = pi0.y.length;
+            var boundaryMin = Infinity;
+
+            // Check all boundary cells for minimum non-null value
+            for(i = 0; i < nb; i++) {
+                if(z[i][0] !== null && z[i][0] < boundaryMin) boundaryMin = z[i][0];
+                if(z[i][na - 1] !== null && z[i][na - 1] < boundaryMin) boundaryMin = z[i][na - 1];
+            }
+            for(i = 1; i < na - 1; i++) {
+                if(z[0][i] !== null && z[0][i] < boundaryMin) boundaryMin = z[0][i];
+                if(z[nb - 1][i] !== null && z[nb - 1][i] < boundaryMin) boundaryMin = z[nb - 1][i];
+            }
+
+            // Fallback to z[0][0] and z[0][1] if no valid boundary values found
+            if(boundaryMin === Infinity) {
+                boundaryMin = Math.min(z[0][0] || Infinity, z[0][1] || Infinity);
+            }
 
             for(i = 0; i < pathinfo.length; i++) {
                 var pi = pathinfo[i];
                 pi.prefixBoundary = !pi.edgepaths.length &&
-                    (edgeVal2 > pi.level || pi.starts.length && edgeVal2 === pi.level);
+                    (boundaryMin > pi.level || pi.starts.length && boundaryMin === pi.level);
             }
             break;
         case 'constraint':

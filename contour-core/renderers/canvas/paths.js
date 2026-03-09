@@ -7,7 +7,8 @@
 var smooth = require('../../smooth');
 
 /**
- * Create perimeter path for boundary closing
+ * Create perimeter path for boundary closing (CANVAS coordinates)
+ * Used for clipping and not for fill boundary
  */
 function createPerimeter(style) {
     var m = (style.z && style.z.length) ? style.z.length : 10;
@@ -27,6 +28,41 @@ function createPerimeter(style) {
         [xMax, yMin],  // 1: top-right
         [xMax, yMax],  // 2: bottom-right
         [xMin, yMax]   // 3: bottom-left
+    ];
+}
+
+/**
+ * Create data perimeter (DATA coordinates)
+ * Used for fill boundary with proper coordinate transformation
+ * IMPORTANT: Always uses fullRange for boundary, not visibleRange
+ * This ensures contour fill respects the actual data boundaries
+ */
+function createDataPerimeter(style) {
+    var x = style.x || [];
+    var y = style.y || [];
+
+    // Always use full data range for boundary, not visibleRange
+    // This ensures contour fill respects the actual data boundaries
+    var xMin, xMax, yMin, yMax;
+
+    if (style.fullRange) {
+        xMin = style.fullRange.xMin;
+        xMax = style.fullRange.xMax;
+        yMin = style.fullRange.yMin;
+        yMax = style.fullRange.yMax;
+    } else {
+        xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
+        xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
+        yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
+        yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+    }
+
+    // Clockwise perimeter starting from top-left (in DATA coordinates)
+    return [
+        [xMin, yMax],  // 0: top-left (data coords, Y decreases upward)
+        [xMax, yMax],  // 1: top-right
+        [xMax, yMin],  // 2: bottom-right
+        [xMin, yMin]   // 3: bottom-left
     ];
 }
 
@@ -491,28 +527,9 @@ function drawFilledPaths(ctx, contourResult, style) {
         bgColor = getColorForValue(normalizedBg, colorScale);
     }
 
-    // Draw background layer only within data area (perimeter)
-    // Strategy:
-    // - When connectgaps=true: always draw white/backgroundColor background first
-    // - When connectgaps=false: use white background so null regions appear transparent (clip mask will reveal canvas background)
-    // - When showGrid=true and no backgroundColor: use first level color for background (original behavior)
-    var shouldDrawBackground = style.showGrid !== true || style.connectgaps === true || style.backgroundColor;
-    if (shouldDrawBackground) {
-        var bgFillColor;
-        if (style.connectgaps === false) {
-            // White background for null regions to appear transparent when clip mask is applied
-            bgFillColor = '#ffffff';
-        } else {
-            // Use user's backgroundColor setting, default to white
-            bgFillColor = style.backgroundColor || '#ffffff';
-        }
-        ctx.fillStyle = bgFillColor;
-        ctx.beginPath();
-        ctx.rect(perimeter[0][0], perimeter[0][1],
-                 perimeter[1][0] - perimeter[0][0],
-                 perimeter[2][1] - perimeter[0][1]);
-        ctx.fill();
-    }
+    // NOTE: Background layer is now handled at a higher level (in renderContourLayer)
+    // to ensure proper coordinate transformation during zoom/pan operations.
+    // Do NOT draw background here as it would use fixed canvas coordinates.
 
     // Draw each contour fill layer (LOWEST to HIGHEST)
     // Key insight: Each layer fills from boundary (or previous contour) to current contour
@@ -532,7 +549,12 @@ function drawFilledPaths(ctx, contourResult, style) {
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
 
-        var boundaryPath = 'M' + perimeter.map(function(pt) { return pt.join(' '); }).join('L') + 'Z';
+        // Create boundary path using DATA coordinates, then transform to canvas coordinates
+        var dataPerimeter = createDataPerimeter(style);
+        var boundaryPath = 'M' + dataPerimeter.map(function(pt) {
+            var canvasPt = scalePoint(style, pt);
+            return canvasPt.join(' ');
+        }).join('L') + 'Z';
         var joinedPaths = joinAllPaths(pathInfo, perimeter, style);
         var fullpath = pathInfo.prefixBoundary ? (boundaryPath + joinedPaths) : joinedPaths;
 
