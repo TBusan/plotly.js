@@ -2595,13 +2595,13 @@ var require_density = __commonJS({
   "labels/density.js"(exports, module) {
     "use strict";
     var DENSITY_CONSTANTS = {
-      LABELDISTANCE: 2,
-      // Each label occupies this length (multiplier of plot diagonal)
-      LABELMIN: 3,
-      // Minimum path length (multiplier of text width)
-      LABELMAX: 10,
-      // Maximum labels per contour line
-      LABELINCREASE: 10
+      LABELDISTANCE: 0.5,
+      // Each label occupies this length (multiplier of plot diagonal) - reduced for more labels
+      LABELMIN: 2,
+      // Minimum path length (multiplier of text width) - reduced threshold
+      LABELMAX: 15,
+      // Maximum labels per contour line - increased for long paths
+      LABELINCREASE: 15
       // Start increasing density after this many contour levels
     };
     function calculateMaxLabels(pathLen, textWidth, textHeight, numLevels, plotDiagonal) {
