@@ -634,6 +634,7 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
     var hoverEnabled = config.hover === true;
     var hoverHitRadius = config.hoverHitRadius || 8;
     var contourResult = config.contourResult;
+    var hoverFormatter = config.hoverFormatter;  // Custom formatter function
     var tooltipElement = null;
 
     var boundHandlers = {};
@@ -846,11 +847,17 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
             document.body.appendChild(tooltipElement);
         }
 
-        // Format tooltip content
-        var content = '<strong>值:</strong> ' + hoverData.level.toFixed(2);
-        if (hoverData.x !== undefined && hoverData.y !== undefined) {
-            content += '<br><strong>X:</strong> ' + hoverData.x.toFixed(4);
-            content += '<br><strong>Y:</strong> ' + hoverData.y.toFixed(4);
+        // Format tooltip content - use custom formatter or default
+        var content;
+        if (hoverFormatter && typeof hoverFormatter === 'function') {
+            content = hoverFormatter(hoverData);
+        } else {
+            // Default formatter
+            content = '<strong>值:</strong> ' + hoverData.level.toFixed(2);
+            if (hoverData.x !== undefined && hoverData.y !== undefined) {
+                content += '<br><strong>X:</strong> ' + hoverData.x.toFixed(4);
+                content += '<br><strong>Y:</strong> ' + hoverData.y.toFixed(4);
+            }
         }
 
         tooltipElement.innerHTML = content;

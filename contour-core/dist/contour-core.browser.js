@@ -5004,6 +5004,7 @@ var contourCore = (() => {
         var hoverEnabled = config.hover === true;
         var hoverHitRadius = config.hoverHitRadius || 8;
         var contourResult = config.contourResult;
+        var hoverFormatter = config.hoverFormatter;
         var tooltipElement = null;
         var boundHandlers = {};
         function getMousePos(e) {
@@ -5158,10 +5159,15 @@ var contourCore = (() => {
             ].join(";");
             document.body.appendChild(tooltipElement);
           }
-          var content = "<strong>\u503C:</strong> " + hoverData.level.toFixed(2);
-          if (hoverData.x !== void 0 && hoverData.y !== void 0) {
-            content += "<br><strong>X:</strong> " + hoverData.x.toFixed(4);
-            content += "<br><strong>Y:</strong> " + hoverData.y.toFixed(4);
+          var content;
+          if (hoverFormatter && typeof hoverFormatter === "function") {
+            content = hoverFormatter(hoverData);
+          } else {
+            content = "<strong>\u503C:</strong> " + hoverData.level.toFixed(2);
+            if (hoverData.x !== void 0 && hoverData.y !== void 0) {
+              content += "<br><strong>X:</strong> " + hoverData.x.toFixed(4);
+              content += "<br><strong>Y:</strong> " + hoverData.y.toFixed(4);
+            }
           }
           tooltipElement.innerHTML = content;
           tooltipElement.style.display = "block";

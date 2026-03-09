@@ -641,6 +641,16 @@
                 // 添加交互配置
                 var enableHover = document.getElementById('enableHover').checked;
 
+                // Custom hover formatter function
+                function customHoverFormatter(data) {
+                    var html = '<div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">等值线信息</div>';
+                    html += '<div>数值: <span style="color: #cc0000; font-weight: bold;">' + data.level.toFixed(2) + '</span></div>';
+                    if (data.x !== undefined && data.y !== undefined) {
+                        html += '<div>坐标: (' + data.x.toFixed(2) + ', ' + data.y.toFixed(2) + ')</div>';
+                    }
+                    return html;
+                }
+
                 options.interaction = {
                     zoom: true,
                     pan: true,
@@ -650,6 +660,7 @@
                     hover: enableHover,  // Enable hover functionality
                     hoverHitRadius: 8,  // Pixel radius for hit detection
                     contourResult: result,  // Pass contour result for hover detection
+                    hoverFormatter: customHoverFormatter,  // Custom formatter for tooltip
                     onZoom: function(state) {
                         updateViewState(state);
                     },
