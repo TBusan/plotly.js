@@ -375,7 +375,8 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
         padding: drawArea.x,
         z: style.z || (pathInfo ? pathInfo.z : null),
         x: style.x || (pathInfo ? pathInfo.x : null),
-        y: style.y || (pathInfo ? pathInfo.y : null)
+        y: style.y || (pathInfo ? pathInfo.y : null),
+        connectgaps: connectGaps  // Pass connectgaps to drawFilledPaths for correct background color
     });
 
     ctx.save();

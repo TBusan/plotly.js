@@ -1899,17 +1899,24 @@ var require_paths = __commonJS({
       }
       return valueColorMap[valueColorMap.length - 1][1];
     }
+    function getColorFromScaleSegmented(value, colorScale) {
+      if (!colorScale || !Array.isArray(colorScale) || colorScale.length === 0) {
+        return "rgba(100, 100, 100, 0.5)";
+      }
+      var n = colorScale.length;
+      if (value < colorScale[0][0]) {
+        return colorScale[0][1];
+      }
+      for (var i = 0; i < n - 1; i++) {
+        if (value >= colorScale[i][0] && value < colorScale[i + 1][0]) {
+          return colorScale[i][1];
+        }
+      }
+      return colorScale[n - 1][1];
+    }
     function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
       if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
-        var segmentValue;
-        if (levelIndex < valueColorMap.length - 1) {
-          segmentValue = (valueColorMap[levelIndex][0] + valueColorMap[levelIndex + 1][0]) / 2;
-        } else if (levelIndex === valueColorMap.length - 1) {
-          segmentValue = valueColorMap[levelIndex][0] + 1;
-        } else {
-          segmentValue = level;
-        }
-        return getColorForSegmentedValue(segmentValue, valueColorMap);
+        return getColorForSegmentedValue(level, valueColorMap);
       }
       if (!colorScale || colorScale.length === 0) {
         return "rgba(100, 100, 100, 0.5)";
@@ -1918,22 +1925,10 @@ var require_paths = __commonJS({
         return colorScale[0][1] || "rgba(100, 100, 100, 0.5)";
       }
       var firstVal = colorScale[0][0];
-      if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
-        for (var i = 0; i < colorScale.length; i++) {
-          if (Math.abs(colorScale[i][0] - level) < 0.01) {
-            return colorScale[i][1];
-          }
-        }
-        var closestIdx = 0;
-        var closestDist = Math.abs(colorScale[0][0] - level);
-        for (var j = 1; j < colorScale.length; j++) {
-          var dist = Math.abs(colorScale[j][0] - level);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestIdx = j;
-          }
-        }
-        return colorScale[closestIdx][1];
+      var lastVal = colorScale[colorScale.length - 1][0];
+      var isNormalizedFormat = firstVal >= 0 && firstVal <= 1 && lastVal >= 0 && lastVal <= 1;
+      if (!isNormalizedFormat) {
+        return getColorFromScaleSegmented(level, colorScale);
       }
       var value;
       if (hasCustomLevels) {
@@ -2015,7 +2010,8 @@ var require_paths = __commonJS({
         normalizedBg = Math.max(0, Math.min(1, normalizedBg));
         bgColor = getColorForValue(normalizedBg, colorScale);
       }
-      if (style.showGrid !== true) {
+      var shouldDrawBackground = style.showGrid !== true || style.connectgaps === true || style.backgroundColor;
+      if (shouldDrawBackground) {
         var bgFillColor;
         if (style.connectgaps === false) {
           bgFillColor = "#ffffff";
@@ -2034,9 +2030,6 @@ var require_paths = __commonJS({
       }
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
-        if (i === 0 && pathInfo.prefixBoundary && style.backgroundColor) {
-          continue;
-        }
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
         var boundaryPath = "M" + perimeter.map(function(pt) {
@@ -4756,7 +4749,9 @@ var require_canvas = __commonJS({
         padding: drawArea.x,
         z: style.z || (pathInfo ? pathInfo.z : null),
         x: style.x || (pathInfo ? pathInfo.x : null),
-        y: style.y || (pathInfo ? pathInfo.y : null)
+        y: style.y || (pathInfo ? pathInfo.y : null),
+        connectgaps: connectGaps
+        // Pass connectgaps to drawFilledPaths for correct background color
       });
       ctx.save();
       ctx.beginPath();

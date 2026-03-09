@@ -176,9 +176,42 @@
 
     <script src="../dist/contour-core.browser.min.js"></script>
     <script>
-        var COLOR_SCALES = {
-            Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725']
-        };
+        // 自定义色阶映射 - 分段颜色映射
+        // 导 < 0: #0000ff (蓝色)
+        // 0 <= 值 < 10: #0000ff (蓝色)
+        // 10 <= 值 < 20: #00bfff (天蓝色)
+        // 20 <= 值 < 30: #00ff00 (绿色)
+        // 30 <= 值 < 35: #ffff00 (黄色)
+        // 35 <= 值 < 40: #ffa500(橙色)
+        // 值 >= 40: #ff0000 (红色)
+        // var customColorScale = [
+        //     [0, "#0000ff"],
+        //     [10, "#00bfff"],
+        //     [20, "#00ff00"],
+        //     [30, "#ffff00"],
+        //     [40, "#ffa500"],
+        //     [50, "#ff0000"]
+        // ];
+
+
+        // 自定义色阶映射 - 分段颜色映射
+        // 数据范围: 1-27
+        // 色阶分段:
+        //   值 < 5: #0000ff (蓝色)
+        //   5 <= 值 < 10: #00bfff (天蓝色)
+        //   10 <= 值 < 15: #00ff00 (绿色)
+        //   15 <= 值 < 20: #ffff00 (黄色)
+        //   20 <= 值 < 25: #ffa500 (橙色)
+        //   值 >= 25: #ff0000 (红色)
+        var customColorScale = [
+            [0, "#0000ff"],      // 蓝色
+            [5, "#00bfff"],      // 天蓝色
+            [10, "#00ff00"],     // 绿色
+            [15, "#ffff00"],     // 黄色
+            [20, "#ffa500"],     // 橙色
+            [25, "#ff0000"],     // 红色
+            [30, "#ff0000"]       // 红色（值 >= 25 都是红色)
+        ];
 
         // 测试数据 - 包含空值的7x8网格
         var testData = [
@@ -200,22 +233,6 @@
             return grid;
         }
 
-        function parseColorScale(colorscale) {
-            var colors = COLOR_SCALES[colorscale] || COLOR_SCALES.Viridis;
-            return colors.map(function(color, i) {
-                return [i / (colors.length - 1), color];
-            });
-        }
-
-        function buildColorScale(levels, colorScale) {
-            return levels.map(function(level, i) {
-                var t = levels.length > 1 ? (i / (levels.length - 1)) : 0.5;
-                var colorIdx = Math.floor(t * (colorScale.length - 1));
-                colorIdx = Math.max(0, Math.min(colorScale.length - 1, colorIdx));
-                return [level, colorScale[colorIdx][1]];
-            });
-        }
-
         function updateRender() {
             var mode = document.getElementById('renderMode').value;
             var connectGaps = document.getElementById('connectgaps').value === 'true';
@@ -223,22 +240,21 @@
             var grid = createGrid(testData);
             var options = {
                 autocontour: true,
-                ncontours: 10,
+                // ncontours: 10,
                 smoothing: 0.3,
                 connectgaps: connectGaps
             };
 
             var result = contourCore.computeContours(grid, options);
 
-            var colorScale = parseColorScale('Viridis');
-            var mappedColors = buildColorScale(result.levels, colorScale);
-
+            // 直接使用自定义色阶映射
+            // 代码会自动检测这是分段映射格式（因为值不在 [0, 1] 范围内）
             var style = {
                 width: 500,
                 height: 400,
                 padding: 40,
                 coloring: mode,
-                colorScale: mappedColors,
+                colorScale: customColorScale,  // 使用自定义色阶
                 smoothing: 0.3,
                 showLines: mode === 'lines',
                 lineWidth: 1.5,
@@ -246,22 +262,13 @@
                 x: grid.x,
                 y: grid.y,
                 useClipMask: true,  // 启用新的 clip mask
-                        interaction: {
-                        zoom: true,
-                        pan: true,
-                        dblclickReset: true,
-                        minZoom: 0.1,
-                        maxZoom: 20,
-                        // onZoom: function(state) {
-                        //     updateViewState(state);
-                        // },
-                        // onPan: function(state) {
-                        //     updateViewState(state);
-                        // },
-                        // onReset: function() {
-                        //     updateViewState(interactiveRenderer.getViewState());
-                        // }
-                    }
+                interaction: {
+                    zoom: true,
+                    pan: true,
+                    dblclickReset: true,
+                    minZoom: 0.1,
+                    maxZoom: 20
+                }
             };
 
             // Canvas - 使用 clip mask

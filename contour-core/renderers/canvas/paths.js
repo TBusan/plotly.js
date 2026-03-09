@@ -310,28 +310,61 @@ function getColorForSegmentedValue(value, valueColorMap) {
 }
 
 /**
+ * Get color from colorScale using segmented (step) mapping
+ * This is the standard contour fill behavior where each level gets a distinct color.
+ *
+ * colorScale format: [[level, color], ...] sorted by level
+ * Example: [[0, '#0000ff'], [10, '#00bfff'], [20, '#00ff00']]
+ *          value < 0 uses '#0000ff', 0-10 uses '#0000ff', 10-20 uses '#00bfff', >= 20 uses '#00ff00'
+ *
+ * @param {number} value - The value to get color for
+ * @param {Array} colorScale - Color scale array [[level, color], ...]
+ * @returns {string} Color string
+ */
+function getColorFromScaleSegmented(value, colorScale) {
+    if (!colorScale || !Array.isArray(colorScale) || colorScale.length === 0) {
+        return 'rgba(100, 100, 100, 0.5)';
+    }
+
+    var n = colorScale.length;
+
+    // If value is below first level, use first color
+    if (value < colorScale[0][0]) {
+        return colorScale[0][1];
+    }
+
+    // Find the appropriate segment
+    // value belongs to segment i if: colorScale[i][0] <= value < colorScale[i+1][0]
+    for (var i = 0; i < n - 1; i++) {
+        if (value >= colorScale[i][0] && value < colorScale[i + 1][0]) {
+            return colorScale[i][1];
+        }
+    }
+
+    // If value is at or above last level, use last color
+    return colorScale[n - 1][1];
+}
+
+/**
  * Get color for a contour level
  * Supports:
  * 1. valueColorMap: Segmented color mapping [[threshold, color], ...]
- * 2. colorScale: [[0, color], ...] normalized format
- * 3. [[level, color], ...] direct level-to-color mapping
+ * 2. colorScale in [[level, color], ...] format - uses SEGMENTED mapping (not interpolation)
+ * 3. colorScale in [[0, color], ...] normalized format - uses linear interpolation
+ *
+ * SEGMENTED MAPPING LOGIC (when colorScale is [[level, color], ...]):
+ * - For each contour level, find which segment it belongs to
+ * - Use the segment's starting color (no interpolation between colors)
+ * - Example: colorScale = [[0, 'blue'], [10, 'green'], [20, 'red']]
+ *   - level 5: segment [0, 10) -> blue
+ *   - level 12: segment [10, 20) -> green
+ *   - level 25: segment >= 20 -> red
  */
 function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels, stepSize, valueColorMap) {
     // PRIORITY 1: Use valueColorMap (segmented color mapping) if provided
     if (valueColorMap && Array.isArray(valueColorMap) && valueColorMap.length > 0) {
-        // For segmented mapping, the color is determined by the value relative to thresholds
-        // Each level represents a threshold boundary, so we use the midpoint of the segment
-        var segmentValue;
-        if (levelIndex < valueColorMap.length - 1) {
-            // Midpoint between this threshold and next
-            segmentValue = (valueColorMap[levelIndex][0] + valueColorMap[levelIndex + 1][0]) / 2;
-        } else if (levelIndex === valueColorMap.length - 1) {
-            // Last segment: value above the last threshold
-            segmentValue = valueColorMap[levelIndex][0] + 1; // Just above the threshold
-        } else {
-            segmentValue = level;
-        }
-        return getColorForSegmentedValue(segmentValue, valueColorMap);
+        // For segmented mapping, use the level value directly to find the segment
+        return getColorForSegmentedValue(level, valueColorMap);
     }
 
     // Validate inputs for other color modes
@@ -343,32 +376,19 @@ function getColorForLevel(level, levelIndex, levels, colorScale, hasCustomLevels
         return colorScale[0][1] || 'rgba(100, 100, 100, 0.5)';
     }
 
-    // Check if colorScale is in [[level, color], ...] format
+    // Check if colorScale is in [[level, color], ...] format (non-normalized)
+    // This is detected when the first value is NOT close to 0 or 1
     var firstVal = colorScale[0][0];
+    var lastVal = colorScale[colorScale.length - 1][0];
+    var isNormalizedFormat = (firstVal >= 0 && firstVal <= 1 && lastVal >= 0 && lastVal <= 1);
 
-    // If first value is close to the first level, assume [[level, color], ...] format
-    if (Math.abs(firstVal - levels[0]) < Math.abs(firstVal) + 0.1) {
-        // Find exact level match
-        for (var i = 0; i < colorScale.length; i++) {
-            if (Math.abs(colorScale[i][0] - level) < 0.01) {
-                return colorScale[i][1];
-            }
-        }
-
-        // If no exact match, find closest
-        var closestIdx = 0;
-        var closestDist = Math.abs(colorScale[0][0] - level);
-        for (var j = 1; j < colorScale.length; j++) {
-            var dist = Math.abs(colorScale[j][0] - level);
-            if (dist < closestDist) {
-                closestDist = dist;
-                closestIdx = j;
-            }
-        }
-        return colorScale[closestIdx][1];
+    if (!isNormalizedFormat) {
+        // colorScale is in [[level, color], ...] format - use SEGMENTED mapping
+        // Each contour level gets the color of the segment it belongs to
+        return getColorFromScaleSegmented(level, colorScale);
     }
 
-    // Original logic for [[0, color], ...] format
+    // Original logic for [[0, color], ...] normalized format - uses linear interpolation
     var value;
 
     if (hasCustomLevels) {
@@ -473,18 +493,17 @@ function drawFilledPaths(ctx, contourResult, style) {
 
     // Draw background layer only within data area (perimeter)
     // Strategy:
-    // - When showGrid=true: skip background fill so grid lines are visible
+    // - When connectgaps=true: always draw white/backgroundColor background first
     // - When connectgaps=false: use white background so null regions appear transparent (clip mask will reveal canvas background)
-    // - When connectgaps=true: use user's backgroundColor if set, otherwise white (to show canvas background)
-    // - First level color is only used for actual contour fill, not background
-    if (style.showGrid !== true) {
-        // Only draw solid background if grid is not shown
+    // - When showGrid=true and no backgroundColor: use first level color for background (original behavior)
+    var shouldDrawBackground = style.showGrid !== true || style.connectgaps === true || style.backgroundColor;
+    if (shouldDrawBackground) {
         var bgFillColor;
         if (style.connectgaps === false) {
             // White background for null regions to appear transparent when clip mask is applied
             bgFillColor = '#ffffff';
         } else {
-            // Use user's backgroundColor setting, default to white (transparent to show canvas background)
+            // Use user's backgroundColor setting, default to white
             bgFillColor = style.backgroundColor || '#ffffff';
         }
         ctx.fillStyle = bgFillColor;
@@ -496,17 +515,20 @@ function drawFilledPaths(ctx, contourResult, style) {
     }
 
     // Draw each contour fill layer (LOWEST to HIGHEST)
+    // Key insight: Each layer fills from boundary (or previous contour) to current contour
+    // Layer 0 (prefixBoundary=true): fills boundary -> contour 0 with color 0
+    // Layer 1 (prefixBoundary=true): fills boundary -> contour 1 with color 1 (covers layer 0's inner part)
+    // So the visible colors are:
+    //   - boundary -> contour 0: color 0
+    //   - contour 0 -> contour 1: color 1 (because layer 1 covers layer 0 in this region)
+    //   - contour 1 -> contour 2: color 2
+    // etc.
+
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
 
-        // When user sets backgroundColor and this is first level with prefixBoundary,
-        // skip the entire first level fill to let background color show through
-        // in the "boundary to first contour" region
-        if (i === 0 && pathInfo.prefixBoundary && style.backgroundColor) {
-            continue; // Skip first level fill, background layer will show through
-        }
-
-        // Get color and build path
+        // All levels use their normal colors from colorScale
+        // Null regions are handled by clip mask, not by changing fill colors
         var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
         ctx.fillStyle = fillColor;
 
