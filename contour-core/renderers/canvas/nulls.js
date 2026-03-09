@@ -25,9 +25,12 @@ function drawNulls(ctx, contourResult, style) {
     var m = nullMask.length;
     var n = nullMask[0].length;
 
+    // Get data coordinate arrays
+    var xData = style.x || [];
+    var yData = style.y || [];
+
     // Get visible range for coordinate transformation (interactive mode)
     var visibleRange = style.visibleRange;
-    var fullRange = style.fullRange || visibleRange;
 
     var width = style.width || 500;
     var height = style.height || 400;
@@ -41,36 +44,58 @@ function drawNulls(ctx, contourResult, style) {
         height: height - 2 * padding
     };
 
-    // Calculate scale based on visible range
-    var scaleX, scaleY, offsetX, offsetY;
-
-    if (visibleRange && fullRange) {
-        // Interactive mode: scale based on visible range
-        var xRange = visibleRange.xMax - visibleRange.xMin;
-        var yRange = visibleRange.yMax - visibleRange.yMin;
-
-        scaleX = drawArea.width / xRange;
-        scaleY = drawArea.height / yRange;
-
-        // Calculate offset to shift data coordinates to visible range
-        offsetX = drawArea.x - (visibleRange.xMin - fullRange.xMin) * scaleX;
-        offsetY = drawArea.y + drawArea.height + (visibleRange.yMin - fullRange.yMin) * scaleY;
+    // Determine coordinate range for transformation
+    var xMin, xMax, yMin, yMax;
+    if (visibleRange) {
+        // Interactive mode: use visible range (in data coordinates)
+        xMin = visibleRange.xMin;
+        xMax = visibleRange.xMax;
+        yMin = visibleRange.yMin;
+        yMax = visibleRange.yMax;
     } else {
-        // Static mode: use original calculation
-        scaleX = drawArea.width / (n - 1);
-        scaleY = drawArea.height / (m - 1);
-        offsetX = drawArea.x;
-        offsetY = drawArea.y + drawArea.height;
+        // Static mode: use full data range
+        xMin = xData.length > 0 ? Math.min.apply(Math, xData) : 0;
+        xMax = xData.length > 0 ? Math.max.apply(Math, xData) : n - 1;
+        yMin = yData.length > 0 ? Math.min.apply(Math, yData) : 0;
+        yMax = yData.length > 0 ? Math.max.apply(Math, yData) : m - 1;
     }
 
-    // Helper function to convert grid coordinates to canvas coordinates
-    function gridToCanvas(j, i) {
-        // j is column (x direction), i is row (y direction from top)
-        // Canvas y is inverted (0 at top)
-        var canvasX = offsetX + j * scaleX;
-        var canvasY = offsetY - i * scaleY;
+    var xRange = xMax - xMin || 1;
+    var yRange = yMax - yMin || 1;
+
+    // Helper function to convert DATA coordinates to canvas coordinates
+    // Uses the same formula as scalePoint in paths.js for consistency
+    function dataToCanvas(dataX, dataY) {
+        var canvasX = drawArea.x + ((dataX - xMin) / xRange) * drawArea.width;
+        var canvasY = drawArea.y + drawArea.height - ((dataY - yMin) / yRange) * drawArea.height;
         return [canvasX, canvasY];
     }
+
+    // Get data coordinate for grid index
+    function getXCoord(j) {
+        return xData.length > j ? xData[j] : j;
+    }
+
+    function getYCoord(i) {
+        return yData.length > i ? yData[i] : i;
+    }
+
+    // Calculate cell size in canvas coordinates
+    var cellSizeX, cellSizeY;
+    if (xData.length >= 2) {
+        cellSizeX = Math.abs(dataToCanvas(xData[1], 0)[0] - dataToCanvas(xData[0], 0)[0]);
+    } else {
+        cellSizeX = drawArea.width / (n - 1);
+    }
+    if (yData.length >= 2) {
+        cellSizeY = Math.abs(dataToCanvas(0, yData[1])[1] - dataToCanvas(0, yData[0])[1]);
+    } else {
+        cellSizeY = drawArea.height / (m - 1);
+    }
+
+    // Ensure minimum cell size
+    cellSizeX = Math.max(cellSizeX, 1);
+    cellSizeY = Math.max(cellSizeY, 1);
 
     // Save context state
     ctx.save();
@@ -82,14 +107,12 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var pt = gridToCanvas(j, i);
-                    var x = pt[0];
-                    var y = pt[1];
-                    var sizeX = Math.abs(scaleX) + 1;
-                    var sizeY = Math.abs(scaleY) + 1;
+                    // Convert grid indices to data coordinates
+                    var dataX = getXCoord(j);
+                    var dataY = getYCoord(i);
+                    var pt = dataToCanvas(dataX, dataY);
 
-                    // Draw filled rectangle to mask contour
-                    ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                    ctx.fillRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
                 }
             }
         }
@@ -99,13 +122,11 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var pt = gridToCanvas(j, i);
-                    var x = pt[0];
-                    var y = pt[1];
-                    var sizeX = Math.abs(scaleX) + 1;
-                    var sizeY = Math.abs(scaleY) + 1;
+                    var dataX = getXCoord(j);
+                    var dataY = getYCoord(i);
+                    var pt = dataToCanvas(dataX, dataY);
 
-                    ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                    ctx.fillRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
                 }
             }
         }
@@ -123,13 +144,11 @@ function drawNulls(ctx, contourResult, style) {
         for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
                 if (nullMask[i][j]) {
-                    var pt = gridToCanvas(j, i);
-                    var x = pt[0];
-                    var y = pt[1];
-                    var sizeX = Math.abs(scaleX) + 1;
-                    var sizeY = Math.abs(scaleY) + 1;
+                    var dataX = getXCoord(j);
+                    var dataY = getYCoord(i);
+                    var pt = dataToCanvas(dataX, dataY);
 
-                    ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                    ctx.strokeRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
                 }
             }
         }

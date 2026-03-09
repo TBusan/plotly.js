@@ -3131,8 +3131,9 @@ var contourCore = (() => {
           return;
         var m = nullMask.length;
         var n = nullMask[0].length;
+        var xData = style.x || [];
+        var yData = style.y || [];
         var visibleRange = style.visibleRange;
-        var fullRange = style.fullRange || visibleRange;
         var width = style.width || 500;
         var height = style.height || 400;
         var padding = style.padding || 30;
@@ -3142,25 +3143,44 @@ var contourCore = (() => {
           width: width - 2 * padding,
           height: height - 2 * padding
         };
-        var scaleX, scaleY, offsetX, offsetY;
-        if (visibleRange && fullRange) {
-          var xRange = visibleRange.xMax - visibleRange.xMin;
-          var yRange = visibleRange.yMax - visibleRange.yMin;
-          scaleX = drawArea.width / xRange;
-          scaleY = drawArea.height / yRange;
-          offsetX = drawArea.x - (visibleRange.xMin - fullRange.xMin) * scaleX;
-          offsetY = drawArea.y + drawArea.height + (visibleRange.yMin - fullRange.yMin) * scaleY;
+        var xMin, xMax, yMin, yMax;
+        if (visibleRange) {
+          xMin = visibleRange.xMin;
+          xMax = visibleRange.xMax;
+          yMin = visibleRange.yMin;
+          yMax = visibleRange.yMax;
         } else {
-          scaleX = drawArea.width / (n - 1);
-          scaleY = drawArea.height / (m - 1);
-          offsetX = drawArea.x;
-          offsetY = drawArea.y + drawArea.height;
+          xMin = xData.length > 0 ? Math.min.apply(Math, xData) : 0;
+          xMax = xData.length > 0 ? Math.max.apply(Math, xData) : n - 1;
+          yMin = yData.length > 0 ? Math.min.apply(Math, yData) : 0;
+          yMax = yData.length > 0 ? Math.max.apply(Math, yData) : m - 1;
         }
-        function gridToCanvas(j2, i2) {
-          var canvasX = offsetX + j2 * scaleX;
-          var canvasY = offsetY - i2 * scaleY;
+        var xRange = xMax - xMin || 1;
+        var yRange = yMax - yMin || 1;
+        function dataToCanvas(dataX2, dataY2) {
+          var canvasX = drawArea.x + (dataX2 - xMin) / xRange * drawArea.width;
+          var canvasY = drawArea.y + drawArea.height - (dataY2 - yMin) / yRange * drawArea.height;
           return [canvasX, canvasY];
         }
+        function getXCoord(j2) {
+          return xData.length > j2 ? xData[j2] : j2;
+        }
+        function getYCoord(i2) {
+          return yData.length > i2 ? yData[i2] : i2;
+        }
+        var cellSizeX, cellSizeY;
+        if (xData.length >= 2) {
+          cellSizeX = Math.abs(dataToCanvas(xData[1], 0)[0] - dataToCanvas(xData[0], 0)[0]);
+        } else {
+          cellSizeX = drawArea.width / (n - 1);
+        }
+        if (yData.length >= 2) {
+          cellSizeY = Math.abs(dataToCanvas(0, yData[1])[1] - dataToCanvas(0, yData[0])[1]);
+        } else {
+          cellSizeY = drawArea.height / (m - 1);
+        }
+        cellSizeX = Math.max(cellSizeX, 1);
+        cellSizeY = Math.max(cellSizeY, 1);
         ctx.save();
         var fillColor = nullRegion.fill || nullRegion.bgColor || "#ffffff";
         if (fillColor !== "transparent") {
@@ -3168,12 +3188,10 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var pt = gridToCanvas(j, i);
-                var x = pt[0];
-                var y = pt[1];
-                var sizeX = Math.abs(scaleX) + 1;
-                var sizeY = Math.abs(scaleY) + 1;
-                ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                var dataX = getXCoord(j);
+                var dataY = getYCoord(i);
+                var pt = dataToCanvas(dataX, dataY);
+                ctx.fillRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
               }
             }
           }
@@ -3182,12 +3200,10 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var pt = gridToCanvas(j, i);
-                var x = pt[0];
-                var y = pt[1];
-                var sizeX = Math.abs(scaleX) + 1;
-                var sizeY = Math.abs(scaleY) + 1;
-                ctx.fillRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                var dataX = getXCoord(j);
+                var dataY = getYCoord(i);
+                var pt = dataToCanvas(dataX, dataY);
+                ctx.fillRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
               }
             }
           }
@@ -3202,12 +3218,10 @@ var contourCore = (() => {
           for (var i = 0; i < m; i++) {
             for (var j = 0; j < n; j++) {
               if (nullMask[i][j]) {
-                var pt = gridToCanvas(j, i);
-                var x = pt[0];
-                var y = pt[1];
-                var sizeX = Math.abs(scaleX) + 1;
-                var sizeY = Math.abs(scaleY) + 1;
-                ctx.strokeRect(x - sizeX / 2, y - sizeY / 2, sizeX, sizeY);
+                var dataX = getXCoord(j);
+                var dataY = getYCoord(i);
+                var pt = dataToCanvas(dataX, dataY);
+                ctx.strokeRect(pt[0] - cellSizeX / 2, pt[1] - cellSizeY / 2, cellSizeX, cellSizeY);
               }
             }
           }
