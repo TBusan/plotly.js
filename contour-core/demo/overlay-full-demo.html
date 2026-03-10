@@ -68,7 +68,7 @@
 
     <div class="container">
         <div class="canvas-section">
-            <canvas id="mainCanvas" width="700" height="500"></canvas>
+            <canvas id="mainCanvas" width="900" height="800"></canvas>
         </div>
 
         <div class="controls">
@@ -154,8 +154,8 @@
         debug('计算等值线完成');
 
         var renderer = contourCore.renderers.canvas.drawContours(ctx, result, {
-            width: 700,
-            height: 500,
+            width: 900,
+            height: 800,
             padding: 50,
             coloring: 'fill+lines',
             interaction: { zoom: true, pan: true, dblclickReset: true }

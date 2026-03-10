@@ -5970,15 +5970,23 @@ var contourCore = (() => {
       }
       OverlayRenderer.prototype = {
         /**
-         * 渲染所有元素
+         * 渲染所有元素（应用裁剪)
          * @param {CanvasRenderingContext2D} ctx - 画布上下文
          * @param {Overlay} overlay - 数据容器
+         * @param {Object} drawingArea - 绘制区域 {x, y, width, height}
          */
-        render: function(ctx, overlay) {
+        render: function(ctx, overlay, drawingArea) {
+          ctx.save();
+          if (drawingArea) {
+            ctx.beginPath();
+            ctx.rect(drawingArea.x, drawingArea.y, drawingArea.width, drawingArea.height);
+            ctx.clip();
+          }
           polygonRenderer.render(ctx, overlay.getByType("polygon"), this._coordSystem);
           lineRenderer.render(ctx, overlay.getByType("line"), this._coordSystem);
           pointRenderer.render(ctx, overlay.getByType("point"), this._coordSystem);
           textRenderer.render(ctx, overlay.getByType("text"), this._coordSystem);
+          ctx.restore();
         },
         /**
          * 渲染临时状态（绘制过程中的预览）
@@ -6242,8 +6250,8 @@ var contourCore = (() => {
            * @param {CanvasRenderingContext2D} ctx - 画布上下文
            */
           render: function(ctx) {
-            overlayRenderer.render(ctx, overlay);
-            overlayRenderer.renderTemp(ctx, interactiveDrawer.getState());
+            overlayRenderer.render(ctx, overlay, coordSystem.getDrawingArea());
+            overlayRenderer.renderTemp(ctx, interactiveDrawer.getState(), coordSystem.getDrawingArea());
           },
           /**
            * 刷新（触发父渲染器重绘）

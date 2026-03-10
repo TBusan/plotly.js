@@ -15,16 +15,28 @@ function OverlayRenderer(coordSystem) {
 
 OverlayRenderer.prototype = {
     /**
-     * 渲染所有元素
+     * 渲染所有元素（应用裁剪)
      * @param {CanvasRenderingContext2D} ctx - 画布上下文
      * @param {Overlay} overlay - 数据容器
+     * @param {Object} drawingArea - 绘制区域 {x, y, width, height}
      */
-    render: function(ctx, overlay) {
+    render: function(ctx, overlay, drawingArea) {
+        ctx.save();
+
+        // 应用裁剪区域
+        if (drawingArea) {
+            ctx.beginPath();
+            ctx.rect(drawingArea.x, drawingArea.y, drawingArea.width, drawingArea.height);
+            ctx.clip();
+        }
+
         // 按顺序渲染：面 → 线 → 点 → 文字
         polygonRenderer.render(ctx, overlay.getByType('polygon'), this._coordSystem);
         lineRenderer.render(ctx, overlay.getByType('line'), this._coordSystem);
         pointRenderer.render(ctx, overlay.getByType('point'), this._coordSystem);
         textRenderer.render(ctx, overlay.getByType('text'), this._coordSystem);
+
+        ctx.restore();
     },
 
     /**

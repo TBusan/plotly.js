@@ -279,8 +279,8 @@ function createOverlaySystem(renderer) {
          * @param {CanvasRenderingContext2D} ctx - 画布上下文
          */
         render: function(ctx) {
-            overlayRenderer.render(ctx, overlay);
-            overlayRenderer.renderTemp(ctx, interactiveDrawer.getState());
+            overlayRenderer.render(ctx, overlay, coordSystem.getDrawingArea());
+            overlayRenderer.renderTemp(ctx, interactiveDrawer.getState(), coordSystem.getDrawingArea());
         },
 
         /**
