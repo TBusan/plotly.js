@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay 坐标测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { border: 1px solid #ccc; }
+        .info { background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Overlay 坐标测试</h1>
+    <div class="info">
+        点击按钮后，点应该出现在等值线区域内（网格中心附近）
+    </div>
+    <canvas id="canvas" width="600" height="400"></canvas>
+
+    <div>
+        <button onclick="addPoint()">添加点 (10, 10)</button>
+        <button onclick="addLine()">添加线</button>
+        <button onclick="addPolygon()">添加面</button>
+        <button onclick="clearAll()">清除全部</button>
+    </div>
+
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+
+        // 生成等值线数据
+        var z = [];
+        for (var i = 0; i < 20; i++) {
+            z[i] = [];
+            for (var j = 0; j < 20; j++) {
+                z[i][j] = Math.sin(i/3) * Math.cos(j/3) * 10;
+            }
+        }
+
+        // 渲染等值线
+        var result = contourCore.computeContours({ z: z }, {
+            autocontour: true,
+            ncontours: 10
+        });
+
+        var renderer = contourCore.renderers.canvas.drawContours(ctx, result, {
+            width: 600,
+            height: 400,
+            padding: 50,
+            coloring: 'fill+lines',
+            interaction: { zoom: true, pan: true, dblclickReset: true }
+        });
+
+        var overlay = renderer.getOverlay();
+        console.log('Overlay:', overlay);
+        console.log('Data range:', result.pathinfo[0].x, result.pathinfo[0].y);
+
+        function addPoint() {
+            // 在数据坐标 (10, 10) 处添加一个点
+            overlay.drawPoint(10, 10, {
+                size: 15,
+                color: 'red',
+                shape: 'circle'
+            });
+            console.log('Added point at (10, 10)');
+        }
+
+        function addLine() {
+            // 添加一条从 (5, 5) 到 (15, 15) 的线
+            overlay.drawLine([[5, 5], [15, 15]], {
+                color: 'blue',
+                width: 2,
+                style: 'solid'
+            });
+            console.log('Added line from (5,5) to (15,15)');
+        }
+
+        function addPolygon() {
+            // 添加一个多边形
+            overlay.drawPolygon([[8, 8], [12, 8], [12, 12], [8, 12]], {
+                fill: { type: 'color', color: 'rgba(0, 255, 0, 0.3)' },
+                stroke: { color: 'green', width: 2 }
+            });
+            console.log('Added polygon');
+        }
+
+        function clearAll() {
+            overlay.clear();
+        }
+    </script>
+</body>
+</html>
