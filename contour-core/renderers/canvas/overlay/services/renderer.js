@@ -1,0 +1,88 @@
+'use strict';
+
+var lineRenderer = require('../renderers/line');
+var pointRenderer = require('../renderers/point');
+var polygonRenderer = require('../renderers/polygon');
+var textRenderer = require('../renderers/text');
+
+/**
+ * OverlayRenderer - 渲染服务
+ * 职责：将 Overlay 数据渲染到 Canvas
+ */
+function OverlayRenderer(coordSystem) {
+    this._coordSystem = coordSystem;
+}
+
+OverlayRenderer.prototype = {
+    /**
+     * 渲染所有元素
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {Overlay} overlay - 数据容器
+     */
+    render: function(ctx, overlay) {
+        // 按顺序渲染：面 → 线 → 点 → 文字
+        polygonRenderer.render(ctx, overlay.getByType('polygon'), this._coordSystem);
+        lineRenderer.render(ctx, overlay.getByType('line'), this._coordSystem);
+        pointRenderer.render(ctx, overlay.getByType('point'), this._coordSystem);
+        textRenderer.render(ctx, overlay.getByType('text'), this._coordSystem);
+    },
+
+    /**
+     * 渲染临时状态（绘制过程中的预览）
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {Object} drawState - InteractiveDrawer 的状态
+     */
+    renderTemp: function(ctx, drawState) {
+        if (!drawState || !drawState.mode || drawState.points.length === 0) {
+            return;
+        }
+
+        var self = this;
+        var points = drawState.points.slice();
+        if (drawState.mousePos) {
+            points.push([drawState.mousePos.x, drawState.mousePos.y]);
+        }
+
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = drawState.options.color || '#0066ff';
+        ctx.lineWidth = drawState.options.width || 2;
+
+        // 转换坐标
+        var canvasPoints = points.map(function(p) {
+            return self._coordSystem.toCanvas(p[0], p[1]);
+        }).filter(function(p) {
+            return p !== null;
+        });
+
+        if (canvasPoints.length >= 2) {
+            ctx.beginPath();
+            ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+            for (var i = 1; i < canvasPoints.length; i++) {
+                ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+            }
+
+            if (drawState.mode === 'polygon' && canvasPoints.length >= 3) {
+                ctx.closePath();
+                var fillColor = drawState.options.fill && drawState.options.fill.color;
+                ctx.fillStyle = fillColor || 'rgba(0,100,255,0.2)';
+                ctx.fill();
+            }
+
+            ctx.stroke();
+        }
+
+        // 绘制顶点标记
+        canvasPoints.forEach(function(p) {
+            ctx.beginPath();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#0066ff';
+            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.restore();
+    }
+};
+
+module.exports = OverlayRenderer;

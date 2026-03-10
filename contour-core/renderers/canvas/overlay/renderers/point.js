@@ -2,7 +2,7 @@
 
 /**
  * Point drawing module
- * Supports multiple shapes, stroke, text labels
+ * 使用 CoordSystem 进行坐标转换
  */
 
 var shapes = require('./shapes');
@@ -16,30 +16,15 @@ var DEFAULTS = {
     shape: 'circle'
 };
 
-/**
- * Merge options with defaults
- * @param {Object} options - User provided options
- * @returns {Object} Merged options
- */
 function mergeOptions(options) {
     var result = {};
     for (var key in DEFAULTS) {
-        result[key] = options[key] !== undefined ? options[key] : DEFAULTS[key];
+        result[key] = options && options[key] !== undefined ? options[key] : DEFAULTS[key];
     }
     return result;
 }
 
-/**
- * Draw custom image shape
- * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @param {number} size - Size
- * @param {Object} customShape - Custom shape config { svg, image }
- * @param {Function} callback - Callback when done
- */
 function drawCustomImage(ctx, x, y, size, customShape, callback) {
-    // Browser environment only
     if (typeof Image === 'undefined') {
         if (callback) callback();
         return;
@@ -54,7 +39,6 @@ function drawCustomImage(ctx, x, y, size, customShape, callback) {
     };
 
     img.onerror = function() {
-        // On load failure, draw default circle
         shapes.drawCircle(ctx, x, y, size);
         ctx.fillStyle = '#ff0000';
         ctx.fill();
@@ -67,32 +51,26 @@ function drawCustomImage(ctx, x, y, size, customShape, callback) {
 /**
  * Draw a single point
  * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
+ * @param {number} x - X coordinate (canvas coordinates)
+ * @param {number} y - Y coordinate (canvas coordinates)
  * @param {Object} options - Point options
- * @param {Overlay} overlay - Overlay manager instance
  */
-function drawPoint(ctx, x, y, options, overlay) {
+function drawPoint(ctx, x, y, options) {
     if (!ctx || x === null || y === null) return;
 
     var opts = mergeOptions(options);
 
     ctx.save();
 
-    // Draw shape
     if (shapes.isCustomShape(opts.shape)) {
-        // Custom shape (async)
         drawCustomImage(ctx, x, y, opts.size, opts.shape);
     } else {
-        // Built-in shape
         var shapeDrawer = shapes.getShapeDrawer(opts.shape);
         shapeDrawer(ctx, x, y, opts.size);
 
-        // Fill
         ctx.fillStyle = opts.color;
         ctx.fill();
 
-        // Stroke (border)
         if (opts.strokeColor && opts.strokeWidth > 0) {
             ctx.strokeStyle = opts.strokeColor;
             ctx.lineWidth = opts.strokeWidth;
@@ -103,7 +81,7 @@ function drawPoint(ctx, x, y, options, overlay) {
     ctx.restore();
 
     // Draw text label
-    if (options.text && options.text.content) {
+    if (options && options.text && options.text.content) {
         var textOpts = options.text;
         var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
         var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.size / 2 - 10;
@@ -114,7 +92,7 @@ function drawPoint(ctx, x, y, options, overlay) {
             fontWeight: textOpts.fontWeight,
             color: textOpts.color,
             background: textOpts.background
-        }, overlay);
+        });
     }
 }
 
@@ -122,22 +100,20 @@ function drawPoint(ctx, x, y, options, overlay) {
  * Render all points
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Array} items - Array of point items
- * @param {Overlay} overlay - Overlay manager instance
+ * @param {CoordSystem} coordSystem - Coordinate system instance
  */
-function render(ctx, items, overlay) {
+function render(ctx, items, coordSystem) {
     if (!items || items.length === 0) return;
 
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        var canvasPos = overlay._toCanvasCoords(item.x, item.y);
+        var canvasPos = coordSystem.toCanvas(item.x, item.y);
 
-        // Skip invalid points
         if (!canvasPos) continue;
 
-        drawPoint(ctx, canvasPos.x, canvasPos.y, item.options, overlay);
+        drawPoint(ctx, canvasPos.x, canvasPos.y, item.options);
     }
 }
-
 
 module.exports = {
     render: render,

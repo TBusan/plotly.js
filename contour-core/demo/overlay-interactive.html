@@ -18,7 +18,7 @@
             background: white;
             padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,00 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         canvas {
             border: 1px solid #ddd;
@@ -29,7 +29,7 @@
             background: white;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .controls h3 {
             margin-top: 0;
@@ -154,7 +154,7 @@
             <div class="instructions">
                 <strong>使用说明：</strong><br>
                 • 点/文字：点击一次<br>
-                • 线/面: 点击多次，完成后点击"完成"
+                • 线/面: 点击多次，双击或按 Enter 完成，Esc 取消
             </div>
 
             <div class="mode-buttons">
@@ -239,12 +239,6 @@
                 </div>
             </div>
 
-            <button id="completeBtn" class="action-btn btn-complete" style="display:none;">
-                完成绘制 (线/面)
-            </button>
-            <button id="cancelBtn" class="action-btn btn-cancel" style="display:none;">
-                取消当前绘制
-            </button>
             <button id="clearBtn" class="action-btn btn-clear">
                 清除所有 Overlay
             </button>
@@ -286,16 +280,19 @@
             coloring: 'fill+lines',
             interaction: { zoom: true, pan: true, dblclickReset: true }
         });
-        var overlay = renderer.getOverlay();
+
+        // 通过 renderer.getOverlay() 获取 Overlay 系统
+        var overlaySystem = renderer.getOverlay();
+
         // 当前模式
         var currentMode = 'point';
+
         // DOM 元素
         var modeButtons = document.querySelectorAll('.mode-btn');
-        var completeBtn = document.getElementById('completeBtn');
-        var cancelBtn = document.getElementById('cancelBtn');
         var clearBtn = document.getElementById('clearBtn');
         var statusEl = document.getElementById('status');
         var logEl = document.getElementById('log');
+
         // 选项面板
         var optionPanels = {
             point: document.getElementById('pointOptions'),
@@ -304,6 +301,7 @@
             text: document.getElementById('textOptions'),
             none: null
         };
+
         // 日志函数
         function log(message) {
             var entry = document.createElement('div');
@@ -311,6 +309,7 @@
             entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
             logEl.insertBefore(entry, logEl.firstChild);
         }
+
         // 更新状态
         function updateStatus() {
             var modeText = {
@@ -327,41 +326,52 @@
                 text: '点击画布添加文字',
                 none: '可缩放/平移查看'
             };
-            var tempPoints = overlay.getTempPoints();
+            var tempPoints = overlaySystem.getTempPoints();
             var pointsInfo = tempPoints.length > 0 ? ' (已添加 ' + tempPoints.length + ' 个点)' : '';
             statusEl.textContent = '模式: ' + modeText[currentMode] + ' | ' + actionText[currentMode] + pointsInfo;
         }
+
         // 切换模式
         function setMode(mode) {
+            // 先停止当前绘制
+            overlaySystem.stopDrawing();
+
             currentMode = mode;
+
             // 更新按钮状态
             modeButtons.forEach(function(btn) {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
-            })
+            });
+
             // 显示/隐藏选项面板
             Object.keys(optionPanels).forEach(function(key) {
                 if (optionPanels[key]) {
                     optionPanels[key].style.display = key === mode ? 'block' : 'none';
                 }
-            })
-            // 显示/隐藏完成/取消按钮
-            var isMultiPoint = mode === 'line' || mode === 'polygon';
-            completeBtn.style.display = isMultiPoint ? 'block' : 'none';
-            cancelBtn.style.display = isMultiPoint ? 'block' : 'none'
+            });
+
             // 设置 canvas 光标
             canvas.style.cursor = mode === 'none' ? 'grab' : 'crosshair';
+
             // 启动绘制模式
             if (mode !== 'none') {
                 var options = getOptionsForMode(mode);
-                overlay.startDrawing(mode, options, canvas, function(result) {
-                    log('绘制完成: ' + JSON.stringify(result));
+                overlaySystem.startDrawing(mode, options, canvas, function(result) {
+                    log('绘制完成: ' + result.type);
+                    updateStatus();
+                    // 自动重新开始相同模式
+                    if (currentMode === mode) {
+                        setTimeout(function() {
+                            setMode(mode);
+                        }, 100);
+                    }
                 });
-            } else {
-                overlay.stopDrawing();
             }
+
             updateStatus();
             log('切换到模式: ' + mode);
         }
+
         // 获取当前模式的选项
         function getOptionsForMode(mode) {
             switch (mode) {
@@ -370,77 +380,90 @@
                         size: parseInt(document.getElementById('pointSize').value),
                         color: document.getElementById('pointColor').value,
                         shape: document.getElementById('pointShape').value
-                    }
+                    };
                 case 'line':
                     return {
                         color: document.getElementById('lineColor').value,
                         width: parseInt(document.getElementById('lineWidth').value),
                         style: document.getElementById('lineStyle').value
-                    }
+                    };
                 case 'polygon':
                     var fillHex = document.getElementById('polygonFillColor').value;
                     var opacity = parseInt(document.getElementById('polygonOpacity').value) / 100;
                     var r = parseInt(fillHex.slice(1, 3), 16);
-                    var g = parseInt(fillHex.slice(3, 5), 16)
-                    var b = parseInt(fillHex.slice(5, 7), 16)
+                    var g = parseInt(fillHex.slice(3, 5), 16);
+                    var b = parseInt(fillHex.slice(5, 7), 16);
                     return {
                         fill: {
-                            type: 'color',
                             color: 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')'
                         },
                         stroke: {
                             color: document.getElementById('polygonStrokeColor').value,
                             width: parseInt(document.getElementById('polygonStrokeWidth').value)
                         }
-                    }
+                    };
                 case 'text':
                     return {
+                        text: document.getElementById('textContent').value || '标注',
                         content: document.getElementById('textContent').value || '标注',
                         color: document.getElementById('textColor').value,
                         fontSize: parseInt(document.getElementById('textFontSize').value)
-                    }
+                    };
                 default:
                     return {};
             }
         }
+
         // 绑定模式按钮事件
         modeButtons.forEach(function(btn) {
             btn.addEventListener('click', function() {
                 setMode(this.dataset.mode);
-            })
-        })
-        // 完成按钮
-        completeBtn.addEventListener('click', function() {
-            overlay._completeMultiPointDrawing();
-            log('完成绘制');
-            // 重新启动绘制模式
-            setMode(currentMode);
-        })
-        // 取消按钮
-        cancelBtn.addEventListener('click', function() {
-            overlay.stopDrawing();
-            log('取消当前绘制');
-            setMode(currentMode);
-        })
+            });
+        });
+
         // 清除按钮
         clearBtn.addEventListener('click', function() {
-            overlay.clear();
+            overlaySystem.clear();
             log('清除所有 Overlay');
-        })
-        // 监听选项变化，实时更新绘制选项
+            updateStatus();
+        });
+
+        // 监听绘制事件
+        overlaySystem.on('point', function(data) {
+            log('添加点: ' + data.index);
+            updateStatus();
+        });
+
+        overlaySystem.on('preview', function(state) {
+            updateStatus();
+        });
+
+        overlaySystem.on('complete', function(result) {
+            log('绘制完成: ' + JSON.stringify(result));
+        });
+
+        overlaySystem.on('stop', function() {
+            log('绘制停止');
+        });
+
+        // 监听选项变化，重新设置模式
         document.querySelectorAll('input, select').forEach(function(el) {
             el.addEventListener('change', function() {
-                if (currentMode !== 'none' && overlay.isDrawing()) {
-                    var options = getOptionsForMode(currentMode);
-                    overlay.setDrawOptions(options);
+                if (currentMode !== 'none' && overlaySystem.isDrawing()) {
+                    // 重新设置模式以应用新选项
+                    var newOptions = getOptionsForMode(currentMode);
+                    overlaySystem.stopDrawing();
+                    overlaySystem.startDrawing(currentMode, newOptions, canvas, function(result) {
+                        log('绘制完成: ' + result.type);
+                        updateStatus();
+                        setTimeout(function() {
+                            setMode(currentMode);
+                        }, 100);
+                    });
                 }
-            })
-        })
-        // 监听绘制完成事件
-        overlay.onDrawComplete(function(result) {
-            log('绘制完成:'+ result.type);
-            updateStatus();
-        })
+            });
+        });
+
         // 初始化
         setMode('point');
         log('系统初始化完成');

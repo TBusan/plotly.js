@@ -2,7 +2,7 @@
 
 /**
  * Polygon drawing module
- * Supports fill patterns, stroke, and text labels
+ * 使用 CoordSystem 进行坐标转换
  */
 
 var patterns = require('./patterns');
@@ -19,11 +19,6 @@ var DEFAULT_STROKE = {
     style: 'solid'
 };
 
-/**
- * Calculate center point of polygon
- * @param {Array} points - Array of {x, y} points
- * @returns {Object} Center point {x, y}
- */
 function calculateCenter(points) {
     if (!points || points.length === 0) {
         return { x: 0, y: 0 };
@@ -47,18 +42,20 @@ function calculateCenter(points) {
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Array} points - Array of {x, y} data coordinates
  * @param {Object} options - Polygon options
- * @param {Overlay} overlay - Overlay manager instance
+ * @param {CoordSystem} coordSystem - Coordinate system instance
  */
-function drawPolygon(ctx, points, options, overlay) {
+function drawPolygon(ctx, points, options, coordSystem) {
     if (!points || points.length < 3) return;
 
     options = options || {};
 
-    // Convert coordinates
+    // Convert coordinates using CoordSystem
     var canvasPoints = [];
     for (var i = 0; i < points.length; i++) {
         var p = points[i];
-        var canvasPos = overlay._toCanvasCoords(p.x !== undefined ? p.x : p[0], p.y !== undefined ? p.y : p[1]);
+        var x = p.x !== undefined ? p.x : p[0];
+        var y = p.y !== undefined ? p.y : p[1];
+        var canvasPos = coordSystem.toCanvas(x, y);
         if (canvasPos) {
             canvasPoints.push(canvasPos);
         }
@@ -70,11 +67,10 @@ function drawPolygon(ctx, points, options, overlay) {
 
     ctx.save();
 
-    // Draw path
     ctx.beginPath();
     ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-    for (var i = 1; i < canvasPoints.length; i++) {
-        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+    for (var j = 1; j < canvasPoints.length; j++) {
+        ctx.lineTo(canvasPoints[j].x, canvasPoints[j].y);
     }
     ctx.closePath();
 
@@ -92,7 +88,7 @@ function drawPolygon(ctx, points, options, overlay) {
     }
     ctx.fill();
 
-    // Stroke (border)
+    // Stroke
     var stroke = options.stroke;
     if (stroke && stroke.color) {
         ctx.strokeStyle = stroke.color;
@@ -100,7 +96,6 @@ function drawPolygon(ctx, points, options, overlay) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        // Line style
         switch (stroke.style) {
             case 'dashed':
                 ctx.setLineDash([ctx.lineWidth * 3, ctx.lineWidth * 2]);
@@ -125,21 +120,23 @@ function drawPolygon(ctx, points, options, overlay) {
         if (textOpts.position === 'center' || !textOpts.position) {
             center = calculateCenter(canvasPoints);
         } else if (Array.isArray(textOpts.position)) {
-            center = overlay._toCanvasCoords(textOpts.position[0], textOpts.position[1]);
+            center = coordSystem.toCanvas(textOpts.position[0], textOpts.position[1]);
         } else {
             center = calculateCenter(canvasPoints);
         }
 
-        var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
-        var offsetY = textOpts.offset ? textOpts.offset[1] : 0;
+        if (center) {
+            var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+            var offsetY = textOpts.offset ? textOpts.offset[1] : 0;
 
-        textDrawer.drawText(ctx, center.x + offsetX, center.y + offsetY, textOpts.content, {
-            fontSize: textOpts.fontSize,
-            fontFamily: textOpts.fontFamily,
-            fontWeight: textOpts.fontWeight,
-            color: textOpts.color,
-            background: textOpts.background
-        }, overlay);
+            textDrawer.drawText(ctx, center.x + offsetX, center.y + offsetY, textOpts.content, {
+                fontSize: textOpts.fontSize,
+                fontFamily: textOpts.fontFamily,
+                fontWeight: textOpts.fontWeight,
+                color: textOpts.color,
+                background: textOpts.background
+            });
+        }
     }
 }
 
@@ -147,14 +144,14 @@ function drawPolygon(ctx, points, options, overlay) {
  * Render all polygons
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {Array} items - Array of polygon items
- * @param {Overlay} overlay - Overlay manager instance
+ * @param {CoordSystem} coordSystem - Coordinate system instance
  */
-function render(ctx, items, overlay) {
+function render(ctx, items, coordSystem) {
     if (!items || items.length === 0) return;
 
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        drawPolygon(ctx, item.points, item.options, overlay);
+        drawPolygon(ctx, item.points, item.options, coordSystem);
     }
 }
 

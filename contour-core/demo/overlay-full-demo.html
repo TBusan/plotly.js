@@ -43,6 +43,24 @@
         button.secondary { background: #f0f0f0; color: #333; }
         button.secondary:hover { background: #e0e0e0; }
         .info { background: #e3f2fd; padding: 10px; border-radius: 4px; font-size: 12px; margin-bottom: 15px; }
+        .status {
+            background: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #2e7d32;
+            margin-top: 10px;
+        }
+        .debug {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 10px;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -90,10 +108,18 @@
 
             <h3>操作</h3>
             <div class="btn-group">
-                <button onclick="clearOverlay('points')" class="secondary">清除点</button>
-                <button onclick="clearOverlay('lines')" class="secondary">清除线</button>
-                <button onclick="clearOverlay('polygons')" class="secondary">清除面</button>
+                <button onclick="clearOverlay('point')" class="secondary">清除点</button>
+                <button onclick="clearOverlay('line')" class="secondary">清除线</button>
+                <button onclick="clearOverlay('polygon')" class="secondary">清除面</button>
                 <button onclick="clearOverlay()" class="secondary" style="background:#f44336;color:white;">清除全部</button>
+            </div>
+
+            <div class="status" id="status">
+                点: 0 | 线: 0 | 面: 0 | 文字: 0
+            </div>
+
+            <div class="debug" id="debug">
+                等待初始化...
             </div>
         </div>
     </div>
@@ -102,7 +128,15 @@
     <script>
         var canvas = document.getElementById('mainCanvas');
         var ctx = canvas.getContext('2d');
-        var overlay = null;
+        var overlaySystem = null;
+        var debugEl = document.getElementById('debug');
+
+        function debug(msg) {
+            var line = document.createElement('div');
+            line.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            debugEl.insertBefore(line, debugEl.firstChild);
+            console.log(msg);
+        }
 
         // 生成等值线数据
         var z = [];
@@ -113,8 +147,11 @@
             }
         }
 
+        debug('生成等值线数据完成 (30x30)');
+
         // 渲染等值线
         var result = contourCore.computeContours({ z: z }, { autocontour: true, ncontours: 12 });
+        debug('计算等值线完成');
 
         var renderer = contourCore.renderers.canvas.drawContours(ctx, result, {
             width: 700,
@@ -123,17 +160,61 @@
             coloring: 'fill+lines',
             interaction: { zoom: true, pan: true, dblclickReset: true }
         });
+        debug('渲染器创建完成');
 
-        overlay = renderer.getOverlay();
+        // 检查 renderer 是否有 getOverlay 方法
+        debug('renderer.getOverlay: ' + (typeof renderer.getOverlay));
+
+        // 通过 renderer.getOverlay() 获取 Overlay 系统
+        overlaySystem = renderer.getOverlay();
+
+        debug('overlaySystem: ' + (overlaySystem ? '创建成功' : 'null'));
+
+        if (overlaySystem) {
+            debug('overlaySystem.drawPoint: ' + (typeof overlaySystem.drawPoint));
+            debug('overlaySystem.drawLine: ' + (typeof overlaySystem.drawLine));
+            debug('overlaySystem.drawPolygon: ' + (typeof overlaySystem.drawPolygon));
+            debug('overlaySystem.drawText: ' + (typeof overlaySystem.drawText));
+            debug('overlaySystem.count: ' + (typeof overlaySystem.count));
+            debug('overlaySystem.clear: ' + (typeof overlaySystem.clear));
+            debug('overlaySystem.render: ' + (typeof overlaySystem.render));
+
+            // 检查坐标系统
+            debug('overlaySystem.coordSystem: ' + (overlaySystem.coordSystem ? 'exists' : 'null'));
+            if (overlaySystem.coordSystem) {
+                var testPos = overlaySystem.coordSystem.toCanvas(15, 15);
+                debug('toCanvas(15,15): ' + JSON.stringify(testPos));
+            }
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            var statusEl = document.getElementById('status');
+            if (!overlaySystem) {
+                statusEl.textContent = 'Overlay 系统未初始化';
+                return;
+            }
+            statusEl.textContent =
+                '点: ' + overlaySystem.count('point') + ' | ' +
+                '线: ' + overlaySystem.count('line') + ' | ' +
+                '面: ' + overlaySystem.count('polygon') + ' | ' +
+                '文字: ' + overlaySystem.count('text');
+        }
 
         // 添加点
         function addPoint(shape) {
+            if (!overlaySystem) {
+                debug('错误: overlaySystem 未初始化');
+                return;
+            }
             var x = 5 + Math.random() * 20;
             var y = 5 + Math.random() * 20;
             var colors = ['red', 'blue', 'green', 'orange', 'purple'];
             var color = colors[Math.floor(Math.random() * colors.length)];
 
-            overlay.drawPoint(x, y, {
+            debug('添加点: (' + x.toFixed(2) + ', ' + y.toFixed(2) + ')');
+
+            var id = overlaySystem.drawPoint(x, y, {
                 size: 10 + Math.random() * 8,
                 color: color,
                 strokeColor: 'black',
@@ -146,10 +227,18 @@
                     color: '#333'
                 }
             });
+
+            debug('点ID: ' + id);
+            debug('当前点数: ' + overlaySystem.count('point'));
+            updateStatus();
         }
 
         // 添加线
         function addLine(style) {
+            if (!overlaySystem) {
+                debug('错误: overlaySystem 未初始化');
+                return;
+            }
             var startX = Math.random() * 10;
             var startY = Math.random() * 20 + 5;
             var points = [[startX, startY]];
@@ -162,9 +251,12 @@
                 ]);
             }
 
+            debug('添加线: ' + points.length + ' 个点');
+            debug('线坐标: ' + JSON.stringify(points));
+
             var colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12'];
 
-            overlay.drawLine(points, {
+            var id = overlaySystem.drawLine(points, {
                 color: colors[Math.floor(Math.random() * colors.length)],
                 width: 1 + Math.random() * 2,
                 style: style,
@@ -175,10 +267,18 @@
                     fontSize: 10
                 }
             });
+
+            debug('线ID: ' + id);
+            debug('当前线数: ' + overlaySystem.count('line'));
+            updateStatus();
         }
 
         // 添加面
         function addPolygon(fillType) {
+            if (!overlaySystem) {
+                debug('错误: overlaySystem 未初始化');
+                return;
+            }
             var cx = 10 + Math.random() * 10;
             var cy = 10 + Math.random() * 10;
             var size = 3 + Math.random() * 4;
@@ -193,58 +293,72 @@
                 ]);
             }
 
-            var fill;
+            debug('添加面: ' + points.length + ' 个顶点');
+            debug('面坐标: ' + JSON.stringify(points));
+
+            var fillColor;
             if (fillType === 'color') {
-                fill = {
-                    type: 'color',
-                    color: 'rgba(' + Math.floor(Math.random()*255) + ',' +
+                fillColor = 'rgba(' + Math.floor(Math.random()*255) + ',' +
                            Math.floor(Math.random()*255) + ',' +
-                           Math.floor(Math.random()*255) + ',0.4)'
-                };
+                           Math.floor(Math.random()*255) + ',0.4)';
             } else {
-                fill = {
-                    type: 'pattern',
-                    pattern: fillType,
-                    patternColor: '#333',
-                    patternSize: 8
-                };
+                fillColor = 'rgba(' + Math.floor(Math.random()*100 + 100) + ',' +
+                           Math.floor(Math.random()*100 + 100) + ',' +
+                           Math.floor(Math.random()*100 + 100) + ',0.3)';
             }
 
-            overlay.drawPolygon(points, {
-                fill: fill,
+            var id = overlaySystem.drawPolygon(points, {
+                fill: { color: fillColor },
                 stroke: {
                     color: '#333',
-                    width: 1,
-                    style: 'solid'
-                },
-                text: {
-                    content: fillType,
-                    position: 'center',
-                    fontSize: 12,
-                    fontWeight: 'bold'
+                    width: 1
                 }
             });
+
+            debug('面ID: ' + id);
+            debug('当前面数: ' + overlaySystem.count('polygon'));
+            updateStatus();
         }
 
         // 添加文字
         function addText() {
+            if (!overlaySystem) {
+                debug('错误: overlaySystem 未初始化');
+                return;
+            }
             var x = 5 + Math.random() * 20;
             var y = 5 + Math.random() * 20;
             var texts = ['标注A', '标记点', '区域名称', '测量值', '说明文字'];
             var text = texts[Math.floor(Math.random() * texts.length)];
 
-            overlay.drawText(x, y, text, {
+            debug('添加文字: "' + text + '" at (' + x.toFixed(2) + ', ' + y.toFixed(2) + ')');
+
+            var id = overlaySystem.drawText(x, y, text, {
                 fontSize: 12 + Math.floor(Math.random() * 8),
                 fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
                 color: '#333',
                 background: 'rgba(255,255,255,0.8)'
             });
+
+            debug('文字ID: ' + id);
+            debug('当前文字数: ' + overlaySystem.count('text'));
+            updateStatus();
         }
 
         // 清除
         function clearOverlay(type) {
-            overlay.clear(type);
+            if (!overlaySystem) {
+                debug('错误: overlaySystem 未初始化');
+                return;
+            }
+            overlaySystem.clear(type);
+            debug('清除: ' + (type || '全部'));
+            updateStatus();
         }
+
+        // 初始化状态
+        updateStatus();
+        debug('初始化完成');
     </script>
 </body>
 </html>

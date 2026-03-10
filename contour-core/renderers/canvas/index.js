@@ -13,8 +13,7 @@ var drawHeatmap = require('./heatmap');
 var axesRenderer = require('./axes');
 var nullHandling = require('../../null_handling');
 var axes = require('../../axes');
-var Overlay = require('./overlay');
-var Overlay = require('./overlay');
+var createOverlaySystem = require('./overlay');
 
 /**
  * Calculate adjusted drawing area based on aspect ratio
@@ -363,16 +362,18 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
 
         /**
          * Get overlay manager for drawing overlay elements
-         * @returns {Overlay} Overlay manager instance
+         * @returns {Object} Overlay system instance
          */
         getOverlay: function() {
             if (!_overlay) {
-                _overlay = new Overlay({
+                // Create renderer-like object for the new overlay system
+                var rendererLike = {
                     _fullRange: _fullRange,
                     _drawingArea: drawingArea,
                     getViewManager: function() { return viewManager; },
                     refresh: render
-                });
+                };
+                _overlay = createOverlaySystem(rendererLike);
             }
             return _overlay;
         },

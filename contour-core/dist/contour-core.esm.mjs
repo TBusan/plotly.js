@@ -4451,9 +4451,784 @@ var require_axes2 = __commonJS({
   }
 });
 
-// renderers/canvas/overlay/text.js
+// renderers/canvas/overlay/core/overlay.js
+var require_overlay = __commonJS({
+  "renderers/canvas/overlay/core/overlay.js"(exports, module) {
+    "use strict";
+    function Overlay() {
+      this._items = /* @__PURE__ */ new Map();
+      this._indices = {
+        text: /* @__PURE__ */ new Set(),
+        point: /* @__PURE__ */ new Set(),
+        line: /* @__PURE__ */ new Set(),
+        polygon: /* @__PURE__ */ new Set()
+      };
+      this._idCounter = 0;
+    }
+    Overlay.prototype = {
+      // ========================================
+      // 增删改查 (CRUD)
+      // ========================================
+      /**
+       * 添加一个元素
+       * @param {string} type - 元素类型 ('text', 'point', 'line', 'polygon')
+       * @param {Object} data - 元素数据
+       * @returns {string} 元素ID
+       */
+      add: function(type, data) {
+        var id = this._generateId();
+        var item = Object.assign({ id, type }, data);
+        this._items.set(id, item);
+        if (this._indices[type]) {
+          this._indices[type].add(id);
+        }
+        return id;
+      },
+      /**
+       * 获取单个元素
+       * @param {string} id - 元素ID
+       * @returns {Object|null} 元素数据
+       */
+      get: function(id) {
+        return this._items.get(id) || null;
+      },
+      /**
+       * 获取某类型的所有元素
+       * @param {string} type - 元素类型
+       * @returns {Array} 元素数组
+       */
+      getByType: function(type) {
+        var self = this;
+        if (!this._indices[type])
+          return [];
+        return Array.from(this._indices[type]).map(function(id) {
+          return self._items.get(id);
+        }).filter(function(item) {
+          return item !== void 0;
+        });
+      },
+      /**
+       * 获取所有元素
+       * @returns {Array} 所有元素数组
+       */
+      getAll: function() {
+        return Array.from(this._items.values());
+      },
+      /**
+       * 更新元素
+       * @param {string} id - 元素ID
+       * @param {Object} data - 更新数据
+       * @returns {Object|null} 更新后的元素
+       */
+      update: function(id, data) {
+        var item = this._items.get(id);
+        if (item) {
+          Object.assign(item, data);
+        }
+        return item || null;
+      },
+      /**
+       * 删除元素
+       * @param {string} id - 元素ID
+       * @returns {boolean} 是否删除成功
+       */
+      remove: function(id) {
+        var item = this._items.get(id);
+        if (item) {
+          this._items.delete(id);
+          if (this._indices[item.type]) {
+            this._indices[item.type].delete(id);
+          }
+          return true;
+        }
+        return false;
+      },
+      /**
+       * 清空某类型或所有元素
+       * @param {string} [type] - 元素类型，不传则清空所有
+       */
+      clear: function(type) {
+        var self = this;
+        if (type) {
+          if (this._indices[type]) {
+            this._indices[type].forEach(function(id) {
+              self._items.delete(id);
+            });
+            this._indices[type].clear();
+          }
+        } else {
+          this._items.clear();
+          Object.keys(this._indices).forEach(function(key) {
+            self._indices[key].clear();
+          });
+        }
+      },
+      /**
+       * 获取元素数量
+       * @param {string} [type] - 元素类型，不传则返回总数
+       * @returns {number} 元素数量
+       */
+      count: function(type) {
+        if (type) {
+          return this._indices[type] ? this._indices[type].size : 0;
+        }
+        return this._items.size;
+      },
+      // ========================================
+      // 内部方法
+      // ========================================
+      _generateId: function() {
+        var timestamp = Date.now().toString(36);
+        var random = Math.random().toString(36).substring(2, 8);
+        return "overlay_" + timestamp + "_" + random + "_" + ++this._idCounter;
+      }
+    };
+    module.exports = Overlay;
+  }
+});
+
+// renderers/canvas/overlay/core/coord_system.js
+var require_coord_system = __commonJS({
+  "renderers/canvas/overlay/core/coord_system.js"(exports, module) {
+    "use strict";
+    function CoordSystem(getDrawingArea, getVisibleRange) {
+      this._getDrawingArea = getDrawingArea;
+      this._getVisibleRange = getVisibleRange;
+    }
+    CoordSystem.prototype = {
+      /**
+       * 数据坐标 → 画布坐标
+       * @param {number} x - 数据 X 坐标
+       * @param {number} y - 数据 Y 坐标
+       * @returns {Object} 画布坐标 {x, y}
+       */
+      toCanvas: function(x, y) {
+        if (!this._isValidNumber(x) || !this._isValidNumber(y)) {
+          return null;
+        }
+        var area = this._getDrawingArea();
+        var range = this._getVisibleRange();
+        if (!area || !range) {
+          return { x, y };
+        }
+        var xRange = range.xMax - range.xMin;
+        var yRange = range.yMax - range.yMin;
+        var xScale = xRange !== 0 ? area.width / xRange : 1;
+        var yScale = yRange !== 0 ? area.height / yRange : 1;
+        return {
+          x: area.x + (x - range.xMin) * xScale,
+          y: area.y + area.height - (y - range.yMin) * yScale
+        };
+      },
+      /**
+       * 画布坐标 → 数据坐标
+       * @param {number} canvasX - 画布 X 坐标
+       * @param {number} canvasY - 画布 Y 坐标
+       * @returns {Object} 数据坐标 {x, y}
+       */
+      toData: function(canvasX, canvasY) {
+        if (!this._isValidNumber(canvasX) || !this._isValidNumber(canvasY)) {
+          return null;
+        }
+        var area = this._getDrawingArea();
+        var range = this._getVisibleRange();
+        if (!area || !range) {
+          return { x: canvasX, y: canvasY };
+        }
+        var xRange = range.xMax - range.xMin;
+        var yRange = range.yMax - range.yMin;
+        var xScale = xRange !== 0 ? area.width / xRange : 1;
+        var yScale = yRange !== 0 ? area.height / yRange : 1;
+        return {
+          x: range.xMin + (canvasX - area.x) / xScale,
+          y: range.yMin + (area.y + area.height - canvasY) / yScale
+        };
+      },
+      /**
+       * 批量转换到画布坐标
+       * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
+       * @returns {Array} 画布坐标数组
+       */
+      toCanvasBatch: function(points) {
+        var self = this;
+        return points.map(function(p) {
+          var x = p.x !== void 0 ? p.x : p[0];
+          var y = p.y !== void 0 ? p.y : p[1];
+          return self.toCanvas(x, y);
+        }).filter(function(p) {
+          return p !== null;
+        });
+      },
+      /**
+       * 检查是否在绘制区域内
+       * @param {number} canvasX - 画布 X 坐标
+       * @param {number} canvasY - 画布 Y 坐标
+       * @returns {boolean} 是否在区域内
+       */
+      isInBounds: function(canvasX, canvasY) {
+        var area = this._getDrawingArea();
+        if (!area)
+          return true;
+        return canvasX >= area.x && canvasX <= area.x + area.width && canvasY >= area.y && canvasY <= area.y + area.height;
+      },
+      /**
+       * 获取当前缩放比例
+       * @returns {Object} 缩放比例 {x, y}
+       */
+      getScale: function() {
+        var area = this._getDrawingArea();
+        var range = this._getVisibleRange();
+        if (!area || !range) {
+          return { x: 1, y: 1 };
+        }
+        var xRange = range.xMax - range.xMin;
+        var yRange = range.yMax - range.yMin;
+        return {
+          x: xRange !== 0 ? area.width / xRange : 1,
+          y: yRange !== 0 ? area.height / yRange : 1
+        };
+      },
+      /**
+       * 获取绘制区域
+       * @returns {Object} 绘制区域
+       */
+      getDrawingArea: function() {
+        return this._getDrawingArea();
+      },
+      /**
+       * 获取可见范围
+       * @returns {Object} 可见范围
+       */
+      getVisibleRange: function() {
+        return this._getVisibleRange();
+      },
+      // ========================================
+      // 内部方法
+      // ========================================
+      _isValidNumber: function(value) {
+        return typeof value === "number" && isFinite(value) && !isNaN(value);
+      }
+    };
+    module.exports = CoordSystem;
+  }
+});
+
+// renderers/canvas/overlay/core/event_emitter.js
+var require_event_emitter = __commonJS({
+  "renderers/canvas/overlay/core/event_emitter.js"(exports, module) {
+    "use strict";
+    function EventEmitter() {
+      this._events = {};
+    }
+    EventEmitter.prototype = {
+      /**
+       * 订阅事件
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      on: function(event, handler) {
+        if (!this._events[event]) {
+          this._events[event] = [];
+        }
+        this._events[event].push(handler);
+        return this;
+      },
+      /**
+       * 取消订阅
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      off: function(event, handler) {
+        if (!this._events[event])
+          return this;
+        if (handler) {
+          this._events[event] = this._events[event].filter(function(h) {
+            return h !== handler;
+          });
+        } else {
+          delete this._events[event];
+        }
+        return this;
+      },
+      /**
+       * 订阅一次
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      once: function(event, handler) {
+        var self = this;
+        var wrapper = function(data) {
+          handler(data);
+          self.off(event, wrapper);
+        };
+        return this.on(event, wrapper);
+      },
+      /**
+       * 发射事件
+       * @param {string} event - 事件名称
+       * @param {*} data - 事件数据
+       */
+      emit: function(event, data) {
+        if (!this._events[event])
+          return this;
+        var handlers = this._events[event].slice();
+        for (var i = 0; i < handlers.length; i++) {
+          handlers[i](data);
+        }
+        return this;
+      },
+      /**
+       * 清除所有事件
+       */
+      clear: function() {
+        this._events = {};
+      }
+    };
+    module.exports = EventEmitter;
+  }
+});
+
+// renderers/canvas/overlay/services/static_drawer.js
+var require_static_drawer = __commonJS({
+  "renderers/canvas/overlay/services/static_drawer.js"(exports, module) {
+    "use strict";
+    function StaticDrawer(overlay, refreshCallback) {
+      this._overlay = overlay;
+      this._refresh = refreshCallback || function() {
+      };
+    }
+    StaticDrawer.prototype = {
+      /**
+       * 绘制点
+       * @param {number} x - X 坐标（数据坐标）
+       * @param {number} y - Y 坐标（数据坐标）
+       * @param {Object} options - 点选项
+       * @returns {string} 元素ID
+       */
+      drawPoint: function(x, y, options) {
+        var id = this._overlay.add("point", {
+          x,
+          y,
+          options: options || {}
+        });
+        this._refresh();
+        return id;
+      },
+      /**
+       * 绘制线
+       * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
+       * @param {Object} options - 线选项
+       * @returns {string} 元素ID
+       */
+      drawLine: function(points, options) {
+        var id = this._overlay.add("line", {
+          points: this._normalizePoints(points),
+          options: options || {}
+        });
+        this._refresh();
+        return id;
+      },
+      /**
+       * 绘制多边形
+       * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
+       * @param {Object} options - 多边形选项
+       * @returns {string} 元素ID
+       */
+      drawPolygon: function(points, options) {
+        var id = this._overlay.add("polygon", {
+          points: this._normalizePoints(points),
+          options: options || {}
+        });
+        this._refresh();
+        return id;
+      },
+      /**
+       * 绘制文本
+       * @param {number} x - X 坐标（数据坐标）
+       * @param {number} y - Y 坐标（数据坐标）
+       * @param {string} content - 文本内容
+       * @param {Object} options - 文本选项
+       * @returns {string} 元素ID
+       */
+      drawText: function(x, y, content, options) {
+        var id = this._overlay.add("text", {
+          x,
+          y,
+          content,
+          options: options || {}
+        });
+        this._refresh();
+        return id;
+      },
+      /**
+       * 批量绘制（性能优化：只触发一次 refresh）
+       * @param {Array} items - 元素数组 [{type, data}]
+       * @returns {Array} 元素ID数组
+       */
+      drawBatch: function(items) {
+        var ids = [];
+        for (var i = 0; i < items.length; i++) {
+          var item = items[i];
+          ids.push(this._drawWithoutRefresh(item.type, item.data));
+        }
+        this._refresh();
+        return ids;
+      },
+      /**
+       * 更新元素
+       * @param {string} id - 元素ID
+       * @param {Object} data - 更新数据
+       * @returns {Object|null} 更新后的元素
+       */
+      update: function(id, data) {
+        var result = this._overlay.update(id, data);
+        this._refresh();
+        return result;
+      },
+      /**
+       * 删除元素
+       * @param {string} id - 元素ID
+       * @returns {boolean} 是否删除成功
+       */
+      remove: function(id) {
+        var result = this._overlay.remove(id);
+        this._refresh();
+        return result;
+      },
+      // ========================================
+      // 内部方法
+      // ========================================
+      _drawWithoutRefresh: function(type, data) {
+        return this._overlay.add(type, data);
+      },
+      _normalizePoints: function(points) {
+        if (!Array.isArray(points))
+          return [];
+        return points.filter(function(p) {
+          if (!p)
+            return false;
+          var x = p.x !== void 0 ? p.x : p[0];
+          var y = p.y !== void 0 ? p.y : p[1];
+          return typeof x === "number" && isFinite(x) && typeof y === "number" && isFinite(y);
+        }).map(function(p) {
+          if (Array.isArray(p)) {
+            return { x: p[0], y: p[1] };
+          }
+          return { x: p.x, y: p.y };
+        });
+      }
+    };
+    module.exports = StaticDrawer;
+  }
+});
+
+// renderers/canvas/overlay/services/interactive_drawer.js
+var require_interactive_drawer = __commonJS({
+  "renderers/canvas/overlay/services/interactive_drawer.js"(exports, module) {
+    "use strict";
+    var EventEmitter = require_event_emitter();
+    function InteractiveDrawer(config) {
+      this._overlay = config.overlay;
+      this._coordSystem = config.coordSystem;
+      this._refresh = config.refresh || function() {
+      };
+      this._state = {
+        mode: null,
+        // 'point' | 'line' | 'polygon' | 'text' | null
+        status: "idle",
+        // 'idle' | 'drawing' | 'completed'
+        tempPoints: [],
+        options: {},
+        mousePos: null
+      };
+      this._events = new EventEmitter();
+      this._canvas = null;
+      this._boundHandlers = {};
+    }
+    InteractiveDrawer.prototype = {
+      // ========================================
+      // 生命周期
+      // ========================================
+      /**
+       * 开始交互绘制
+       * @param {string} mode - 绘制模式
+       * @param {Object} options - 绘制选项
+       * @param {HTMLCanvasElement} canvas - 画布元素
+       * @param {Function} onComplete - 完成回调
+       */
+      start: function(mode, options, canvas, onComplete) {
+        this.stop();
+        this._state.mode = mode;
+        this._state.status = "drawing";
+        this._state.options = options || {};
+        this._state.tempPoints = [];
+        this._state.mousePos = null;
+        this._canvas = canvas;
+        if (onComplete) {
+          this._events.once("complete", onComplete);
+        }
+        this._bindEvents();
+        this._events.emit("start", { mode });
+      },
+      /**
+       * 停止交互绘制
+       */
+      stop: function() {
+        this._unbindEvents();
+        this._state.mode = null;
+        this._state.status = "idle";
+        this._state.tempPoints = [];
+        this._state.mousePos = null;
+        this._canvas = null;
+        this._events.emit("stop");
+      },
+      // ========================================
+      // 状态查询
+      // ========================================
+      /**
+       * 获取当前绘制状态（用于渲染预览）
+       * @returns {Object} 状态对象
+       */
+      getState: function() {
+        return {
+          mode: this._state.mode,
+          status: this._state.status,
+          points: this._state.tempPoints.slice(),
+          mousePos: this._state.mousePos ? {
+            x: this._state.mousePos.x,
+            y: this._state.mousePos.y
+          } : null,
+          options: Object.assign({}, this._state.options)
+        };
+      },
+      /**
+       * 是否正在绘制
+       * @returns {boolean}
+       */
+      isDrawing: function() {
+        return this._state.status === "drawing";
+      },
+      /**
+       * 获取当前模式
+       * @returns {string|null}
+       */
+      getMode: function() {
+        return this._state.mode;
+      },
+      /**
+       * 获取临时点
+       * @returns {Array}
+       */
+      getTempPoints: function() {
+        return this._state.tempPoints.slice();
+      },
+      // ========================================
+      // 事件订阅
+      // ========================================
+      /**
+       * 订阅事件
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      on: function(event, handler) {
+        this._events.on(event, handler);
+        return this;
+      },
+      /**
+       * 取消订阅
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      off: function(event, handler) {
+        this._events.off(event, handler);
+        return this;
+      },
+      // ========================================
+      // 内部方法 - 事件处理
+      // ========================================
+      _bindEvents: function() {
+        if (!this._canvas)
+          return;
+        var self = this;
+        this._boundHandlers = {
+          click: function(e) {
+            self._handleClick(e);
+          },
+          dblclick: function(e) {
+            self._handleDblClick(e);
+          },
+          mousemove: function(e) {
+            self._handleMouseMove(e);
+          },
+          keydown: function(e) {
+            self._handleKeyDown(e);
+          }
+        };
+        this._canvas.addEventListener("click", this._boundHandlers.click);
+        this._canvas.addEventListener("dblclick", this._boundHandlers.dblclick);
+        this._canvas.addEventListener("mousemove", this._boundHandlers.mousemove);
+        document.addEventListener("keydown", this._boundHandlers.keydown);
+      },
+      _unbindEvents: function() {
+        if (this._canvas) {
+          this._canvas.removeEventListener("click", this._boundHandlers.click);
+          this._canvas.removeEventListener("dblclick", this._boundHandlers.dblclick);
+          this._canvas.removeEventListener("mousemove", this._boundHandlers.mousemove);
+        }
+        document.removeEventListener("keydown", this._boundHandlers.keydown);
+        this._boundHandlers = {};
+      },
+      _handleClick: function(e) {
+        var pos = this._getCanvasPos(e);
+        if (!this._coordSystem.isInBounds(pos.x, pos.y))
+          return;
+        var dataPos = this._coordSystem.toData(pos.x, pos.y);
+        if (!dataPos)
+          return;
+        switch (this._state.mode) {
+          case "point":
+            this._completePoint(dataPos);
+            break;
+          case "line":
+          case "polygon":
+            this._addTempPoint(dataPos);
+            break;
+          case "text":
+            this._completeText(dataPos);
+            break;
+        }
+      },
+      _handleDblClick: function(e) {
+        if (this._state.mode === "line" || this._state.mode === "polygon") {
+          this._completeMultiPoint();
+        }
+      },
+      _handleMouseMove: function(e) {
+        if (!this.isDrawing())
+          return;
+        if (this._state.mode !== "line" && this._state.mode !== "polygon")
+          return;
+        var pos = this._getCanvasPos(e);
+        if (!this._coordSystem.isInBounds(pos.x, pos.y))
+          return;
+        var dataPos = this._coordSystem.toData(pos.x, pos.y);
+        if (!dataPos)
+          return;
+        this._state.mousePos = dataPos;
+        this._events.emit("preview", this.getState());
+        this._refresh();
+      },
+      _handleKeyDown: function(e) {
+        if (e.key === "Escape") {
+          this.stop();
+          this._refresh();
+        } else if (e.key === "Enter") {
+          if (this._state.mode === "line" || this._state.mode === "polygon") {
+            this._completeMultiPoint();
+          }
+        }
+      },
+      // ========================================
+      // 内部方法 - 状态转换
+      // ========================================
+      _addTempPoint: function(dataPos) {
+        this._state.tempPoints.push([dataPos.x, dataPos.y]);
+        this._events.emit("point", {
+          index: this._state.tempPoints.length - 1,
+          position: dataPos
+        });
+        this._refresh();
+      },
+      _completePoint: function(dataPos) {
+        var id = this._overlay.add("point", {
+          x: dataPos.x,
+          y: dataPos.y,
+          options: this._state.options
+        });
+        this._state.status = "completed";
+        this._events.emit("complete", {
+          type: "point",
+          id,
+          x: dataPos.x,
+          y: dataPos.y
+        });
+        this.stop();
+        this._refresh();
+      },
+      _completeText: function(dataPos) {
+        var text = this._state.options.text || this._state.options.content || "";
+        if (!text) {
+          this.stop();
+          return;
+        }
+        var textOptions = Object.assign({}, this._state.options);
+        delete textOptions.text;
+        delete textOptions.content;
+        var id = this._overlay.add("text", {
+          x: dataPos.x,
+          y: dataPos.y,
+          content: text,
+          options: textOptions
+        });
+        this._state.status = "completed";
+        this._events.emit("complete", {
+          type: "text",
+          id,
+          x: dataPos.x,
+          y: dataPos.y,
+          content: text
+        });
+        this.stop();
+        this._refresh();
+      },
+      _completeMultiPoint: function() {
+        if (this._state.tempPoints.length < 2) {
+          this.stop();
+          return;
+        }
+        var type = this._state.mode;
+        var id;
+        if (type === "line") {
+          id = this._overlay.add("line", {
+            points: this._state.tempPoints.slice(),
+            options: this._state.options
+          });
+          this._state.status = "completed";
+          this._events.emit("complete", {
+            type: "line",
+            id,
+            points: this._state.tempPoints.slice()
+          });
+        } else if (type === "polygon" && this._state.tempPoints.length >= 3) {
+          id = this._overlay.add("polygon", {
+            points: this._state.tempPoints.slice(),
+            options: this._state.options
+          });
+          this._state.status = "completed";
+          this._events.emit("complete", {
+            type: "polygon",
+            id,
+            points: this._state.tempPoints.slice()
+          });
+        }
+        this.stop();
+        this._refresh();
+      },
+      _getCanvasPos: function(e) {
+        var rect = this._canvas.getBoundingClientRect();
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+    };
+    module.exports = InteractiveDrawer;
+  }
+});
+
+// renderers/canvas/overlay/renderers/text.js
 var require_text = __commonJS({
-  "renderers/canvas/overlay/text.js"(exports, module) {
+  "renderers/canvas/overlay/renderers/text.js"(exports, module) {
     "use strict";
     var DEFAULT_OPTIONS = {
       fontSize: 12,
@@ -4505,12 +5280,15 @@ var require_text = __commonJS({
         textHeight + padding * 2
       );
     }
-    function render(ctx, items, overlay) {
+    function render(ctx, items, coordSystem) {
       if (!items || items.length === 0) {
         return;
       }
-      items.forEach(function(item) {
-        var coords = overlay._toCanvasCoords(item.x, item.y);
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var coords = coordSystem.toCanvas(item.x, item.y);
+        if (!coords)
+          continue;
         var options = mergeOptions(item.options);
         ctx.save();
         var fontString = buildFontString(options);
@@ -4526,9 +5304,9 @@ var require_text = __commonJS({
         drawBackground(ctx, coords.x, coords.y, item.content, options);
         ctx.fillText(item.content, coords.x, coords.y);
         ctx.restore();
-      });
+      }
     }
-    function drawText(ctx, x, y, content, options, overlay) {
+    function drawText(ctx, x, y, content, options) {
       if (!content)
         return;
       var opts = mergeOptions(options);
@@ -4573,9 +5351,132 @@ var require_text = __commonJS({
   }
 });
 
-// renderers/canvas/overlay/shapes.js
+// renderers/canvas/overlay/renderers/line.js
+var require_line = __commonJS({
+  "renderers/canvas/overlay/renderers/line.js"(exports, module) {
+    "use strict";
+    var textDrawer = require_text();
+    var DEFAULTS = {
+      color: "#000000",
+      width: 1,
+      style: "solid",
+      cap: "round",
+      join: "round"
+    };
+    function mergeOptions(options) {
+      var result = {};
+      for (var key in DEFAULTS) {
+        result[key] = options && options[key] !== void 0 ? options[key] : DEFAULTS[key];
+      }
+      return result;
+    }
+    function setLineStyle(ctx, style, width) {
+      switch (style) {
+        case "dashed":
+          ctx.setLineDash([width * 3, width * 2]);
+          break;
+        case "dotted":
+          ctx.setLineDash([width, width * 2]);
+          break;
+        default:
+          ctx.setLineDash([]);
+      }
+    }
+    function getAngleAtPoint(points, index) {
+      var prev = Math.max(0, index - 1);
+      var next = Math.min(points.length - 1, index + 1);
+      var dx = points[next].x - points[prev].x;
+      var dy = points[next].y - points[prev].y;
+      return Math.atan2(dy, dx);
+    }
+    function getPointAtPosition(points, position) {
+      if (position === "start") {
+        return { index: 0, point: points[0] };
+      }
+      if (position === "end") {
+        return { index: points.length - 1, point: points[points.length - 1] };
+      }
+      if (position === "middle" || typeof position === "undefined") {
+        var midIndex = Math.floor(points.length / 2);
+        return { index: midIndex, point: points[midIndex] };
+      }
+      var idx = Math.min(Math.max(0, position), points.length - 1);
+      return { index: idx, point: points[idx] };
+    }
+    function drawLine(ctx, points, options, coordSystem) {
+      if (!points || points.length < 2)
+        return;
+      var opts = mergeOptions(options);
+      ctx.save();
+      var canvasPoints = [];
+      for (var i = 0; i < points.length; i++) {
+        var p = points[i];
+        var x = p.x !== void 0 ? p.x : p[0];
+        var y = p.y !== void 0 ? p.y : p[1];
+        var canvasPos = coordSystem.toCanvas(x, y);
+        if (canvasPos) {
+          canvasPoints.push(canvasPos);
+        }
+      }
+      if (canvasPoints.length < 2) {
+        ctx.restore();
+        return;
+      }
+      ctx.strokeStyle = opts.color;
+      ctx.lineWidth = opts.width;
+      ctx.lineCap = opts.cap;
+      ctx.lineJoin = opts.join;
+      setLineStyle(ctx, opts.style, opts.width);
+      ctx.beginPath();
+      ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+      for (var j = 1; j < canvasPoints.length; j++) {
+        ctx.lineTo(canvasPoints[j].x, canvasPoints[j].y);
+      }
+      ctx.stroke();
+      ctx.restore();
+      if (options && options.text && options.text.content) {
+        var textOpts = options.text;
+        var posInfo = getPointAtPosition(canvasPoints, textOpts.position);
+        var angle = textOpts.rotation === "auto" ? getAngleAtPoint(canvasPoints, posInfo.index) : textOpts.rotation || 0;
+        var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+        var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.width - 10;
+        var perpAngle = angle + Math.PI / 2;
+        var perpOffsetX = Math.cos(perpAngle) * Math.abs(offsetY);
+        var perpOffsetY = Math.sin(perpAngle) * Math.abs(offsetY);
+        ctx.save();
+        ctx.translate(posInfo.point.x + perpOffsetX + offsetX, posInfo.point.y + perpOffsetY);
+        ctx.rotate(angle);
+        textDrawer.drawText(ctx, 0, 0, textOpts.content, {
+          fontSize: textOpts.fontSize,
+          fontFamily: textOpts.fontFamily,
+          fontWeight: textOpts.fontWeight,
+          color: textOpts.color,
+          background: textOpts.background,
+          align: "center",
+          baseline: "middle"
+        });
+        ctx.restore();
+      }
+    }
+    function render(ctx, items, coordSystem) {
+      if (!items || items.length === 0)
+        return;
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        drawLine(ctx, item.points, item.options, coordSystem);
+      }
+    }
+    module.exports = {
+      render,
+      drawLine,
+      DEFAULTS
+    };
+  }
+});
+
+// renderers/canvas/overlay/renderers/shapes.js
 var require_shapes = __commonJS({
-  "renderers/canvas/overlay/shapes.js"(exports, module) {
+  "renderers/canvas/overlay/renderers/shapes.js"(exports, module) {
     "use strict";
     function drawCircle(ctx, x, y, size) {
       var radius = size / 2;
@@ -4659,9 +5560,9 @@ var require_shapes = __commonJS({
   }
 });
 
-// renderers/canvas/overlay/point.js
+// renderers/canvas/overlay/renderers/point.js
 var require_point = __commonJS({
-  "renderers/canvas/overlay/point.js"(exports, module) {
+  "renderers/canvas/overlay/renderers/point.js"(exports, module) {
     "use strict";
     var shapes = require_shapes();
     var textDrawer = require_text();
@@ -4675,7 +5576,7 @@ var require_point = __commonJS({
     function mergeOptions(options) {
       var result = {};
       for (var key in DEFAULTS) {
-        result[key] = options[key] !== void 0 ? options[key] : DEFAULTS[key];
+        result[key] = options && options[key] !== void 0 ? options[key] : DEFAULTS[key];
       }
       return result;
     }
@@ -4701,7 +5602,7 @@ var require_point = __commonJS({
       };
       img.src = src;
     }
-    function drawPoint(ctx, x, y, options, overlay) {
+    function drawPoint(ctx, x, y, options) {
       if (!ctx || x === null || y === null)
         return;
       var opts = mergeOptions(options);
@@ -4720,7 +5621,7 @@ var require_point = __commonJS({
         }
       }
       ctx.restore();
-      if (options.text && options.text.content) {
+      if (options && options.text && options.text.content) {
         var textOpts = options.text;
         var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
         var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.size / 2 - 10;
@@ -4730,18 +5631,18 @@ var require_point = __commonJS({
           fontWeight: textOpts.fontWeight,
           color: textOpts.color,
           background: textOpts.background
-        }, overlay);
+        });
       }
     }
-    function render(ctx, items, overlay) {
+    function render(ctx, items, coordSystem) {
       if (!items || items.length === 0)
         return;
       for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        var canvasPos = overlay._toCanvasCoords(item.x, item.y);
+        var canvasPos = coordSystem.toCanvas(item.x, item.y);
         if (!canvasPos)
           continue;
-        drawPoint(ctx, canvasPos.x, canvasPos.y, item.options, overlay);
+        drawPoint(ctx, canvasPos.x, canvasPos.y, item.options);
       }
     }
     module.exports = {
@@ -4752,130 +5653,9 @@ var require_point = __commonJS({
   }
 });
 
-// renderers/canvas/overlay/line.js
-var require_line = __commonJS({
-  "renderers/canvas/overlay/line.js"(exports, module) {
-    "use strict";
-    var textDrawer = require_text();
-    var DEFAULTS = {
-      color: "#000000",
-      width: 1,
-      style: "solid",
-      cap: "round",
-      join: "round"
-    };
-    function mergeOptions(options) {
-      var result = {};
-      for (var key in DEFAULTS) {
-        result[key] = options[key] !== void 0 ? options[key] : DEFAULTS[key];
-      }
-      return result;
-    }
-    function setLineStyle(ctx, style, width) {
-      switch (style) {
-        case "dashed":
-          ctx.setLineDash([width * 3, width * 2]);
-          break;
-        case "dotted":
-          ctx.setLineDash([width, width * 2]);
-          break;
-        default:
-          ctx.setLineDash([]);
-      }
-    }
-    function getAngleAtPoint(points, index) {
-      var prev = Math.max(0, index - 1);
-      var next = Math.min(points.length - 1, index + 1);
-      var dx = points[next].x - points[prev].x;
-      var dy = points[next].y - points[prev].y;
-      return Math.atan2(dy, dx);
-    }
-    function getPointAtPosition(points, position) {
-      if (position === "start") {
-        return { index: 0, point: points[0] };
-      }
-      if (position === "end") {
-        return { index: points.length - 1, point: points[points.length - 1] };
-      }
-      if (position === "middle" || typeof position === "undefined") {
-        var midIndex = Math.floor(points.length / 2);
-        return { index: midIndex, point: points[midIndex] };
-      }
-      var idx = Math.min(Math.max(0, position), points.length - 1);
-      return { index: idx, point: points[idx] };
-    }
-    function drawLine(ctx, points, options, overlay) {
-      if (!points || points.length < 2)
-        return;
-      var opts = mergeOptions(options);
-      ctx.save();
-      var canvasPoints = [];
-      for (var i = 0; i < points.length; i++) {
-        var p = points[i];
-        var canvasPos = overlay._toCanvasCoords(p.x !== void 0 ? p.x : p[0], p.y !== void 0 ? p.y : p[1]);
-        if (canvasPos) {
-          canvasPoints.push(canvasPos);
-        }
-      }
-      if (canvasPoints.length < 2) {
-        ctx.restore();
-        return;
-      }
-      ctx.strokeStyle = opts.color;
-      ctx.lineWidth = opts.width;
-      ctx.lineCap = opts.cap;
-      ctx.lineJoin = opts.join;
-      setLineStyle(ctx, opts.style, opts.width);
-      ctx.beginPath();
-      ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-      for (var i = 1; i < canvasPoints.length; i++) {
-        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
-      }
-      ctx.stroke();
-      ctx.restore();
-      if (options.text && options.text.content) {
-        var textOpts = options.text;
-        var posInfo = getPointAtPosition(canvasPoints, textOpts.position);
-        var angle = textOpts.rotation === "auto" ? getAngleAtPoint(canvasPoints, posInfo.index) : textOpts.rotation || 0;
-        var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
-        var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.width - 10;
-        var perpAngle = angle + Math.PI / 2;
-        var perpOffsetX = Math.cos(perpAngle) * Math.abs(offsetY);
-        var perpOffsetY = Math.sin(perpAngle) * Math.abs(offsetY);
-        ctx.save();
-        ctx.translate(posInfo.point.x + perpOffsetX + offsetX, posInfo.point.y + perpOffsetY);
-        ctx.rotate(angle);
-        textDrawer.drawText(ctx, 0, 0, textOpts.content, {
-          fontSize: textOpts.fontSize,
-          fontFamily: textOpts.fontFamily,
-          fontWeight: textOpts.fontWeight,
-          color: textOpts.color,
-          background: textOpts.background,
-          align: "center",
-          baseline: "middle"
-        }, overlay);
-        ctx.restore();
-      }
-    }
-    function render(ctx, items, overlay) {
-      if (!items || items.length === 0)
-        return;
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        drawLine(ctx, item.points, item.options, overlay);
-      }
-    }
-    module.exports = {
-      render,
-      drawLine,
-      DEFAULTS
-    };
-  }
-});
-
-// renderers/canvas/overlay/patterns.js
+// renderers/canvas/overlay/renderers/patterns.js
 var require_patterns = __commonJS({
-  "renderers/canvas/overlay/patterns.js"(exports, module) {
+  "renderers/canvas/overlay/renderers/patterns.js"(exports, module) {
     "use strict";
     var patternCache = {};
     var isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
@@ -5049,9 +5829,9 @@ var require_patterns = __commonJS({
   }
 });
 
-// renderers/canvas/overlay/polygon.js
+// renderers/canvas/overlay/renderers/polygon.js
 var require_polygon = __commonJS({
-  "renderers/canvas/overlay/polygon.js"(exports, module) {
+  "renderers/canvas/overlay/renderers/polygon.js"(exports, module) {
     "use strict";
     var patterns = require_patterns();
     var textDrawer = require_text();
@@ -5079,14 +5859,16 @@ var require_polygon = __commonJS({
         y: sumY / points.length
       };
     }
-    function drawPolygon(ctx, points, options, overlay) {
+    function drawPolygon(ctx, points, options, coordSystem) {
       if (!points || points.length < 3)
         return;
       options = options || {};
       var canvasPoints = [];
       for (var i = 0; i < points.length; i++) {
         var p = points[i];
-        var canvasPos = overlay._toCanvasCoords(p.x !== void 0 ? p.x : p[0], p.y !== void 0 ? p.y : p[1]);
+        var x = p.x !== void 0 ? p.x : p[0];
+        var y = p.y !== void 0 ? p.y : p[1];
+        var canvasPos = coordSystem.toCanvas(x, y);
         if (canvasPos) {
           canvasPoints.push(canvasPos);
         }
@@ -5097,8 +5879,8 @@ var require_polygon = __commonJS({
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-      for (var i = 1; i < canvasPoints.length; i++) {
-        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+      for (var j = 1; j < canvasPoints.length; j++) {
+        ctx.lineTo(canvasPoints[j].x, canvasPoints[j].y);
       }
       ctx.closePath();
       var fill = options.fill || DEFAULT_FILL;
@@ -5138,27 +5920,29 @@ var require_polygon = __commonJS({
         if (textOpts.position === "center" || !textOpts.position) {
           center = calculateCenter(canvasPoints);
         } else if (Array.isArray(textOpts.position)) {
-          center = overlay._toCanvasCoords(textOpts.position[0], textOpts.position[1]);
+          center = coordSystem.toCanvas(textOpts.position[0], textOpts.position[1]);
         } else {
           center = calculateCenter(canvasPoints);
         }
-        var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
-        var offsetY = textOpts.offset ? textOpts.offset[1] : 0;
-        textDrawer.drawText(ctx, center.x + offsetX, center.y + offsetY, textOpts.content, {
-          fontSize: textOpts.fontSize,
-          fontFamily: textOpts.fontFamily,
-          fontWeight: textOpts.fontWeight,
-          color: textOpts.color,
-          background: textOpts.background
-        }, overlay);
+        if (center) {
+          var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+          var offsetY = textOpts.offset ? textOpts.offset[1] : 0;
+          textDrawer.drawText(ctx, center.x + offsetX, center.y + offsetY, textOpts.content, {
+            fontSize: textOpts.fontSize,
+            fontFamily: textOpts.fontFamily,
+            fontWeight: textOpts.fontWeight,
+            color: textOpts.color,
+            background: textOpts.background
+          });
+        }
       }
     }
-    function render(ctx, items, overlay) {
+    function render(ctx, items, coordSystem) {
       if (!items || items.length === 0)
         return;
       for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        drawPolygon(ctx, item.points, item.options, overlay);
+        drawPolygon(ctx, item.points, item.options, coordSystem);
       }
     }
     module.exports = {
@@ -5171,481 +5955,372 @@ var require_polygon = __commonJS({
   }
 });
 
+// renderers/canvas/overlay/services/renderer.js
+var require_renderer = __commonJS({
+  "renderers/canvas/overlay/services/renderer.js"(exports, module) {
+    "use strict";
+    var lineRenderer = require_line();
+    var pointRenderer = require_point();
+    var polygonRenderer = require_polygon();
+    var textRenderer = require_text();
+    function OverlayRenderer(coordSystem) {
+      this._coordSystem = coordSystem;
+    }
+    OverlayRenderer.prototype = {
+      /**
+       * 渲染所有元素
+       * @param {CanvasRenderingContext2D} ctx - 画布上下文
+       * @param {Overlay} overlay - 数据容器
+       */
+      render: function(ctx, overlay) {
+        polygonRenderer.render(ctx, overlay.getByType("polygon"), this._coordSystem);
+        lineRenderer.render(ctx, overlay.getByType("line"), this._coordSystem);
+        pointRenderer.render(ctx, overlay.getByType("point"), this._coordSystem);
+        textRenderer.render(ctx, overlay.getByType("text"), this._coordSystem);
+      },
+      /**
+       * 渲染临时状态（绘制过程中的预览）
+       * @param {CanvasRenderingContext2D} ctx - 画布上下文
+       * @param {Object} drawState - InteractiveDrawer 的状态
+       */
+      renderTemp: function(ctx, drawState) {
+        if (!drawState || !drawState.mode || drawState.points.length === 0) {
+          return;
+        }
+        var self = this;
+        var points = drawState.points.slice();
+        if (drawState.mousePos) {
+          points.push([drawState.mousePos.x, drawState.mousePos.y]);
+        }
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = drawState.options.color || "#0066ff";
+        ctx.lineWidth = drawState.options.width || 2;
+        var canvasPoints = points.map(function(p) {
+          return self._coordSystem.toCanvas(p[0], p[1]);
+        }).filter(function(p) {
+          return p !== null;
+        });
+        if (canvasPoints.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+          for (var i = 1; i < canvasPoints.length; i++) {
+            ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+          }
+          if (drawState.mode === "polygon" && canvasPoints.length >= 3) {
+            ctx.closePath();
+            var fillColor = drawState.options.fill && drawState.options.fill.color;
+            ctx.fillStyle = fillColor || "rgba(0,100,255,0.2)";
+            ctx.fill();
+          }
+          ctx.stroke();
+        }
+        canvasPoints.forEach(function(p) {
+          ctx.beginPath();
+          ctx.setLineDash([]);
+          ctx.fillStyle = "#0066ff";
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+    };
+    module.exports = OverlayRenderer;
+  }
+});
+
 // renderers/canvas/overlay/index.js
-var require_overlay = __commonJS({
+var require_overlay2 = __commonJS({
   "renderers/canvas/overlay/index.js"(exports, module) {
     "use strict";
-    var textRenderer = require_text();
-    var pointRenderer = require_point();
-    var lineRenderer = require_line();
-    var polygonRenderer = require_polygon();
-    function Overlay(renderer) {
-      this._renderer = renderer;
-      this._texts = [];
-      this._points = [];
-      this._lines = [];
-      this._polygons = [];
-      this._idCounter = 0;
-      this._drawMode = null;
-      this._tempPoints = [];
-      this._drawOptions = {};
-      this._eventHandlers = {};
-      this._canvas = null;
-      this._onDrawComplete = null;
-      this._currentMousePos = null;
-    }
-    Overlay.prototype._generateId = function() {
-      this._idCounter++;
-      var timestamp = Date.now().toString(36);
-      var randomPart = Math.random().toString(36).substring(2, 10);
-      var counter = this._idCounter.toString(36);
-      return "overlay_" + timestamp + "_" + randomPart + "_" + counter;
-    };
-    Overlay.prototype._isValidNumber = function(value) {
-      return typeof value === "number" && isFinite(value) && !isNaN(value);
-    };
-    Overlay.prototype._filterValidPoints = function(points) {
-      if (!Array.isArray(points)) {
-        return [];
-      }
-      return points.filter(function(point) {
-        if (!point)
-          return false;
-        var x, y;
-        if (Array.isArray(point)) {
-          x = point[0];
-          y = point[1];
-        } else {
-          x = point.x;
-          y = point.y;
-        }
-        return this._isValidNumber(x) && this._isValidNumber(y);
-      }.bind(this));
-    };
-    Overlay.prototype._toCanvasCoords = function(x, y) {
-      if (!this._isValidNumber(x) || !this._isValidNumber(y)) {
-        return null;
-      }
-      if (!this._renderer) {
-        return { x, y };
-      }
-      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-      if (!drawingArea) {
-        return { x, y };
-      }
-      var visibleRange;
-      if (this._renderer.getViewManager) {
-        var viewManager = this._renderer.getViewManager();
-        if (viewManager && viewManager.getState) {
-          visibleRange = viewManager.getState();
-        }
-      }
-      if (!visibleRange) {
-        visibleRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
-      }
-      if (!visibleRange) {
-        return { x, y };
-      }
-      var xRange = visibleRange.xMax - visibleRange.xMin;
-      var yRange = visibleRange.yMax - visibleRange.yMin;
-      var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
-      var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
-      var canvasX = drawingArea.x + (x - visibleRange.xMin) * xScale;
-      var canvasY = drawingArea.y + drawingArea.height - (y - visibleRange.yMin) * yScale;
-      return { x: canvasX, y: canvasY };
-    };
-    Overlay.prototype._getScale = function() {
-      if (!this._renderer) {
-        return { xScale: 1, yScale: 1 };
-      }
-      var fullRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
-      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-      if (!fullRange || !drawingArea) {
-        return { xScale: 1, yScale: 1 };
-      }
-      var xRange = fullRange.xMax - fullRange.xMin;
-      var yRange = fullRange.yMax - fullRange.yMin;
-      var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
-      var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
-      return { xScale, yScale };
-    };
-    Overlay.prototype.drawText = function(x, y, content, options) {
-      var id = this._generateId();
-      var item = {
-        id,
-        x,
-        y,
-        content,
-        options: options || {}
-      };
-      this._texts.push(item);
-      this.refresh();
-      return id;
-    };
-    Overlay.prototype.drawPoint = function(x, y, options) {
-      var id = this._generateId();
-      var item = {
-        id,
-        x,
-        y,
-        options: options || {}
-      };
-      this._points.push(item);
-      this.refresh();
-      return id;
-    };
-    Overlay.prototype.drawLine = function(points, options) {
-      var id = this._generateId();
-      var validPoints = this._filterValidPoints(points);
-      var item = {
-        id,
-        points: validPoints,
-        options: options || {}
-      };
-      this._lines.push(item);
-      this.refresh();
-      return id;
-    };
-    Overlay.prototype.drawPolygon = function(points, options) {
-      var id = this._generateId();
-      var validPoints = this._filterValidPoints(points);
-      var item = {
-        id,
-        points: validPoints,
-        options: options || {}
-      };
-      this._polygons.push(item);
-      this.refresh();
-      return id;
-    };
-    Overlay.prototype.clear = function(type) {
-      if (!type) {
-        this._texts = [];
-        this._points = [];
-        this._lines = [];
-        this._polygons = [];
-      } else {
-        switch (type) {
-          case "text":
-            this._texts = [];
-            break;
-          case "point":
-            this._points = [];
-            break;
-          case "line":
-            this._lines = [];
-            break;
-          case "polygon":
-            this._polygons = [];
-            break;
-        }
-      }
-      this.refresh();
-    };
-    Overlay.prototype.render = function(ctx) {
-      polygonRenderer.render(ctx, this._polygons, this);
-      lineRenderer.render(ctx, this._lines, this);
-      pointRenderer.render(ctx, this._points, this);
-      textRenderer.render(ctx, this._texts, this);
-      this._renderTempElements(ctx);
-    };
-    Overlay.prototype._renderTempElements = function(ctx) {
-      if (!this._drawMode || this._tempPoints.length === 0)
-        return;
-      ctx.save();
-      if (this._drawMode === "line" && this._tempPoints.length >= 1) {
-        this._renderTempLine(ctx);
-      } else if (this._drawMode === "polygon" && this._tempPoints.length >= 1) {
-        this._renderTempPolygon(ctx);
-      }
-      ctx.restore();
-    };
-    Overlay.prototype._renderTempLine = function(ctx) {
-      if (this._tempPoints.length < 1)
-        return;
-      var self = this;
-      var points = this._tempPoints.slice();
-      if (this._currentMousePos) {
-        points.push(this._currentMousePos);
-      }
-      var canvasPoints = points.map(function(p) {
-        return self._toCanvasCoords(p[0], p[1]);
-      }).filter(function(p) {
-        return p !== null;
-      });
-      if (canvasPoints.length < 2)
-        return;
-      ctx.beginPath();
-      ctx.strokeStyle = this._drawOptions.color || "#0066ff";
-      ctx.lineWidth = this._drawOptions.width || 2;
-      ctx.setLineDash([5, 5]);
-      ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-      for (var i = 1; i < canvasPoints.length; i++) {
-        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
-      }
-      ctx.stroke();
-      canvasPoints.forEach(function(p) {
-        ctx.beginPath();
-        ctx.fillStyle = self._drawOptions.color || "#0066ff";
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    };
-    Overlay.prototype._renderTempPolygon = function(ctx) {
-      if (this._tempPoints.length < 1)
-        return;
-      var self = this;
-      var points = this._tempPoints.slice();
-      if (this._currentMousePos) {
-        points.push(this._currentMousePos);
-      }
-      var canvasPoints = points.map(function(p) {
-        return self._toCanvasCoords(p[0], p[1]);
-      }).filter(function(p) {
-        return p !== null;
-      });
-      if (canvasPoints.length < 2)
-        return;
-      ctx.beginPath();
-      ctx.strokeStyle = this._drawOptions.stroke && this._drawOptions.stroke.color || "#008800";
-      ctx.lineWidth = this._drawOptions.stroke && this._drawOptions.stroke.width || 2;
-      ctx.setLineDash([5, 5]);
-      var fillHex = this._drawOptions.fill && this._drawOptions.fill.color || "rgba(0,255,0,0.3)";
-      ctx.fillStyle = fillHex;
-      ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
-      for (var i = 1; i < canvasPoints.length; i++) {
-        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
-      }
-      if (canvasPoints.length >= 3) {
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.stroke();
-      canvasPoints.forEach(function(p) {
-        ctx.beginPath();
-        ctx.fillStyle = "#008800";
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    };
-    Overlay.prototype.refresh = function() {
-      if (this._renderer && typeof this._renderer.refresh === "function") {
-        this._renderer.refresh();
-      }
-    };
-    Overlay.prototype._toDataCoords = function(canvasX, canvasY) {
-      if (!this._isValidNumber(canvasX) || !this._isValidNumber(canvasY)) {
-        return null;
-      }
-      if (!this._renderer) {
-        return { x: canvasX, y: canvasY };
-      }
-      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-      if (!drawingArea) {
-        return { x: canvasX, y: canvasY };
-      }
-      var visibleRange;
-      if (this._renderer.getViewManager) {
-        var viewManager = this._renderer.getViewManager();
-        if (viewManager && viewManager.getState) {
-          visibleRange = viewManager.getState();
-        }
-      }
-      if (!visibleRange) {
-        visibleRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
-      }
-      if (!visibleRange) {
-        return { x: canvasX, y: canvasY };
-      }
-      var xRange = visibleRange.xMax - visibleRange.xMin;
-      var yRange = visibleRange.yMax - visibleRange.yMin;
-      var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
-      var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
-      var dataX = visibleRange.xMin + (canvasX - drawingArea.x) / xScale;
-      var dataY = visibleRange.yMin + (drawingArea.y + drawingArea.height - canvasY) / yScale;
-      return { x: dataX, y: dataY };
-    };
-    Overlay.prototype._isInDrawingArea = function(canvasX, canvasY) {
-      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-      if (!drawingArea)
-        return true;
-      return canvasX >= drawingArea.x && canvasX <= drawingArea.x + drawingArea.width && canvasY >= drawingArea.y && canvasY <= drawingArea.y + drawingArea.height;
-    };
-    Overlay.prototype.startDrawing = function(mode, options, canvas, onComplete) {
-      this.stopDrawing();
-      this._drawMode = mode;
-      this._drawOptions = options || {};
-      this._tempPoints = [];
-      this._canvas = canvas;
-      this._onDrawComplete = onComplete;
-      this._bindDrawEvents();
-    };
-    Overlay.prototype.stopDrawing = function() {
-      this._unbindDrawEvents();
-      this._drawMode = null;
-      this._tempPoints = [];
-      this._canvas = null;
-      this._onDrawComplete = null;
-    };
-    Overlay.prototype._bindDrawEvents = function() {
-      if (!this._canvas)
-        return;
-      var self = this;
-      this._eventHandlers.click = function(e) {
-        self._handleDrawClick(e);
-      };
-      this._eventHandlers.dblclick = function(e) {
-        self._handleDrawDblClick(e);
-      };
-      this._eventHandlers.mousemove = function(e) {
-        self._handleDrawMouseMove(e);
-      };
-      this._eventHandlers.keydown = function(e) {
-        self._handleDrawKeyDown(e);
-      };
-      this._canvas.addEventListener("click", this._eventHandlers.click);
-      this._canvas.addEventListener("dblclick", this._eventHandlers.dblclick);
-      this._canvas.addEventListener("mousemove", this._eventHandlers.mousemove);
-      document.addEventListener("keydown", this._eventHandlers.keydown);
-    };
-    Overlay.prototype._unbindDrawEvents = function() {
-      if (this._canvas) {
-        this._canvas.removeEventListener("click", this._eventHandlers.click);
-        this._canvas.removeEventListener("dblclick", this._eventHandlers.dblclick);
-        this._canvas.removeEventListener("mousemove", this._eventHandlers.mousemove);
-      }
-      document.removeEventListener("keydown", this._eventHandlers.keydown);
-      this._eventHandlers = {};
-    };
-    Overlay.prototype._handleDrawClick = function(e) {
-      var rect = this._canvas.getBoundingClientRect();
-      var canvasX = e.clientX - rect.left;
-      var canvasY = e.clientY - rect.top;
-      if (!this._isInDrawingArea(canvasX, canvasY))
-        return;
-      var dataCoords = this._toDataCoords(canvasX, canvasY);
-      if (!dataCoords)
-        return;
-      switch (this._drawMode) {
-        case "point":
-          this._completePointDrawing(dataCoords);
-          break;
-        case "line":
-        case "polygon":
-          this._tempPoints.push([dataCoords.x, dataCoords.y]);
-          this._showTempFeedback();
-          break;
-        case "text":
-          this._completeTextDrawing(dataCoords);
-          break;
-      }
-    };
-    Overlay.prototype._handleDrawDblClick = function(e) {
-      if (this._drawMode === "line" || this._drawMode === "polygon") {
-        this._completeMultiPointDrawing();
-      }
-    };
-    Overlay.prototype._handleDrawMouseMove = function(e) {
-      if (this._drawMode !== "line" && this._drawMode !== "polygon")
-        return;
-      if (this._tempPoints.length === 0)
-        return;
-      var rect = this._canvas.getBoundingClientRect();
-      var canvasX = e.clientX - rect.left;
-      var canvasY = e.clientY - rect.top;
-      if (!this._isInDrawingArea(canvasX, canvasY))
-        return;
-      var dataCoords = this._toDataCoords(canvasX, canvasY);
-      if (!dataCoords)
-        return;
-      this._showTempFeedback(dataCoords);
-    };
-    Overlay.prototype._handleDrawKeyDown = function(e) {
-      if (e.key === "Escape") {
-        this.stopDrawing();
-      }
-      if (e.key === "Enter" && (this._drawMode === "line" || this._drawMode === "polygon")) {
-        this._completeMultiPointDrawing();
-      }
-    };
-    Overlay.prototype._completePointDrawing = function(dataCoords) {
-      var id = this.drawPoint(dataCoords.x, dataCoords.y, this._drawOptions);
-      if (this._onDrawComplete) {
-        this._onDrawComplete({ type: "point", id, x: dataCoords.x, y: dataCoords.y });
-      }
-      this.stopDrawing();
-    };
-    Overlay.prototype._completeTextDrawing = function(dataCoords) {
-      var text = this._drawOptions.text || this._drawOptions.content || "";
-      if (!text) {
-        this.stopDrawing();
-        return;
-      }
-      var textOptions = Object.assign({}, this._drawOptions);
-      delete textOptions.text;
-      delete textOptions.content;
-      var id = this.drawText(dataCoords.x, dataCoords.y, text, textOptions);
-      if (this._onDrawComplete) {
-        this._onDrawComplete({ type: "text", id, x: dataCoords.x, y: dataCoords.y, text });
-      }
-      this.stopDrawing();
-    };
-    Overlay.prototype._completeMultiPointDrawing = function() {
-      if (this._tempPoints.length < 2) {
-        this.stopDrawing();
-        return;
-      }
-      var id;
-      if (this._drawMode === "line") {
-        id = this.drawLine(this._tempPoints, this._drawOptions);
-        if (this._onDrawComplete) {
-          this._onDrawComplete({ type: "line", id, points: this._tempPoints.slice() });
-        }
-      } else if (this._drawMode === "polygon") {
-        if (this._tempPoints.length >= 3) {
-          id = this.drawPolygon(this._tempPoints, this._drawOptions);
-          if (this._onDrawComplete) {
-            this._onDrawComplete({ type: "polygon", id, points: this._tempPoints.slice() });
+    var Overlay = require_overlay();
+    var CoordSystem = require_coord_system();
+    var EventEmitter = require_event_emitter();
+    var StaticDrawer = require_static_drawer();
+    var InteractiveDrawer = require_interactive_drawer();
+    var OverlayRenderer = require_renderer();
+    function createOverlaySystem(renderer) {
+      var overlay = new Overlay();
+      var coordSystem = new CoordSystem(
+        function getDrawingArea() {
+          if (!renderer)
+            return null;
+          return typeof renderer._drawingArea === "function" ? renderer._drawingArea() : renderer._drawingArea;
+        },
+        function getVisibleRange() {
+          if (!renderer)
+            return null;
+          if (renderer.getViewManager) {
+            var vm = renderer.getViewManager();
+            if (vm && vm.getState)
+              return vm.getState();
           }
+          return typeof renderer._fullRange === "function" ? renderer._fullRange() : renderer._fullRange;
         }
-      }
-      this.stopDrawing();
+      );
+      var overlayRenderer = new OverlayRenderer(coordSystem);
+      var refresh = function() {
+        if (renderer && typeof renderer.refresh === "function") {
+          renderer.refresh();
+        }
+      };
+      var staticDrawer = new StaticDrawer(overlay, refresh);
+      var interactiveDrawer = new InteractiveDrawer({
+        overlay,
+        coordSystem,
+        refresh
+      });
+      var system = {
+        // ========================================
+        // 数据容器访问（只读）
+        // ========================================
+        overlay,
+        coordSystem,
+        // ========================================
+        // 静态绘制 API
+        // ========================================
+        /**
+         * 绘制点
+         * @param {number} x - X 坐标（数据坐标）
+         * @param {number} y - Y 坐标（数据坐标）
+         * @param {Object} options - 点选项
+         * @returns {string} 元素ID
+         */
+        drawPoint: function(x, y, options) {
+          return staticDrawer.drawPoint(x, y, options);
+        },
+        /**
+         * 绘制线
+         * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
+         * @param {Object} options - 线选项
+         * @returns {string} 元素ID
+         */
+        drawLine: function(points, options) {
+          return staticDrawer.drawLine(points, options);
+        },
+        /**
+         * 绘制多边形
+         * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
+         * @param {Object} options - 多边形选项
+         * @returns {string} 元素ID
+         */
+        drawPolygon: function(points, options) {
+          return staticDrawer.drawPolygon(points, options);
+        },
+        /**
+         * 绘制文本
+         * @param {number} x - X 坐标（数据坐标）
+         * @param {number} y - Y 坐标（数据坐标）
+         * @param {string} content - 文本内容
+         * @param {Object} options - 文本选项
+         * @returns {string} 元素ID
+         */
+        drawText: function(x, y, content, options) {
+          return staticDrawer.drawText(x, y, content, options);
+        },
+        /**
+         * 批量绘制
+         * @param {Array} items - 元素数组 [{type, data}]
+         * @returns {Array} 元素ID数组
+         */
+        drawBatch: function(items) {
+          return staticDrawer.drawBatch(items);
+        },
+        // ========================================
+        // 交互绘制 API
+        // ========================================
+        /**
+         * 开始交互绘制
+         * @param {string} mode - 绘制模式 ('point', 'line', 'polygon', 'text')
+         * @param {Object} options - 绘制选项
+         * @param {HTMLCanvasElement} canvas - 画布元素
+         * @param {Function} onComplete - 完成回调
+         */
+        startDrawing: function(mode, options, canvas, onComplete) {
+          return interactiveDrawer.start(mode, options, canvas, onComplete);
+        },
+        /**
+         * 停止交互绘制
+         */
+        stopDrawing: function() {
+          return interactiveDrawer.stop();
+        },
+        /**
+         * 是否正在绘制
+         * @returns {boolean}
+         */
+        isDrawing: function() {
+          return interactiveDrawer.isDrawing();
+        },
+        /**
+         * 获取当前绘制模式
+         * @returns {string|null}
+         */
+        getDrawMode: function() {
+          return interactiveDrawer.getMode();
+        },
+        /**
+         * 获取绘制状态（用于渲染预览）
+         * @returns {Object}
+         */
+        getDrawState: function() {
+          return interactiveDrawer.getState();
+        },
+        /**
+         * 获取临时点
+         * @returns {Array}
+         */
+        getTempPoints: function() {
+          return interactiveDrawer.getTempPoints();
+        },
+        // ========================================
+        // 数据操作 API
+        // ========================================
+        /**
+         * 获取单个元素
+         * @param {string} id - 元素ID
+         * @returns {Object|null}
+         */
+        getItem: function(id) {
+          return overlay.get(id);
+        },
+        /**
+         * 获取某类型的所有元素
+         * @param {string} type - 元素类型
+         * @returns {Array}
+         */
+        getItemsByType: function(type) {
+          return overlay.getByType(type);
+        },
+        /**
+         * 获取所有元素
+         * @returns {Array}
+         */
+        getAllItems: function() {
+          return overlay.getAll();
+        },
+        /**
+         * 更新元素
+         * @param {string} id - 元素ID
+         * @param {Object} data - 更新数据
+         * @returns {Object|null}
+         */
+        updateItem: function(id, data) {
+          return staticDrawer.update(id, data);
+        },
+        /**
+         * 删除元素
+         * @param {string} id - 元素ID
+         * @returns {boolean}
+         */
+        removeItem: function(id) {
+          return staticDrawer.remove(id);
+        },
+        /**
+         * 清空元素
+         * @param {string} [type] - 元素类型，不传则清空所有
+         */
+        clear: function(type) {
+          overlay.clear(type);
+          refresh();
+        },
+        /**
+         * 获取元素数量
+         * @param {string} [type] - 元素类型
+         * @returns {number}
+         */
+        count: function(type) {
+          return overlay.count(type);
+        },
+        // ========================================
+        // 渲染 API
+        // ========================================
+        /**
+         * 渲染所有覆盖物
+         * @param {CanvasRenderingContext2D} ctx - 画布上下文
+         */
+        render: function(ctx) {
+          overlayRenderer.render(ctx, overlay);
+          overlayRenderer.renderTemp(ctx, interactiveDrawer.getState());
+        },
+        /**
+         * 刷新（触发父渲染器重绘）
+         */
+        refresh,
+        // ========================================
+        // 坐标转换 API
+        // ========================================
+        /**
+         * 数据坐标 → 画布坐标
+         * @param {number} x - 数据 X 坐标
+         * @param {number} y - 数据 Y 坐标
+         * @returns {Object|null}
+         */
+        dataToCanvas: function(x, y) {
+          return coordSystem.toCanvas(x, y);
+        },
+        /**
+         * 画布坐标 → 数据坐标
+         * @param {number} x - 画布 X 坐标
+         * @param {number} y - 画布 Y 坐标
+         * @returns {Object|null}
+         */
+        canvasToData: function(x, y) {
+          return coordSystem.toData(x, y);
+        },
+        /**
+         * 获取缩放比例
+         * @returns {Object}
+         */
+        getScale: function() {
+          return coordSystem.getScale();
+        },
+        /**
+         * 检查是否在绘制区域内
+         * @param {number} x - 画布 X 坐标
+         * @param {number} y - 画布 Y 坐标
+         * @returns {boolean}
+         */
+        isInBounds: function(x, y) {
+          return coordSystem.isInBounds(x, y);
+        },
+        // ========================================
+        // 事件订阅 API
+        // ========================================
+        /**
+         * 订阅绘制事件
+         * @param {string} event - 事件名称
+         * @param {Function} handler - 处理函数
+         */
+        on: function(event, handler) {
+          return interactiveDrawer.on(event, handler);
+        },
+        /**
+         * 取消订阅
+         * @param {string} event - 事件名称
+         * @param {Function} handler - 处理函数
+         */
+        off: function(event, handler) {
+          return interactiveDrawer.off(event, handler);
+        }
+      };
+      return system;
+    }
+    module.exports = createOverlaySystem;
+    module.exports.Overlay = Overlay;
+    module.exports.CoordSystem = CoordSystem;
+    module.exports.EventEmitter = EventEmitter;
+    module.exports.StaticDrawer = StaticDrawer;
+    module.exports.InteractiveDrawer = InteractiveDrawer;
+    module.exports.OverlayRenderer = OverlayRenderer;
+    module.exports.renderers = {
+      line: require_line(),
+      point: require_point(),
+      polygon: require_polygon(),
+      text: require_text(),
+      shapes: require_shapes(),
+      patterns: require_patterns()
     };
-    Overlay.prototype._showTempFeedback = function(currentPos) {
-      if (currentPos) {
-        this._currentMousePos = [currentPos.x, currentPos.y];
-      } else {
-        this._currentMousePos = null;
-      }
-      this.refresh();
-    };
-    Overlay.prototype.getDrawMode = function() {
-      return this._drawMode;
-    };
-    Overlay.prototype.isDrawing = function() {
-      return this._drawMode !== null;
-    };
-    Overlay.prototype.getTempPoints = function() {
-      return this._tempPoints.slice();
-    };
-    Overlay.prototype.onDrawComplete = function(callback) {
-      this._drawCompleteCallback = callback;
-    };
-    Overlay.prototype.setDrawOptions = function(options) {
-      if (options) {
-        this._drawOptions = Object.assign({}, this._drawOptions, options);
-      }
-    };
-    Overlay.prototype.getCanvas = function() {
-      return this._canvas;
-    };
-    Overlay.prototype.dataToCanvas = function(x, y) {
-      return this._toCanvasCoords(x, y);
-    };
-    Overlay.prototype.canvasToData = function(canvasX, canvasY) {
-      return this._toDataCoords(canvasX, canvasY);
-    };
-    module.exports = Overlay;
   }
 });
 
@@ -5815,8 +6490,7 @@ var require_canvas = __commonJS({
     var axesRenderer = require_axes2();
     var nullHandling = require_null_handling();
     var axes = require_axes();
-    var Overlay = require_overlay();
-    var Overlay = require_overlay();
+    var createOverlaySystem = require_overlay2();
     function calculateAspectRatioDrawingArea(baseArea, fullRange, aspectRatio) {
       if (aspectRatio !== "equal" && aspectRatio !== 1 && aspectRatio !== "1:1") {
         return baseArea;
@@ -6024,18 +6698,19 @@ var require_canvas = __commonJS({
         },
         /**
          * Get overlay manager for drawing overlay elements
-         * @returns {Overlay} Overlay manager instance
+         * @returns {Object} Overlay system instance
          */
         getOverlay: function() {
           if (!_overlay) {
-            _overlay = new Overlay({
+            var rendererLike = {
               _fullRange,
               _drawingArea: drawingArea,
               getViewManager: function() {
                 return viewManager;
               },
               refresh: render
-            });
+            };
+            _overlay = createOverlaySystem(rendererLike);
           }
           return _overlay;
         },
@@ -8469,7 +9144,7 @@ var require_contour_core = __commonJS({
       renderers: require_renderers(),
       axes: require_axes(),
       interaction: require_interaction(),
-      Overlay: require_overlay(),
+      Overlay: require_overlay2(),
       // ============================================
       // Utilities
       // ============================================

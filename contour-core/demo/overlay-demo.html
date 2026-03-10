@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay System Refactoring Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .controls button {
+            padding: 8px 15px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+        .controls hr {
+            margin: 15px 0;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+        #canvas-container {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        #info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Overlay System Refactoring Demo</h1>
+
+    <div class="controls">
+        <strong>Static Drawing:</strong><br>
+        <button id="btn-point">Draw Point</button>
+        <button id="btn-line">Draw Line</button>
+        <button id="btn-polygon">Draw Polygon</button>
+        <button id="btn-text">Draw Text</button>
+        <button id="btn-batch">Draw Batch</button>
+        <hr>
+        <strong>Interactive Drawing:</strong><br>
+        <button id="btn-interactive-point">Interactive Point</button>
+        <button id="btn-interactive-line">Interactive Line</button>
+        <button id="btn-interactive-polygon">Interactive Polygon</button>
+        <button id="btn-stop">Stop Drawing (Esc)</button>
+        <hr>
+        <strong>Actions:</strong><br>
+        <button id="btn-clear">Clear All</button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="testCanvas" width="600" height="400"></canvas>
+    </div>
+    <div class="hint">
+        Interactive drawing: Click to add points, double-click or press Enter to finish, Esc to cancel
+    </div>
+
+    <div id="info">
+        Initializing...
+    </div>
+
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            var canvas = document.getElementById('testCanvas');
+            var ctx = canvas.getContext('2d');
+
+            // Drawing area and data range configuration
+            var DRAWING_AREA = { x: 50, y: 50, width: 500, height: 300 };
+            var DATA_RANGE = { xMin: 0, xMax: 100, yMin: 0, yMax: 100 };
+
+            // ========================================
+            // Mock Renderer
+            // ========================================
+            function createMockRenderer() {
+                return {
+                    _drawingArea: DRAWING_AREA,
+                    _fullRange: DATA_RANGE,
+                    getViewManager: function() {
+                        return {
+                            getState: function() {
+                                return DATA_RANGE;
+                            }
+                        };
+                    },
+                    refresh: function() {
+                        render();
+                    }
+                };
+            }
+
+            // ========================================
+            // Render function
+            // ========================================
+            function render() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw background
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw border for drawing area
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(DRAWING_AREA.x, DRAWING_AREA.y, DRAWING_AREA.width, DRAWING_AREA.height);
+
+                // Draw grid
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+
+                // Vertical grid lines
+                for (var x = 0; x <= 100; x += 10) {
+                    var canvasX = DRAWING_AREA.x + (x / 100) * DRAWING_AREA.width;
+                    ctx.beginPath();
+                    ctx.moveTo(canvasX, DRAWING_AREA.y);
+                    ctx.lineTo(canvasX, DRAWING_AREA.y + DRAWING_AREA.height);
+                    ctx.stroke();
+                }
+
+                // Horizontal grid lines
+                for (var y = 0; y <= 100; y += 10) {
+                    var canvasY = DRAWING_AREA.y + DRAWING_AREA.height - (y / 100) * DRAWING_AREA.height;
+                    ctx.beginPath();
+                    ctx.moveTo(DRAWING_AREA.x, canvasY);
+                    ctx.lineTo(DRAWING_AREA.x + DRAWING_AREA.width, canvasY);
+                    ctx.stroke();
+                }
+
+                // Draw axis labels
+                ctx.fillStyle = '#666';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+
+                // X-axis labels
+                for (var x = 0; x <= 100; x += 20) {
+                    var canvasX = DRAWING_AREA.x + (x / 100) * DRAWING_AREA.width;
+                    ctx.fillText(x.toString(), canvasX, DRAWING_AREA.y + DRAWING_AREA.height + 15);
+                }
+
+                // Y-axis labels
+                ctx.textAlign = 'right';
+                for (var y = 0; y <= 100; y += 20) {
+                    var canvasY = DRAWING_AREA.y + DRAWING_AREA.height - (y / 100) * DRAWING_AREA.height;
+                    ctx.fillText(y.toString(), DRAWING_AREA.x - 5, canvasY + 3);
+                }
+
+                // Render overlay system
+                if (window.overlaySystem) {
+                    window.overlaySystem.render(ctx);
+                }
+            }
+
+            // ========================================
+            // Initialize Overlay System
+            // ========================================
+
+            // Check if contourCore is available
+            if (typeof contourCore === 'undefined') {
+                document.getElementById('info').innerHTML = '<span style="color:red">Error: contour-core.browser.js not loaded!</span>';
+                console.error('contourCore is not defined. Make sure the dist file is built.');
+                return;
+            }
+
+            // Get the overlay system factory function
+            var createOverlaySystem = contourCore.Overlay;
+
+            if (typeof createOverlaySystem !== 'function') {
+                document.getElementById('info').innerHTML = '<span style="color:red">Error: Overlay system not found in contourCore!</span>';
+                console.error('contourCore.Overlay is not a function:', createOverlaySystem);
+                return;
+            }
+
+            // Create mock renderer and overlay system
+            var renderer = createMockRenderer();
+            window.overlaySystem = createOverlaySystem(renderer);
+
+            console.log('Overlay system initialized:', window.overlaySystem);
+            console.log('Available methods:', Object.keys(window.overlaySystem));
+
+            // ========================================
+            // Info Update Function
+            // ========================================
+            function updateInfo() {
+                var info = document.getElementById('info');
+                var pointCount = window.overlaySystem.count('point');
+                var lineCount = window.overlaySystem.count('line');
+                var polygonCount = window.overlaySystem.count('polygon');
+                var textCount = window.overlaySystem.count('text');
+                var totalCount = pointCount + lineCount + polygonCount + textCount;
+
+                info.innerHTML =
+                    '<strong>Elements:</strong> ' +
+                    'Points: ' + pointCount + ', ' +
+                    'Lines: ' + lineCount + ', ' +
+                    'Polygons: ' + polygonCount + ', ' +
+                    'Texts: ' + textCount +
+                    ' <span style="color:#888">(Total: ' + totalCount + ')</span>';
+            }
+
+            // ========================================
+            // Event Handlers
+            // ========================================
+
+            window.overlaySystem.on('complete', function(result) {
+                console.log('Drawing complete:', result);
+                updateInfo();
+            });
+
+            window.overlaySystem.on('preview', function(state) {
+                console.log('Preview:', state.points.length, 'points');
+            });
+
+            window.overlaySystem.on('start', function(data) {
+                console.log('Drawing started:', data.mode);
+            });
+
+            window.overlaySystem.on('stop', function() {
+                console.log('Drawing stopped');
+            });
+
+            // ========================================
+            // Button Handlers
+            // ========================================
+
+            // Static drawing buttons
+            document.getElementById('btn-point').addEventListener('click', function() {
+                var x = 10 + Math.random() * 80;
+                var y = 10 + Math.random() * 80;
+                var colors = ['#ff0000', '#00ff00', '#0000ff', '#ff00ff', '#00ffff'];
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                var id = window.overlaySystem.drawPoint(x, y, {
+                    color: color,
+                    size: 8 + Math.random() * 8,
+                    shape: 'circle'
+                });
+                console.log('Point created:', id, 'at', x, y);
+                updateInfo();
+            });
+
+            document.getElementById('btn-line').addEventListener('click', function() {
+                var id = window.overlaySystem.drawLine([
+                    { x: 10, y: 10 },
+                    { x: 50, y: 50 },
+                    { x: 90, y: 30 }
+                ], {
+                    color: '#00aa00',
+                    width: 3,
+                    style: 'solid'
+                });
+                console.log('Line created:', id);
+                updateInfo();
+            });
+
+            document.getElementById('btn-polygon').addEventListener('click', function() {
+                var id = window.overlaySystem.drawPolygon([
+                    { x: 20, y: 20 },
+                    { x: 40, y: 60 },
+                    { x: 80, y: 60 },
+                    { x: 60, y: 20 }
+                ], {
+                    fill: { color: 'rgba(0, 150, 255, 0.3)' },
+                    stroke: { color: '#0066cc', width: 2 }
+                });
+                console.log('Polygon created:', id);
+                updateInfo();
+            });
+
+            document.getElementById('btn-text').addEventListener('click', function() {
+                var id = window.overlaySystem.drawText(50, 50, 'Hello Overlay!', {
+                    fontSize: 16,
+                    color: '#333333',
+                    background: 'rgba(255, 255, 0, 0.5)'
+                });
+                console.log('Text created:', id);
+                updateInfo();
+            });
+
+            document.getElementById('btn-batch').addEventListener('click', function() {
+                var ids = window.overlaySystem.drawBatch([
+                    {
+                        type: 'point',
+                        data: {
+                            x: 30,
+                            y: 30,
+                            options: { color: '#0000ff', size: 10 }
+                        }
+                    },
+                    {
+                        type: 'line',
+                        data: {
+                            points: [
+                                { x: 70, y: 70 },
+                                { x: 85, y: 85 }
+                            ],
+                            options: { color: '#ff00ff', width: 3 }
+                        }
+                    },
+                    {
+                        type: 'polygon',
+                        data: {
+                            points: [
+                                { x: 10, y: 70 },
+                                { x: 30, y: 90 },
+                                { x: 10, y: 90 }
+                            ],
+                            options: {
+                                fill: { color: 'rgba(255, 100, 0, 0.4)' },
+                                stroke: { color: '#ff6600', width: 2 }
+                            }
+                        }
+                    }
+                ]);
+                console.log('Batch created:', ids);
+                updateInfo();
+            });
+
+            // Interactive drawing buttons
+            document.getElementById('btn-interactive-point').addEventListener('click', function() {
+                window.overlaySystem.startDrawing('point', {
+                    color: '#ff3300',
+                    size: 12
+                }, canvas, function(result) {
+                    console.log('Interactive point complete:', result);
+                    updateInfo();
+                });
+            });
+
+            document.getElementById('btn-interactive-line').addEventListener('click', function() {
+                window.overlaySystem.startDrawing('line', {
+                    color: '#0066ff',
+                    width: 3
+                }, canvas, function(result) {
+                    console.log('Interactive line complete:', result);
+                    updateInfo();
+                });
+            });
+
+            document.getElementById('btn-interactive-polygon').addEventListener('click', function() {
+                window.overlaySystem.startDrawing('polygon', {
+                    fill: { color: 'rgba(0, 150, 0, 0.3)' },
+                    stroke: { color: '#008800', width: 2 }
+                }, canvas, function(result) {
+                    console.log('Interactive polygon complete:', result);
+                    updateInfo();
+                });
+            });
+
+            document.getElementById('btn-stop').addEventListener('click', function() {
+                window.overlaySystem.stopDrawing();
+                console.log('Drawing stopped');
+                updateInfo();
+            });
+
+            document.getElementById('btn-clear').addEventListener('click', function() {
+                window.overlaySystem.clear();
+                console.log('All cleared');
+                updateInfo();
+            });
+
+            // ========================================
+            // Initial Render
+            // ========================================
+            updateInfo();
+            render();
+
+            console.log('Overlay system demo ready!');
+
+        })();
+    </script>
+</body>
+</html>
