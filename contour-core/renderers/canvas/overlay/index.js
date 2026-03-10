@@ -25,6 +25,14 @@ function Overlay(renderer) {
 
     // ID counter for unique identifiers
     this._idCounter = 0;
+
+    // Interactive drawing state
+    this._interactionMode = null;  // 'point', 'line', 'polygon', 'text', null
+    this._tempPoints = [];  // Temporary points for line/polygon drawing
+    this._drawOptions = {};  // Options for current drawing operation
+    this._eventHandlers = {};  // Bound event handlers
+    this._canvas = null;  // Canvas element reference
+    this._onDrawComplete = null;  // Callback when drawing is complete
 }
 
 /**
@@ -301,6 +309,332 @@ Overlay.prototype.refresh = function() {
     if (this._renderer && typeof this._renderer.refresh === 'function') {
         this._renderer.refresh();
     }
+};
+
+/**
+ * Convert canvas coordinates to data coordinates
+ * @param {number} canvasX - Canvas X coordinate
+ * @param {number} canvasY - Canvas Y coordinate
+ * @returns {Object|null} Data coordinates {x, y} or null if invalid
+ */
+Overlay.prototype._toDataCoords = function(canvasX, canvasY) {
+    if (!this._isValidNumber(canvasX) || !this._isValidNumber(canvasY)) {
+        return null;
+    }
+
+    if (!this._renderer) {
+        return { x: canvasX, y: canvasY };
+    }
+
+    // Get drawing area
+    var drawingArea = typeof this._renderer._drawingArea === 'function'
+        ? this._renderer._drawingArea()
+        : this._renderer._drawingArea;
+
+    if (!drawingArea) {
+        return { x: canvasX, y: canvasY };
+    }
+
+    // Get visible range
+    var visibleRange;
+    if (this._renderer.getViewManager) {
+        var viewManager = this._renderer.getViewManager();
+        if (viewManager && viewManager.getState) {
+            visibleRange = viewManager.getState();
+        }
+    }
+
+    if (!visibleRange) {
+        visibleRange = typeof this._renderer._fullRange === 'function'
+            ? this._renderer._fullRange()
+            : this._renderer._fullRange;
+    }
+
+    if (!visibleRange) {
+        return { x: canvasX, y: canvasY };
+    }
+
+    // Calculate scale
+    var xRange = visibleRange.xMax - visibleRange.xMin;
+    var yRange = visibleRange.yMax - visibleRange.yMin;
+    var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+    var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
+
+    // Convert to data coordinates
+    var dataX = visibleRange.xMin + (canvasX - drawingArea.x) / xScale;
+    var dataY = visibleRange.yMin + (drawingArea.y + drawingArea.height - canvasY) / yScale;
+
+    return { x: dataX, y: dataY };
+};
+
+/**
+ * Check if a canvas position is within the drawing area
+ * @param {number} canvasX - Canvas X coordinate
+ * @param {number} canvasY - Canvas Y coordinate
+ * @returns {boolean} True if within drawing area
+ */
+Overlay.prototype._isInDrawingArea = function(canvasX, canvasY) {
+    var drawingArea = typeof this._renderer._drawingArea === 'function'
+        ? this._renderer._drawingArea()
+        : this._renderer._drawingArea;
+
+    if (!drawingArea) return true;
+
+    return canvasX >= drawingArea.x &&
+           canvasX <= drawingArea.x + drawingArea.width &&
+           canvasY >= drawingArea.y &&
+           canvasY <= drawingArea.y + drawingArea.height;
+};
+
+/**
+ * Start interactive drawing mode
+ * @param {string} mode - Drawing mode: 'point', 'line', 'polygon', 'text'
+ * @param {Object} options - Drawing options
+ * @param {HTMLCanvasElement} canvas - Canvas element to attach events
+ * @param {Function} onComplete - Callback when drawing is complete (receives item ID)
+ */
+Overlay.prototype.startDrawing = function(mode, options, canvas, onComplete) {
+    this.stopDrawing();  // Stop any existing drawing mode
+
+    this._drawMode = mode;
+    this._drawOptions = options || {};
+    this._tempPoints = [];
+    this._canvas = canvas;
+    this._onDrawComplete = onComplete;
+
+    this._bindDrawEvents();
+};
+
+/**
+ * Stop interactive drawing mode
+ */
+Overlay.prototype.stopDrawing = function() {
+    this._unbindDrawEvents();
+    this._drawMode = null;
+    this._tempPoints = [];
+    this._canvas = null;
+    this._onDrawComplete = null;
+};
+
+/**
+ * Bind mouse/touch events for drawing
+ * @private
+ */
+Overlay.prototype._bindDrawEvents = function() {
+    if (!this._canvas) return;
+
+    var self = this;
+
+    this._eventHandlers.click = function(e) {
+        self._handleDrawClick(e);
+    };
+
+    this._eventHandlers.dblclick = function(e) {
+        self._handleDrawDblClick(e);
+    };
+
+    this._eventHandlers.mousemove = function(e) {
+        self._handleDrawMouseMove(e);
+    };
+
+    this._eventHandlers.keydown = function(e) {
+        self._handleDrawKeyDown(e);
+    };
+
+    this._canvas.addEventListener('click', this._eventHandlers.click);
+    this._canvas.addEventListener('dblclick', this._eventHandlers.dblclick);
+    this._canvas.addEventListener('mousemove', this._eventHandlers.mousemove);
+    document.addEventListener('keydown', this._eventHandlers.keydown);
+};
+
+/**
+ * Unbind mouse/touch events
+ * @private
+ */
+Overlay.prototype._unbindDrawEvents = function() {
+    if (this._canvas) {
+        this._canvas.removeEventListener('click', this._eventHandlers.click);
+        this._canvas.removeEventListener('dblclick', this._eventHandlers.dblclick);
+        this._canvas.removeEventListener('mousemove', this._eventHandlers.mousemove);
+    }
+    document.removeEventListener('keydown', this._eventHandlers.keydown);
+    this._eventHandlers = {};
+};
+
+/**
+ * Handle click during drawing
+ * @private
+ */
+Overlay.prototype._handleDrawClick = function(e) {
+    var rect = this._canvas.getBoundingClientRect();
+    var canvasX = e.clientX - rect.left;
+    var canvasY = e.clientY - rect.top;
+
+    if (!this._isInDrawingArea(canvasX, canvasY)) return;
+
+    var dataCoords = this._toDataCoords(canvasX, canvasY);
+    if (!dataCoords) return;
+
+    switch (this._drawMode) {
+        case 'point':
+            this._completePointDrawing(dataCoords);
+            break;
+        case 'line':
+        case 'polygon':
+            this._tempPoints.push([dataCoords.x, dataCoords.y]);
+            this._showTempFeedback();
+            break;
+        case 'text':
+            this._completeTextDrawing(dataCoords);
+            break;
+    }
+};
+
+/**
+ * Handle double-click during drawing (complete line/polygon)
+ * @private
+ */
+Overlay.prototype._handleDrawDblClick = function(e) {
+    if (this._drawMode === 'line' || this._drawMode === 'polygon') {
+        this._completeMultiPointDrawing();
+    }
+};
+
+/**
+ * Handle mouse move during drawing
+ * @private
+ */
+Overlay.prototype._handleDrawMouseMove = function(e) {
+    if (this._drawMode !== 'line' && this._drawMode !== 'polygon') return;
+    if (this._tempPoints.length === 0) return;
+
+    var rect = this._canvas.getBoundingClientRect();
+    var canvasX = e.clientX - rect.left;
+    var canvasY = e.clientY - rect.top;
+
+    if (!this._isInDrawingArea(canvasX, canvasY)) return;
+
+    var dataCoords = this._toDataCoords(canvasX, canvasY);
+    if (!dataCoords) return;
+
+    this._showTempFeedback(dataCoords);
+};
+
+/**
+ * Handle key down during drawing
+ * @private
+ */
+Overlay.prototype._handleDrawKeyDown = function(e) {
+    // Escape key cancels drawing
+    if (e.key === 'Escape') {
+        this.stopDrawing();
+    }
+    // Enter key completes line/polygon
+    if (e.key === 'Enter' && (this._drawMode === 'line' || this._drawMode === 'polygon')) {
+        this._completeMultiPointDrawing();
+    }
+};
+
+/**
+ * Complete point drawing
+ * @private
+ */
+Overlay.prototype._completePointDrawing = function(dataCoords) {
+    var id = this.drawPoint(dataCoords.x, dataCoords.y, this._drawOptions);
+
+    if (this._onDrawComplete) {
+        this._onDrawComplete({ type: 'point', id: id, x: dataCoords.x, y: dataCoords.y });
+    }
+
+    this.stopDrawing();
+};
+
+/**
+ * Complete text drawing
+ * @private
+ */
+Overlay.prototype._completeTextDrawing = function(dataCoords) {
+    var text = this._drawOptions.text || prompt('请输入文本内容:', '');
+    if (!text) {
+        this.stopDrawing();
+        return;
+    }
+
+    var textOptions = Object.assign({}, this._drawOptions);
+    delete textOptions.text;  // Remove text from options
+
+    var id = this.drawText(dataCoords.x, dataCoords.y, text, textOptions);
+
+    if (this._onDrawComplete) {
+        this._onDrawComplete({ type: 'text', id: id, x: dataCoords.x, y: dataCoords.y, text: text });
+    }
+
+    this.stopDrawing();
+};
+
+/**
+ * Complete line or polygon drawing
+ * @private
+ */
+Overlay.prototype._completeMultiPointDrawing = function() {
+    if (this._tempPoints.length < 2) {
+        this.stopDrawing();
+        return;
+    }
+
+    var id;
+    if (this._drawMode === 'line') {
+        id = this.drawLine(this._tempPoints, this._drawOptions);
+        if (this._onDrawComplete) {
+            this._onDrawComplete({ type: 'line', id: id, points: this._tempPoints.slice() });
+        }
+    } else if (this._drawMode === 'polygon') {
+        if (this._tempPoints.length >= 3) {
+            id = this.drawPolygon(this._tempPoints, this._drawOptions);
+            if (this._onDrawComplete) {
+                this._onDrawComplete({ type: 'polygon', id: id, points: this._tempPoints.slice() });
+            }
+        }
+    }
+
+    this.stopDrawing();
+};
+
+/**
+ * Show temporary visual feedback during drawing
+ * @private
+ */
+Overlay.prototype._showTempFeedback = function(currentPos) {
+    // For now, we just trigger a refresh which will re-render
+    // In a more sophisticated implementation, we could draw temporary lines
+    // For simplicity, we'll show points as they're added
+    if (this._tempPoints.length > 0) {
+        // Could add visual preview here
+    }
+};
+
+/**
+ * Get current drawing mode
+ * @returns {string|null} Current drawing mode or null
+ */
+Overlay.prototype.getDrawMode = function() {
+    return this._drawMode;
+};
+
+/**
+ * Check if currently drawing
+ * @returns {boolean} True if in drawing mode
+ */
+Overlay.prototype.isDrawing = function() {
+    return this._drawMode !== null;
+};
+
+/**
+ * Get temporary points for current drawing (useful for UI feedback)
+ * @returns {Array} Array of temporary points
+ */
+Overlay.prototype.getTempPoints = function() {
+    return this._tempPoints.slice();
 };
 
 module.exports = Overlay;

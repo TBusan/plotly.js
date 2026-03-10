@@ -5186,6 +5186,12 @@ var require_overlay = __commonJS({
       this._lines = [];
       this._polygons = [];
       this._idCounter = 0;
+      this._interactionMode = null;
+      this._tempPoints = [];
+      this._drawOptions = {};
+      this._eventHandlers = {};
+      this._canvas = null;
+      this._onDrawComplete = null;
     }
     Overlay.prototype._generateId = function() {
       this._idCounter++;
@@ -5345,6 +5351,196 @@ var require_overlay = __commonJS({
       if (this._renderer && typeof this._renderer.refresh === "function") {
         this._renderer.refresh();
       }
+    };
+    Overlay.prototype._toDataCoords = function(canvasX, canvasY) {
+      if (!this._isValidNumber(canvasX) || !this._isValidNumber(canvasY)) {
+        return null;
+      }
+      if (!this._renderer) {
+        return { x: canvasX, y: canvasY };
+      }
+      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
+      if (!drawingArea) {
+        return { x: canvasX, y: canvasY };
+      }
+      var visibleRange;
+      if (this._renderer.getViewManager) {
+        var viewManager = this._renderer.getViewManager();
+        if (viewManager && viewManager.getState) {
+          visibleRange = viewManager.getState();
+        }
+      }
+      if (!visibleRange) {
+        visibleRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
+      }
+      if (!visibleRange) {
+        return { x: canvasX, y: canvasY };
+      }
+      var xRange = visibleRange.xMax - visibleRange.xMin;
+      var yRange = visibleRange.yMax - visibleRange.yMin;
+      var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+      var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
+      var dataX = visibleRange.xMin + (canvasX - drawingArea.x) / xScale;
+      var dataY = visibleRange.yMin + (drawingArea.y + drawingArea.height - canvasY) / yScale;
+      return { x: dataX, y: dataY };
+    };
+    Overlay.prototype._isInDrawingArea = function(canvasX, canvasY) {
+      var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
+      if (!drawingArea)
+        return true;
+      return canvasX >= drawingArea.x && canvasX <= drawingArea.x + drawingArea.width && canvasY >= drawingArea.y && canvasY <= drawingArea.y + drawingArea.height;
+    };
+    Overlay.prototype.startDrawing = function(mode, options, canvas, onComplete) {
+      this.stopDrawing();
+      this._drawMode = mode;
+      this._drawOptions = options || {};
+      this._tempPoints = [];
+      this._canvas = canvas;
+      this._onDrawComplete = onComplete;
+      this._bindDrawEvents();
+    };
+    Overlay.prototype.stopDrawing = function() {
+      this._unbindDrawEvents();
+      this._drawMode = null;
+      this._tempPoints = [];
+      this._canvas = null;
+      this._onDrawComplete = null;
+    };
+    Overlay.prototype._bindDrawEvents = function() {
+      if (!this._canvas)
+        return;
+      var self = this;
+      this._eventHandlers.click = function(e) {
+        self._handleDrawClick(e);
+      };
+      this._eventHandlers.dblclick = function(e) {
+        self._handleDrawDblClick(e);
+      };
+      this._eventHandlers.mousemove = function(e) {
+        self._handleDrawMouseMove(e);
+      };
+      this._eventHandlers.keydown = function(e) {
+        self._handleDrawKeyDown(e);
+      };
+      this._canvas.addEventListener("click", this._eventHandlers.click);
+      this._canvas.addEventListener("dblclick", this._eventHandlers.dblclick);
+      this._canvas.addEventListener("mousemove", this._eventHandlers.mousemove);
+      document.addEventListener("keydown", this._eventHandlers.keydown);
+    };
+    Overlay.prototype._unbindDrawEvents = function() {
+      if (this._canvas) {
+        this._canvas.removeEventListener("click", this._eventHandlers.click);
+        this._canvas.removeEventListener("dblclick", this._eventHandlers.dblclick);
+        this._canvas.removeEventListener("mousemove", this._eventHandlers.mousemove);
+      }
+      document.removeEventListener("keydown", this._eventHandlers.keydown);
+      this._eventHandlers = {};
+    };
+    Overlay.prototype._handleDrawClick = function(e) {
+      var rect = this._canvas.getBoundingClientRect();
+      var canvasX = e.clientX - rect.left;
+      var canvasY = e.clientY - rect.top;
+      if (!this._isInDrawingArea(canvasX, canvasY))
+        return;
+      var dataCoords = this._toDataCoords(canvasX, canvasY);
+      if (!dataCoords)
+        return;
+      switch (this._drawMode) {
+        case "point":
+          this._completePointDrawing(dataCoords);
+          break;
+        case "line":
+        case "polygon":
+          this._tempPoints.push([dataCoords.x, dataCoords.y]);
+          this._showTempFeedback();
+          break;
+        case "text":
+          this._completeTextDrawing(dataCoords);
+          break;
+      }
+    };
+    Overlay.prototype._handleDrawDblClick = function(e) {
+      if (this._drawMode === "line" || this._drawMode === "polygon") {
+        this._completeMultiPointDrawing();
+      }
+    };
+    Overlay.prototype._handleDrawMouseMove = function(e) {
+      if (this._drawMode !== "line" && this._drawMode !== "polygon")
+        return;
+      if (this._tempPoints.length === 0)
+        return;
+      var rect = this._canvas.getBoundingClientRect();
+      var canvasX = e.clientX - rect.left;
+      var canvasY = e.clientY - rect.top;
+      if (!this._isInDrawingArea(canvasX, canvasY))
+        return;
+      var dataCoords = this._toDataCoords(canvasX, canvasY);
+      if (!dataCoords)
+        return;
+      this._showTempFeedback(dataCoords);
+    };
+    Overlay.prototype._handleDrawKeyDown = function(e) {
+      if (e.key === "Escape") {
+        this.stopDrawing();
+      }
+      if (e.key === "Enter" && (this._drawMode === "line" || this._drawMode === "polygon")) {
+        this._completeMultiPointDrawing();
+      }
+    };
+    Overlay.prototype._completePointDrawing = function(dataCoords) {
+      var id = this.drawPoint(dataCoords.x, dataCoords.y, this._drawOptions);
+      if (this._onDrawComplete) {
+        this._onDrawComplete({ type: "point", id, x: dataCoords.x, y: dataCoords.y });
+      }
+      this.stopDrawing();
+    };
+    Overlay.prototype._completeTextDrawing = function(dataCoords) {
+      var text = this._drawOptions.text || prompt("\u8BF7\u8F93\u5165\u6587\u672C\u5185\u5BB9:", "");
+      if (!text) {
+        this.stopDrawing();
+        return;
+      }
+      var textOptions = Object.assign({}, this._drawOptions);
+      delete textOptions.text;
+      var id = this.drawText(dataCoords.x, dataCoords.y, text, textOptions);
+      if (this._onDrawComplete) {
+        this._onDrawComplete({ type: "text", id, x: dataCoords.x, y: dataCoords.y, text });
+      }
+      this.stopDrawing();
+    };
+    Overlay.prototype._completeMultiPointDrawing = function() {
+      if (this._tempPoints.length < 2) {
+        this.stopDrawing();
+        return;
+      }
+      var id;
+      if (this._drawMode === "line") {
+        id = this.drawLine(this._tempPoints, this._drawOptions);
+        if (this._onDrawComplete) {
+          this._onDrawComplete({ type: "line", id, points: this._tempPoints.slice() });
+        }
+      } else if (this._drawMode === "polygon") {
+        if (this._tempPoints.length >= 3) {
+          id = this.drawPolygon(this._tempPoints, this._drawOptions);
+          if (this._onDrawComplete) {
+            this._onDrawComplete({ type: "polygon", id, points: this._tempPoints.slice() });
+          }
+        }
+      }
+      this.stopDrawing();
+    };
+    Overlay.prototype._showTempFeedback = function(currentPos) {
+      if (this._tempPoints.length > 0) {
+      }
+    };
+    Overlay.prototype.getDrawMode = function() {
+      return this._drawMode;
+    };
+    Overlay.prototype.isDrawing = function() {
+      return this._drawMode !== null;
+    };
+    Overlay.prototype.getTempPoints = function() {
+      return this._tempPoints.slice();
     };
     module.exports = Overlay;
   }
