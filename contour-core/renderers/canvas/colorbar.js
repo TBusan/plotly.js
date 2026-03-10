@@ -19,6 +19,9 @@ function drawColorbar(ctx, contourResult, style) {
     var levels = contourResult.levels;
     if (!levels || levels.length === 0) return;
 
+    // Save context state to prevent pollution
+    ctx.save();
+
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
 
@@ -74,6 +77,9 @@ function drawColorbar(ctx, contourResult, style) {
 
         ctx.fillText(level.toFixed(1), x + thickness + 5, tickY);
     }
+
+    // Restore context state
+    ctx.restore();
 }
 
 module.exports = drawColorbar;

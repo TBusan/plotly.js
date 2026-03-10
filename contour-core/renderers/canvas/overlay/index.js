@@ -101,13 +101,7 @@ Overlay.prototype._toCanvasCoords = function(x, y) {
         ? this._renderer._drawingArea()
         : this._renderer._drawingArea;
 
-    console.log('[Overlay] _toCanvasCoords:');
-    console.log('  Input (x, y):', x, y);
-    console.log('  fullRange:', JSON.stringify(fullRange));
-    console.log('  drawingArea:', JSON.stringify(drawingArea));
-
     if (!fullRange || !drawingArea) {
-        console.log('  Missing fullRange or drawingArea, returning raw coords');
         return { x: x, y: y };
     }
 

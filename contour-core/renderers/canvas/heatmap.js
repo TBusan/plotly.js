@@ -26,11 +26,15 @@ function drawHeatmapBackground(ctx, grid, style) {
         return;
     }
 
+    // Save context state to prevent pollution
+    ctx.save();
+
     var z = grid.z;
     var m = z.length;    // number of rows
     var n = z[0].length; // number of columns
 
     if (m === 0 || n === 0) {
+        ctx.restore();
         return;
     }
 
@@ -69,6 +73,7 @@ function drawHeatmapBackground(ctx, grid, style) {
     }
 
     if (!isFinite(zmin) || !isFinite(zmax)) {
+        ctx.restore();
         return; // No valid data
     }
 
@@ -110,6 +115,8 @@ function drawHeatmapBackground(ctx, grid, style) {
             );
         }
     }
+
+    ctx.restore();
 }
 
 /**

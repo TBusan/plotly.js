@@ -3135,6 +3135,7 @@ var require_colorbar2 = __commonJS({
       var levels = contourResult.levels;
       if (!levels || levels.length === 0)
         return;
+      ctx.save();
       var width = style.width || ctx.canvas.width;
       var height = style.height || ctx.canvas.height;
       var thickness = style.colorbarThickness || 20;
@@ -3177,6 +3178,7 @@ var require_colorbar2 = __commonJS({
         var tickY = y + barHeight * (1 - t);
         ctx.fillText(level.toFixed(1), x + thickness + 5, tickY);
       }
+      ctx.restore();
     }
     module.exports = drawColorbar;
   }
@@ -3308,10 +3310,12 @@ var require_heatmap = __commonJS({
       if (!grid || !grid.z || !ctx) {
         return;
       }
+      ctx.save();
       var z = grid.z;
       var m = z.length;
       var n = z[0].length;
       if (m === 0 || n === 0) {
+        ctx.restore();
         return;
       }
       var width = style.width || ctx.canvas.width;
@@ -3344,6 +3348,7 @@ var require_heatmap = __commonJS({
         zmax = maxVal;
       }
       if (!isFinite(zmin) || !isFinite(zmax)) {
+        ctx.restore();
         return;
       }
       for (var i = 0; i < m; i++) {
@@ -3375,6 +3380,7 @@ var require_heatmap = __commonJS({
           );
         }
       }
+      ctx.restore();
     }
     function drawInterpolatedHeatmap(ctx, grid, style) {
       if (!grid || !grid.z || !ctx) {
@@ -5219,12 +5225,7 @@ var require_overlay = __commonJS({
       }
       var fullRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
       var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-      console.log("[Overlay] _toCanvasCoords:");
-      console.log("  Input (x, y):", x, y);
-      console.log("  fullRange:", JSON.stringify(fullRange));
-      console.log("  drawingArea:", JSON.stringify(drawingArea));
       if (!fullRange || !drawingArea) {
-        console.log("  Missing fullRange or drawingArea, returning raw coords");
         return { x, y };
       }
       var xRange = fullRange.xMax - fullRange.xMin;
