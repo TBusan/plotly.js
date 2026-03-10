@@ -5188,12 +5188,13 @@ var contourCore = (() => {
         this._lines = [];
         this._polygons = [];
         this._idCounter = 0;
-        this._interactionMode = null;
+        this._drawMode = null;
         this._tempPoints = [];
         this._drawOptions = {};
         this._eventHandlers = {};
         this._canvas = null;
         this._onDrawComplete = null;
+        this._currentMousePos = null;
       }
       Overlay.prototype._generateId = function() {
         this._idCounter++;
@@ -5348,6 +5349,86 @@ var contourCore = (() => {
         lineRenderer.render(ctx, this._lines, this);
         pointRenderer.render(ctx, this._points, this);
         textRenderer.render(ctx, this._texts, this);
+        this._renderTempElements(ctx);
+      };
+      Overlay.prototype._renderTempElements = function(ctx) {
+        if (!this._drawMode || this._tempPoints.length === 0)
+          return;
+        ctx.save();
+        if (this._drawMode === "line" && this._tempPoints.length >= 1) {
+          this._renderTempLine(ctx);
+        } else if (this._drawMode === "polygon" && this._tempPoints.length >= 1) {
+          this._renderTempPolygon(ctx);
+        }
+        ctx.restore();
+      };
+      Overlay.prototype._renderTempLine = function(ctx) {
+        if (this._tempPoints.length < 1)
+          return;
+        var self = this;
+        var points = this._tempPoints.slice();
+        if (this._currentMousePos) {
+          points.push(this._currentMousePos);
+        }
+        var canvasPoints = points.map(function(p) {
+          return self._toCanvasCoords(p[0], p[1]);
+        }).filter(function(p) {
+          return p !== null;
+        });
+        if (canvasPoints.length < 2)
+          return;
+        ctx.beginPath();
+        ctx.strokeStyle = this._drawOptions.color || "#0066ff";
+        ctx.lineWidth = this._drawOptions.width || 2;
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+        }
+        ctx.stroke();
+        canvasPoints.forEach(function(p) {
+          ctx.beginPath();
+          ctx.fillStyle = self._drawOptions.color || "#0066ff";
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      };
+      Overlay.prototype._renderTempPolygon = function(ctx) {
+        if (this._tempPoints.length < 1)
+          return;
+        var self = this;
+        var points = this._tempPoints.slice();
+        if (this._currentMousePos) {
+          points.push(this._currentMousePos);
+        }
+        var canvasPoints = points.map(function(p) {
+          return self._toCanvasCoords(p[0], p[1]);
+        }).filter(function(p) {
+          return p !== null;
+        });
+        if (canvasPoints.length < 2)
+          return;
+        ctx.beginPath();
+        ctx.strokeStyle = this._drawOptions.stroke && this._drawOptions.stroke.color || "#008800";
+        ctx.lineWidth = this._drawOptions.stroke && this._drawOptions.stroke.width || 2;
+        ctx.setLineDash([5, 5]);
+        var fillHex = this._drawOptions.fill && this._drawOptions.fill.color || "rgba(0,255,0,0.3)";
+        ctx.fillStyle = fillHex;
+        ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+        }
+        if (canvasPoints.length >= 3) {
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.stroke();
+        canvasPoints.forEach(function(p) {
+          ctx.beginPath();
+          ctx.fillStyle = "#008800";
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
       };
       Overlay.prototype.refresh = function() {
         if (this._renderer && typeof this._renderer.refresh === "function") {
@@ -5497,13 +5578,14 @@ var contourCore = (() => {
         this.stopDrawing();
       };
       Overlay.prototype._completeTextDrawing = function(dataCoords) {
-        var text = this._drawOptions.text || prompt("\u8BF7\u8F93\u5165\u6587\u672C\u5185\u5BB9:", "");
+        var text = this._drawOptions.text || this._drawOptions.content || "";
         if (!text) {
           this.stopDrawing();
           return;
         }
         var textOptions = Object.assign({}, this._drawOptions);
         delete textOptions.text;
+        delete textOptions.content;
         var id = this.drawText(dataCoords.x, dataCoords.y, text, textOptions);
         if (this._onDrawComplete) {
           this._onDrawComplete({ type: "text", id, x: dataCoords.x, y: dataCoords.y, text });
@@ -5532,8 +5614,12 @@ var contourCore = (() => {
         this.stopDrawing();
       };
       Overlay.prototype._showTempFeedback = function(currentPos) {
-        if (this._tempPoints.length > 0) {
+        if (currentPos) {
+          this._currentMousePos = [currentPos.x, currentPos.y];
+        } else {
+          this._currentMousePos = null;
         }
+        this.refresh();
       };
       Overlay.prototype.getDrawMode = function() {
         return this._drawMode;
@@ -5543,6 +5629,23 @@ var contourCore = (() => {
       };
       Overlay.prototype.getTempPoints = function() {
         return this._tempPoints.slice();
+      };
+      Overlay.prototype.onDrawComplete = function(callback) {
+        this._drawCompleteCallback = callback;
+      };
+      Overlay.prototype.setDrawOptions = function(options) {
+        if (options) {
+          this._drawOptions = Object.assign({}, this._drawOptions, options);
+        }
+      };
+      Overlay.prototype.getCanvas = function() {
+        return this._canvas;
+      };
+      Overlay.prototype.dataToCanvas = function(x, y) {
+        return this._toCanvasCoords(x, y);
+      };
+      Overlay.prototype.canvasToData = function(canvasX, canvasY) {
+        return this._toDataCoords(canvasX, canvasY);
       };
       module.exports = Overlay;
     }

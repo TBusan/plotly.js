@@ -27,12 +27,13 @@ function Overlay(renderer) {
     this._idCounter = 0;
 
     // Interactive drawing state
-    this._interactionMode = null;  // 'point', 'line', 'polygon', 'text', null
+    this._drawMode = null;  // 'point', 'line', 'polygon', 'text', null
     this._tempPoints = [];  // Temporary points for line/polygon drawing
     this._drawOptions = {};  // Options for current drawing operation
     this._eventHandlers = {};  // Bound event handlers
     this._canvas = null;  // Canvas element reference
     this._onDrawComplete = null;  // Callback when drawing is complete
+    this._currentMousePos = null;  // Current mouse position for preview
 }
 
 /**
@@ -300,6 +301,129 @@ Overlay.prototype.render = function(ctx) {
     lineRenderer.render(ctx, this._lines, this);
     pointRenderer.render(ctx, this._points, this);
     textRenderer.render(ctx, this._texts, this);
+
+    // Render temporary drawing elements
+    this._renderTempElements(ctx);
+};
+
+/**
+ * Render temporary elements during drawing
+ * @private
+ */
+Overlay.prototype._renderTempElements = function(ctx) {
+    if (!this._drawMode || this._tempPoints.length === 0) return;
+
+    ctx.save();
+
+    if (this._drawMode === 'line' && this._tempPoints.length >= 1) {
+        this._renderTempLine(ctx);
+    } else if (this._drawMode === 'polygon' && this._tempPoints.length >= 1) {
+        this._renderTempPolygon(ctx);
+    }
+
+    ctx.restore();
+};
+
+/**
+ * Render temporary line during drawing
+ * @private
+ */
+Overlay.prototype._renderTempLine = function(ctx) {
+    if (this._tempPoints.length < 1) return;
+
+    var self = this;
+    var points = this._tempPoints.slice();
+
+    // Add current mouse position if available
+    if (this._currentMousePos) {
+        points.push(this._currentMousePos);
+    }
+
+    // Convert all points to canvas coordinates
+    var canvasPoints = points.map(function(p) {
+        return self._toCanvasCoords(p[0], p[1]);
+    }).filter(function(p) {
+        return p !== null;
+    });
+
+    if (canvasPoints.length < 2) return;
+
+    // Draw the temporary line
+    ctx.beginPath();
+    ctx.strokeStyle = this._drawOptions.color || '#0066ff';
+    ctx.lineWidth = this._drawOptions.width || 2;
+    ctx.setLineDash([5, 5]); // Dashed line for preview
+
+    ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+    for (var i = 1; i < canvasPoints.length; i++) {
+        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+    }
+
+    ctx.stroke();
+
+    // Draw point markers at each vertex
+    canvasPoints.forEach(function(p) {
+        ctx.beginPath();
+        ctx.fillStyle = self._drawOptions.color || '#0066ff';
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+};
+
+/**
+ * Render temporary polygon during drawing
+ * @private
+ */
+Overlay.prototype._renderTempPolygon = function(ctx) {
+    if (this._tempPoints.length < 1) return;
+
+    var self = this;
+    var points = this._tempPoints.slice();
+
+    // Add current mouse position if available
+    if (this._currentMousePos) {
+        points.push(this._currentMousePos);
+    }
+
+    // Convert all points to canvas coordinates
+    var canvasPoints = points.map(function(p) {
+        return self._toCanvasCoords(p[0], p[1]);
+    }).filter(function(p) {
+        return p !== null;
+    });
+
+    if (canvasPoints.length < 2) return;
+
+    // Draw the temporary polygon
+    ctx.beginPath();
+    ctx.strokeStyle = this._drawOptions.stroke && this._drawOptions.stroke.color || '#008800';
+    ctx.lineWidth = this._drawOptions.stroke && this._drawOptions.stroke.width || 2;
+    ctx.setLineDash([5, 5]);
+
+    // Fill with semi-transparent color
+    var fillHex = this._drawOptions.fill && this._drawOptions.fill.color || 'rgba(0,255,0,0.3)';
+    ctx.fillStyle = fillHex;
+
+    ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+    for (var i = 1; i < canvasPoints.length; i++) {
+        ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+    }
+
+    // Close the path for polygon
+    if (canvasPoints.length >= 3) {
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    ctx.stroke();
+
+    // Draw point markers at each vertex
+    canvasPoints.forEach(function(p) {
+        ctx.beginPath();
+        ctx.fillStyle = '#008800';
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
 };
 
 /**
@@ -554,14 +678,16 @@ Overlay.prototype._completePointDrawing = function(dataCoords) {
  * @private
  */
 Overlay.prototype._completeTextDrawing = function(dataCoords) {
-    var text = this._drawOptions.text || prompt('请输入文本内容:', '');
+    // Support both 'text' and 'content' properties
+    var text = this._drawOptions.text || this._drawOptions.content || '';
     if (!text) {
         this.stopDrawing();
         return;
     }
 
     var textOptions = Object.assign({}, this._drawOptions);
-    delete textOptions.text;  // Remove text from options
+    delete textOptions.text;
+    delete textOptions.content;
 
     var id = this.drawText(dataCoords.x, dataCoords.y, text, textOptions);
 
@@ -605,12 +731,15 @@ Overlay.prototype._completeMultiPointDrawing = function() {
  * @private
  */
 Overlay.prototype._showTempFeedback = function(currentPos) {
-    // For now, we just trigger a refresh which will re-render
-    // In a more sophisticated implementation, we could draw temporary lines
-    // For simplicity, we'll show points as they're added
-    if (this._tempPoints.length > 0) {
-        // Could add visual preview here
+    // Store current mouse position for rendering
+    if (currentPos) {
+        this._currentMousePos = [currentPos.x, currentPos.y];
+    } else {
+        this._currentMousePos = null;
     }
+
+    // Trigger a refresh to render temporary elements
+    this.refresh();
 };
 
 /**
@@ -635,6 +764,52 @@ Overlay.prototype.isDrawing = function() {
  */
 Overlay.prototype.getTempPoints = function() {
     return this._tempPoints.slice();
+};
+
+/**
+ * Set draw complete callback
+ * @param {Function} callback - Callback function to be called when drawing completes
+ */
+Overlay.prototype.onDrawComplete = function(callback) {
+    this._drawCompleteCallback = callback;
+};
+
+/**
+ * Set drawing options (can be called during drawing to update options)
+ * @param {Object} options - New drawing options
+ */
+Overlay.prototype.setDrawOptions = function(options) {
+    if (options) {
+        this._drawOptions = Object.assign({}, this._drawOptions, options);
+    }
+};
+
+/**
+ * Get the canvas element currently being used for drawing
+ * @returns {HTMLCanvasElement|null} Canvas element or null
+ */
+Overlay.prototype.getCanvas = function() {
+    return this._canvas;
+};
+
+/**
+ * Convert data coordinates to canvas coordinates (public method)
+ * @param {number} x - Data x coordinate
+ * @param {number} y - Data y coordinate
+ * @returns {Object|null} Canvas coordinates {x, y} or null if invalid
+ */
+Overlay.prototype.dataToCanvas = function(x, y) {
+    return this._toCanvasCoords(x, y);
+};
+
+/**
+ * Convert canvas coordinates to data coordinates (public method)
+ * @param {number} canvasX - Canvas x coordinate
+ * @param {number} canvasY - Canvas y coordinate
+ * @returns {Object|null} Data coordinates {x, y} or null if invalid
+ */
+Overlay.prototype.canvasToData = function(canvasX, canvasY) {
+    return this._toDataCoords(canvasX, canvasY);
 };
 
 module.exports = Overlay;
