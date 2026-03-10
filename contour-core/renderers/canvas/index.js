@@ -13,6 +13,8 @@ var drawHeatmap = require('./heatmap');
 var axesRenderer = require('./axes');
 var nullHandling = require('../../null_handling');
 var axes = require('../../axes');
+var Overlay = require('./overlay');
+var Overlay = require('./overlay');
 
 /**
  * Calculate adjusted drawing area based on aspect ratio
@@ -233,6 +235,11 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var hasAxes = currentStyle.axes !== undefined && currentStyle.axes !== null;
     var currentAspectRatio = aspectRatio;
 
+    // Store state for overlay access
+    var _overlay = null;
+    var _fullRange = fullRange;
+    var _drawingArea = drawingArea;
+
     /**
      * Render all layers
      */
@@ -268,6 +275,11 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
         if (currentStyle.colorbar !== false &&
             (currentStyle.coloring === 'fill' || currentStyle.coloring === 'fill+lines' || currentStyle.coloring === 'heatmap')) {
             drawColorbar(ctx, contourResult, currentStyle);
+        }
+
+        // Layer 4: Overlay
+        if (_overlay) {
+            _overlay.render(ctx);
         }
     }
 
@@ -347,6 +359,22 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
 
         getDrawingArea: function() {
             return drawingArea;
+        },
+
+        /**
+         * Get overlay manager for drawing overlay elements
+         * @returns {Overlay} Overlay manager instance
+         */
+        getOverlay: function() {
+            if (!_overlay) {
+                _overlay = new Overlay({
+                    _fullRange: _fullRange,
+                    _drawingArea: drawingArea,
+                    getViewManager: function() { return viewManager; },
+                    refresh: render
+                });
+            }
+            return _overlay;
         },
 
         destroy: function() {

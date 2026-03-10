@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay 绘图功能演示</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .canvas-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ddd;
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+        h2 { margin-top: 0; color: #333; }
+        h3 { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #2196F3;
+            color: white;
+            transition: background 0.2s;
+        }
+        button:hover { background: #1976D2; }
+        button.secondary { background: #f0f0f0; color: #333; }
+        button.secondary:hover { background: #e0e0e0; }
+        .info { background: #e3f2fd; padding: 10px; border-radius: 4px; font-size: 12px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Overlay 绘图功能演示</h1>
+
+    <div class="container">
+        <div class="canvas-section">
+            <canvas id="mainCanvas" width="700" height="500"></canvas>
+        </div>
+
+        <div class="controls">
+            <h2>控制面板</h2>
+
+            <div class="info">
+                <strong>交互：</strong>滚轮缩放，拖拽平移，双击重置
+            </div>
+
+            <h3>点绘制</h3>
+            <div class="btn-group">
+                <button onclick="addPoint('circle')">圆形点</button>
+                <button onclick="addPoint('square')">方形点</button>
+                <button onclick="addPoint('triangle')">三角形</button>
+                <button onclick="addPoint('diamond')">菱形</button>
+            </div>
+
+            <h3>线绘制</h3>
+            <div class="btn-group">
+                <button onclick="addLine('solid')">实线</button>
+                <button onclick="addLine('dashed')">虚线</button>
+                <button onclick="addLine('dotted')">点线</button>
+            </div>
+
+            <h3>面绘制</h3>
+            <div class="btn-group">
+                <button onclick="addPolygon('color')">纯色填充</button>
+                <button onclick="addPolygon('grid')">网格填充</button>
+                <button onclick="addPolygon('diagonal')">斜线填充</button>
+                <button onclick="addPolygon('dots')">圆点填充</button>
+            </div>
+
+            <h3>文字绘制</h3>
+            <div class="btn-group">
+                <button onclick="addText()">添加文字</button>
+            </div>
+
+            <h3>操作</h3>
+            <div class="btn-group">
+                <button onclick="clearOverlay('points')" class="secondary">清除点</button>
+                <button onclick="clearOverlay('lines')" class="secondary">清除线</button>
+                <button onclick="clearOverlay('polygons')" class="secondary">清除面</button>
+                <button onclick="clearOverlay()" class="secondary" style="background:#f44336;color:white;">清除全部</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        var canvas = document.getElementById('mainCanvas');
+        var ctx = canvas.getContext('2d');
+        var overlay = null;
+
+        // 生成等值线数据
+        var z = [];
+        for (var i = 0; i < 30; i++) {
+            z[i] = [];
+            for (var j = 0; j < 30; j++) {
+                z[i][j] = Math.sin(i/4) * Math.cos(j/4) * 10 + Math.random() * 2;
+            }
+        }
+
+        // 渲染等值线
+        var result = contourCore.computeContours({ z: z }, { autocontour: true, ncontours: 12 });
+
+        var renderer = contourCore.renderers.canvas.drawContours(ctx, result, {
+            width: 700,
+            height: 500,
+            padding: 50,
+            coloring: 'fill+lines',
+            interaction: { zoom: true, pan: true, dblclickReset: true }
+        });
+
+        overlay = renderer.getOverlay();
+
+        // 添加点
+        function addPoint(shape) {
+            var x = 5 + Math.random() * 20;
+            var y = 5 + Math.random() * 20;
+            var colors = ['red', 'blue', 'green', 'orange', 'purple'];
+            var color = colors[Math.floor(Math.random() * colors.length)];
+
+            overlay.drawPoint(x, y, {
+                size: 10 + Math.random() * 8,
+                color: color,
+                strokeColor: 'black',
+                strokeWidth: 1,
+                shape: shape,
+                text: {
+                    content: shape.charAt(0).toUpperCase() + Math.floor(Math.random() * 100),
+                    offset: [0, -15],
+                    fontSize: 11,
+                    color: '#333'
+                }
+            });
+        }
+
+        // 添加线
+        function addLine(style) {
+            var startX = Math.random() * 10;
+            var startY = Math.random() * 20 + 5;
+            var points = [[startX, startY]];
+            var segments = 2 + Math.floor(Math.random() * 3);
+
+            for (var i = 0; i < segments; i++) {
+                points.push([
+                    startX + (i + 1) * (5 + Math.random() * 3),
+                    startY + (Math.random() - 0.5) * 10
+                ]);
+            }
+
+            var colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12'];
+
+            overlay.drawLine(points, {
+                color: colors[Math.floor(Math.random() * colors.length)],
+                width: 1 + Math.random() * 2,
+                style: style,
+                text: {
+                    content: style,
+                    position: 'middle',
+                    rotation: 'auto',
+                    fontSize: 10
+                }
+            });
+        }
+
+        // 添加面
+        function addPolygon(fillType) {
+            var cx = 10 + Math.random() * 10;
+            var cy = 10 + Math.random() * 10;
+            var size = 3 + Math.random() * 4;
+            var sides = 4 + Math.floor(Math.random() * 3);
+
+            var points = [];
+            for (var i = 0; i < sides; i++) {
+                var angle = (i / sides) * Math.PI * 2;
+                points.push([
+                    cx + Math.cos(angle) * size,
+                    cy + Math.sin(angle) * size
+                ]);
+            }
+
+            var fill;
+            if (fillType === 'color') {
+                fill = {
+                    type: 'color',
+                    color: 'rgba(' + Math.floor(Math.random()*255) + ',' +
+                           Math.floor(Math.random()*255) + ',' +
+                           Math.floor(Math.random()*255) + ',0.4)'
+                };
+            } else {
+                fill = {
+                    type: 'pattern',
+                    pattern: fillType,
+                    patternColor: '#333',
+                    patternSize: 8
+                };
+            }
+
+            overlay.drawPolygon(points, {
+                fill: fill,
+                stroke: {
+                    color: '#333',
+                    width: 1,
+                    style: 'solid'
+                },
+                text: {
+                    content: fillType,
+                    position: 'center',
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                }
+            });
+        }
+
+        // 添加文字
+        function addText() {
+            var x = 5 + Math.random() * 20;
+            var y = 5 + Math.random() * 20;
+            var texts = ['标注A', '标记点', '区域名称', '测量值', '说明文字'];
+            var text = texts[Math.floor(Math.random() * texts.length)];
+
+            overlay.drawText(x, y, text, {
+                fontSize: 12 + Math.floor(Math.random() * 8),
+                fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
+                color: '#333',
+                background: 'rgba(255,255,255,0.8)'
+            });
+        }
+
+        // 清除
+        function clearOverlay(type) {
+            overlay.clear(type);
+        }
+    </script>
+</body>
+</html>

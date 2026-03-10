@@ -1,7 +1,14 @@
 "use strict";
 var contourCore = (() => {
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
 
@@ -4440,6 +4447,889 @@ var contourCore = (() => {
     }
   });
 
+  // renderers/canvas/overlay/text.js
+  var require_text = __commonJS({
+    "renderers/canvas/overlay/text.js"(exports, module) {
+      "use strict";
+      var DEFAULT_OPTIONS = {
+        fontSize: 12,
+        fontFamily: "Arial",
+        fontWeight: "normal",
+        color: "#000000",
+        rotation: 0,
+        align: "center",
+        baseline: "middle",
+        background: null
+      };
+      function mergeOptions(userOptions) {
+        if (!userOptions) {
+          return Object.assign({}, DEFAULT_OPTIONS);
+        }
+        return Object.assign({}, DEFAULT_OPTIONS, userOptions);
+      }
+      function buildFontString(options) {
+        var fontWeight = options.fontWeight || "normal";
+        var fontSize = options.fontSize || 12;
+        var fontFamily = options.fontFamily || "Arial";
+        return fontWeight + " " + fontSize + "px " + fontFamily;
+      }
+      function drawBackground(ctx, x, y, text, options) {
+        if (!options.background) {
+          return;
+        }
+        var padding = 2;
+        var metrics = ctx.measureText(text);
+        var textWidth = metrics.width;
+        var textHeight = options.fontSize || 12;
+        var boxX = x;
+        var boxY = y;
+        if (options.align === "center") {
+          boxX = x - textWidth / 2;
+        } else if (options.align === "right") {
+          boxX = x - textWidth;
+        }
+        if (options.baseline === "middle") {
+          boxY = y - textHeight / 2;
+        } else if (options.baseline === "bottom") {
+          boxY = y - textHeight;
+        }
+        ctx.fillStyle = options.background;
+        ctx.fillRect(
+          boxX - padding,
+          boxY - padding,
+          textWidth + padding * 2,
+          textHeight + padding * 2
+        );
+      }
+      function render(ctx, items, overlay) {
+        if (!items || items.length === 0) {
+          return;
+        }
+        items.forEach(function(item) {
+          var coords = overlay._toCanvasCoords(item.x, item.y);
+          var options = mergeOptions(item.options);
+          ctx.save();
+          var fontString = buildFontString(options);
+          ctx.font = fontString;
+          ctx.fillStyle = options.color;
+          ctx.textAlign = options.align;
+          ctx.textBaseline = options.baseline;
+          if (options.rotation !== 0) {
+            ctx.translate(coords.x, coords.y);
+            ctx.rotate(options.rotation);
+            ctx.translate(-coords.x, -coords.y);
+          }
+          drawBackground(ctx, coords.x, coords.y, item.content, options);
+          ctx.fillText(item.content, coords.x, coords.y);
+          ctx.restore();
+        });
+      }
+      function drawText(ctx, x, y, content, options, overlay) {
+        if (!content)
+          return;
+        var opts = mergeOptions(options);
+        ctx.save();
+        ctx.font = buildFontString(opts);
+        ctx.fillStyle = opts.color;
+        ctx.textAlign = opts.align;
+        ctx.textBaseline = opts.baseline;
+        ctx.translate(x, y);
+        if (opts.rotation) {
+          ctx.rotate(opts.rotation);
+        }
+        if (opts.background) {
+          var metrics = ctx.measureText(content);
+          var bgWidth = metrics.width + 6;
+          var bgHeight = opts.fontSize + 4;
+          ctx.fillStyle = opts.background;
+          var bgX = 0;
+          var bgY = 0;
+          if (opts.align === "center") {
+            bgX = -bgWidth / 2;
+          } else if (opts.align === "right") {
+            bgX = -bgWidth;
+          }
+          if (opts.baseline === "middle") {
+            bgY = -bgHeight / 2;
+          } else if (opts.baseline === "bottom") {
+            bgY = -bgHeight;
+          }
+          ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+          ctx.fillStyle = opts.color;
+        }
+        ctx.fillText(content, 0, 0);
+        ctx.restore();
+      }
+      module.exports = {
+        DEFAULT_OPTIONS,
+        mergeOptions,
+        render,
+        drawText
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/shapes.js
+  var require_shapes = __commonJS({
+    "renderers/canvas/overlay/shapes.js"(exports, module) {
+      "use strict";
+      function drawCircle(ctx, x, y, size) {
+        var radius = size / 2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.closePath();
+      }
+      function drawSquare(ctx, x, y, size) {
+        var half = size / 2;
+        ctx.beginPath();
+        ctx.rect(x - half, y - half, size, size);
+        ctx.closePath();
+      }
+      function drawTriangle(ctx, x, y, size) {
+        var half = size / 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - half);
+        ctx.lineTo(x + half, y + half);
+        ctx.lineTo(x - half, y + half);
+        ctx.closePath();
+      }
+      function drawDiamond(ctx, x, y, size) {
+        var half = size / 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - half);
+        ctx.lineTo(x + half, y);
+        ctx.lineTo(x, y + half);
+        ctx.lineTo(x - half, y);
+        ctx.closePath();
+      }
+      function drawStar(ctx, x, y, size) {
+        var outerRadius = size / 2;
+        var innerRadius = outerRadius * 0.4;
+        var points = 5;
+        ctx.beginPath();
+        for (var i = 0; i < points * 2; i++) {
+          var radius = i % 2 === 0 ? outerRadius : innerRadius;
+          var angle = i * Math.PI / points - Math.PI / 2;
+          var px = x + Math.cos(angle) * radius;
+          var py = y + Math.sin(angle) * radius;
+          if (i === 0) {
+            ctx.moveTo(px, py);
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.closePath();
+      }
+      function drawCross(ctx, x, y, size) {
+        var half = size / 2;
+        var thick = size / 4;
+        ctx.beginPath();
+        ctx.rect(x - thick / 2, y - half, thick, size);
+        ctx.rect(x - half, y - thick / 2, size, thick);
+        ctx.closePath();
+      }
+      function getShapeDrawer(shape) {
+        var shapeMap = {
+          "circle": drawCircle,
+          "square": drawSquare,
+          "triangle": drawTriangle,
+          "diamond": drawDiamond,
+          "star": drawStar,
+          "cross": drawCross
+        };
+        return shapeMap[shape] || drawCircle;
+      }
+      function isCustomShape(shape) {
+        return typeof shape === "object" && (shape.svg || shape.image);
+      }
+      module.exports = {
+        drawCircle,
+        drawSquare,
+        drawTriangle,
+        drawDiamond,
+        drawStar,
+        drawCross,
+        getShapeDrawer,
+        isCustomShape
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/point.js
+  var require_point = __commonJS({
+    "renderers/canvas/overlay/point.js"(exports, module) {
+      "use strict";
+      var shapes = require_shapes();
+      var textDrawer = require_text();
+      var DEFAULTS = {
+        size: 8,
+        color: "#ff0000",
+        strokeColor: null,
+        strokeWidth: 0,
+        shape: "circle"
+      };
+      function mergeOptions(options) {
+        var result = {};
+        for (var key in DEFAULTS) {
+          result[key] = options[key] !== void 0 ? options[key] : DEFAULTS[key];
+        }
+        return result;
+      }
+      function drawCustomImage(ctx, x, y, size, customShape, callback) {
+        if (typeof Image === "undefined") {
+          if (callback)
+            callback();
+          return;
+        }
+        var img = new Image();
+        var src = customShape.svg || customShape.image;
+        img.onload = function() {
+          ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
+          if (callback)
+            callback();
+        };
+        img.onerror = function() {
+          shapes.drawCircle(ctx, x, y, size);
+          ctx.fillStyle = "#ff0000";
+          ctx.fill();
+          if (callback)
+            callback();
+        };
+        img.src = src;
+      }
+      function drawPoint(ctx, x, y, options, overlay) {
+        if (!ctx || x === null || y === null)
+          return;
+        var opts = mergeOptions(options);
+        ctx.save();
+        if (shapes.isCustomShape(opts.shape)) {
+          drawCustomImage(ctx, x, y, opts.size, opts.shape);
+        } else {
+          var shapeDrawer = shapes.getShapeDrawer(opts.shape);
+          shapeDrawer(ctx, x, y, opts.size);
+          ctx.fillStyle = opts.color;
+          ctx.fill();
+          if (opts.strokeColor && opts.strokeWidth > 0) {
+            ctx.strokeStyle = opts.strokeColor;
+            ctx.lineWidth = opts.strokeWidth;
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+        if (options.text && options.text.content) {
+          var textOpts = options.text;
+          var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+          var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.size / 2 - 10;
+          textDrawer.drawText(ctx, x + offsetX, y + offsetY, textOpts.content, {
+            fontSize: textOpts.fontSize,
+            fontFamily: textOpts.fontFamily,
+            fontWeight: textOpts.fontWeight,
+            color: textOpts.color,
+            background: textOpts.background
+          }, overlay);
+        }
+      }
+      function render(ctx, items, overlay) {
+        if (!items || items.length === 0)
+          return;
+        for (var i = 0; i < items.length; i++) {
+          var item = items[i];
+          var canvasPos = overlay._toCanvasCoords(item.x, item.y);
+          if (!canvasPos)
+            continue;
+          drawPoint(ctx, canvasPos.x, canvasPos.y, item.options, overlay);
+        }
+      }
+      module.exports = {
+        render,
+        drawPoint,
+        DEFAULTS
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/line.js
+  var require_line = __commonJS({
+    "renderers/canvas/overlay/line.js"(exports, module) {
+      "use strict";
+      var textDrawer = require_text();
+      var DEFAULTS = {
+        color: "#000000",
+        width: 1,
+        style: "solid",
+        cap: "round",
+        join: "round"
+      };
+      function mergeOptions(options) {
+        var result = {};
+        for (var key in DEFAULTS) {
+          result[key] = options[key] !== void 0 ? options[key] : DEFAULTS[key];
+        }
+        return result;
+      }
+      function setLineStyle(ctx, style, width) {
+        switch (style) {
+          case "dashed":
+            ctx.setLineDash([width * 3, width * 2]);
+            break;
+          case "dotted":
+            ctx.setLineDash([width, width * 2]);
+            break;
+          default:
+            ctx.setLineDash([]);
+        }
+      }
+      function getAngleAtPoint(points, index) {
+        var prev = Math.max(0, index - 1);
+        var next = Math.min(points.length - 1, index + 1);
+        var dx = points[next].x - points[prev].x;
+        var dy = points[next].y - points[prev].y;
+        return Math.atan2(dy, dx);
+      }
+      function getPointAtPosition(points, position) {
+        if (position === "start") {
+          return { index: 0, point: points[0] };
+        }
+        if (position === "end") {
+          return { index: points.length - 1, point: points[points.length - 1] };
+        }
+        if (position === "middle" || typeof position === "undefined") {
+          var midIndex = Math.floor(points.length / 2);
+          return { index: midIndex, point: points[midIndex] };
+        }
+        var idx = Math.min(Math.max(0, position), points.length - 1);
+        return { index: idx, point: points[idx] };
+      }
+      function drawLine(ctx, points, options, overlay) {
+        if (!points || points.length < 2)
+          return;
+        var opts = mergeOptions(options);
+        ctx.save();
+        var canvasPoints = [];
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+          var canvasPos = overlay._toCanvasCoords(p.x !== void 0 ? p.x : p[0], p.y !== void 0 ? p.y : p[1]);
+          if (canvasPos) {
+            canvasPoints.push(canvasPos);
+          }
+        }
+        if (canvasPoints.length < 2) {
+          ctx.restore();
+          return;
+        }
+        ctx.strokeStyle = opts.color;
+        ctx.lineWidth = opts.width;
+        ctx.lineCap = opts.cap;
+        ctx.lineJoin = opts.join;
+        setLineStyle(ctx, opts.style, opts.width);
+        ctx.beginPath();
+        ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+        }
+        ctx.stroke();
+        ctx.restore();
+        if (options.text && options.text.content) {
+          var textOpts = options.text;
+          var posInfo = getPointAtPosition(canvasPoints, textOpts.position);
+          var angle = textOpts.rotation === "auto" ? getAngleAtPoint(canvasPoints, posInfo.index) : textOpts.rotation || 0;
+          var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+          var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.width - 10;
+          var perpAngle = angle + Math.PI / 2;
+          var perpOffsetX = Math.cos(perpAngle) * Math.abs(offsetY);
+          var perpOffsetY = Math.sin(perpAngle) * Math.abs(offsetY);
+          ctx.save();
+          ctx.translate(posInfo.point.x + perpOffsetX + offsetX, posInfo.point.y + perpOffsetY);
+          ctx.rotate(angle);
+          textDrawer.drawText(ctx, 0, 0, textOpts.content, {
+            fontSize: textOpts.fontSize,
+            fontFamily: textOpts.fontFamily,
+            fontWeight: textOpts.fontWeight,
+            color: textOpts.color,
+            background: textOpts.background,
+            align: "center",
+            baseline: "middle"
+          }, overlay);
+          ctx.restore();
+        }
+      }
+      function render(ctx, items, overlay) {
+        if (!items || items.length === 0)
+          return;
+        for (var i = 0; i < items.length; i++) {
+          var item = items[i];
+          drawLine(ctx, item.points, item.options, overlay);
+        }
+      }
+      module.exports = {
+        render,
+        drawLine,
+        DEFAULTS
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/patterns.js
+  var require_patterns = __commonJS({
+    "renderers/canvas/overlay/patterns.js"(exports, module) {
+      "use strict";
+      var patternCache = {};
+      var isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+      function createCanvas(size) {
+        if (isBrowser) {
+          var canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          return canvas;
+        } else {
+          try {
+            var nodeCanvas = __require("canvas");
+            return nodeCanvas.createCanvas(size, size);
+          } catch (e) {
+            console.warn("node-canvas not available, patterns will not work in SSR");
+            return null;
+          }
+        }
+      }
+      function createPattern(ctx, canvas) {
+        return ctx.createPattern(canvas, "repeat");
+      }
+      function createGridPattern(size, color, lineWidth) {
+        var cacheKey = "grid_" + size + "_" + color + "_" + lineWidth;
+        if (patternCache[cacheKey]) {
+          return patternCache[cacheKey];
+        }
+        var canvas = createCanvas(size);
+        if (!canvas)
+          return null;
+        var ctx = canvas.getContext("2d");
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth || 1;
+        ctx.beginPath();
+        ctx.moveTo(size / 2, 0);
+        ctx.lineTo(size / 2, size);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, size / 2);
+        ctx.lineTo(size, size / 2);
+        ctx.stroke();
+        var pattern = createPattern(ctx, canvas);
+        patternCache[cacheKey] = pattern;
+        return pattern;
+      }
+      function createHashPattern(size, color, lineWidth, angle) {
+        var cacheKey = "hash_" + size + "_" + color + "_" + lineWidth + "_" + angle;
+        if (patternCache[cacheKey]) {
+          return patternCache[cacheKey];
+        }
+        var canvas = createCanvas(size);
+        if (!canvas)
+          return null;
+        var ctx = canvas.getContext("2d");
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth || 1;
+        var rad = (angle || 45) * Math.PI / 180;
+        var offset = size / 2;
+        ctx.beginPath();
+        ctx.moveTo(0, offset);
+        ctx.lineTo(size, offset + size * Math.tan(rad));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(offset, 0);
+        ctx.lineTo(offset + size * Math.tan(rad), size);
+        ctx.stroke();
+        var pattern = createPattern(ctx, canvas);
+        patternCache[cacheKey] = pattern;
+        return pattern;
+      }
+      function createDiagonalPattern(size, color, lineWidth, angle) {
+        var cacheKey = "diagonal_" + size + "_" + color + "_" + lineWidth + "_" + angle;
+        if (patternCache[cacheKey]) {
+          return patternCache[cacheKey];
+        }
+        var canvas = createCanvas(size);
+        if (!canvas)
+          return null;
+        var ctx = canvas.getContext("2d");
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth || 1;
+        var rad = (angle || 45) * Math.PI / 180;
+        ctx.beginPath();
+        ctx.moveTo(0, size);
+        ctx.lineTo(size * Math.cos(rad), size - size * Math.sin(rad));
+        ctx.stroke();
+        var pattern = createPattern(ctx, canvas);
+        patternCache[cacheKey] = pattern;
+        return pattern;
+      }
+      function createDotsPattern(size, color, dotSize) {
+        var cacheKey = "dots_" + size + "_" + color + "_" + dotSize;
+        if (patternCache[cacheKey]) {
+          return patternCache[cacheKey];
+        }
+        var canvas = createCanvas(size);
+        if (!canvas)
+          return null;
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, dotSize || size / 6, 0, Math.PI * 2);
+        ctx.fill();
+        var pattern = createPattern(ctx, canvas);
+        patternCache[cacheKey] = pattern;
+        return pattern;
+      }
+      function createSVGPattern(svgSource, size, callback) {
+        if (typeof Image === "undefined") {
+          if (callback)
+            callback(null);
+          return;
+        }
+        var img = new Image();
+        img.onload = function() {
+          var canvas = createCanvas(size);
+          if (!canvas) {
+            if (callback)
+              callback(null);
+            return;
+          }
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, size, size);
+          var pattern = createPattern(ctx, canvas);
+          if (callback)
+            callback(pattern);
+        };
+        img.onerror = function() {
+          if (callback)
+            callback(null);
+        };
+        img.src = svgSource;
+      }
+      function getPattern(fillConfig, ctx) {
+        if (!fillConfig || fillConfig.type !== "pattern") {
+          return null;
+        }
+        var pattern = fillConfig.pattern;
+        var color = fillConfig.patternColor || "#000000";
+        var size = fillConfig.patternSize || 10;
+        var lineWidth = fillConfig.patternLineWidth || 1;
+        if (typeof pattern === "string") {
+          switch (pattern) {
+            case "grid":
+              return createGridPattern(size, color, lineWidth);
+            case "hash":
+              return createHashPattern(size, color, lineWidth, fillConfig.patternAngle);
+            case "diagonal":
+              return createDiagonalPattern(size, color, lineWidth, fillConfig.patternAngle);
+            case "dots":
+              return createDotsPattern(size, color, fillConfig.patternDotSize);
+          }
+        }
+        if (typeof pattern === "object" && pattern.svg) {
+          return null;
+        }
+        return null;
+      }
+      function clearCache() {
+        patternCache = {};
+      }
+      module.exports = {
+        createGridPattern,
+        createHashPattern,
+        createDiagonalPattern,
+        createDotsPattern,
+        createSVGPattern,
+        getPattern,
+        clearCache
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/polygon.js
+  var require_polygon = __commonJS({
+    "renderers/canvas/overlay/polygon.js"(exports, module) {
+      "use strict";
+      var patterns = require_patterns();
+      var textDrawer = require_text();
+      var DEFAULT_FILL = {
+        type: "color",
+        color: "rgba(0, 0, 0, 0.3)"
+      };
+      var DEFAULT_STROKE = {
+        color: "#000000",
+        width: 1,
+        style: "solid"
+      };
+      function calculateCenter(points) {
+        if (!points || points.length === 0) {
+          return { x: 0, y: 0 };
+        }
+        var sumX = 0, sumY = 0;
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+          sumX += p.x !== void 0 ? p.x : p[0];
+          sumY += p.y !== void 0 ? p.y : p[1];
+        }
+        return {
+          x: sumX / points.length,
+          y: sumY / points.length
+        };
+      }
+      function drawPolygon(ctx, points, options, overlay) {
+        if (!points || points.length < 3)
+          return;
+        options = options || {};
+        var canvasPoints = [];
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+          var canvasPos = overlay._toCanvasCoords(p.x !== void 0 ? p.x : p[0], p.y !== void 0 ? p.y : p[1]);
+          if (canvasPos) {
+            canvasPoints.push(canvasPos);
+          }
+        }
+        if (canvasPoints.length < 3) {
+          return;
+        }
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          ctx.lineTo(canvasPoints[i].x, canvasPoints[i].y);
+        }
+        ctx.closePath();
+        var fill = options.fill || DEFAULT_FILL;
+        if (fill.type === "pattern") {
+          var pattern = patterns.getPattern(fill, ctx);
+          if (pattern) {
+            ctx.fillStyle = pattern;
+          } else {
+            ctx.fillStyle = fill.color || DEFAULT_FILL.color;
+          }
+        } else {
+          ctx.fillStyle = fill.color || DEFAULT_FILL.color;
+        }
+        ctx.fill();
+        var stroke = options.stroke;
+        if (stroke && stroke.color) {
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = stroke.width || DEFAULT_STROKE.width;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          switch (stroke.style) {
+            case "dashed":
+              ctx.setLineDash([ctx.lineWidth * 3, ctx.lineWidth * 2]);
+              break;
+            case "dotted":
+              ctx.setLineDash([ctx.lineWidth, ctx.lineWidth * 2]);
+              break;
+            default:
+              ctx.setLineDash([]);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+        if (options.text && options.text.content) {
+          var textOpts = options.text;
+          var center;
+          if (textOpts.position === "center" || !textOpts.position) {
+            center = calculateCenter(canvasPoints);
+          } else if (Array.isArray(textOpts.position)) {
+            center = overlay._toCanvasCoords(textOpts.position[0], textOpts.position[1]);
+          } else {
+            center = calculateCenter(canvasPoints);
+          }
+          var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
+          var offsetY = textOpts.offset ? textOpts.offset[1] : 0;
+          textDrawer.drawText(ctx, center.x + offsetX, center.y + offsetY, textOpts.content, {
+            fontSize: textOpts.fontSize,
+            fontFamily: textOpts.fontFamily,
+            fontWeight: textOpts.fontWeight,
+            color: textOpts.color,
+            background: textOpts.background
+          }, overlay);
+        }
+      }
+      function render(ctx, items, overlay) {
+        if (!items || items.length === 0)
+          return;
+        for (var i = 0; i < items.length; i++) {
+          var item = items[i];
+          drawPolygon(ctx, item.points, item.options, overlay);
+        }
+      }
+      module.exports = {
+        render,
+        drawPolygon,
+        calculateCenter,
+        DEFAULT_FILL,
+        DEFAULT_STROKE
+      };
+    }
+  });
+
+  // renderers/canvas/overlay/index.js
+  var require_overlay = __commonJS({
+    "renderers/canvas/overlay/index.js"(exports, module) {
+      "use strict";
+      var textRenderer = require_text();
+      var pointRenderer = require_point();
+      var lineRenderer = require_line();
+      var polygonRenderer = require_polygon();
+      function Overlay(renderer) {
+        this._renderer = renderer;
+        this._texts = [];
+        this._points = [];
+        this._lines = [];
+        this._polygons = [];
+        this._idCounter = 0;
+      }
+      Overlay.prototype._generateId = function() {
+        this._idCounter++;
+        var timestamp = Date.now().toString(36);
+        var randomPart = Math.random().toString(36).substring(2, 10);
+        var counter = this._idCounter.toString(36);
+        return "overlay_" + timestamp + "_" + randomPart + "_" + counter;
+      };
+      Overlay.prototype._isValidNumber = function(value) {
+        return typeof value === "number" && isFinite(value) && !isNaN(value);
+      };
+      Overlay.prototype._filterValidPoints = function(points) {
+        if (!Array.isArray(points)) {
+          return [];
+        }
+        return points.filter(function(point) {
+          return point && this._isValidNumber(point.x) && this._isValidNumber(point.y);
+        }.bind(this));
+      };
+      Overlay.prototype._toCanvasCoords = function(x, y) {
+        if (!this._isValidNumber(x) || !this._isValidNumber(y)) {
+          return null;
+        }
+        if (!this._renderer) {
+          console.log("[Overlay] _toCanvasCoords: no renderer, returning raw coords");
+          return { x, y };
+        }
+        var fullRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
+        var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
+        console.log("[Overlay] _toCanvasCoords:");
+        console.log("  Input (x, y):", x, y);
+        console.log("  fullRange:", JSON.stringify(fullRange));
+        console.log("  drawingArea:", JSON.stringify(drawingArea));
+        if (!fullRange || !drawingArea) {
+          console.log("  Missing fullRange or drawingArea, returning raw coords");
+          return { x, y };
+        }
+        var xRange = fullRange.xMax - fullRange.xMin;
+        var yRange = fullRange.yMax - fullRange.yMin;
+        var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+        var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
+        var canvasX = drawingArea.x + (x - fullRange.xMin) * xScale;
+        var canvasY = drawingArea.y + drawingArea.height - (y - fullRange.yMin) * yScale;
+        return { x: canvasX, y: canvasY };
+      };
+      Overlay.prototype._getScale = function() {
+        if (!this._renderer) {
+          return { xScale: 1, yScale: 1 };
+        }
+        var fullRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
+        var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
+        if (!fullRange || !drawingArea) {
+          return { xScale: 1, yScale: 1 };
+        }
+        var xRange = fullRange.xMax - fullRange.xMin;
+        var yRange = fullRange.yMax - fullRange.yMin;
+        var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+        var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
+        return { xScale, yScale };
+      };
+      Overlay.prototype.drawText = function(x, y, content, options) {
+        var id = this._generateId();
+        var item = {
+          id,
+          x,
+          y,
+          content,
+          options: options || {}
+        };
+        this._texts.push(item);
+        this.refresh();
+        return id;
+      };
+      Overlay.prototype.drawPoint = function(x, y, options) {
+        var id = this._generateId();
+        var item = {
+          id,
+          x,
+          y,
+          options: options || {}
+        };
+        this._points.push(item);
+        this.refresh();
+        return id;
+      };
+      Overlay.prototype.drawLine = function(points, options) {
+        var id = this._generateId();
+        var validPoints = this._filterValidPoints(points);
+        var item = {
+          id,
+          points: validPoints,
+          options: options || {}
+        };
+        this._lines.push(item);
+        this.refresh();
+        return id;
+      };
+      Overlay.prototype.drawPolygon = function(points, options) {
+        var id = this._generateId();
+        var validPoints = this._filterValidPoints(points);
+        var item = {
+          id,
+          points: validPoints,
+          options: options || {}
+        };
+        this._polygons.push(item);
+        this.refresh();
+        return id;
+      };
+      Overlay.prototype.clear = function(type) {
+        if (!type) {
+          this._texts = [];
+          this._points = [];
+          this._lines = [];
+          this._polygons = [];
+        } else {
+          switch (type) {
+            case "text":
+              this._texts = [];
+              break;
+            case "point":
+              this._points = [];
+              break;
+            case "line":
+              this._lines = [];
+              break;
+            case "polygon":
+              this._polygons = [];
+              break;
+          }
+        }
+        this.refresh();
+      };
+      Overlay.prototype.render = function(ctx) {
+        polygonRenderer.render(ctx, this._polygons, this);
+        lineRenderer.render(ctx, this._lines, this);
+        pointRenderer.render(ctx, this._points, this);
+        textRenderer.render(ctx, this._texts, this);
+      };
+      Overlay.prototype.refresh = function() {
+        if (this._renderer && typeof this._renderer.refresh === "function") {
+          this._renderer.refresh();
+        }
+      };
+      module.exports = Overlay;
+    }
+  });
+
   // interaction/view_state.js
   var require_view_state = __commonJS({
     "interaction/view_state.js"(exports, module) {
@@ -4606,6 +5496,8 @@ var contourCore = (() => {
       var axesRenderer = require_axes2();
       var nullHandling = require_null_handling();
       var axes = require_axes();
+      var Overlay = require_overlay();
+      var Overlay = require_overlay();
       function calculateAspectRatioDrawingArea(baseArea, fullRange, aspectRatio) {
         if (aspectRatio !== "equal" && aspectRatio !== 1 && aspectRatio !== "1:1") {
           return baseArea;
@@ -4725,6 +5617,9 @@ var contourCore = (() => {
         var currentStyle = Object.assign({}, style);
         var hasAxes = currentStyle.axes !== void 0 && currentStyle.axes !== null;
         var currentAspectRatio = aspectRatio;
+        var _overlay = null;
+        var _fullRange = fullRange;
+        var _drawingArea = drawingArea;
         function render() {
           var ctx = canvas.getContext("2d");
           var visibleRange = viewManager.getState();
@@ -4743,6 +5638,9 @@ var contourCore = (() => {
           }
           if (currentStyle.colorbar !== false && (currentStyle.coloring === "fill" || currentStyle.coloring === "fill+lines" || currentStyle.coloring === "heatmap")) {
             drawColorbar(ctx, contourResult, currentStyle);
+          }
+          if (_overlay) {
+            _overlay.render(ctx);
           }
         }
         render();
@@ -4804,6 +5702,23 @@ var contourCore = (() => {
           },
           getDrawingArea: function() {
             return drawingArea;
+          },
+          /**
+           * Get overlay manager for drawing overlay elements
+           * @returns {Overlay} Overlay manager instance
+           */
+          getOverlay: function() {
+            if (!_overlay) {
+              _overlay = new Overlay({
+                _fullRange,
+                _drawingArea: drawingArea,
+                getViewManager: function() {
+                  return viewManager;
+                },
+                refresh: render
+              });
+            }
+            return _overlay;
           },
           destroy: function() {
             interaction.destroy();
@@ -7235,6 +8150,7 @@ var contourCore = (() => {
         renderers: require_renderers(),
         axes: require_axes(),
         interaction: require_interaction(),
+        Overlay: require_overlay(),
         // ============================================
         // Utilities
         // ============================================

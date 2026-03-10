@@ -33,29 +33,80 @@ function Overlay(renderer) {
  */
 Overlay.prototype._generateId = function() {
     this._idCounter++;
-    return 'overlay_' + Date.now() + '_' + this._idCounter;
+    // Use timestamp + random number + counter for more reliable uniqueness
+    var timestamp = Date.now().toString(36);
+    var randomPart = Math.random().toString(36).substring(2, 10);
+    var counter = this._idCounter.toString(36);
+    return 'overlay_' + timestamp + '_' + randomPart + '_' + counter;
+};
+
+/**
+ * Check if a value is a valid number
+ * @param {*} value - Value to check
+ * @returns {boolean} True if value is a valid finite number
+ */
+Overlay.prototype._isValidNumber = function(value) {
+    return typeof value === 'number' && isFinite(value) && !isNaN(value);
+};
+
+/**
+ * Validate points array - check if each point has valid x and y coordinates
+ * @param {Array} points - Array of {x, y} points
+ * @returns {Array} Filtered array with only valid points
+ */
+Overlay.prototype._filterValidPoints = function(points) {
+    if (!Array.isArray(points)) {
+        return [];
+    }
+    return points.filter(function(point) {
+        return point &&
+            this._isValidNumber(point.x) &&
+            this._isValidNumber(point.y);
+    }.bind(this));
 };
 
 /**
  * Convert data coordinates to canvas coordinates
  * @param {number} x - Data x coordinate
  * @param {number} y - Data y coordinate
- * @returns {Object} Canvas coordinates {x, y}
+ * @returns {Object} Canvas coordinates {x, y} or null if input is invalid
  */
 Overlay.prototype._toCanvasCoords = function(x, y) {
+    // Validate input coordinates
+    if (!this._isValidNumber(x) || !this._isValidNumber(y)) {
+        return null;
+    }
+
     if (!this._renderer) {
+        console.log('[Overlay] _toCanvasCoords: no renderer, returning raw coords');
         return { x: x, y: y };
     }
 
-    var fullRange = this._renderer._fullRange;
-    var drawingArea = this._renderer._drawingArea;
+    // Support both direct values and getter functions
+    var fullRange = typeof this._renderer._fullRange === 'function'
+        ? this._renderer._fullRange()
+        : this._renderer._fullRange;
+    var drawingArea = typeof this._renderer._drawingArea === 'function'
+        ? this._renderer._drawingArea()
+        : this._renderer._drawingArea;
+
+    console.log('[Overlay] _toCanvasCoords:');
+    console.log('  Input (x, y):', x, y);
+    console.log('  fullRange:', JSON.stringify(fullRange));
+    console.log('  drawingArea:', JSON.stringify(drawingArea));
 
     if (!fullRange || !drawingArea) {
+        console.log('  Missing fullRange or drawingArea, returning raw coords');
         return { x: x, y: y };
     }
 
-    var xScale = drawingArea.width / (fullRange.xMax - fullRange.xMin);
-    var yScale = drawingArea.height / (fullRange.yMax - fullRange.yMin);
+    // Protect against division by zero
+    var xRange = fullRange.xMax - fullRange.xMin;
+    var yRange = fullRange.yMax - fullRange.yMin;
+
+    // If range is zero, use default scale of 1
+    var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+    var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
 
     var canvasX = drawingArea.x + (x - fullRange.xMin) * xScale;
     var canvasY = drawingArea.y + drawingArea.height - (y - fullRange.yMin) * yScale;
@@ -72,15 +123,25 @@ Overlay.prototype._getScale = function() {
         return { xScale: 1, yScale: 1 };
     }
 
-    var fullRange = this._renderer._fullRange;
-    var drawingArea = this._renderer._drawingArea;
+    // Support both direct values and getter functions
+    var fullRange = typeof this._renderer._fullRange === 'function'
+        ? this._renderer._fullRange()
+        : this._renderer._fullRange;
+    var drawingArea = typeof this._renderer._drawingArea === 'function'
+        ? this._renderer._drawingArea()
+        : this._renderer._drawingArea;
 
     if (!fullRange || !drawingArea) {
         return { xScale: 1, yScale: 1 };
     }
 
-    var xScale = drawingArea.width / (fullRange.xMax - fullRange.xMin);
-    var yScale = drawingArea.height / (fullRange.yMax - fullRange.yMin);
+    // Protect against division by zero
+    var xRange = fullRange.xMax - fullRange.xMin;
+    var yRange = fullRange.yMax - fullRange.yMin;
+
+    // If range is zero, use default scale of 1
+    var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
+    var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
 
     return { xScale: xScale, yScale: yScale };
 };
@@ -135,9 +196,11 @@ Overlay.prototype.drawPoint = function(x, y, options) {
  */
 Overlay.prototype.drawLine = function(points, options) {
     var id = this._generateId();
+    // Filter out invalid points
+    var validPoints = this._filterValidPoints(points);
     var item = {
         id: id,
-        points: points || [],
+        points: validPoints,
         options: options || {}
     };
     this._lines.push(item);
@@ -153,9 +216,11 @@ Overlay.prototype.drawLine = function(points, options) {
  */
 Overlay.prototype.drawPolygon = function(points, options) {
     var id = this._generateId();
+    // Filter out invalid points
+    var validPoints = this._filterValidPoints(points);
     var item = {
         id: id,
-        points: points || [],
+        points: validPoints,
         options: options || {}
     };
     this._polygons.push(item);
