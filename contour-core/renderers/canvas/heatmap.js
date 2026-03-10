@@ -7,6 +7,28 @@
 
 var colors = require('../../colorbar/colors');
 
+// Detect environment and get canvas factory
+var isNodeJS = typeof window === 'undefined' || typeof document === 'undefined';
+var createCanvasElement;
+
+if (isNodeJS) {
+    try {
+        createCanvasElement = require('@napi-rs/canvas').createCanvas;
+    } catch (e) {
+        // Fallback: create a mock that throws a helpful error
+        createCanvasElement = function(width, height) {
+            throw new Error('Canvas rendering in Node.js requires @napi-rs/canvas. Install it with: npm install @napi-rs/canvas');
+        };
+    }
+} else {
+    createCanvasElement = function(width, height) {
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        return canvas;
+    };
+}
+
 /**
  * Draw heatmap background
  * Renders each grid cell with its corresponding color
@@ -254,9 +276,7 @@ function drawSmoothHeatmap(ctx, grid, style) {
 
     // Create high-resolution offscreen canvas
     var scaleFactor = Math.max(1, Math.min(10, Math.ceil(100 / Math.max(n, m))));
-    var hiresCanvas = document.createElement('canvas');
-    hiresCanvas.width = n * scaleFactor;
-    hiresCanvas.height = m * scaleFactor;
+    var hiresCanvas = createCanvasElement(n * scaleFactor, m * scaleFactor);
     var hiresCtx = hiresCanvas.getContext('2d');
 
     // Draw interpolated heatmap at high resolution
