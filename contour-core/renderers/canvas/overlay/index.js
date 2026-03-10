@@ -78,6 +78,7 @@ Overlay.prototype._filterValidPoints = function(points) {
 
 /**
  * Convert data coordinates to canvas coordinates
+ * Uses visibleRange for proper coordinate transformation during zoom/pan
  * @param {number} x - Data x coordinate
  * @param {number} y - Data y coordinate
  * @returns {Object} Canvas coordinates {x, y} or null if input is invalid
@@ -89,32 +90,49 @@ Overlay.prototype._toCanvasCoords = function(x, y) {
     }
 
     if (!this._renderer) {
-        console.log('[Overlay] _toCanvasCoords: no renderer, returning raw coords');
         return { x: x, y: y };
     }
 
-    // Support both direct values and getter functions
-    var fullRange = typeof this._renderer._fullRange === 'function'
-        ? this._renderer._fullRange()
-        : this._renderer._fullRange;
+    // Get drawing area
     var drawingArea = typeof this._renderer._drawingArea === 'function'
         ? this._renderer._drawingArea()
         : this._renderer._drawingArea;
 
-    if (!fullRange || !drawingArea) {
+    if (!drawingArea) {
+        return { x: x, y: y };
+    }
+
+    // Get visible range from view manager (for zoom/pan support)
+    // Fall back to fullRange if view manager is not available
+    var visibleRange;
+    if (this._renderer.getViewManager) {
+        var viewManager = this._renderer.getViewManager();
+        if (viewManager && viewManager.getState) {
+            visibleRange = viewManager.getState();
+        }
+    }
+
+    // Fall back to fullRange if no visible range
+    if (!visibleRange) {
+        visibleRange = typeof this._renderer._fullRange === 'function'
+            ? this._renderer._fullRange()
+            : this._renderer._fullRange;
+    }
+
+    if (!visibleRange) {
         return { x: x, y: y };
     }
 
     // Protect against division by zero
-    var xRange = fullRange.xMax - fullRange.xMin;
-    var yRange = fullRange.yMax - fullRange.yMin;
+    var xRange = visibleRange.xMax - visibleRange.xMin;
+    var yRange = visibleRange.yMax - visibleRange.yMin;
 
     // If range is zero, use default scale of 1
     var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
     var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
 
-    var canvasX = drawingArea.x + (x - fullRange.xMin) * xScale;
-    var canvasY = drawingArea.y + drawingArea.height - (y - fullRange.yMin) * yScale;
+    var canvasX = drawingArea.x + (x - visibleRange.xMin) * xScale;
+    var canvasY = drawingArea.y + drawingArea.height - (y - visibleRange.yMin) * yScale;
 
     return { x: canvasX, y: canvasY };
 };

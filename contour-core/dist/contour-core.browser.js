@@ -5222,20 +5222,31 @@ var contourCore = (() => {
           return null;
         }
         if (!this._renderer) {
-          console.log("[Overlay] _toCanvasCoords: no renderer, returning raw coords");
           return { x, y };
         }
-        var fullRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
         var drawingArea = typeof this._renderer._drawingArea === "function" ? this._renderer._drawingArea() : this._renderer._drawingArea;
-        if (!fullRange || !drawingArea) {
+        if (!drawingArea) {
           return { x, y };
         }
-        var xRange = fullRange.xMax - fullRange.xMin;
-        var yRange = fullRange.yMax - fullRange.yMin;
+        var visibleRange;
+        if (this._renderer.getViewManager) {
+          var viewManager = this._renderer.getViewManager();
+          if (viewManager && viewManager.getState) {
+            visibleRange = viewManager.getState();
+          }
+        }
+        if (!visibleRange) {
+          visibleRange = typeof this._renderer._fullRange === "function" ? this._renderer._fullRange() : this._renderer._fullRange;
+        }
+        if (!visibleRange) {
+          return { x, y };
+        }
+        var xRange = visibleRange.xMax - visibleRange.xMin;
+        var yRange = visibleRange.yMax - visibleRange.yMin;
         var xScale = xRange !== 0 ? drawingArea.width / xRange : 1;
         var yScale = yRange !== 0 ? drawingArea.height / yRange : 1;
-        var canvasX = drawingArea.x + (x - fullRange.xMin) * xScale;
-        var canvasY = drawingArea.y + drawingArea.height - (y - fullRange.yMin) * yScale;
+        var canvasX = drawingArea.x + (x - visibleRange.xMin) * xScale;
+        var canvasY = drawingArea.y + drawingArea.height - (y - visibleRange.yMin) * yScale;
         return { x: canvasX, y: canvasY };
       };
       Overlay.prototype._getScale = function() {
