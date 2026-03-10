@@ -51,17 +51,28 @@ Overlay.prototype._isValidNumber = function(value) {
 
 /**
  * Validate points array - check if each point has valid x and y coordinates
- * @param {Array} points - Array of {x, y} points
- * @returns {Array} Filtered array with only valid points
+ * Supports both object format {x, y} and array format [x, y]
+ * @param {Array} points - Array of points (either {x, y} or [x, y] format)
+ * @returns {Array} Filtered array with only valid points (normalized to {x, y} format)
  */
 Overlay.prototype._filterValidPoints = function(points) {
     if (!Array.isArray(points)) {
         return [];
     }
     return points.filter(function(point) {
-        return point &&
-            this._isValidNumber(point.x) &&
-            this._isValidNumber(point.y);
+        if (!point) return false;
+
+        // Support both {x, y} object format and [x, y] array format
+        var x, y;
+        if (Array.isArray(point)) {
+            x = point[0];
+            y = point[1];
+        } else {
+            x = point.x;
+            y = point.y;
+        }
+
+        return this._isValidNumber(x) && this._isValidNumber(y);
     }.bind(this));
 };
 

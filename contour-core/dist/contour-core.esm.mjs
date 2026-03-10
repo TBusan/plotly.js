@@ -5196,7 +5196,17 @@ var require_overlay = __commonJS({
         return [];
       }
       return points.filter(function(point) {
-        return point && this._isValidNumber(point.x) && this._isValidNumber(point.y);
+        if (!point)
+          return false;
+        var x, y;
+        if (Array.isArray(point)) {
+          x = point[0];
+          y = point[1];
+        } else {
+          x = point.x;
+          y = point.y;
+        }
+        return this._isValidNumber(x) && this._isValidNumber(y);
       }.bind(this));
     };
     Overlay.prototype._toCanvasCoords = function(x, y) {
