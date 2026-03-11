@@ -155,7 +155,7 @@ function findBestTextLocation(path, textOpts, existingLabels, plotBounds, isClos
         isClosed = closureDist < 1; // Consider closed if within 1 unit
     }
 
-    // Calculate search range
+    // Calculate search range with relaxed conditions for non-closed paths
     var dp, p0, pMax;
 
     if (isClosed) {
@@ -163,16 +163,19 @@ function findBestTextLocation(path, textOpts, existingLabels, plotBounds, isClos
         dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
         p0 = dp / 2;
         pMax = totalPathLen;
-    } else if (totalPathLen > textWidth * 2) {
-        // Open path - keep text away from edges
-        dp = (totalPathLen - textWidth * 2) / (COST_CONSTANTS.INITIALSEARCHPOINTS - 1);
-        p0 = textWidth;
-        pMax = totalPathLen - textWidth;
-    } else {
-        // Very short path - search entire path
+    } else if (totalPathLen > textWidth * 1.2) {
+        // Non-closed path (longer): allow label closer to edges
+        dp = (totalPathLen - textWidth) / (COST_CONSTANTS.INITIALSEARCHPOINTS - 1);
+        p0 = textWidth / 2;
+        pMax = totalPathLen - textWidth / 2;
+    } else if (totalPathLen > textWidth * 0.5) {
+        // Non-closed path (shorter): place label in middle of path
         dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
-        p0 = dp / 2;
-        pMax = totalPathLen;
+        p0 = totalPathLen / 4;
+        pMax = totalPathLen * 3 / 4;
+    } else {
+        // Very short path - no label
+        return null;
     }
 
     var bestCost = Infinity;
