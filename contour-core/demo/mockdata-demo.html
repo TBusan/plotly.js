@@ -372,6 +372,20 @@
                     <input type="checkbox" id="showColorbar" checked onchange="updateRender()">
                     <label for="showColorbar">显示颜色标尺</label>
                 </div>
+                <div class="control-row">
+                    <label>标尺位置</label>
+                    <select id="colorbarPosition" onchange="updateRender()">
+                        <option value="right">右侧</option>
+                        <option value="left">左侧</option>
+                        <option value="bottom">下边</option>
+                        <option value="top">上边</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>标注间隔</label>
+                    <input type="range" id="tickInterval" min="0" max="5" value="2" onchange="updateRender()">
+                    <span id="tickIntervalVal">2</span>
+                </div>
                 <div class="checkbox-row">
                     <input type="checkbox" id="enableHover" onchange="updateRender()">
                     <label for="enableHover">显示等值线 Tooltip</label>
@@ -653,6 +667,8 @@ function generateData8() {
                 var showGrid = document.getElementById('showGrid').checked;
                 var showLabels = document.getElementById('showLabels').checked;
                 var showColorbar = document.getElementById('showColorbar').checked;
+                var colorbarPosition = document.getElementById('colorbarPosition').value;
+                var tickInterval = parseInt(document.getElementById('tickInterval').value);
                 var bgColor = document.getElementById('backgroundColor').value;
                 var xTitle = document.getElementById('xTitle').value;
                 var yTitle = document.getElementById('yTitle').value;
@@ -660,6 +676,7 @@ function generateData8() {
                 document.getElementById('smoothingVal').textContent = smoothing;
                 document.getElementById('ncontoursVal').textContent = ncontours;
                 document.getElementById('lineWidthVal').textContent = lineWidth;
+                document.getElementById('tickIntervalVal').textContent = tickInterval;
 
                 // 计算等值线 - x 和 y 应该放在第一个参数（grid 对象）中
                 var gridData = {
@@ -704,6 +721,14 @@ function generateData8() {
                     backgroundColor: bgColor,
                     showColorbar: showColorbar,
                     showLabels: showLabels,
+                    // Add discrete colorbar configuration
+                    colorbar: {
+                        blocks: colorScale,  // Use the parsed colorScale array
+                        position: colorbarPosition,
+                        tickInterval: tickInterval,
+                        thickness: 25,
+                        padding: 10
+                    },
                     axes: showAxes ? {
                         x: { title: xTitle },
                         y: { title: yTitle }
