@@ -276,6 +276,7 @@
                         <option value="data5">data5 (仅 z,data1)</option>
                         <option value="data6">data6 (含 x, y, z)</option>
                         <option value="data7">data7 (仅 z)</option>
+                        <option value="data8">data8 (1000x1000 网格)</option>
                     </select>
                 </div>
                 <div id="dataInfo" class="info-box success">
@@ -418,6 +419,76 @@
     </script>
 
     <script>
+
+function generateData8() {
+    const rows = 1500;
+    const cols = 1500;
+
+    // 生成 x 和 y 坐标 (0-100 范围)
+    const x = new Array(cols);
+    const y = new Array(rows);
+    for (let i = 0; i < cols; i++) {
+        x[i] = i * 100 / (cols - 1);
+    }
+    for (let i = 0; i < rows; i++) {
+        y[i] = i * 100 / (rows - 1);
+    }
+
+    // 生成 z 数据 - 使用多个高斯峰和波纹效果
+    const z = new Array(rows);
+
+    // 定义几个高斯峰的参数 [centerX, centerY, amplitude, sigma]
+    const peaks = [
+        [25, 25, 100, 15],    // 左下角高峰
+        [75, 75, 80, 20],     // 右上角高峰
+        [50, 50, 120, 25],    // 中心高峰
+        [25, 75, 60, 12],     // 左上角
+        [75, 25, 70, 18],     // 右下角
+        [40, 60, 50, 10],     // 中左
+        [60, 40, 55, 14],     // 中右
+    ];
+
+    // 添加一些波纹效果的参数
+    const waves = [
+        { cx: 30, cy: 30, freq: 0.15, amp: 15 },
+        { cx: 70, cy: 70, freq: 0.12, amp: 12 },
+        { cx: 50, cy: 50, freq: 0.08, amp: 20 },
+    ];
+
+    for (let i = 0; i < rows; i++) {
+        z[i] = new Array(cols);
+        const yi = y[i];
+
+        for (let j = 0; j < cols; j++) {
+            const xi = x[j];
+            let value = 0;
+
+            // 叠加高斯峰
+            for (const [cx, cy, amp, sigma] of peaks) {
+                const dx = xi - cx;
+                const dy = yi - cy;
+                const dist2 = dx * dx + dy * dy;
+                value += amp * Math.exp(-dist2 / (2 * sigma * sigma));
+            }
+
+            // 叠加波纹效果
+            for (const wave of waves) {
+                const dx = xi - wave.cx;
+                const dy = yi - wave.cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                value += wave.amp * Math.sin(dist * wave.freq);
+            }
+
+            // 添加轻微的噪声
+            value += (Math.random() - 0.5) * 2;
+
+            z[i][j] = Math.round(value * 100) / 100;
+        }
+    }
+
+    return { x, y, z };
+}
+
         // 颜色方案定义
         var COLOR_SCALES = {
             Viridis: ['#440154', '#482878', '#3e4a89', '#31688e', '#26838f', '#1f9d8a', '#35b779', '#6dcd59', '#b4de2c', '#fde725'],
@@ -504,6 +575,12 @@
                     z = window.mockData.data7;
                     x = null;
                     y = null;
+                    break;
+                case 'data8':
+                    data = generateData8();
+                    z = data.z;
+                    x = data.x;
+                    y = data.y;
                     break;
                 default:
                     data = window.mockData.data1;

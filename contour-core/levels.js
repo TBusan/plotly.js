@@ -68,10 +68,20 @@ function setContours(options, vals) {
 
     // Auto-generate contour levels
     if (options.autocontour) {
-        // Flatten and filter out NaN/null values
-        var flatVals = vals.flat().filter(function(v) {
-            return typeof v === 'number' && !isNaN(v) && isFinite(v);
-        });
+        // Flatten array manually to avoid stack overflow with large arrays
+        // (Array.flat() may use recursive implementation in some JS engines)
+        var flatVals = [];
+        for (var rowIdx = 0; rowIdx < vals.length; rowIdx++) {
+            var row = vals[rowIdx];
+            if (row) {
+                for (var colIdx = 0; colIdx < row.length; colIdx++) {
+                    var v = row[colIdx];
+                    if (typeof v === 'number' && !isNaN(v) && isFinite(v)) {
+                        flatVals.push(v);
+                    }
+                }
+            }
+        }
 
         if (flatVals.length === 0) {
             return [];  // No valid data

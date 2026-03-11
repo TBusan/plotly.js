@@ -46,9 +46,18 @@ var contourCore = (() => {
           }
         }
         if (options.autocontour) {
-          var flatVals = vals.flat().filter(function(v) {
-            return typeof v === "number" && !isNaN(v) && isFinite(v);
-          });
+          var flatVals = [];
+          for (var rowIdx = 0; rowIdx < vals.length; rowIdx++) {
+            var row = vals[rowIdx];
+            if (row) {
+              for (var colIdx = 0; colIdx < row.length; colIdx++) {
+                var v = row[colIdx];
+                if (typeof v === "number" && !isNaN(v) && isFinite(v)) {
+                  flatVals.push(v);
+                }
+              }
+            }
+          }
           if (flatVals.length === 0) {
             return [];
           }
