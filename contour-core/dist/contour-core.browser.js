@@ -3308,6 +3308,24 @@ var contourCore = (() => {
     "renderers/canvas/heatmap.js"(exports, module) {
       "use strict";
       var colors = require_colors();
+      var isNodeJS = typeof window === "undefined" || typeof document === "undefined";
+      var createCanvasElement;
+      if (isNodeJS) {
+        try {
+          createCanvasElement = __require("@napi-rs/canvas").createCanvas;
+        } catch (e) {
+          createCanvasElement = function(width, height) {
+            throw new Error("Canvas rendering in Node.js requires @napi-rs/canvas. Install it with: npm install @napi-rs/canvas");
+          };
+        }
+      } else {
+        createCanvasElement = function(width, height) {
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          return canvas;
+        };
+      }
       function drawHeatmapBackground(ctx, grid, style) {
         if (!grid || !grid.z || !ctx) {
           return;
@@ -3480,9 +3498,7 @@ var contourCore = (() => {
         var plotWidth = width - 2 * padding;
         var plotHeight = height - 2 * padding;
         var scaleFactor = Math.max(1, Math.min(10, Math.ceil(100 / Math.max(n, m))));
-        var hiresCanvas = document.createElement("canvas");
-        hiresCanvas.width = n * scaleFactor;
-        hiresCanvas.height = m * scaleFactor;
+        var hiresCanvas = createCanvasElement(n * scaleFactor, m * scaleFactor);
         var hiresCtx = hiresCanvas.getContext("2d");
         drawInterpolatedHeatmap(hiresCtx, grid, {
           width: hiresCanvas.width,
