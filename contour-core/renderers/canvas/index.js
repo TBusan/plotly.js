@@ -186,7 +186,9 @@ function renderStatic(ctx, contourResult, style, width, height, coloring, showLi
     }
 
     // Draw colorbar (if enabled)
-    if (style.colorbar !== false && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
+    var showColorbar = style.showColorbar !== false &&
+                       (style.colorbar === undefined || style.colorbar === true || style.colorbar.show !== false);
+    if (showColorbar && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
         drawColorbar(ctx, contourResult, style);
     }
 }
@@ -271,7 +273,9 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
         }
 
         // Draw colorbar
-        if (currentStyle.colorbar !== false &&
+        var showColorbarInteractive = currentStyle.showColorbar !== false &&
+            (currentStyle.colorbar === undefined || currentStyle.colorbar === true || currentStyle.colorbar.show !== false);
+        if (showColorbarInteractive &&
             (currentStyle.coloring === 'fill' || currentStyle.coloring === 'fill+lines' || currentStyle.coloring === 'heatmap')) {
             drawColorbar(ctx, contourResult, currentStyle);
         }
