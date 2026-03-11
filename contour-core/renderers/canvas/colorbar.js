@@ -11,6 +11,33 @@ var computeDiscreteColorbar = colorbar.computeDiscreteColorbar;
 var calculateColorbarDimensions = colorbar.calculateColorbarDimensions;
 
 /**
+ * Check if colorbar should be shown based on style configuration
+ * @param {Object} style - Style options
+ * @param {string} coloring - Coloring mode
+ * @returns {boolean} - True if colorbar should be shown
+ */
+function shouldShowColorbar(style, coloring) {
+    // Check if coloring mode supports colorbar
+    var validColoringModes = ['fill', 'fill+lines', 'heatmap'];
+    if (validColoringModes.indexOf(coloring) === -1) {
+        return false;
+    }
+
+    // Check if showColorbar is explicitly set to false
+    if (style.showColorbar === false) {
+        return false;
+    }
+
+    // Check colorbar configuration
+    var colorbarConfig = style.colorbar;
+    if (colorbarConfig === false) return false;
+    if (colorbarConfig === undefined || colorbarConfig === true) return true;
+    if (colorbarConfig && colorbarConfig.show === false) return false;
+
+    return true;
+}
+
+ /**
  * Draw colorbar on canvas
  * Auto-detects discrete mode if blocks format is provided
  * @param {CanvasRenderingContext2D} ctx - Canvas context
@@ -25,11 +52,36 @@ function drawColorbar(ctx, contourResult, style) {
     var blocks = colorbarConfig.blocks || style.colorScale;
 
     if (blocks && Array.isArray(blocks) && blocks.length > 0 && Array.isArray(blocks[0])) {
+        // Normalize blocks format - accept both [color, value] and [value, color]
+        var normalizedBlocks = normalizeBlocks(blocks);
         // Use discrete colorbar rendering
-        drawDiscreteColorbar(ctx, blocks, style);
+        drawDiscreteColorbar(ctx, normalizedBlocks, style);
     } else {
         // Use legacy gradient colorbar rendering
         drawGradientColorbar(ctx, contourResult, style);
+    }
+}
+
+/**
+ * Normalize blocks format - accept both [color, value] and [value, color]
+ * @param {Array} blocks - Input blocks array
+ * @returns {Array} Normalized blocks in [color, value] format
+ */
+function normalizeBlocks(blocks) {
+    if (!blocks || !blocks.length) return blocks;
+
+    var first = blocks[0];
+    if (!Array.isArray(first) || first.length < 2) return blocks;
+
+    // Check if format is [value, color] (number first) or [color, value] (string first)
+    if (typeof first[0] === 'string') {
+        // Format is [color, value] - already correct
+        return blocks;
+    } else {
+        // Format is [value, color] - swap to [color, value]
+        return blocks.map(function(b) {
+            return [b[1], b[0]];
+        });
     }
 }
 
@@ -69,13 +121,18 @@ function drawDiscreteColorbar(ctx, blocks, style) {
     });
 
     // Draw each block
-    for (var i = 0; i < discreteData.blocks.length; i++) {
+    // For vertical colorbars: reverse order so highest value is at TOP
+    // For horizontal colorbars: normal order so lowest value is at LEFT
+    var blockCount = discreteData.blocks.length;
+    for (var i = 0; i < blockCount; i++) {
         var block = discreteData.blocks[i];
         var bx, by, bw, bh;
 
         if (dims.isVertical) {
+            // Reverse order for vertical: block 0 at bottom, block n-1 at top
+            var reversedIndex = blockCount - 1 - i;
             bx = dims.x;
-            by = dims.y + i * dims.blockThickness;
+            by = dims.y + reversedIndex * dims.blockThickness;
             bw = dims.thickness;
             bh = dims.blockThickness - blockGap;
 
@@ -84,6 +141,7 @@ function drawDiscreteColorbar(ctx, blocks, style) {
                 bh = dims.y + dims.length - by;
             }
         } else {
+            // Normal order for horizontal: block 0 at left, block n-1 at right
             bx = dims.x + i * dims.blockThickness;
             by = dims.y;
             bw = dims.blockThickness - blockGap;
@@ -122,8 +180,10 @@ function drawDiscreteColorbar(ctx, blocks, style) {
         var label = formatValue(block.value);
 
         if (dims.isVertical) {
+            // Reverse index to match reversed block order
+            var reversedIndex = blockCount - 1 - j;
             labelX = dims.x + dims.thickness + 5;
-            labelY = dims.y + j * dims.blockThickness + dims.blockThickness / 2;
+            labelY = dims.y + reversedIndex * dims.blockThickness + dims.blockThickness / 2;
 
             if (position === 'left') {
                 ctx.textAlign = 'right';
@@ -165,11 +225,38 @@ function drawDiscreteColorbar(ctx, blocks, style) {
 }
 
 /**
+ * Normalize blocks format - accept both [color, value] and [value, color]
+ * @param {Array} blocks - Input blocks array
+ * @returns {Array} Normalized blocks in [color, value] format
+ */
+function normalizeBlocks(blocks) {
+    if (!blocks || !blocks.length) return blocks;
+
+    var first = blocks[0];
+    if (!Array.isArray(first) || first.length < 2) return blocks;
+
+    // Check if format is [value, color] (number first) or [color, value] (string first)
+    if (typeof first[0] === 'string') {
+        // Format is [color, value] - already correct
+        return blocks;
+    } else {
+        // Format is [value, color] - swap to [color, value]
+        return blocks.map(function(b) {
+            return [b[1], b[0]];
+        });
+    }
+}
+
+/**
  * Format value for display
  * @param {number} value - Value to format
  * @returns {string} Formatted value
  */
 function formatValue(value) {
+    // Ensure value is a number
+    if (typeof value !== 'number' || isNaN(value)) {
+        return String(value);
+    }
     if (Math.abs(value) < 0.01 || Math.abs(value) >= 1000) {
         return value.toExponential(1);
     }

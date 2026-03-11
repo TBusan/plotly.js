@@ -2521,14 +2521,16 @@ var contourCore = (() => {
           dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
           p0 = dp / 2;
           pMax = totalPathLen;
-        } else if (totalPathLen > textWidth * 2) {
-          dp = (totalPathLen - textWidth * 2) / (COST_CONSTANTS.INITIALSEARCHPOINTS - 1);
-          p0 = textWidth;
-          pMax = totalPathLen - textWidth;
-        } else {
+        } else if (totalPathLen > textWidth * 1.2) {
+          dp = (totalPathLen - textWidth) / (COST_CONSTANTS.INITIALSEARCHPOINTS - 1);
+          p0 = textWidth / 2;
+          pMax = totalPathLen - textWidth / 2;
+        } else if (totalPathLen > textWidth * 0.5) {
           dp = totalPathLen / COST_CONSTANTS.INITIALSEARCHPOINTS;
-          p0 = dp / 2;
-          pMax = totalPathLen;
+          p0 = totalPathLen / 4;
+          pMax = totalPathLen * 3 / 4;
+        } else {
+          return null;
         }
         var bestCost = Infinity;
         var bestLoc = null;
@@ -2935,6 +2937,75 @@ var contourCore = (() => {
     }
   });
 
+  // colorbar/discrete.js
+  var require_discrete = __commonJS({
+    "colorbar/discrete.js"(exports, module) {
+      "use strict";
+      function computeDiscreteColorbar(blocks, options) {
+        options = options || {};
+        if (!blocks || blocks.length === 0) {
+          return { blocks: [], min: 0, max: 1 };
+        }
+        var tickInterval = options.tickInterval || 0;
+        var result = {
+          blocks: [],
+          min: blocks[0][1],
+          max: blocks[blocks.length - 1][1]
+        };
+        for (var i = 0; i < blocks.length; i++) {
+          var block = blocks[i];
+          var showLabel = tickInterval === 0 || i === 0 || i === blocks.length - 1 || i % tickInterval === 0;
+          result.blocks.push({
+            color: block[0],
+            value: block[1],
+            index: i,
+            showLabel
+          });
+        }
+        return result;
+      }
+      function calculateColorbarDimensions(options) {
+        var position = options.position || "right";
+        var thickness = options.thickness || 25;
+        var padding = options.padding || 10;
+        var width = options.width;
+        var height = options.height;
+        var blockCount = options.blockCount || 10;
+        var isVertical = position === "left" || position === "right";
+        var x, y, length;
+        if (isVertical) {
+          length = height * 0.8;
+          y = (height - length) / 2;
+          if (position === "right") {
+            x = width - thickness - padding;
+          } else {
+            x = padding;
+          }
+        } else {
+          length = width * 0.8;
+          x = (width - length) / 2;
+          if (position === "bottom") {
+            y = height - thickness - padding;
+          } else {
+            y = padding;
+          }
+        }
+        return {
+          x,
+          y,
+          thickness,
+          length,
+          isVertical,
+          blockThickness: isVertical ? length / blockCount : length / blockCount
+        };
+      }
+      module.exports = {
+        computeDiscreteColorbar,
+        calculateColorbarDimensions
+      };
+    }
+  });
+
   // colorbar/compute.js
   var require_compute2 = __commonJS({
     "colorbar/compute.js"(exports, module) {
@@ -3125,12 +3196,16 @@ var contourCore = (() => {
     "colorbar/index.js"(exports, module) {
       "use strict";
       var colors = require_colors();
+      var discrete = require_discrete();
       module.exports = {
         computeColorbar: require_compute2(),
         computeTicks: require_ticks(),
         mapColors: colors.mapColors,
         buildColorScale: colors.buildColorScale,
-        COLOR_SCALES: colors.COLOR_SCALES
+        COLOR_SCALES: colors.COLOR_SCALES,
+        // Discrete colorbar
+        computeDiscreteColorbar: discrete.computeDiscreteColorbar,
+        calculateColorbarDimensions: discrete.calculateColorbarDimensions
       };
     }
   });
@@ -3139,9 +3214,158 @@ var contourCore = (() => {
   var require_colorbar2 = __commonJS({
     "renderers/canvas/colorbar.js"(exports, module) {
       "use strict";
-      var mapColors = require_colorbar().mapColors;
-      var computeTicks = require_colorbar().computeTicks;
+      var colorbar = require_colorbar();
+      var mapColors = colorbar.mapColors;
+      var computeDiscreteColorbar = colorbar.computeDiscreteColorbar;
+      var calculateColorbarDimensions = colorbar.calculateColorbarDimensions;
       function drawColorbar(ctx, contourResult, style) {
+        style = style || {};
+        var colorbarConfig = style.colorbar || {};
+        var blocks = colorbarConfig.blocks || style.colorScale;
+        if (blocks && Array.isArray(blocks) && blocks.length > 0 && Array.isArray(blocks[0])) {
+          var normalizedBlocks = normalizeBlocks(blocks);
+          drawDiscreteColorbar(ctx, normalizedBlocks, style);
+        } else {
+          drawGradientColorbar(ctx, contourResult, style);
+        }
+      }
+      function normalizeBlocks(blocks) {
+        if (!blocks || !blocks.length)
+          return blocks;
+        var first = blocks[0];
+        if (!Array.isArray(first) || first.length < 2)
+          return blocks;
+        if (typeof first[0] === "string") {
+          return blocks;
+        } else {
+          return blocks.map(function(b) {
+            return [b[1], b[0]];
+          });
+        }
+      }
+      function drawDiscreteColorbar(ctx, blocks, style) {
+        style = style || {};
+        var colorbarConfig = style.colorbar || {};
+        ctx.save();
+        var width = style.width || ctx.canvas.width;
+        var height = style.height || ctx.canvas.height;
+        var position = colorbarConfig.position || "right";
+        var thickness = colorbarConfig.thickness || 25;
+        var padding = colorbarConfig.padding || 10;
+        var tickInterval = colorbarConfig.tickInterval || 0;
+        var blockGap = colorbarConfig.blockGap || 1;
+        var dims = calculateColorbarDimensions({
+          position,
+          thickness,
+          padding,
+          width,
+          height,
+          blockCount: blocks.length
+        });
+        var discreteData = computeDiscreteColorbar(blocks, {
+          tickInterval
+        });
+        var blockCount = discreteData.blocks.length;
+        for (var i = 0; i < blockCount; i++) {
+          var block = discreteData.blocks[i];
+          var bx, by, bw, bh;
+          if (dims.isVertical) {
+            var reversedIndex = blockCount - 1 - i;
+            bx = dims.x;
+            by = dims.y + reversedIndex * dims.blockThickness;
+            bw = dims.thickness;
+            bh = dims.blockThickness - blockGap;
+            if (by + bh > dims.y + dims.length) {
+              bh = dims.y + dims.length - by;
+            }
+          } else {
+            bx = dims.x + i * dims.blockThickness;
+            by = dims.y;
+            bw = dims.blockThickness - blockGap;
+            bh = dims.thickness;
+            if (bx + bw > dims.x + dims.length) {
+              bw = dims.x + dims.length - bx;
+            }
+          }
+          ctx.fillStyle = block.color;
+          ctx.fillRect(bx, by, bw, bh);
+        }
+        ctx.strokeStyle = "#666";
+        ctx.lineWidth = 1;
+        if (dims.isVertical) {
+          ctx.strokeRect(dims.x, dims.y, dims.thickness, dims.length);
+        } else {
+          ctx.strokeRect(dims.x, dims.y, dims.length, dims.thickness);
+        }
+        ctx.fillStyle = "#333";
+        ctx.font = "10px Arial";
+        ctx.textBaseline = "middle";
+        for (var j = 0; j < discreteData.blocks.length; j++) {
+          var block = discreteData.blocks[j];
+          if (!block.showLabel)
+            continue;
+          var labelX, labelY;
+          var label = formatValue(block.value);
+          if (dims.isVertical) {
+            var reversedIndex = blockCount - 1 - j;
+            labelX = dims.x + dims.thickness + 5;
+            labelY = dims.y + reversedIndex * dims.blockThickness + dims.blockThickness / 2;
+            if (position === "left") {
+              ctx.textAlign = "right";
+              labelX = dims.x - 5;
+            } else {
+              ctx.textAlign = "left";
+            }
+          } else {
+            labelX = dims.x + j * dims.blockThickness + dims.blockThickness / 2;
+            labelY = dims.y + dims.thickness + 12;
+            if (position === "top") {
+              labelY = dims.y - 5;
+            }
+            ctx.textAlign = "center";
+          }
+          ctx.fillText(label, labelX, labelY);
+        }
+        if (colorbarConfig.title) {
+          ctx.fillStyle = "#333";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          if (dims.isVertical) {
+            ctx.save();
+            ctx.translate(dims.x + dims.thickness / 2, dims.y - 15);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(colorbarConfig.title, 0, 0);
+            ctx.restore();
+          } else {
+            ctx.fillText(colorbarConfig.title, dims.x + dims.length / 2, dims.y - 10);
+          }
+        }
+        ctx.restore();
+      }
+      function normalizeBlocks(blocks) {
+        if (!blocks || !blocks.length)
+          return blocks;
+        var first = blocks[0];
+        if (!Array.isArray(first) || first.length < 2)
+          return blocks;
+        if (typeof first[0] === "string") {
+          return blocks;
+        } else {
+          return blocks.map(function(b) {
+            return [b[1], b[0]];
+          });
+        }
+      }
+      function formatValue(value) {
+        if (typeof value !== "number" || isNaN(value)) {
+          return String(value);
+        }
+        if (Math.abs(value) < 0.01 || Math.abs(value) >= 1e3) {
+          return value.toExponential(1);
+        }
+        return value.toFixed(2);
+      }
+      function drawGradientColorbar(ctx, contourResult, style) {
         style = style || {};
         var levels = contourResult.levels;
         if (!levels || levels.length === 0)
@@ -6613,7 +6837,8 @@ var contourCore = (() => {
         if (hasAxes) {
           renderAxesLayer(ctx, drawingArea, fullRange, fullRange, style);
         }
-        if (style.colorbar !== false && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
+        var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
+        if (showColorbar && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
           drawColorbar(ctx, contourResult, style);
         }
       }
@@ -6664,7 +6889,8 @@ var contourCore = (() => {
           if (hasAxes) {
             renderAxesLayer(ctx, drawingArea, visibleRange, fullRange, currentStyle);
           }
-          if (currentStyle.colorbar !== false && (currentStyle.coloring === "fill" || currentStyle.coloring === "fill+lines" || currentStyle.coloring === "heatmap")) {
+          var showColorbarInteractive = currentStyle.showColorbar !== false && (currentStyle.colorbar === void 0 || currentStyle.colorbar === true || currentStyle.colorbar.show !== false);
+          if (showColorbarInteractive && (currentStyle.coloring === "fill" || currentStyle.coloring === "fill+lines" || currentStyle.coloring === "heatmap")) {
             drawColorbar(ctx, contourResult, currentStyle);
           }
           if (_overlay) {
