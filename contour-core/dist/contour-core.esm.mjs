@@ -8591,13 +8591,10 @@ var require_canvas = __commonJS({
         tooltipElement.innerHTML = content;
         tooltipElement.style.display = "block";
         var canvasRect = canvas.getBoundingClientRect();
-        var tooltipX = canvasRect.left + px + 15;
-        var tooltipY = canvasRect.top + py - 40;
+        var tooltipX = canvasRect.left + px + 10;
+        var tooltipY = canvasRect.top + py + 5;
         if (tooltipX + 150 > window.innerWidth) {
           tooltipX = canvasRect.left + px - 160;
-        }
-        if (tooltipY < 5) {
-          tooltipY = canvasRect.top + py + 20;
         }
         tooltipElement.style.left = tooltipX + "px";
         tooltipElement.style.top = tooltipY + "px";
