@@ -517,10 +517,17 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
     // This ensures clip mask stays consistent with contours during zoom/pan
     if (needsClip && useClipMask) {
         // Pass real data coordinates for proper coordinate transformation
+        // Include anti-aliasing options from style
         var clipPathData = nullHandling.generateClipPath(contourResult, {
             useDataCoordinates: true,
             dataX: pathInfo ? pathInfo.x : null,
-            dataY: pathInfo ? pathInfo.y : null
+            dataY: pathInfo ? pathInfo.y : null,
+            // Anti-aliasing options
+            smoothingMethod: style.smoothingMethod,
+            upsampleScale: style.upsampleScale,
+            clipLevel: style.clipLevel,
+            clipSmoothing: style.clipSmoothing,
+            simplifyTolerance: style.simplifyTolerance
         });
         if (clipPathData) {
             applyCanvasClipPathFromData(ctx, clipPathData, drawArea, visibleRange);

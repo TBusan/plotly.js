@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直接平滑测试 - Clip Mask</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .method-selector {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .method-selector h4 {
+            margin: 0 0 10px;
+            color: #ff9800;
+        }
+        .method-selector .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .method-selector label {
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .method-selector input[type="radio"] {
+            margin-right: 5px;
+        }
+        .method-selector span {
+            margin-left: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .control-row label {
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .control-row input[type="range"] {
+            flex: 1;
+        }
+        .control-row span {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: #888;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #667eea;
+            text-align: center;
+        }
+        .canvas-wrapper, .svg-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .svg-wrapper svg {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>直接平滑测试 - Clip Mask</h1>
+        <p class="subtitle">对比超采样平滑 vs. 直接边界平滑</p>
+
+        <div class="method-selector">
+            <h4>选择平滑方法</h4>
+            <div class="control-row">
+                <label>
+                    <input type="radio" name="smoothingMethod" value="upsample" onchange="updateRender()">
+                    超采样 (upsample)
+                </label>
+                <label>
+                    <input type="radio" name="smoothingMethod" value="direct" checked onchange="updateRender()">
+                    直接平滑 (推荐)
+                </label>
+            </div>
+            <div class="control-row">
+                <label>超采样倍数</label>
+                <input type="range" id="upsampleScale" min="1" max="4" step="1" value="2" onchange="updateRender()">
+                <span id="upsampleScaleVal">2</span>
+            </div>
+            <div class="control-row">
+                <label>边界级别</label>
+                <input type="range" id="clipLevel" min="0.5" max="0.99" step="0.01" value="0.95" onchange="updateRender()">
+                <span id="clipLevelVal">0.95</span>
+            </div>
+            <div class="control-row">
+                <label>平滑系数</label>
+                <input type="range" id="clipSmoothing" min="0" max="1" step="0.1" value="0.3" onchange="updateRender()">
+                <span id="clipSmoothingVal">0.3</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>说明：</strong><br>
+            • <strong>超采样 (upsample)</strong>： 使用双线性插值创建更高分辨率的掩膜， marching squares 在中间值处找到边界<br>
+            • <strong>直接平滑 (direct)</strong>： 直接在原始边界点上应用 Catmull-Rom 平滑， 减少计算量<br>
+            • 两种方法都能消除边界的锯齿现象
+        </div>
+
+        <div class="comparison">
+            <div class="panel">
+                <h3>Canvas - 超采样平滑</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasUpsample" width="500" height="400"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Canvas - 直接平滑</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasDirect" width="500" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison">
+            <div class="panel">
+                <h3>SVG - 超采样平滑</h3>
+                <div class="svg-wrapper" id="svgUpsample"></div>
+            </div>
+            <div class="panel">
+                <h3>SVG - 直接平滑</h3>
+                <div class="svg-wrapper" id="svgDirect"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.min.js"></script>
+    <script>
+        // 测试数据 - 包含空值的7x8网格
+        var testData = [
+            [null, null, null, 12, 13, 14, 15, 16],
+            [null, 1, null, 11, null, null, null, 17],
+            [null, 2, 6, 7, null, null, null, 18],
+            [null, 3, null, 8, null, null, null, 19],
+            [5, 4, 10, 9, null, null, null, 20],
+            [null, null, null, 27, null, null, null, 21],
+            [null, null, null, 26, 25, 24, 23, 22]
+        ];
+
+        function createGrid(zData) {
+            var m = zData.length;
+            var n = zData[0].length;
+            var grid = { z: zData, x: [], y: [] };
+            for (var i = 0; i < n; i++) grid.x.push(i);
+            for (var j = 0; j < m; j++) grid.y.push(j);
+            return grid;
+        }
+
+        function updateRender() {
+            var method = document.querySelector('input[name="smoothingMethod"]:checked').value;
+            var upsampleScale = parseInt(document.getElementById('upsampleScale').value);
+            var clipLevel = parseFloat(document.getElementById('clipLevel').value)
+            var clipSmoothing = parseFloat(document.getElementById('clipSmoothing').value);
+
+            // 更新显示值
+            document.getElementById('upsampleScaleVal').textContent = upsampleScale;
+            document.getElementById('clipLevelVal').textContent = clipLevel
+            document.getElementById('clipSmoothingVal').textContent = clipSmoothing
+            var grid = createGrid(testData)
+            var options = {
+                autocontour: true,
+                smoothing: 0.3,
+                connectgaps: false
+            };
+            var result = contourCore.computeContours(grid, options)
+            // 准备样式选项
+            var style = {
+                width: 500,
+                height: 400,
+                padding: 40,
+                coloring: 'fill',
+                colorScale: [
+                    [1, '#0000ff'],
+                    [5, '#00bfff'],
+                    [10, '#00ffff'],
+                    [15, '#ffff00'],
+                    [20, '#ffa500'],
+                    [25, '#ff0000']
+                ],
+                smoothing: 0.3,
+                showLines: false,
+                lineWidth: 1.5,
+                z: grid.z,
+                x: grid.x,
+                y: grid.y,
+                useClipMask: true
+            };
+            // Canvas - 超采样平滑
+            var ctx1 = document.getElementById('canvasUpsample').getContext('2d')
+            ctx1.clearRect(0, 0, 500, 400)
+            var styleUpsample = Object.assign({}, style, {
+                smoothingMethod: 'upsample',
+                upsampleScale: upsampleScale,
+            });
+            contourCore.renderers.canvas.drawContours(ctx1, result, styleUpsample);
+
+            // Canvas - 直接平滑
+            var ctx2 = document.getElementById('canvasDirect').getContext('2d')
+            ctx2.clearRect(0, 0, 500, 400)
+            var styleDirect = Object.assign({}, style, {
+                smoothingMethod: 'direct'
+            });
+            contourCore.renderers.canvas.drawContours(ctx2, result, styleDirect);
+
+            // SVG - 超采样平滑
+            var styleUpsample = Object.assign({}, style, {
+                smoothingMethod: 'upsample',
+                upsampleScale: upsampleScale
+            });
+            var svg1 = contourCore.renderers.svg.renderSVG(result, styleUpsample)
+            document.getElementById('svgUpsample').innerHTML = svg1
+
+            // SVG - 直接平滑
+            var styleDirect = Object.assign({}, style, {
+                smoothingMethod: 'direct'
+            });
+            var svg2 = contourCore.renderers.svg.renderSVG(result, styleDirect)
+            document.getElementById('svgDirect').innerHTML = svg2
+        }
+        // 初始化
+        updateRender()
+    </script>
+</body>
+</html>

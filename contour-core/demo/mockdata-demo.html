@@ -249,7 +249,7 @@
         <div class="canvas-section">
             <div class="canvas-title">交互式等值线渲染器</div>
             <div class="canvas-wrapper">
-                <canvas id="mainCanvas" width="700" height="550"></canvas>
+                <canvas id="mainCanvas" width="900" height="750"></canvas>
             </div>
             <div id="viewState" class="view-state">
                 视图状态：加载中...
@@ -408,6 +408,40 @@
                 <div class="control-row">
                     <label>背景颜色</label>
                     <input type="color" id="backgroundColor" value="#ffffff" onchange="updateRender()" style="flex:1; height:30px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>🎯 抗锯齿设置</h3>
+                <div class="info-box warning" style="margin-bottom: 10px; padding: 8px; font-size: 12px;">
+                    优化 null 区域边界的平滑度
+                </div>
+                <div class="control-row">
+                    <label>平滑方法</label>
+                    <select id="smoothingMethod" onchange="updateRender()">
+                        <option value="upsample">超采样 (upsample)</option>
+                        <option value="direct" selected>直接平滑 (推荐)</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>超采样倍数</label>
+                    <input type="range" id="upsampleScale" min="1" max="12" step="1" value="2" onchange="updateRender()">
+                    <span id="upsampleScaleVal">2</span>
+                </div>
+                <div class="control-row">
+                    <label>边界级别</label>
+                    <input type="range" id="clipLevel" min="0.5" max="0.99" step="0.01" value="0.95" onchange="updateRender()">
+                    <span id="clipLevelVal">0.95</span>
+                </div>
+                <div class="control-row">
+                    <label>平滑系数</label>
+                    <input type="range" id="clipSmoothing" min="0" max="1" step="0.1" value="0.3" onchange="updateRender()">
+                    <span id="clipSmoothingVal">0.3</span>
+                </div>
+                <div class="control-row">
+                    <label>简化容差</label>
+                    <input type="range" id="simplifyTolerance" min="0" max="2" step="0.1" value="0.5" onchange="updateRender()">
+                    <span id="simplifyToleranceVal">0.5</span>
                 </div>
             </div>
         </div>
@@ -673,10 +707,21 @@ function generateData8() {
                 var xTitle = document.getElementById('xTitle').value;
                 var yTitle = document.getElementById('yTitle').value;
 
+                // Anti-aliasing options
+                var upsampleScale = parseInt(document.getElementById('upsampleScale').value);
+                var clipLevel = parseFloat(document.getElementById('clipLevel').value);
+                var clipSmoothing = parseFloat(document.getElementById('clipSmoothing').value);
+                var smoothingMethod = document.getElementById('smoothingMethod').value;
+                var simplifyTolerance = parseFloat(document.getElementById('simplifyTolerance').value);
+
                 document.getElementById('smoothingVal').textContent = smoothing;
                 document.getElementById('ncontoursVal').textContent = ncontours;
                 document.getElementById('lineWidthVal').textContent = lineWidth;
                 document.getElementById('tickIntervalVal').textContent = tickInterval;
+                document.getElementById('upsampleScaleVal').textContent = upsampleScale;
+                document.getElementById('clipLevelVal').textContent = clipLevel;
+                document.getElementById('clipSmoothingVal').textContent = clipSmoothing;
+                document.getElementById('simplifyToleranceVal').textContent = simplifyTolerance;
 
                 // 计算等值线 - x 和 y 应该放在第一个参数（grid 对象）中
                 var gridData = {
@@ -721,6 +766,12 @@ function generateData8() {
                     backgroundColor: bgColor,
                     showColorbar: showColorbar,
                     showLabels: showLabels,
+                    // Anti-aliasing options for clip mask
+                    smoothingMethod: smoothingMethod,
+                    upsampleScale: upsampleScale,
+                    clipLevel: clipLevel,
+                    clipSmoothing: clipSmoothing,
+                    simplifyTolerance: simplifyTolerance,
                     // Add discrete colorbar configuration
                     colorbar: {
                         blocks: colorScale,  // Use the parsed colorScale array

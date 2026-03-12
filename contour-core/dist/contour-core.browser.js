@@ -976,6 +976,109 @@ var contourCore = (() => {
       var marchingSquares = require_marchingsquares();
       var pathFinding = require_pathfinding();
       var closeBoundaries = require_close_boundaries();
+      var DEFAULT_UPSAMPLE_SCALE = 2;
+      var DEFAULT_CLIP_LEVEL = 0.95;
+      var DEFAULT_SMOOTHING = 0.3;
+      var DEFAULT_SIMPLIFY_TOLERANCE = 0.5;
+      function perpendicularDistance(point, lineStart, lineEnd) {
+        var dx = lineEnd[0] - lineStart[0];
+        var dy = lineEnd[1] - lineStart[1];
+        var lineLengthSquared = dx * dx + dy * dy;
+        if (lineLengthSquared === 0) {
+          var ddx = point[0] - lineStart[0];
+          var ddy = point[1] - lineStart[1];
+          return Math.sqrt(ddx * ddx + ddy * ddy);
+        }
+        var t = ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lineLengthSquared;
+        t = Math.max(0, Math.min(1, t));
+        var closestX = lineStart[0] + t * dx;
+        var closestY = lineStart[1] + t * dy;
+        var distX = point[0] - closestX;
+        var distY = point[1] - closestY;
+        return Math.sqrt(distX * distX + distY * distY);
+      }
+      function simplifyPathDouglasPeucker(points, tolerance) {
+        if (!points || points.length <= 2)
+          return points;
+        var maxDistance = 0;
+        var maxIndex = 0;
+        var first = points[0];
+        var last = points[points.length - 1];
+        for (var i = 1; i < points.length - 1; i++) {
+          var distance = perpendicularDistance(points[i], first, last);
+          if (distance > maxDistance) {
+            maxDistance = distance;
+            maxIndex = i;
+          }
+        }
+        if (maxDistance > tolerance) {
+          var left = simplifyPathDouglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+          var right = simplifyPathDouglasPeucker(points.slice(maxIndex), tolerance);
+          return left.slice(0, -1).concat(right);
+        } else {
+          return [first, last];
+        }
+      }
+      var DEFAULT_SIMPLIFY_TOLERANCE = 0.5;
+      function perpendicularDistance(point, lineStart, lineEnd) {
+        var dx = lineEnd[0] - lineStart[0];
+        var dy = lineEnd[1] - lineStart[1];
+        var lineLengthSquared = dx * dx + dy * dy;
+        if (lineLengthSquared === 0) {
+          return Math.sqrt(
+            (point[0] - lineStart[0]) * (point[0] - lineStart[0]) + (point[1] - lineStart[1]) * (point[1] - lineStart[1])
+          );
+        }
+        var t = ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lineLengthSquared;
+        t = Math.max(0, Math.min(1, t));
+        var nearestX = lineStart[0] + t * dx;
+        var nearestY = lineStart[1] + t * dy;
+        return Math.sqrt(
+          (point[0] - nearestX) * (point[0] - nearestX) + (point[1] - nearestY) * (point[1] - nearestY)
+        );
+      }
+      function simplifyPathDouglasPeucker(points, tolerance) {
+        if (!points || points.length <= 2)
+          return points;
+        tolerance = tolerance || DEFAULT_SIMPLIFY_TOLERANCE;
+        if (tolerance <= 0)
+          return points;
+        var maxDistance = 0;
+        var maxIndex = 0;
+        var first = points[0];
+        var last = points[points.length - 1];
+        for (var i = 1; i < points.length - 1; i++) {
+          var distance = perpendicularDistance(points[i], first, last);
+          if (distance > maxDistance) {
+            maxDistance = distance;
+            maxIndex = i;
+          }
+        }
+        if (maxDistance > tolerance) {
+          var left = simplifyPathDouglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+          var right = simplifyPathDouglasPeucker(points.slice(maxIndex), tolerance);
+          return left.slice(0, -1).concat(right);
+        }
+        return [first, last];
+      }
+      function simplifyPathInfoPaths(pathInfo, tolerance) {
+        if (tolerance <= 0)
+          return;
+        if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
+          for (var i = 0; i < pathInfo.edgepaths.length; i++) {
+            if (pathInfo.edgepaths[i] && pathInfo.edgepaths[i].length > 2) {
+              pathInfo.edgepaths[i] = simplifyPathDouglasPeucker(pathInfo.edgepaths[i], tolerance);
+            }
+          }
+        }
+        if (pathInfo.paths && pathInfo.paths.length > 0) {
+          for (var i = 0; i < pathInfo.paths.length; i++) {
+            if (pathInfo.paths[i] && pathInfo.paths[i].length > 2) {
+              pathInfo.paths[i] = simplifyPathDouglasPeucker(pathInfo.paths[i], tolerance);
+            }
+          }
+        }
+      }
       function makeBinaryMask(nullMask) {
         if (!nullMask)
           return null;
@@ -991,6 +1094,58 @@ var contourCore = (() => {
         }
         return binaryMask;
       }
+      function bilinearInterpolate(mask, x, y) {
+        var m = mask.length;
+        var n = mask[0].length;
+        var x0 = Math.max(0, Math.min(Math.floor(x), n - 1));
+        var y0 = Math.max(0, Math.min(Math.floor(y), m - 1));
+        var x1 = Math.min(x0 + 1, n - 1);
+        var y1 = Math.min(y0 + 1, m - 1);
+        if (x0 === x1 && y0 === y1)
+          return mask[y0][x0];
+        if (x0 === x1) {
+          var t = y - y0;
+          return mask[y0][x0] * (1 - t) + mask[y1][x0] * t;
+        }
+        if (y0 === y1) {
+          var t = x - x0;
+          return mask[y0][x0] * (1 - t) + mask[y0][x1] * t;
+        }
+        var tx = x - x0;
+        var ty = y - y0;
+        var v00 = mask[y0][x0];
+        var v10 = mask[y0][x1];
+        var v01 = mask[y1][x0];
+        var v11 = mask[y1][x1];
+        var v0 = v00 * (1 - tx) + v10 * tx;
+        var v1 = v01 * (1 - tx) + v11 * tx;
+        return v0 * (1 - ty) + v1 * ty;
+      }
+      function upsampleMask(mask, scale) {
+        if (!mask || mask.length === 0)
+          return { mask, scale: 1 };
+        scale = scale || DEFAULT_UPSAMPLE_SCALE;
+        if (scale < 1)
+          scale = 1;
+        var m = mask.length;
+        var n = mask[0].length;
+        if (scale === 1)
+          return { mask, scale: 1 };
+        var newM = (m - 1) * scale + 1;
+        var newN = (n - 1) * scale + 1;
+        var upsampled = [];
+        for (var i = 0; i < newM; i++) {
+          var row = [];
+          var origY = i / scale;
+          for (var j = 0; j < newN; j++) {
+            var origX = j / scale;
+            var value = bilinearInterpolate(mask, origX, origY);
+            row.push(Math.max(0, Math.min(1, value)));
+          }
+          upsampled.push(row);
+        }
+        return { mask: upsampled, scale };
+      }
       function generateClipPath(contourResult, options) {
         options = options || {};
         var nullMask = contourResult.nullMask;
@@ -1000,45 +1155,100 @@ var contourCore = (() => {
         var binaryMask = makeBinaryMask(nullMask);
         if (!binaryMask)
           return null;
-        var m = binaryMask.length;
-        var n = binaryMask[0].length;
+        var originalM = binaryMask.length;
+        var originalN = binaryMask[0].length;
+        var clipLevel = options.clipLevel !== void 0 ? options.clipLevel : DEFAULT_CLIP_LEVEL;
+        var clipSmoothing = options.clipSmoothing !== void 0 ? options.clipSmoothing : DEFAULT_SMOOTHING;
+        var smoothingMethod = options.smoothingMethod || "direct";
+        var workingMask, scale, m, n;
+        if (smoothingMethod === "upsample") {
+          var upsampleScale = options.upsampleScale !== void 0 ? options.upsampleScale : DEFAULT_UPSAMPLE_SCALE;
+          var upsampled = upsampleMask(binaryMask, upsampleScale);
+          workingMask = upsampled.mask;
+          scale = upsampled.scale;
+          m = workingMask.length;
+          n = workingMask[0].length;
+        } else {
+          workingMask = binaryMask;
+          scale = 1;
+          m = originalM;
+          n = originalN;
+        }
         var x, y;
         if (options.useDataCoordinates && options.dataX && options.dataY) {
-          x = options.dataX;
-          y = options.dataY;
+          var dataX = options.dataX;
+          var dataY = options.dataY;
+          var xMin = Math.min.apply(Math, dataX);
+          var xMax = Math.max.apply(Math, dataX);
+          var yMin = Math.min.apply(Math, dataY);
+          var yMax = Math.max.apply(Math, dataY);
+          x = [];
+          y = [];
+          for (var i = 0; i < n; i++) {
+            var origIdx = i / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+            if (origIdxFloor >= dataX.length - 1) {
+              x.push(dataX[dataX.length - 1]);
+            } else if (origIdxFloor < 0) {
+              x.push(dataX[0]);
+            } else {
+              x.push(dataX[origIdxFloor] + (dataX[origIdxFloor + 1] - dataX[origIdxFloor]) * origIdxFrac);
+            }
+          }
+          for (var j = 0; j < m; j++) {
+            var origIdx = j / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+            if (origIdxFloor >= dataY.length - 1) {
+              y.push(dataY[dataY.length - 1]);
+            } else if (origIdxFloor < 0) {
+              y.push(dataY[0]);
+            } else {
+              y.push(dataY[origIdxFloor] + (dataY[origIdxFloor + 1] - dataY[origIdxFloor]) * origIdxFrac);
+            }
+          }
         } else {
           x = [];
           y = [];
           for (var i = 0; i < n; i++)
-            x.push(i);
+            x.push(i / scale);
           for (var j = 0; j < m; j++)
-            y.push(j);
+            y.push(j / scale);
         }
         var clipPathInfo = {
-          level: 0.9,
+          level: clipLevel,
           crossings: {},
           starts: [],
           edgepaths: [],
           paths: [],
-          z: binaryMask,
+          z: workingMask,
           x,
           y,
-          smoothing: 0
+          smoothing: clipSmoothing
         };
         marchingSquares.makeCrossings([clipPathInfo]);
         var xRange = x.length > 1 ? x[x.length - 1] - x[0] : 1;
         var yRange = y.length > 1 ? y[y.length - 1] - y[0] : 1;
-        var xTol = Math.max(1e-10, xRange * 1e-3);
-        var yTol = Math.max(1e-10, yRange * 1e-3);
+        var xTol = Math.max(1e-10, xRange * 1e-3 / scale);
+        var yTol = Math.max(1e-10, yRange * 1e-3 / scale);
         pathFinding.findAllPaths([clipPathInfo], xTol, yTol);
         closeBoundaries([clipPathInfo], { type: "levels" });
+        var simplifyTolerance = options.simplifyTolerance !== void 0 ? options.simplifyTolerance : DEFAULT_SIMPLIFY_TOLERANCE;
+        if (simplifyTolerance > 0) {
+          var xRange = x.length > 1 ? x[x.length - 1] - x[0] : 1;
+          var yRange = y.length > 1 ? y[y.length - 1] - y[0] : 1;
+          var baseTol = Math.min(xRange, yRange) / Math.max(m, n) * 2;
+          var scaledTolerance = baseTol * simplifyTolerance;
+          simplifyPathInfoPaths(clipPathInfo, scaledTolerance);
+        }
         if (options.useDataCoordinates) {
           return createClipPathDataCoords(clipPathInfo, m, n);
         }
         var width = options.width || 500;
         var height = options.height || 400;
         var padding = options.padding || 30;
-        return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
+        return createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
       }
       function createClipPathDataCoords(clipPathInfo, m, n) {
         var x = clipPathInfo.x || [];
@@ -1282,7 +1492,13 @@ var contourCore = (() => {
       module.exports = {
         generateClipPath,
         makeBinaryMask,
-        createClipPathSVG
+        upsampleMask,
+        bilinearInterpolate,
+        createClipPathSVG,
+        // Export default options for reference
+        DEFAULT_UPSAMPLE_SCALE,
+        DEFAULT_CLIP_LEVEL,
+        DEFAULT_SMOOTHING
       };
     }
   });
@@ -7068,7 +7284,13 @@ var contourCore = (() => {
           var clipPathData = nullHandling.generateClipPath(contourResult, {
             useDataCoordinates: true,
             dataX: pathInfo ? pathInfo.x : null,
-            dataY: pathInfo ? pathInfo.y : null
+            dataY: pathInfo ? pathInfo.y : null,
+            // Anti-aliasing options
+            smoothingMethod: style.smoothingMethod,
+            upsampleScale: style.upsampleScale,
+            clipLevel: style.clipLevel,
+            clipSmoothing: style.clipSmoothing,
+            simplifyTolerance: style.simplifyTolerance
           });
           if (clipPathData) {
             applyCanvasClipPathFromData(ctx, clipPathData, drawArea, visibleRange);

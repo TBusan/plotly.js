@@ -10,14 +10,241 @@
  *
  * The key idea:
  * 1. Create a binary mask (valid data=1, null=0)
- * 2. Run marching squares at level=0.9 to find boundary
- * 3. Generate SVG path from this boundary
- * 4. Use as clipPath or mask in rendering
+ * 2. Upsample the mask using bilinear interpolation (for smoother boundaries)
+ * 3. Run marching squares at level=0.95 to find boundary
+ * 4. Apply Catmull-Rom smoothing to the path
+ * 5. Use as clipPath or mask in rendering
+ *
+ * Anti-aliasing strategy:
+ * - Upsampling (2x) creates intermediate values at the boundary
+ * - This allows marching squares to place boundary points at more precise locations
+ * - Smoothing then creates smooth curves through these points
  */
 
 var marchingSquares = require('../marchingsquares');
 var pathFinding = require('../pathfinding');
 var closeBoundaries = require('../close_boundaries');
+
+// Default anti-aliasing options
+var DEFAULT_UPSAMPLE_SCALE = 2;    // 2x upsampling
+var DEFAULT_CLIP_LEVEL = 0.95;     // Higher level = boundary closer to data region
+var DEFAULT_SMOOTHING = 0.3;       // Catmull-Rom smoothing factor
+var DEFAULT_SIMPLIFY_TOLERANCE = 0.5; // Douglas-Peucker simplification tolerance
+
+/**
+ * Calculate perpendicular distance from a point to a line segment
+ * @param {Array} point - Point [x, y]
+ * @param {Array} lineStart - Line start point [x, y]
+ * @param {Array} lineEnd - Line end point [x, y]
+ * @returns {Number} Perpendicular distance
+ */
+function perpendicularDistance(point, lineStart, lineEnd) {
+    var dx = lineEnd[0] - lineStart[0];
+    var dy = lineEnd[1] - lineStart[1];
+
+    // Handle degenerate case where lineStart === lineEnd
+    var lineLengthSquared = dx * dx + dy * dy;
+    if (lineLengthSquared === 0) {
+        // Point to point distance
+        var ddx = point[0] - lineStart[0];
+        var ddy = point[1] - lineStart[1];
+        return Math.sqrt(ddx * ddx + ddy * ddy);
+    }
+
+    // Calculate perpendicular distance
+    var t = ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lineLengthSquared;
+
+    // Clamp t to [0, 1] to get distance to line segment (not infinite line)
+    t = Math.max(0, Math.min(1, t));
+
+    var closestX = lineStart[0] + t * dx;
+    var closestY = lineStart[1] + t * dy;
+
+    var distX = point[0] - closestX;
+    var distY = point[1] - closestY;
+
+    return Math.sqrt(distX * distX + distY * distY);
+}
+
+/**
+ * Douglas-Peucker path simplification algorithm
+ * Reduces the number of points in a path while preserving its overall shape
+ *
+ * @param {Array} points - Array of [x, y] points
+ * @param {Number} tolerance - Simplification tolerance (higher = fewer points)
+ * @returns {Array} Simplified array of [x, y] points
+ */
+function simplifyPathDouglasPeucker(points, tolerance) {
+    if (!points || points.length <= 2) return points;
+
+    // Find the point with maximum distance from the line connecting first and last
+    var maxDistance = 0;
+    var maxIndex = 0;
+
+    var first = points[0];
+    var last = points[points.length - 1];
+
+    for (var i = 1; i < points.length - 1; i++) {
+        var distance = perpendicularDistance(points[i], first, last);
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            maxIndex = i;
+        }
+    }
+
+    // If max distance is greater than tolerance, recursively simplify
+    if (maxDistance > tolerance) {
+        // Recursive call
+        var left = simplifyPathDouglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+        var right = simplifyPathDouglasPeucker(points.slice(maxIndex), tolerance);
+
+        // Concatenate results (avoid duplicating the middle point)
+        return left.slice(0, -1).concat(right);
+    } else {
+        // All points between first and last can be removed
+        return [first, last];
+    }
+}
+
+/**
+ * Simplify all paths in pathInfo using Douglas-Peucker algorithm
+ * @param {Object} pathInfo - Path info from marching squares
+ * @param {Number} tolerance - Simplification tolerance
+ * @returns {Object} Path info with simplified paths
+ */
+function simplifyPaths(pathInfo, tolerance) {
+    if (!pathInfo || tolerance <= 0) return pathInfo;
+
+    var result = {
+        level: pathInfo.level,
+        crossings: pathInfo.crossings,
+        smoothing: pathInfo.smoothing
+    };
+
+    // Simplify edge paths
+    if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
+        result.edgepaths = pathInfo.edgepaths.map(function(path) {
+            return simplifyPathDouglasPeucker(path, tolerance);
+        });
+    } else {
+        result.edgepaths = [];
+    }
+
+    // Simplify interior paths
+    if (pathInfo.paths && pathInfo.paths.length > 0) {
+        result.paths = pathInfo.paths.map(function(path) {
+            return simplifyPathDouglasPeucker(path, tolerance);
+        });
+    } else {
+        result.paths = [];
+    }
+
+    return result;
+}
+var DEFAULT_SIMPLIFY_TOLERANCE = 0.5; // Douglas-Peucker simplification tolerance
+
+/**
+ * Calculate perpendicular distance from point to line segment
+ * @param {Array} point - Point [x, y]
+ * @param {Array} lineStart - Line start point [x, y]
+ * @param {Array} lineEnd - Line end point [x, y]
+ * @returns {Number} Perpendicular distance
+ */
+function perpendicularDistance(point, lineStart, lineEnd) {
+    var dx = lineEnd[0] - lineStart[0];
+    var dy = lineEnd[1] - lineStart[1];
+
+    // Handle case where start and end are the same point
+    var lineLengthSquared = dx * dx + dy * dy;
+    if (lineLengthSquared === 0) {
+        return Math.sqrt(
+            (point[0] - lineStart[0]) * (point[0] - lineStart[0]) +
+            (point[1] - lineStart[1]) * (point[1] - lineStart[1])
+        );
+    }
+
+    // Calculate perpendicular distance using cross product
+    var t = ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lineLengthSquared;
+    t = Math.max(0, Math.min(1, t)); // Clamp to line segment
+
+    var nearestX = lineStart[0] + t * dx;
+    var nearestY = lineStart[1] + t * dy;
+
+    return Math.sqrt(
+        (point[0] - nearestX) * (point[0] - nearestX) +
+        (point[1] - nearestY) * (point[1] - nearestY)
+    );
+}
+
+/**
+ * Douglas-Peucker algorithm for path simplification
+ * Reduces the number of points in a path while preserving its shape
+ *
+ * @param {Array} points - Array of [x, y] points
+ * @param {Number} tolerance - Simplification tolerance (higher = more simplification)
+ * @returns {Array} Simplified array of points
+ */
+function simplifyPathDouglasPeucker(points, tolerance) {
+    if (!points || points.length <= 2) return points;
+
+    tolerance = tolerance || DEFAULT_SIMPLIFY_TOLERANCE;
+    if (tolerance <= 0) return points;
+
+    // Find the point with maximum distance from line between first and last
+    var maxDistance = 0;
+    var maxIndex = 0;
+
+    var first = points[0];
+    var last = points[points.length - 1];
+
+    for (var i = 1; i < points.length - 1; i++) {
+        var distance = perpendicularDistance(points[i], first, last);
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            maxIndex = i;
+        }
+    }
+
+    // If max distance is greater than tolerance, recursively simplify
+    if (maxDistance > tolerance) {
+        // Recursive call on both segments
+        var left = simplifyPathDouglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+        var right = simplifyPathDouglasPeucker(points.slice(maxIndex), tolerance);
+
+        // Concatenate results (avoiding duplicate point at maxIndex)
+        return left.slice(0, -1).concat(right);
+    }
+
+    // All points between first and last are within tolerance
+    return [first, last];
+}
+
+/**
+ * Simplify all paths in pathInfo using Douglas-Peucker algorithm
+ * @param {Object} pathInfo - Path info from marching squares
+ * @param {Number} tolerance - Simplification tolerance
+ */
+function simplifyPathInfoPaths(pathInfo, tolerance) {
+    if (tolerance <= 0) return;
+
+    // Simplify edge paths
+    if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
+        for (var i = 0; i < pathInfo.edgepaths.length; i++) {
+            if (pathInfo.edgepaths[i] && pathInfo.edgepaths[i].length > 2) {
+                pathInfo.edgepaths[i] = simplifyPathDouglasPeucker(pathInfo.edgepaths[i], tolerance);
+            }
+        }
+    }
+
+    // Simplify interior paths
+    if (pathInfo.paths && pathInfo.paths.length > 0) {
+        for (var i = 0; i < pathInfo.paths.length; i++) {
+            if (pathInfo.paths[i] && pathInfo.paths[i].length > 2) {
+                pathInfo.paths[i] = simplifyPathDouglasPeucker(pathInfo.paths[i], tolerance);
+            }
+        }
+    }
+}
 
 /**
  * Create a binary mask for clipping
@@ -47,13 +274,106 @@ function makeBinaryMask(nullMask) {
 }
 
 /**
+ * Bilinear interpolation for mask values
+ * @param {Array} mask - 2D array of values
+ * @param {Number} x - X coordinate (can be fractional)
+ * @param {Number} y - Y coordinate (can be fractional)
+ * @returns {Number} Interpolated value
+ */
+function bilinearInterpolate(mask, x, y) {
+    var m = mask.length;
+    var n = mask[0].length;
+
+    // Clamp coordinates to valid range
+    var x0 = Math.max(0, Math.min(Math.floor(x), n - 1));
+    var y0 = Math.max(0, Math.min(Math.floor(y), m - 1));
+    var x1 = Math.min(x0 + 1, n - 1);
+    var y1 = Math.min(y0 + 1, m - 1);
+
+    // Handle edge cases
+    if (x0 === x1 && y0 === y1) return mask[y0][x0];
+    if (x0 === x1) {
+        var t = y - y0;
+        return mask[y0][x0] * (1 - t) + mask[y1][x0] * t;
+    }
+    if (y0 === y1) {
+        var t = x - x0;
+        return mask[y0][x0] * (1 - t) + mask[y0][x1] * t;
+    }
+
+    // Bilinear interpolation
+    var tx = x - x0;
+    var ty = y - y0;
+
+    var v00 = mask[y0][x0];
+    var v10 = mask[y0][x1];
+    var v01 = mask[y1][x0];
+    var v11 = mask[y1][x1];
+
+    // Interpolate along x for both rows
+    var v0 = v00 * (1 - tx) + v10 * tx;
+    var v1 = v01 * (1 - tx) + v11 * tx;
+
+    // Interpolate along y
+    return v0 * (1 - ty) + v1 * ty;
+}
+
+/**
+ * Upsample a binary mask using bilinear interpolation
+ * This creates intermediate values at the boundary between 0 and 1,
+ * allowing marching squares to place boundary points at more precise locations.
+ *
+ * @param {Array} mask - 2D binary mask (values 0 or 1)
+ * @param {Number} scale - Upsampling factor (e.g., 2 means 2x resolution)
+ * @returns {Object} Object containing upsampled mask and scale factor
+ */
+function upsampleMask(mask, scale) {
+    if (!mask || mask.length === 0) return { mask: mask, scale: 1 };
+
+    scale = scale || DEFAULT_UPSAMPLE_SCALE;
+    if (scale < 1) scale = 1;
+
+    var m = mask.length;
+    var n = mask[0].length;
+
+    // For small masks or scale=1, no upsampling needed
+    if (scale === 1) return { mask: mask, scale: 1 };
+
+    var newM = (m - 1) * scale + 1;
+    var newN = (n - 1) * scale + 1;
+    var upsampled = [];
+
+    for (var i = 0; i < newM; i++) {
+        var row = [];
+        var origY = i / scale;
+
+        for (var j = 0; j < newN; j++) {
+            var origX = j / scale;
+
+            // Use bilinear interpolation for smooth transitions
+            var value = bilinearInterpolate(mask, origX, origY);
+
+            // Clamp to [0, 1] range
+            row.push(Math.max(0, Math.min(1, value)));
+        }
+        upsampled.push(row);
+    }
+
+    return { mask: upsampled, scale: scale };
+}
+
+/**
  * Generate clip path for null regions using marching squares
+ * Now with direct boundary smoothing instead of upsampling
  *
  * @param {Object} contourResult - Result from computeContours()
  * @param {Object} options - Options including width, height, padding
  * @param {Boolean} options.useDataCoordinates - If true, return path in data coordinates (for interactive mode)
  * @param {Array} options.dataX - Optional real X coordinate array (for useDataCoordinates mode)
  * @param {Array} options.dataY - Optional real Y coordinate array (for useDataCoordinates mode)
+ * @param {Number} options.clipLevel - Level for marching squares (default: 0.95)
+ * @param {Number} options.clipSmoothing - Smoothing factor (default: 0.3, set to 0 to disable)
+ * @param {String} options.smoothingMethod - 'upsample' or 'direct' (default: 'direct')
  * @returns {String} SVG path data string for the clip region
  */
 function generateClipPath(contourResult, options) {
@@ -67,37 +387,96 @@ function generateClipPath(contourResult, options) {
     var binaryMask = makeBinaryMask(nullMask);
     if (!binaryMask) return null;
 
-    var m = binaryMask.length;
-    var n = binaryMask[0].length;
+    var originalM = binaryMask.length;
+    var originalN = binaryMask[0].length;
 
-    // Create x and y coordinate arrays
-    // For useDataCoordinates mode with real data coordinates provided, use them
-    // Otherwise use index coordinates (0, 1, 2, ...)
+    // Get anti-aliasing options
+    var clipLevel = options.clipLevel !== undefined ? options.clipLevel : DEFAULT_CLIP_LEVEL;
+    var clipSmoothing = options.clipSmoothing !== undefined ? options.clipSmoothing : DEFAULT_SMOOTHING;
+    var smoothingMethod = options.smoothingMethod || 'direct';  // 'direct' or 'upsample'
+
+    var workingMask, scale, m, n;
+
+    if (smoothingMethod === 'upsample') {
+        // Legacy method: Upsample the mask for smoother boundaries
+        var upsampleScale = options.upsampleScale !== undefined ? options.upsampleScale : DEFAULT_UPSAMPLE_SCALE;
+        var upsampled = upsampleMask(binaryMask, upsampleScale);
+        workingMask = upsampled.mask;
+        scale = upsampled.scale;
+        m = workingMask.length;
+        n = workingMask[0].length;
+    } else {
+        // New method: Use original mask directly, apply smoothing to boundary points later
+        workingMask = binaryMask;
+        scale = 1;
+        m = originalM;
+        n = originalN;
+    }
+
+    // Create x and y coordinate arrays in the upsampled coordinate space
+    // The coordinates are scaled to match the original coordinate range
     var x, y;
     if (options.useDataCoordinates && options.dataX && options.dataY) {
-        // Use real data coordinates for proper coordinate transformation
-        x = options.dataX;
-        y = options.dataY;
-    } else {
-        // Use index coordinates
+        // For data coordinates, we need to create a finer grid
+        var dataX = options.dataX;
+        var dataY = options.dataY;
+        var xMin = Math.min.apply(Math, dataX);
+        var xMax = Math.max.apply(Math, dataX);
+        var yMin = Math.min.apply(Math, dataY);
+        var yMax = Math.max.apply(Math, dataY);
+
+        // Create upsampled coordinate arrays
         x = [];
         y = [];
-        for (var i = 0; i < n; i++) x.push(i);
-        for (var j = 0; j < m; j++) y.push(j);
+        for (var i = 0; i < n; i++) {
+            // Map upsampled index to original index, then to data coordinate
+            var origIdx = i / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+
+            if (origIdxFloor >= dataX.length - 1) {
+                x.push(dataX[dataX.length - 1]);
+            } else if (origIdxFloor < 0) {
+                x.push(dataX[0]);
+            } else {
+                // Linear interpolation between data coordinates
+                x.push(dataX[origIdxFloor] + (dataX[origIdxFloor + 1] - dataX[origIdxFloor]) * origIdxFrac);
+            }
+        }
+        for (var j = 0; j < m; j++) {
+            var origIdx = j / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+
+            if (origIdxFloor >= dataY.length - 1) {
+                y.push(dataY[dataY.length - 1]);
+            } else if (origIdxFloor < 0) {
+                y.push(dataY[0]);
+            } else {
+                y.push(dataY[origIdxFloor] + (dataY[origIdxFloor + 1] - dataY[origIdxFloor]) * origIdxFrac);
+            }
+        }
+    } else {
+        // Use index coordinates scaled to upsampled space
+        x = [];
+        y = [];
+        for (var i = 0; i < n; i++) x.push(i / scale);
+        for (var j = 0; j < m; j++) y.push(j / scale);
     }
 
     // Create pathinfo for clip path generation
-    // level = 0.9 means we draw boundary at 90% between null (0) and data (1)
+    // level = 0.95 means we draw boundary at 95% between null (0) and data (1)
+    // This is more conservative and reduces the risk of clipping valid data
     var clipPathInfo = {
-        level: 0.9,
+        level: clipLevel,
         crossings: {},
         starts: [],
         edgepaths: [],
         paths: [],
-        z: binaryMask,
+        z: workingMask,
         x: x,
         y: y,
-        smoothing: 0
+        smoothing: clipSmoothing
     };
 
     // Run marching squares to find boundary
@@ -107,13 +486,27 @@ function generateClipPath(contourResult, options) {
     // Use relative tolerance for small data ranges (like GPS coordinates)
     var xRange = x.length > 1 ? (x[x.length - 1] - x[0]) : 1;
     var yRange = y.length > 1 ? (y[y.length - 1] - y[0]) : 1;
-    var xTol = Math.max(1e-10, xRange * 0.001);
-    var yTol = Math.max(1e-10, yRange * 0.001);
+    // Scale tolerance for upsampled grid
+    var xTol = Math.max(1e-10, xRange * 0.001 / scale);
+    var yTol = Math.max(1e-10, yRange * 0.001 / scale);
 
     pathFinding.findAllPaths([clipPathInfo], xTol, yTol);
 
     // Close boundaries
     closeBoundaries([clipPathInfo], { type: 'levels' });
+
+    // Apply Douglas-Peucker path simplification if tolerance > 0
+    var simplifyTolerance = options.simplifyTolerance !== undefined ? options.simplifyTolerance : DEFAULT_SIMPLIFY_TOLERANCE;
+    if (simplifyTolerance > 0) {
+        // Calculate a reasonable tolerance based on coordinate range
+        var xRange = x.length > 1 ? (x[x.length - 1] - x[0]) : 1;
+        var yRange = y.length > 1 ? (y[y.length - 1] - y[0]) : 1;
+        var baseTol = Math.min(xRange, yRange) / Math.max(m, n) * 2;
+
+        // Scale tolerance for upsampled grids
+        var scaledTolerance = baseTol * simplifyTolerance;
+        simplifyPathInfoPaths(clipPathInfo, scaledTolerance);
+    }
 
     // For interactive mode, return path in data coordinates
     // The renderer will convert to canvas coordinates based on visibleRange
@@ -125,7 +518,7 @@ function generateClipPath(contourResult, options) {
     var width = options.width || 500;
     var height = options.height || 400;
     var padding = options.padding || 30;
-    return createClipPathSVG(clipPathInfo, width, height, padding, m, n);
+    return createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
 }
 
 /**
@@ -459,5 +852,11 @@ function joinAllPaths(pathInfo, perimeter, scalePath, pathToSVGFn) {
 module.exports = {
     generateClipPath: generateClipPath,
     makeBinaryMask: makeBinaryMask,
-    createClipPathSVG: createClipPathSVG
+    upsampleMask: upsampleMask,
+    bilinearInterpolate: bilinearInterpolate,
+    createClipPathSVG: createClipPathSVG,
+    // Export default options for reference
+    DEFAULT_UPSAMPLE_SCALE: DEFAULT_UPSAMPLE_SCALE,
+    DEFAULT_CLIP_LEVEL: DEFAULT_CLIP_LEVEL,
+    DEFAULT_SMOOTHING: DEFAULT_SMOOTHING
 };

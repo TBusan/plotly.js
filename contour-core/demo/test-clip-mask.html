@@ -47,11 +47,21 @@
             color: #555;
             font-size: 14px;
         }
-        select, button {
+        select, button, input[type="range"] {
             padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100px;
+            vertical-align: middle;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         button {
             background: #667eea;
@@ -113,12 +123,38 @@
             white-space: pre;
             overflow-x: auto;
         }
+        .anti-aliasing-controls {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .anti-aliasing-controls h4 {
+            margin: 0 0 10px 0;
+            color: #e65100;
+        }
+        .anti-aliasing-controls .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .anti-aliasing-controls .control-row label {
+            width: 150px;
+            font-size: 13px;
+        }
+        .anti-aliasing-controls .control-row .value {
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #e65100;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Clip Mask 对比测试</h1>
-        <p class="subtitle">对比矩形遮罩 vs. Marching Squares 平滑遮罩</p>
+        <p class="subtitle">对比矩形遮罩 vs. Marching Squares 平滑遮罩（带抗锯齿优化）</p>
 
         <div class="controls">
             <div class="control-group">
@@ -138,16 +174,47 @@
             <button onclick="updateRender()">更新渲染</button>
         </div>
 
+        <div class="anti-aliasing-controls">
+            <h4>🎯 抗锯齿参数（用于 Clip Mask）</h4>
+            <div class="control-row">
+                <label>平滑方法:</label>
+                <select id="smoothingMethod">
+                    <option value="direct" selected>直接平滑 (推荐)</option>
+                    <option value="upsample">超采样平滑</option>
+                </select>
+                <span style="margin-left: 10px; color: #666; font-size: 12px;">(直接平滑更快，超采样质量更高)</span>
+            </div>
+            <div class="control-row">
+                <label>超采样倍数:</label>
+                <input type="range" id="upsampleScale" min="1" max="4" step="1" value="2">
+                <span class="value" id="upsampleScaleValue">2</span>
+                <span style="margin-left: 10px; color: #666; font-size: 12px;">(1=禁用, 2=推荐, 4=最高质量)</span>
+            </div>
+            <div class="control-row">
+                <label>边界级别:</label>
+                <input type="range" id="clipLevel" min="0.5" max="0.99" step="0.01" value="0.95" onchange="updateRender()">
+                <span class="value" id="clipLevelValue">0.95</span>
+                <span style="margin-left: 10px; color: #666; font-size: 12px;">(越高越保守，0.95=推荐)</span>
+            </div>
+            <div class="control-row">
+                <label>平滑系数:</label>
+                <input type="range" id="clipSmoothing" min="0" max="1" step="0.1" value="0.3" onchange="updateRender()">
+                <span class="value" id="clipSmoothingValue">0.3</span>
+                <span style="margin-left: 10px; color: #666; font-size: 12px;">(0=无平滑, 0.3=推荐, 1=最大平滑)</span>
+            </div>
+        </div>
+
         <div class="info-box">
             <strong>说明：</strong><br>
-            • 左侧：使用新的 marching squares clipPath 遮罩（平滑边界）<br>
+            • 左侧：使用新的 marching squares clipPath 遮罩（平滑边界 + 抗锯齿）<br>
             • 右侧：使用传统矩形遮罩（网格边界）<br>
-            • 设置 connectgaps=false 来观察遮罩效果
+            • 设置 connectgaps=false 来观察遮罩效果<br>
+            • 调整抗锯齿参数可以优化边界平滑度
         </div>
 
         <div class="comparison">
             <div class="panel">
-                <h3>Canvas (Clip Mask)</h3>
+                <h3>Canvas (Clip Mask + 抗锯齿)</h3>
                 <div class="canvas-wrapper">
                     <canvas id="canvasClip" width="500" height="400"></canvas>
                 </div>
@@ -162,7 +229,7 @@
 
         <div class="comparison">
             <div class="panel">
-                <h3>SVG (Clip Mask)</h3>
+                <h3>SVG (Clip Mask + 抗锯齿)</h3>
                 <div class="svg-wrapper" id="svgClip"></div>
             </div>
             <div class="panel">
@@ -176,24 +243,6 @@
 
     <script src="../dist/contour-core.browser.min.js"></script>
     <script>
-        // 自定义色阶映射 - 分段颜色映射
-        // 导 < 0: #0000ff (蓝色)
-        // 0 <= 值 < 10: #0000ff (蓝色)
-        // 10 <= 值 < 20: #00bfff (天蓝色)
-        // 20 <= 值 < 30: #00ff00 (绿色)
-        // 30 <= 值 < 35: #ffff00 (黄色)
-        // 35 <= 值 < 40: #ffa500(橙色)
-        // 值 >= 40: #ff0000 (红色)
-        // var customColorScale = [
-        //     [0, "#0000ff"],
-        //     [10, "#00bfff"],
-        //     [20, "#00ff00"],
-        //     [30, "#ffff00"],
-        //     [40, "#ffa500"],
-        //     [50, "#ff0000"]
-        // ];
-
-
         // 自定义色阶映射 - 分段颜色映射
         // 数据范围: 1-27
         // 色阶分段:
@@ -233,63 +282,91 @@
             return grid;
         }
 
+        // 更新滑块值显示
+        document.getElementById('upsampleScale').addEventListener('input', function() {
+            document.getElementById('upsampleScaleValue').textContent = this.value;
+            updateRender();
+        });
+        document.getElementById('clipLevel').addEventListener('input', function() {
+            document.getElementById('clipLevelValue').textContent = this.value;
+            updateRender();
+        });
+        document.getElementById('clipSmoothing').addEventListener('input', function() {
+            document.getElementById('clipSmoothingValue').textContent = this.value;
+            updateRender();
+        });
+
         function updateRender() {
             var mode = document.getElementById('renderMode').value;
             var connectGaps = document.getElementById('connectgaps').value === 'true';
 
+            // 获取抗锯齿参数
+            var smoothingMethod = document.getElementById('smoothingMethod').value;
+            var upsampleScale = parseFloat(document.getElementById('upsampleScale').value);
+            var clipLevel = parseFloat(document.getElementById('clipLevel').value);
+            var clipSmoothing = parseFloat(document.getElementById('clipSmoothing').value);
+
             var grid = createGrid(testData);
             var options = {
                 autocontour: true,
-                // ncontours: 10,
                 smoothing: 0.3,
                 connectgaps: connectGaps
             };
 
             var result = contourCore.computeContours(grid, options);
 
-            // 直接使用自定义色阶映射
-            // 代码会自动检测这是分段映射格式（因为值不在 [0, 1] 范围内）
-            var style = {
+            // 基础样式
+            var baseStyle = {
                 width: 500,
                 height: 400,
                 padding: 40,
                 coloring: mode,
-                colorScale: customColorScale,  // 使用自定义色阶
+                colorScale: customColorScale,
                 smoothing: 0.3,
                 showLines: mode === 'lines',
                 lineWidth: 1.5,
                 z: grid.z,
                 x: grid.x,
-                y: grid.y,
-                useClipMask: true,  // 启用新的 clip mask
-                interaction: {
-                    zoom: true,
-                    pan: true,
-                    dblclickReset: true,
-                    minZoom: 0.1,
-                    maxZoom: 20
-                }
+                y: grid.y
             };
 
-            // Canvas - 使用 clip mask
+            // Canvas - 使用 clip mask + 抗锯齿
             var ctx1 = document.getElementById('canvasClip').getContext('2d');
             ctx1.clearRect(0, 0, 500, 400);
-            contourCore.renderers.canvas.drawContours(ctx1, result, style);
+            var style1 = Object.assign({}, baseStyle, {
+                useClipMask: true,
+                // 抗锯齿参数
+                smoothingMethod: smoothingMethod,
+                upsampleScale: upsampleScale,
+                clipLevel: clipLevel,
+                clipSmoothing: clipSmoothing
+            });
+            contourCore.renderers.canvas.drawContours(ctx1, result, style1);
 
-            // Canvas - 使用矩形遮罩
+            // Canvas - 使用矩形遮罩（无抗锯齿）
             var ctx2 = document.getElementById('canvasRect').getContext('2d');
             ctx2.clearRect(0, 0, 500, 400);
-            style.useClipMask = false;
-            contourCore.renderers.canvas.drawContours(ctx2, result, style);
+            var style2 = Object.assign({}, baseStyle, {
+                useClipMask: false
+            });
+            contourCore.renderers.canvas.drawContours(ctx2, result, style2);
 
-            // SVG - 使用 clip mask
-            style.useClipMask = true;
-            var svg1 = contourCore.renderers.svg.renderSVG(result, style);
+            // SVG - 使用 clip mask + 抗锯齿
+            var style3 = Object.assign({}, baseStyle, {
+                useClipMask: true,
+                smoothingMethod: smoothingMethod,
+                upsampleScale: upsampleScale,
+                clipLevel: clipLevel,
+                clipSmoothing: clipSmoothing
+            });
+            var svg1 = contourCore.renderers.svg.renderSVG(result, style3);
             document.getElementById('svgClip').innerHTML = svg1;
 
-            // SVG - 使用矩形遮罩
-            style.useClipMask = false;
-            var svg2 = contourCore.renderers.svg.renderSVG(result, style);
+            // SVG - 使用矩形遮罩（无抗锯齿）
+            var style4 = Object.assign({}, baseStyle, {
+                useClipMask: false
+            });
+            var svg2 = contourCore.renderers.svg.renderSVG(result, style4);
             document.getElementById('svgRect').innerHTML = svg2;
 
             // 显示数据信息
@@ -297,7 +374,8 @@
                 '数据: 7×8 网格\n' +
                 '空值数量: ' + result.nullCount + '\n' +
                 '等值线级别: ' + result.levels.length + '\n' +
-                'connectgaps: ' + connectGaps;
+                'connectgaps: ' + connectGaps + '\n' +
+                '抗锯齿参数: 方法=' + smoothingMethod + ', 超采样=' + upsampleScale + 'x, 边界级别=' + clipLevel + ', 平滑=' + clipSmoothing;
         }
 
         // 初始化
