@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Management Demo - contour-core</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        .canvas-container {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: block;
+        }
+        .control-panel {
+            width: 350px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .section h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #357abd;
+        }
+        .btn-success {
+            background: #5cb85c;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #449d44;
+        }
+        .btn-warning {
+            background: #f0ad4e;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #ec971f;
+        }
+        .btn-danger {
+            background: #d9534f;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c9302c;
+        }
+        .btn-info {
+            background: #5bc0de;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #31b0d5;
+        }
+        .item-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .item {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .item .id {
+            font-family: monospace;
+            color: #666;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .item .actions {
+            display: flex;
+            gap: 4px;
+        }
+        .item button {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .input-group input, .input-group select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Overlay Management Demo</h1>
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="canvas" width="900" height="600"></canvas>
+            </div>
+            <div class="control-panel">
+                <!-- Overlay 绘制 -->
+                <div class="section">
+                    <h3>绘制 Overlay</h3>
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="drawPoint()">绘制点</button>
+                        <button class="btn-primary" onclick="drawLine()">绘制线</button>
+                        <button class="btn-primary" onclick="drawPolygon()">绘制多边形</button>
+                        <button class="btn-primary" onclick="drawText()">绘制文字</button>
+                    </div>
+                </div>
+
+                <!-- Overlay 列表 -->
+                <div class="section">
+                    <h3>Overlay 列表</h3>
+                    <div class="btn-group" style="margin-bottom: 10px;">
+                        <button class="btn-info" onclick="refreshItemList()">刷新列表</button>
+                        <button class="btn-danger" onclick="clearAll()">清空所有</button>
+                    </div>
+                    <div id="itemList" class="item-list"></div>
+                </div>
+
+                <!-- 显示/隐藏 -->
+                <div class="section">
+                    <h3>显示/隐藏</h3>
+                    <div class="btn-group">
+                        <button class="btn-warning" onclick="hideAllItems()">隐藏全部</button>
+                        <button class="btn-success" onclick="showAllItems()">显示全部</button>
+                    </div>
+                    <div class="status" id="visibilityStatus">可见元素: 0 | 隐藏元素: 0</div>
+                </div>
+
+                <!-- 样式更新 -->
+                <div class="section">
+                    <h3>样式更新</h3>
+                    <div class="input-group">
+                        <input type="color" id="styleColor" value="#ff0000">
+                        <input type="number" id="styleSize" placeholder="大小" min="1" max="50" value="10">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-warning" onclick="updateSelectedStyle()">更新选中样式</button>
+                    </div>
+                </div>
+
+                <!-- 定位 -->
+                <div class="section">
+                    <h3>定位</h3>
+                    <div class="btn-group">
+                        <button class="btn-info" onclick="focusToSelected()">聚焦到选中</button>
+                        <button class="btn-info" onclick="resetView()">重置视图</button>
+                    </div>
+                </div>
+
+                <!-- 高亮 -->
+                <div class="section">
+                    <h3>高亮</h3>
+                    <div class="input-group">
+                        <input type="color" id="highlightColor" value="#ffff00">
+                        <input type="number" id="highlightDuration" placeholder="持续时间(ms)" min="0" max="10000" value="2000">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-warning" onclick="highlightSelected()">高亮选中</button>
+                        <button class="btn-info" onclick="clearAllHighlights()">取消所有高亮</button>
+                    </div>
+                </div>
+
+                <!-- 等值线更新 -->
+                <div class="section">
+                    <h3>等值线更新</h3>
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="updateData()">更新数据</button>
+                        <button class="btn-primary" onclick="updateColorScale()">更新 ColorScale</button>
+                        <button class="btn-primary" onclick="updateSmoothing()">更新平滑度</button>
+                    </div>
+                    <div class="input-group" style="margin-top: 8px;">
+                        <input type="range" id="smoothingRange" min="0" max="1" step="0.1" value="0.5" oninput="document.getElementById('smoothingValue').textContent = this.value">
+                        <span id="smoothingValue">0.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/contour-core.browser.js"></script>
+    <script>
+        // 生成测试数据
+        function generateData(nx, ny) {
+            var z = [];
+            for (var i = 0; i < ny; i++) {
+                var row = [];
+                for (var j = 0; j < nx; j++) {
+                    var x = j / (nx - 1) * 4 - 2;
+                    var y = i / (ny - 1) * 4 - 2;
+                    var r = Math.sqrt(x * x + y * y);
+                    row.push(Math.sin(r * 3) * Math.exp(-r / 2));
+                }
+                z.push(row);
+            }
+            return z;
+        }
+
+        // 初始化
+        var canvas = document.getElementById('canvas');
+        var z = generateData(50, 50);
+        var valueColorMap = [
+            [-1, '#313695'],
+            [-0.5, '#4575b4'],
+            [0, '#74add1'],
+            [0.25, '#abd9e9'],
+            [0.5, '#e0f3f8'],
+            [0.75, '#fee090'],
+            [1, '#fdae61'],
+            [1.25, '#f46d43'],
+            [1.5, '#d73027'],
+            [2, '#a50026']
+        ];
+
+        // 渲染等值线
+        var controller = contourCore.renderers.canvas.drawContours(canvas.getContext('2d'),
+            contourCore.computeContours({ z: z }, {
+                smoothing: 0.5,
+                valueColorMap: valueColorMap
+            }),
+            {
+                width: 900,
+                height: 600,
+                coloring: 'fill',
+                showLines: true,
+                valueColorMap: valueColorMap,
+                smoothing: 0.5,
+                interaction: {
+                    zoom: true,
+                    pan: true,
+                    dblclickReset: true
+                },
+                axes: {
+                    x: { title: 'X Axis', color: '#333' },
+                    y: { title: 'Y Axis', color: '#333' }
+                },
+                colorbar: {
+                    show: true,
+                    title: 'Value'
+                }
+            }
+        );
+
+        var overlay = controller.getOverlay();
+        var selectedId = null;
+
+        // 绘制点
+        function drawPoint() {
+            var x = Math.random() * 4 - 2;
+            var y = Math.random() * 4 - 2;
+            var color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            var id = overlay.drawPoint(x, y, {
+                color: color,
+                size: 8 + Math.random() * 8
+            });
+            console.log('绘制点:', id, '坐标:', x.toFixed(2), y.toFixed(2));
+            refreshItemList();
+        }
+
+        // 绘制线
+        function drawLine() {
+            var points = [];
+            var n = 3 + Math.floor(Math.random() * 5);
+            for (var i = 0; i < n; i++) {
+                points.push({
+                    x: Math.random() * 4 - 2,
+                    y: Math.random() * 4 - 2
+                });
+            }
+            var color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            var id = overlay.drawLine(points, {
+                color: color,
+                width: 2 + Math.random() * 3
+            });
+            console.log('绘制线:', id);
+            refreshItemList();
+        }
+
+        // 绘制多边形
+        function drawPolygon() {
+            var points = [];
+            var n = 3 + Math.floor(Math.random() * 4);
+            var cx = Math.random() * 2 - 1;
+            var cy = Math.random() * 2 - 1;
+            var r = 0.3 + Math.random() * 0.5;
+            for (var i = 0; i < n; i++) {
+                var angle = (i / n) * Math.PI * 2;
+                points.push({
+                    x: cx + Math.cos(angle) * r,
+                    y: cy + Math.sin(angle) * r
+                });
+            }
+            var fillColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            var id = overlay.drawPolygon(points, {
+                fill: { color: fillColor },
+                color: '#333',
+                width: 1
+            });
+            console.log('绘制多边形:', id);
+            refreshItemList();
+        }
+
+        // 绘制文字
+        function drawText() {
+            var x = Math.random() * 4 - 2;
+            var y = Math.random() * 4 - 2;
+            var texts = ['Point A', 'Label', 'Marker', 'Note', 'Tag'];
+            var content = texts[Math.floor(Math.random() * texts.length)] + ' ' + Math.floor(Math.random() * 100);
+            var color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            var id = overlay.drawText(x, y, content, {
+                color: color,
+                fontSize: 12 + Math.floor(Math.random() * 8)
+            });
+            console.log('绘制文字:', id);
+            refreshItemList();
+        }
+
+        // 刷新列表
+        function refreshItemList() {
+            var items = overlay.getAllItems();
+            var listEl = document.getElementById('itemList');
+            listEl.innerHTML = '';
+
+            items.forEach(function(item) {
+                var div = document.createElement('div');
+                div.className = 'item';
+                if (selectedId === item.id) {
+                    div.style.background = '#e8f4fc';
+                }
+
+                var idSpan = document.createElement('span');
+                idSpan.className = 'id';
+                idSpan.textContent = item.type + ': ' + item.id.substring(0, 15) + '...';
+                if (overlay.isHidden(item.id)) {
+                    idSpan.style.textDecoration = 'line-through';
+                    idSpan.style.color = '#999';
+                }
+
+                var actions = document.createElement('div');
+                actions.className = 'actions';
+
+                // 选择按钮
+                var selectBtn = document.createElement('button');
+                selectBtn.className = 'btn-primary';
+                selectBtn.textContent = '选';
+                selectBtn.onclick = function() {
+                    selectedId = item.id;
+                    refreshItemList();
+                };
+
+                // 显示/隐藏按钮
+                var toggleBtn = document.createElement('button');
+                toggleBtn.className = overlay.isHidden(item.id) ? 'btn-success' : 'btn-warning';
+                toggleBtn.textContent = overlay.isHidden(item.id) ? '显' : '隐';
+                toggleBtn.onclick = function() {
+                    if (overlay.isHidden(item.id)) {
+                        overlay.show(item.id);
+                    } else {
+                        overlay.hide(item.id);
+                    }
+                    refreshItemList();
+                    updateVisibilityStatus();
+                };
+
+                // 高亮按钮
+                var highlightBtn = document.createElement('button');
+                highlightBtn.className = 'btn-info';
+                highlightBtn.textContent = '亮';
+                highlightBtn.onclick = function() {
+                    var color = document.getElementById('highlightColor').value;
+                    var duration = parseInt(document.getElementById('highlightDuration').value) || 0;
+                    overlay.highlight(item.id, { color: color, duration: duration });
+                };
+
+                // 定位按钮
+                var focusBtn = document.createElement('button');
+                focusBtn.className = 'btn-info';
+                focusBtn.textContent = '定';
+                focusBtn.onclick = function() {
+                    overlay.focusTo(item.id, { padding: 100 });
+                };
+
+                // 删除按钮
+                var deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-danger';
+                deleteBtn.textContent = '删';
+                deleteBtn.onclick = function() {
+                    overlay.removeItem(item.id);
+                    if (selectedId === item.id) selectedId = null;
+                    refreshItemList();
+                };
+
+                actions.appendChild(selectBtn);
+                actions.appendChild(toggleBtn);
+                actions.appendChild(highlightBtn);
+                actions.appendChild(focusBtn);
+                actions.appendChild(deleteBtn);
+
+                div.appendChild(idSpan);
+                div.appendChild(actions);
+                listEl.appendChild(div);
+            });
+
+            updateVisibilityStatus();
+        }
+
+        // 更新可见性状态
+        function updateVisibilityStatus() {
+            var visible = overlay.getVisibleItems().length;
+            var hidden = overlay.getHiddenItems().length;
+            document.getElementById('visibilityStatus').textContent =
+                '可见元素: ' + visible + ' | 隐藏元素: ' + hidden;
+        }
+
+        // 隐藏全部
+        function hideAllItems() {
+            overlay.hideAll();
+            refreshItemList();
+        }
+
+        // 显示全部
+        function showAllItems() {
+            overlay.showAll();
+            refreshItemList();
+        }
+
+        // 清空所有
+        function clearAll() {
+            overlay.clear();
+            selectedId = null;
+            refreshItemList();
+        }
+
+        // 更新选中样式
+        function updateSelectedStyle() {
+            if (!selectedId) {
+                alert('请先选择一个元素');
+                return;
+            }
+            var color = document.getElementById('styleColor').value;
+            var size = parseInt(document.getElementById('styleSize').value);
+            overlay.updateStyle(selectedId, { color: color, size: size });
+        }
+
+        // 聚焦到选中
+        function focusToSelected() {
+            if (!selectedId) {
+                alert('请先选择一个元素');
+                return;
+            }
+            overlay.focusTo(selectedId, { padding: 100 });
+        }
+
+        // 重置视图
+        function resetView() {
+            controller.resetView();
+        }
+
+        // 高亮选中
+        function highlightSelected() {
+            if (!selectedId) {
+                alert('请先选择一个元素');
+                return;
+            }
+            var color = document.getElementById('highlightColor').value;
+            var duration = parseInt(document.getElementById('highlightDuration').value) || 0;
+            overlay.highlight(selectedId, { color: color, duration: duration });
+        }
+
+        // 取消所有高亮
+        function clearAllHighlights() {
+            overlay.clearAllHighlights();
+        }
+
+        // 更新数据
+        function updateData() {
+            var newZ = generateData(50, 50);
+            controller.updateData({ z: newZ });
+            console.log('数据已更新');
+        }
+
+        // 更新 ColorScale
+        function updateColorScale() {
+            var newColorScale = [
+                [-1, '#000080'],
+                [-0.5, '#0000ff'],
+                [0, '#00ffff'],
+                [0.5, '#ffff00'],
+                [1, '#ff8000'],
+                [1.5, '#ff0000'],
+                [2, '#800000']
+            ];
+            controller.updateColorScale(newColorScale);
+            console.log('ColorScale 已更新');
+        }
+
+        // 更新平滑度
+        function updateSmoothing() {
+            var smoothing = parseFloat(document.getElementById('smoothingRange').value);
+            controller.updateContours({ smoothing: smoothing });
+            console.log('平滑度已更新:', smoothing);
+        }
+
+        // 初始化列表
+        refreshItemList();
+    </script>
+</body>
+</html>

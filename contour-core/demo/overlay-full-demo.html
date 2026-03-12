@@ -293,29 +293,63 @@
                 ]);
             }
 
-            debug('添加面: ' + points.length + ' 个顶点');
-            debug('面坐标: ' + JSON.stringify(points));
+            debug('添加面: ' + points.length + ' 个顶点, 填充类型: ' + fillType);
 
-            var fillColor;
+            var patternColor = 'rgb(' + Math.floor(Math.random()*100 + 100) + ',' +
+                       Math.floor(Math.random()*100 + 100) + ',' +
+                       Math.floor(Math.random()*100 + 100) + ')';
+
+            var fill;
             if (fillType === 'color') {
-                fillColor = 'rgba(' + Math.floor(Math.random()*255) + ',' +
+                // 纯色填充
+                var fillColor = 'rgba(' + Math.floor(Math.random()*255) + ',' +
                            Math.floor(Math.random()*255) + ',' +
                            Math.floor(Math.random()*255) + ',0.4)';
+                fill = { color: fillColor };
+            } else if (fillType === 'grid') {
+                // 网格填充
+                fill = {
+                    type: 'pattern',
+                    pattern: 'grid',
+                    patternColor: patternColor,
+                    patternSize: 12,
+                    patternLineWidth: 1,
+                    color: 'rgba(255,255,255,0.3)' // 背景色
+                };
+            } else if (fillType === 'diagonal') {
+                // 斜线填充
+                fill = {
+                    type: 'pattern',
+                    pattern: 'diagonal',
+                    patternColor: patternColor,
+                    patternSize: 10,
+                    patternLineWidth: 1,
+                    patternAngle: 45,
+                    color: 'rgba(255,255,255,0.3)'
+                };
+            } else if (fillType === 'dots') {
+                // 圆点填充
+                fill = {
+                    type: 'pattern',
+                    pattern: 'dots',
+                    patternColor: patternColor,
+                    patternSize: 12,
+                    patternDotSize: 3,
+                    color: 'rgba(255,255,255,0.3)'
+                };
             } else {
-                fillColor = 'rgba(' + Math.floor(Math.random()*100 + 100) + ',' +
-                           Math.floor(Math.random()*100 + 100) + ',' +
-                           Math.floor(Math.random()*100 + 100) + ',0.3)';
+                fill = { color: 'rgba(100,100,100,0.3)' };
             }
 
             var id = overlaySystem.drawPolygon(points, {
-                fill: { color: fillColor },
+                fill: fill,
                 stroke: {
                     color: '#333',
                     width: 1
                 }
             });
 
-            debug('面ID: ' + id);
+            debug('面ID: ' + id + ', fill: ' + JSON.stringify(fill));
             debug('当前面数: ' + overlaySystem.count('polygon'));
             updateStatus();
         }

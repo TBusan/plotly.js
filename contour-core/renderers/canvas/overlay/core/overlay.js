@@ -7,6 +7,7 @@
  */
 function Overlay() {
     this._items = new Map();  // id → item
+    this._hidden = new Set(); // 存储隐藏的元素ID
     this._indices = {
         text: new Set(),
         point: new Set(),
@@ -131,6 +132,128 @@ Overlay.prototype = {
             return this._indices[type] ? this._indices[type].size : 0;
         }
         return this._items.size;
+    },
+
+    // ========================================
+    // 显示/隐藏
+    // ========================================
+
+    /**
+     * 隐藏元素
+     * @param {string} id - 元素ID
+     * @returns {boolean} 是否成功隐藏
+     */
+    hide: function(id) {
+        if (this._items.has(id)) {
+            this._hidden.add(id);
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * 显示元素
+     * @param {string} id - 元素ID
+     * @returns {boolean} 是否成功显示
+     */
+    show: function(id) {
+        if (this._hidden.has(id)) {
+            this._hidden.delete(id);
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * 切换元素的显示/隐藏状态
+     * @param {string} id - 元素ID
+     * @returns {boolean} 切换后的状态 (true=隐藏, false=显示)
+     */
+    toggle: function(id) {
+        if (this._hidden.has(id)) {
+            this._hidden.delete(id);
+            return false;
+        } else if (this._items.has(id)) {
+            this._hidden.add(id);
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * 检查元素是否隐藏
+     * @param {string} id - 元素ID
+     * @returns {boolean} 是否隐藏
+     */
+    isHidden: function(id) {
+        return this._hidden.has(id);
+    },
+
+    /**
+     * 隐藏所有元素
+     */
+    hideAll: function() {
+        var self = this;
+        this._items.forEach(function(_, id) {
+            self._hidden.add(id);
+        });
+    },
+
+    /**
+     * 显示所有元素
+     */
+    showAll: function() {
+        this._hidden.clear();
+    },
+
+    /**
+     * 隐藏某类型的所有元素
+     * @param {string} type - 元素类型
+     */
+    hideByType: function(type) {
+        var self = this;
+        if (this._indices[type]) {
+            this._indices[type].forEach(function(id) {
+                self._hidden.add(id);
+            });
+        }
+    },
+
+    /**
+     * 显示某类型的所有元素
+     * @param {string} type - 元素类型
+     */
+    showByType: function(type) {
+        var self = this;
+        if (this._indices[type]) {
+            this._indices[type].forEach(function(id) {
+                self._hidden.delete(id);
+            });
+        }
+    },
+
+    /**
+     * 获取所有可见元素
+     * @returns {Array} 可见元素数组
+     */
+    getVisible: function() {
+        var self = this;
+        return this._items.values().filter(function(item) {
+            return !self._hidden.has(item.id);
+        });
+    },
+
+    /**
+     * 获取所有隐藏元素
+     * @returns {Array} 隐藏元素数组
+     */
+    getHidden: function() {
+        var self = this;
+        return Array.from(this._hidden).map(function(id) {
+            return self._items.get(id);
+        }).filter(function(item) {
+            return item !== undefined;
+        });
     },
 
     // ========================================

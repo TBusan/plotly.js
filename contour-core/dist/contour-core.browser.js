@@ -4924,6 +4924,7 @@ var contourCore = (() => {
       "use strict";
       function Overlay() {
         this._items = /* @__PURE__ */ new Map();
+        this._hidden = /* @__PURE__ */ new Set();
         this._indices = {
           text: /* @__PURE__ */ new Set(),
           point: /* @__PURE__ */ new Set(),
@@ -5040,6 +5041,117 @@ var contourCore = (() => {
             return this._indices[type] ? this._indices[type].size : 0;
           }
           return this._items.size;
+        },
+        // ========================================
+        // 显示/隐藏
+        // ========================================
+        /**
+         * 隐藏元素
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否成功隐藏
+         */
+        hide: function(id) {
+          if (this._items.has(id)) {
+            this._hidden.add(id);
+            return true;
+          }
+          return false;
+        },
+        /**
+         * 显示元素
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否成功显示
+         */
+        show: function(id) {
+          if (this._hidden.has(id)) {
+            this._hidden.delete(id);
+            return true;
+          }
+          return false;
+        },
+        /**
+         * 切换元素的显示/隐藏状态
+         * @param {string} id - 元素ID
+         * @returns {boolean} 切换后的状态 (true=隐藏, false=显示)
+         */
+        toggle: function(id) {
+          if (this._hidden.has(id)) {
+            this._hidden.delete(id);
+            return false;
+          } else if (this._items.has(id)) {
+            this._hidden.add(id);
+            return true;
+          }
+          return false;
+        },
+        /**
+         * 检查元素是否隐藏
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否隐藏
+         */
+        isHidden: function(id) {
+          return this._hidden.has(id);
+        },
+        /**
+         * 隐藏所有元素
+         */
+        hideAll: function() {
+          var self = this;
+          this._items.forEach(function(_, id) {
+            self._hidden.add(id);
+          });
+        },
+        /**
+         * 显示所有元素
+         */
+        showAll: function() {
+          this._hidden.clear();
+        },
+        /**
+         * 隐藏某类型的所有元素
+         * @param {string} type - 元素类型
+         */
+        hideByType: function(type) {
+          var self = this;
+          if (this._indices[type]) {
+            this._indices[type].forEach(function(id) {
+              self._hidden.add(id);
+            });
+          }
+        },
+        /**
+         * 显示某类型的所有元素
+         * @param {string} type - 元素类型
+         */
+        showByType: function(type) {
+          var self = this;
+          if (this._indices[type]) {
+            this._indices[type].forEach(function(id) {
+              self._hidden.delete(id);
+            });
+          }
+        },
+        /**
+         * 获取所有可见元素
+         * @returns {Array} 可见元素数组
+         */
+        getVisible: function() {
+          var self = this;
+          return this._items.values().filter(function(item) {
+            return !self._hidden.has(item.id);
+          });
+        },
+        /**
+         * 获取所有隐藏元素
+         * @returns {Array} 隐藏元素数组
+         */
+        getHidden: function() {
+          var self = this;
+          return Array.from(this._hidden).map(function(id) {
+            return self._items.get(id);
+          }).filter(function(item) {
+            return item !== void 0;
+          });
         },
         // ========================================
         // 内部方法
@@ -5361,6 +5473,142 @@ var contourCore = (() => {
           var result = this._overlay.remove(id);
           this._refresh();
           return result;
+        },
+        /**
+         * 只更新样式（不影响数据）
+         * @param {string} id - 元素ID
+         * @param {Object} style - 样式对象
+         * @returns {Object|null} 更新后的元素
+         */
+        updateStyle: function(id, style) {
+          var item = this._overlay.get(id);
+          if (!item)
+            return null;
+          if (!item.options) {
+            item.options = {};
+          }
+          var styleProps = [
+            // 通用样式
+            "color",
+            "opacity",
+            "visible",
+            // 点样式
+            "size",
+            "shape",
+            "strokeColor",
+            "strokeWidth",
+            // 线样式
+            "width",
+            "lineWidth",
+            "lineDash",
+            "lineCap",
+            "lineJoin",
+            // 多边形样式
+            "fill",
+            "fillColor",
+            "stroke",
+            "strokeColor",
+            // 文字样式
+            "fontSize",
+            "fontFamily",
+            "fontWeight",
+            "fontStyle",
+            "textAlign",
+            "textBaseline",
+            "angle",
+            "offsetX",
+            "offsetY",
+            "backgroundColor",
+            "padding",
+            "borderRadius",
+            "borderColor",
+            "borderWidth"
+          ];
+          for (var i = 0; i < styleProps.length; i++) {
+            var prop = styleProps[i];
+            if (style[prop] !== void 0) {
+              item.options[prop] = style[prop];
+            }
+          }
+          if (style.options) {
+            Object.assign(item.options, style.options);
+          }
+          this._refresh();
+          return item;
+        },
+        /**
+         * 只更新数据（不影响样式）
+         * @param {string} id - 元素ID
+         * @param {Object} data - 数据对象
+         * @returns {Object|null} 更新后的元素
+         */
+        updateData: function(id, data) {
+          var item = this._overlay.get(id);
+          if (!item)
+            return null;
+          switch (item.type) {
+            case "point":
+              if (data.x !== void 0)
+                item.x = data.x;
+              if (data.y !== void 0)
+                item.y = data.y;
+              break;
+            case "line":
+            case "polygon":
+              if (data.points !== void 0) {
+                item.points = this._normalizePoints(data.points);
+              }
+              break;
+            case "text":
+              if (data.x !== void 0)
+                item.x = data.x;
+              if (data.y !== void 0)
+                item.y = data.y;
+              if (data.content !== void 0)
+                item.content = data.content;
+              break;
+          }
+          this._refresh();
+          return item;
+        },
+        /**
+         * 批量更新样式
+         * @param {Array} ids - 元素ID数组
+         * @param {Object} style - 样式对象
+         * @returns {Array} 更新成功的元素数组
+         */
+        updateStyles: function(ids, style) {
+          var self = this;
+          var updated = [];
+          for (var i = 0; i < ids.length; i++) {
+            var item = this.updateStyle(ids[i], style);
+            if (item)
+              updated.push(item);
+          }
+          return updated;
+        },
+        /**
+         * 批量更新数据
+         * @param {Array} dataList - 数据列表 [{id, ...data}]
+         * @returns {Array} 更新成功的元素数组
+         */
+        updateDataList: function(dataList) {
+          var updated = [];
+          for (var i = 0; i < dataList.length; i++) {
+            var data = dataList[i];
+            var id = data.id;
+            if (id) {
+              var item = this._overlay.get(id);
+              if (item) {
+                var updateData = Object.assign({}, data);
+                delete updateData.id;
+                this.updateData(id, updateData);
+                updated.push(item);
+              }
+            }
+          }
+          this._refresh();
+          return updated;
         },
         // ========================================
         // 内部方法
@@ -6142,10 +6390,7 @@ var contourCore = (() => {
           }
         }
       }
-      function createPattern(ctx, canvas) {
-        return ctx.createPattern(canvas, "repeat");
-      }
-      function createGridPattern(size, color, lineWidth) {
+      function createGridPattern(size, color, lineWidth, targetCtx) {
         var cacheKey = "grid_" + size + "_" + color + "_" + lineWidth;
         if (patternCache[cacheKey]) {
           return patternCache[cacheKey];
@@ -6164,11 +6409,12 @@ var contourCore = (() => {
         ctx.moveTo(0, size / 2);
         ctx.lineTo(size, size / 2);
         ctx.stroke();
-        var pattern = createPattern(ctx, canvas);
+        var patternCtx = targetCtx || ctx;
+        var pattern = patternCtx.createPattern(canvas, "repeat");
         patternCache[cacheKey] = pattern;
         return pattern;
       }
-      function createHashPattern(size, color, lineWidth, angle) {
+      function createHashPattern(size, color, lineWidth, angle, targetCtx) {
         var cacheKey = "hash_" + size + "_" + color + "_" + lineWidth + "_" + angle;
         if (patternCache[cacheKey]) {
           return patternCache[cacheKey];
@@ -6189,11 +6435,12 @@ var contourCore = (() => {
         ctx.moveTo(offset, 0);
         ctx.lineTo(offset + size * Math.tan(rad), size);
         ctx.stroke();
-        var pattern = createPattern(ctx, canvas);
+        var patternCtx = targetCtx || ctx;
+        var pattern = patternCtx.createPattern(canvas, "repeat");
         patternCache[cacheKey] = pattern;
         return pattern;
       }
-      function createDiagonalPattern(size, color, lineWidth, angle) {
+      function createDiagonalPattern(size, color, lineWidth, angle, targetCtx) {
         var cacheKey = "diagonal_" + size + "_" + color + "_" + lineWidth + "_" + angle;
         if (patternCache[cacheKey]) {
           return patternCache[cacheKey];
@@ -6207,13 +6454,14 @@ var contourCore = (() => {
         var rad = (angle || 45) * Math.PI / 180;
         ctx.beginPath();
         ctx.moveTo(0, size);
-        ctx.lineTo(size * Math.cos(rad), size - size * Math.sin(rad));
+        ctx.lineTo(size, 0);
         ctx.stroke();
-        var pattern = createPattern(ctx, canvas);
+        var patternCtx = targetCtx || ctx;
+        var pattern = patternCtx.createPattern(canvas, "repeat");
         patternCache[cacheKey] = pattern;
         return pattern;
       }
-      function createDotsPattern(size, color, dotSize) {
+      function createDotsPattern(size, color, dotSize, targetCtx) {
         var cacheKey = "dots_" + size + "_" + color + "_" + dotSize;
         if (patternCache[cacheKey]) {
           return patternCache[cacheKey];
@@ -6226,11 +6474,12 @@ var contourCore = (() => {
         ctx.beginPath();
         ctx.arc(size / 2, size / 2, dotSize || size / 6, 0, Math.PI * 2);
         ctx.fill();
-        var pattern = createPattern(ctx, canvas);
+        var patternCtx = targetCtx || ctx;
+        var pattern = patternCtx.createPattern(canvas, "repeat");
         patternCache[cacheKey] = pattern;
         return pattern;
       }
-      function createSVGPattern(svgSource, size, callback) {
+      function createSVGPattern(svgSource, size, targetCtx, callback) {
         if (typeof Image === "undefined") {
           if (callback)
             callback(null);
@@ -6246,7 +6495,8 @@ var contourCore = (() => {
           }
           var ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, size, size);
-          var pattern = createPattern(ctx, canvas);
+          var patternCtx = targetCtx || ctx;
+          var pattern = patternCtx.createPattern(canvas, "repeat");
           if (callback)
             callback(pattern);
         };
@@ -6261,19 +6511,19 @@ var contourCore = (() => {
           return null;
         }
         var pattern = fillConfig.pattern;
-        var color = fillConfig.patternColor || "#000000";
+        var color = fillConfig.patternColor || fillConfig.color || "#000000";
         var size = fillConfig.patternSize || 10;
         var lineWidth = fillConfig.patternLineWidth || 1;
         if (typeof pattern === "string") {
           switch (pattern) {
             case "grid":
-              return createGridPattern(size, color, lineWidth);
+              return createGridPattern(size, color, lineWidth, ctx);
             case "hash":
-              return createHashPattern(size, color, lineWidth, fillConfig.patternAngle);
+              return createHashPattern(size, color, lineWidth, fillConfig.patternAngle, ctx);
             case "diagonal":
-              return createDiagonalPattern(size, color, lineWidth, fillConfig.patternAngle);
+              return createDiagonalPattern(size, color, lineWidth, fillConfig.patternAngle, ctx);
             case "dots":
-              return createDotsPattern(size, color, fillConfig.patternDotSize);
+              return createDotsPattern(size, color, fillConfig.patternDotSize, ctx);
           }
         }
         if (typeof pattern === "object" && pattern.svg) {
@@ -6311,6 +6561,56 @@ var contourCore = (() => {
         width: 1,
         style: "solid"
       };
+      function normalizeOptions(options) {
+        options = options || {};
+        var fill, stroke;
+        if (options.fill) {
+          fill = options.fill;
+        } else if (options.fillColor) {
+          fill = {
+            type: "color",
+            color: options.fillColor
+          };
+        } else if (options.color && !options.strokeColor && !options.stroke) {
+          fill = {
+            type: "color",
+            color: options.color
+          };
+        } else {
+          fill = DEFAULT_FILL;
+        }
+        if (options.stroke !== void 0) {
+          stroke = options.stroke;
+        } else if (options.strokeColor !== void 0 || options.strokeWidth !== void 0) {
+          stroke = {
+            color: options.strokeColor || DEFAULT_STROKE.color,
+            width: options.strokeWidth !== void 0 ? options.strokeWidth : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+          };
+        } else if (options.color && (options.strokeColor !== void 0 || options.width !== void 0)) {
+          stroke = {
+            color: options.color,
+            width: options.width !== void 0 ? options.width : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+          };
+        } else if (options.color && options.fill) {
+          stroke = {
+            color: options.color,
+            width: options.width !== void 0 ? options.width : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+          };
+        } else if (options.stroke === null) {
+          stroke = null;
+        } else {
+          stroke = null;
+        }
+        return {
+          fill,
+          stroke,
+          opacity: options.opacity,
+          text: options.text
+        };
+      }
       function calculateCenter(points) {
         if (!points || points.length === 0) {
           return { x: 0, y: 0 };
@@ -6329,7 +6629,7 @@ var contourCore = (() => {
       function drawPolygon(ctx, points, options, coordSystem) {
         if (!points || points.length < 3)
           return;
-        options = options || {};
+        var opts = normalizeOptions(options);
         var canvasPoints = [];
         for (var i = 0; i < points.length; i++) {
           var p = points[i];
@@ -6350,7 +6650,10 @@ var contourCore = (() => {
           ctx.lineTo(canvasPoints[j].x, canvasPoints[j].y);
         }
         ctx.closePath();
-        var fill = options.fill || DEFAULT_FILL;
+        if (opts.opacity !== void 0) {
+          ctx.globalAlpha = opts.opacity;
+        }
+        var fill = opts.fill || DEFAULT_FILL;
         if (fill.type === "pattern") {
           var pattern = patterns.getPattern(fill, ctx);
           if (pattern) {
@@ -6362,7 +6665,7 @@ var contourCore = (() => {
           ctx.fillStyle = fill.color || DEFAULT_FILL.color;
         }
         ctx.fill();
-        var stroke = options.stroke;
+        var stroke = opts.stroke;
         if (stroke && stroke.color) {
           ctx.strokeStyle = stroke.color;
           ctx.lineWidth = stroke.width || DEFAULT_STROKE.width;
@@ -6381,8 +6684,8 @@ var contourCore = (() => {
           ctx.stroke();
         }
         ctx.restore();
-        if (options.text && options.text.content) {
-          var textOpts = options.text;
+        if (opts.text && opts.text.content) {
+          var textOpts = opts.text;
           var center;
           if (textOpts.position === "center" || !textOpts.position) {
             center = calculateCenter(canvasPoints);
@@ -6441,16 +6744,22 @@ var contourCore = (() => {
          * @param {Object} drawingArea - 绘制区域 {x, y, width, height}
          */
         render: function(ctx, overlay, drawingArea) {
+          var self = this;
           ctx.save();
           if (drawingArea) {
             ctx.beginPath();
             ctx.rect(drawingArea.x, drawingArea.y, drawingArea.width, drawingArea.height);
             ctx.clip();
           }
-          polygonRenderer.render(ctx, overlay.getByType("polygon"), this._coordSystem);
-          lineRenderer.render(ctx, overlay.getByType("line"), this._coordSystem);
-          pointRenderer.render(ctx, overlay.getByType("point"), this._coordSystem);
-          textRenderer.render(ctx, overlay.getByType("text"), this._coordSystem);
+          function filterVisible(items) {
+            return items.filter(function(item) {
+              return !overlay.isHidden(item.id);
+            });
+          }
+          polygonRenderer.render(ctx, filterVisible(overlay.getByType("polygon")), self._coordSystem);
+          lineRenderer.render(ctx, filterVisible(overlay.getByType("line")), self._coordSystem);
+          pointRenderer.render(ctx, filterVisible(overlay.getByType("point")), self._coordSystem);
+          textRenderer.render(ctx, filterVisible(overlay.getByType("text")), self._coordSystem);
           ctx.restore();
         },
         /**
@@ -6504,6 +6813,536 @@ var contourCore = (() => {
     }
   });
 
+  // renderers/canvas/overlay/services/overlay_manager.js
+  var require_overlay_manager = __commonJS({
+    "renderers/canvas/overlay/services/overlay_manager.js"(exports, module) {
+      "use strict";
+      function OverlayManager(config) {
+        this._overlay = config.overlay;
+        this._staticDrawer = config.staticDrawer;
+        this._coordSystem = config.coordSystem;
+        this._viewManager = config.viewManager;
+        this._refresh = config.refresh || function() {
+        };
+        this._highlights = /* @__PURE__ */ new Map();
+      }
+      OverlayManager.prototype = {
+        // ========================================
+        // 视图管理器引用更新
+        // ========================================
+        /**
+         * 更新视图管理器引用
+         * @param {Object|Function} viewManager - 视图管理器或获取函数
+         */
+        setViewManager: function(viewManager) {
+          this._viewManager = viewManager;
+        },
+        /**
+         * 获取视图管理器实例
+         * @returns {Object|null}
+         * @private
+         */
+        _getViewManager: function() {
+          if (typeof this._viewManager === "function") {
+            return this._viewManager();
+          }
+          return this._viewManager;
+        },
+        // ========================================
+        // 显示/隐藏管理
+        // ========================================
+        /**
+         * 隐藏元素
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否成功
+         */
+        hide: function(id) {
+          var result = this._overlay.hide(id);
+          if (result)
+            this._refresh();
+          return result;
+        },
+        /**
+         * 显示元素
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否成功
+         */
+        show: function(id) {
+          var result = this._overlay.show(id);
+          if (result)
+            this._refresh();
+          return result;
+        },
+        /**
+         * 切换元素显示/隐藏
+         * @param {string} id - 元素ID
+         * @returns {boolean} 切换后的状态 (true=隐藏)
+         */
+        toggle: function(id) {
+          var result = this._overlay.toggle(id);
+          this._refresh();
+          return result;
+        },
+        /**
+         * 检查元素是否隐藏
+         * @param {string} id - 元素ID
+         * @returns {boolean}
+         */
+        isHidden: function(id) {
+          return this._overlay.isHidden(id);
+        },
+        /**
+         * 隐藏所有元素
+         */
+        hideAll: function() {
+          this._overlay.hideAll();
+          this._refresh();
+        },
+        /**
+         * 显示所有元素
+         */
+        showAll: function() {
+          this._overlay.showAll();
+          this._refresh();
+        },
+        /**
+         * 隐藏某类型的所有元素
+         * @param {string} type - 元素类型
+         */
+        hideByType: function(type) {
+          this._overlay.hideByType(type);
+          this._refresh();
+        },
+        /**
+         * 显示某类型的所有元素
+         * @param {string} type - 元素类型
+         */
+        showByType: function(type) {
+          this._overlay.showByType(type);
+          this._refresh();
+        },
+        /**
+         * 获取所有可见元素
+         * @returns {Array}
+         */
+        getVisibleItems: function() {
+          return this._overlay.getVisible();
+        },
+        /**
+         * 获取所有隐藏元素
+         * @returns {Array}
+         */
+        getHiddenItems: function() {
+          return this._overlay.getHidden();
+        },
+        // ========================================
+        // 定位/聚焦管理
+        // ========================================
+        /**
+         * 聚焦到指定元素（调整视图使元素可见）
+         * @param {string} id - 元素ID
+         * @param {Object} options - 选项
+         * @param {number} options.padding - 边距（像素），默认 50
+         * @returns {boolean} 是否成功
+         */
+        focusTo: function(id, options) {
+          var item = this._overlay.get(id);
+          if (!item)
+            return false;
+          options = options || {};
+          var bounds = this._calculateFocusBounds([item], options.padding || 50);
+          if (!bounds)
+            return false;
+          return this._applyFocusBounds(bounds);
+        },
+        /**
+         * 聚焦到多个元素（调整视图使所有元素可见）
+         * @param {Array} ids - 元素ID数组
+         * @param {Object} options - 选项
+         * @returns {boolean} 是否成功
+         */
+        focusToBounds: function(ids, options) {
+          if (!Array.isArray(ids) || ids.length === 0)
+            return false;
+          options = options || {};
+          var items = [];
+          for (var i = 0; i < ids.length; i++) {
+            var item = this._overlay.get(ids[i]);
+            if (item)
+              items.push(item);
+          }
+          if (items.length === 0)
+            return false;
+          var bounds = this._calculateFocusBounds(items, options.padding || 50);
+          if (!bounds)
+            return false;
+          return this._applyFocusBounds(bounds);
+        },
+        /**
+         * 计算聚焦边界
+         * @param {Array} items - 元素数组
+         * @param {number} padding - 边距
+         * @returns {Object|null}
+         * @private
+         */
+        _calculateFocusBounds: function(items, padding) {
+          if (!items || items.length === 0)
+            return null;
+          var bounds = {
+            xMin: Infinity,
+            xMax: -Infinity,
+            yMin: Infinity,
+            yMax: -Infinity
+          };
+          for (var i = 0; i < items.length; i++) {
+            var itemBounds = this._getItemBounds(items[i]);
+            if (itemBounds) {
+              bounds.xMin = Math.min(bounds.xMin, itemBounds.xMin);
+              bounds.xMax = Math.max(bounds.xMax, itemBounds.xMax);
+              bounds.yMin = Math.min(bounds.yMin, itemBounds.yMin);
+              bounds.yMax = Math.max(bounds.yMax, itemBounds.yMax);
+            }
+          }
+          if (!isFinite(bounds.xMin))
+            return null;
+          var drawingArea = this._coordSystem.getDrawingArea();
+          if (!drawingArea)
+            return null;
+          var xRange = bounds.xMax - bounds.xMin;
+          var yRange = bounds.yMax - bounds.yMin;
+          if (xRange === 0) {
+            xRange = 1;
+            bounds.xMin -= 0.5;
+            bounds.xMax += 0.5;
+          }
+          if (yRange === 0) {
+            yRange = 1;
+            bounds.yMin -= 0.5;
+            bounds.yMax += 0.5;
+          }
+          var paddingRatioX = padding / drawingArea.width;
+          var paddingRatioY = padding / drawingArea.height;
+          return {
+            xMin: bounds.xMin - xRange * paddingRatioX,
+            xMax: bounds.xMax + xRange * paddingRatioX,
+            yMin: bounds.yMin - yRange * paddingRatioY,
+            yMax: bounds.yMax + yRange * paddingRatioY
+          };
+        },
+        /**
+         * 应用聚焦边界
+         * @param {Object} bounds - 边界
+         * @returns {boolean}
+         * @private
+         */
+        _applyFocusBounds: function(bounds) {
+          var viewManager = this._getViewManager();
+          if (viewManager && viewManager.setRange) {
+            viewManager.setRange(bounds.xMin, bounds.xMax, bounds.yMin, bounds.yMax);
+          }
+          this._refresh();
+          return true;
+        },
+        // ========================================
+        // 高亮管理
+        // ========================================
+        /**
+         * 高亮元素
+         * @param {string} id - 元素ID
+         * @param {Object} options - 选项
+         * @param {string} options.color - 高亮颜色，默认 '#ff0000'
+         * @param {number} options.duration - 持续时间(ms)，0 表示持续，默认 0
+         * @param {number} options.lineWidth - 高亮时的线宽（线/多边形）
+         * @param {number} options.size - 高亮时的大小（点）
+         * @returns {boolean} 是否成功
+         */
+        highlight: function(id, options) {
+          var item = this._overlay.get(id);
+          if (!item)
+            return false;
+          options = options || {};
+          var originalStyle = this._saveOriginalStyle(item);
+          this._highlights.set(id, originalStyle);
+          this._applyHighlightStyle(item, options);
+          this._refresh();
+          if (options.duration && options.duration > 0) {
+            var self = this;
+            setTimeout(function() {
+              self.clearHighlight(id);
+            }, options.duration);
+          }
+          return true;
+        },
+        /**
+         * 保存元素的原始样式（支持扁平格式和嵌套格式）
+         * @param {Object} item - 元素对象
+         * @returns {Object} 原始样式
+         * @private
+         */
+        _saveOriginalStyle: function(item) {
+          var opts = item.options || {};
+          var style = {
+            // 扁平格式
+            color: opts.color,
+            fillColor: opts.fillColor,
+            strokeColor: opts.strokeColor,
+            strokeWidth: opts.strokeWidth,
+            width: opts.width,
+            lineWidth: opts.lineWidth,
+            size: opts.size,
+            // 嵌套格式（polygon）
+            fill: opts.fill ? this._cloneObject(opts.fill) : void 0,
+            stroke: opts.stroke ? this._cloneObject(opts.stroke) : void 0
+          };
+          return style;
+        },
+        /**
+         * 应用高亮样式（支持扁平格式和嵌套格式）
+         * @param {Object} item - 元素对象
+         * @param {Object} options - 高亮选项
+         * @private
+         */
+        _applyHighlightStyle: function(item, options) {
+          if (!item.options)
+            return;
+          var highlightColor = options.color || "#ff0000";
+          if (item.type === "polygon") {
+            if (item.options.color !== void 0 || item.options.fillColor !== void 0) {
+              item.options.color = highlightColor;
+              item.options.fillColor = highlightColor;
+            }
+            if (item.options.fill && item.options.fill.color) {
+              item.options.fill = {
+                type: item.options.fill.type || "color",
+                color: highlightColor
+              };
+            }
+            if (!options.strokeColor) {
+              item.options.strokeColor = highlightColor;
+              if (item.options.stroke) {
+                item.options.stroke = this._cloneObject(item.options.stroke);
+                item.options.stroke.color = highlightColor;
+              }
+            }
+            if (options.lineWidth !== void 0) {
+              item.options.strokeWidth = options.lineWidth;
+              item.options.lineWidth = options.lineWidth;
+              if (item.options.stroke) {
+                item.options.stroke = item.options.stroke || {};
+                item.options.stroke.width = options.lineWidth;
+              }
+            }
+          } else if (item.type === "line") {
+            item.options.color = highlightColor;
+            if (options.lineWidth !== void 0) {
+              item.options.lineWidth = options.lineWidth;
+              item.options.width = options.lineWidth;
+            }
+          } else if (item.type === "point") {
+            item.options.color = highlightColor;
+            if (options.size !== void 0) {
+              item.options.size = options.size;
+            }
+          } else if (item.type === "text") {
+            item.options.color = highlightColor;
+          }
+          if (options.strokeColor) {
+            item.options.strokeColor = options.strokeColor;
+          }
+        },
+        /**
+         * 克隆对象（浅拷贝）
+         * @param {Object} obj - 要克隆的对象
+         * @returns {Object} 克隆后的对象
+         * @private
+         */
+        _cloneObject: function(obj) {
+          if (!obj)
+            return obj;
+          var clone = {};
+          for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+              clone[key] = obj[key];
+            }
+          }
+          return clone;
+        },
+        /**
+         * 取消高亮
+         * @param {string} id - 元素ID
+         * @returns {boolean} 是否成功
+         */
+        clearHighlight: function(id) {
+          var originalStyle = this._highlights.get(id);
+          if (!originalStyle)
+            return false;
+          var item = this._overlay.get(id);
+          if (item && item.options) {
+            this._restoreOriginalStyle(item, originalStyle);
+          }
+          this._highlights.delete(id);
+          this._refresh();
+          return true;
+        },
+        /**
+         * 恢复元素的原始样式（支持扁平格式和嵌套格式）
+         * @param {Object} item - 元素对象
+         * @param {Object} originalStyle - 原始样式
+         * @private
+         */
+        _restoreOriginalStyle: function(item, originalStyle) {
+          var opts = item.options;
+          if (!opts)
+            return;
+          if (originalStyle.color !== void 0) {
+            opts.color = originalStyle.color;
+          } else {
+            delete opts.color;
+          }
+          if (originalStyle.fillColor !== void 0) {
+            opts.fillColor = originalStyle.fillColor;
+          } else {
+            delete opts.fillColor;
+          }
+          if (originalStyle.strokeColor !== void 0) {
+            opts.strokeColor = originalStyle.strokeColor;
+          } else {
+            delete opts.strokeColor;
+          }
+          if (originalStyle.strokeWidth !== void 0) {
+            opts.strokeWidth = originalStyle.strokeWidth;
+          } else {
+            delete opts.strokeWidth;
+          }
+          if (originalStyle.width !== void 0) {
+            opts.width = originalStyle.width;
+          }
+          if (originalStyle.lineWidth !== void 0) {
+            opts.lineWidth = originalStyle.lineWidth;
+          }
+          if (originalStyle.size !== void 0) {
+            opts.size = originalStyle.size;
+          }
+          if (originalStyle.fill !== void 0) {
+            opts.fill = originalStyle.fill ? this._cloneObject(originalStyle.fill) : void 0;
+          }
+          if (originalStyle.stroke !== void 0) {
+            opts.stroke = originalStyle.stroke ? this._cloneObject(originalStyle.stroke) : void 0;
+          }
+        },
+        /**
+         * 取消所有高亮
+         */
+        clearAllHighlights: function() {
+          var self = this;
+          var ids = Array.from(this._highlights.keys());
+          ids.forEach(function(id) {
+            self.clearHighlight(id);
+          });
+        },
+        /**
+         * 检查元素是否处于高亮状态
+         * @param {string} id - 元素ID
+         * @returns {boolean}
+         */
+        isHighlighted: function(id) {
+          return this._highlights.has(id);
+        },
+        /**
+         * 获取所有高亮的元素ID
+         * @returns {Array}
+         */
+        getHighlightedIds: function() {
+          return Array.from(this._highlights.keys());
+        },
+        // ========================================
+        // 样式/数据更新管理
+        // ========================================
+        /**
+         * 只更新样式（不影响数据）
+         * @param {string} id - 元素ID
+         * @param {Object} style - 样式对象
+         * @returns {Object|null} 更新后的元素
+         */
+        updateStyle: function(id, style) {
+          return this._staticDrawer.updateStyle(id, style);
+        },
+        /**
+         * 只更新数据（不影响样式）
+         * @param {string} id - 元素ID
+         * @param {Object} data - 数据对象
+         * @returns {Object|null} 更新后的元素
+         */
+        updateData: function(id, data) {
+          return this._staticDrawer.updateData(id, data);
+        },
+        /**
+         * 批量更新样式
+         * @param {Array} ids - 元素ID数组
+         * @param {Object} style - 样式对象
+         * @returns {Array} 更新成功的元素数组
+         */
+        updateStyles: function(ids, style) {
+          return this._staticDrawer.updateStyles(ids, style);
+        },
+        /**
+         * 批量更新数据
+         * @param {Array} dataList - 数据列表 [{id, ...data}]
+         * @returns {Array} 更新成功的元素数组
+         */
+        updateDataList: function(dataList) {
+          return this._staticDrawer.updateDataList(dataList);
+        },
+        // ========================================
+        // 内部工具方法
+        // ========================================
+        /**
+         * 获取元素的边界
+         * @param {Object} item - 元素对象
+         * @returns {Object|null} { xMin, xMax, yMin, yMax }
+         * @private
+         */
+        _getItemBounds: function(item) {
+          if (!item)
+            return null;
+          var bounds = {
+            xMin: Infinity,
+            xMax: -Infinity,
+            yMin: Infinity,
+            yMax: -Infinity
+          };
+          switch (item.type) {
+            case "point":
+            case "text":
+              if (typeof item.x === "number" && typeof item.y === "number") {
+                bounds.xMin = bounds.xMax = item.x;
+                bounds.yMin = bounds.yMax = item.y;
+              }
+              break;
+            case "line":
+            case "polygon":
+              if (Array.isArray(item.points)) {
+                for (var i = 0; i < item.points.length; i++) {
+                  var p = item.points[i];
+                  if (p && typeof p.x === "number" && typeof p.y === "number") {
+                    bounds.xMin = Math.min(bounds.xMin, p.x);
+                    bounds.xMax = Math.max(bounds.xMax, p.x);
+                    bounds.yMin = Math.min(bounds.yMin, p.y);
+                    bounds.yMax = Math.max(bounds.yMax, p.y);
+                  }
+                }
+              }
+              break;
+          }
+          if (!isFinite(bounds.xMin))
+            return null;
+          return bounds;
+        }
+      };
+      module.exports = OverlayManager;
+    }
+  });
+
   // renderers/canvas/overlay/index.js
   var require_overlay2 = __commonJS({
     "renderers/canvas/overlay/index.js"(exports, module) {
@@ -6514,6 +7353,7 @@ var contourCore = (() => {
       var StaticDrawer = require_static_drawer();
       var InteractiveDrawer = require_interactive_drawer();
       var OverlayRenderer = require_renderer();
+      var OverlayManager = require_overlay_manager();
       function createOverlaySystem(renderer) {
         var overlay = new Overlay();
         var coordSystem = new CoordSystem(
@@ -6545,241 +7385,190 @@ var contourCore = (() => {
           coordSystem,
           refresh
         });
-        var system = {
-          // ========================================
-          // 数据容器访问（只读）
-          // ========================================
+        var getViewManager = function() {
+          if (!renderer)
+            return null;
+          if (renderer.getViewManager)
+            return renderer.getViewManager();
+          return null;
+        };
+        var overlayManager = new OverlayManager({
+          overlay,
+          staticDrawer,
+          coordSystem,
+          viewManager: getViewManager,
+          refresh
+        });
+        return {
+          // 核心组件访问（只读）
           overlay,
           coordSystem,
+          manager: overlayManager,
           // ========================================
-          // 静态绘制 API
+          // 绘制 API（委托给 StaticDrawer）
           // ========================================
-          /**
-           * 绘制点
-           * @param {number} x - X 坐标（数据坐标）
-           * @param {number} y - Y 坐标（数据坐标）
-           * @param {Object} options - 点选项
-           * @returns {string} 元素ID
-           */
           drawPoint: function(x, y, options) {
             return staticDrawer.drawPoint(x, y, options);
           },
-          /**
-           * 绘制线
-           * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
-           * @param {Object} options - 线选项
-           * @returns {string} 元素ID
-           */
           drawLine: function(points, options) {
             return staticDrawer.drawLine(points, options);
           },
-          /**
-           * 绘制多边形
-           * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
-           * @param {Object} options - 多边形选项
-           * @returns {string} 元素ID
-           */
           drawPolygon: function(points, options) {
             return staticDrawer.drawPolygon(points, options);
           },
-          /**
-           * 绘制文本
-           * @param {number} x - X 坐标（数据坐标）
-           * @param {number} y - Y 坐标（数据坐标）
-           * @param {string} content - 文本内容
-           * @param {Object} options - 文本选项
-           * @returns {string} 元素ID
-           */
           drawText: function(x, y, content, options) {
             return staticDrawer.drawText(x, y, content, options);
           },
-          /**
-           * 批量绘制
-           * @param {Array} items - 元素数组 [{type, data}]
-           * @returns {Array} 元素ID数组
-           */
           drawBatch: function(items) {
             return staticDrawer.drawBatch(items);
           },
           // ========================================
-          // 交互绘制 API
+          // 交互绘制 API（委托给 InteractiveDrawer）
           // ========================================
-          /**
-           * 开始交互绘制
-           * @param {string} mode - 绘制模式 ('point', 'line', 'polygon', 'text')
-           * @param {Object} options - 绘制选项
-           * @param {HTMLCanvasElement} canvas - 画布元素
-           * @param {Function} onComplete - 完成回调
-           */
           startDrawing: function(mode, options, canvas, onComplete) {
             return interactiveDrawer.start(mode, options, canvas, onComplete);
           },
-          /**
-           * 停止交互绘制
-           */
           stopDrawing: function() {
             return interactiveDrawer.stop();
           },
-          /**
-           * 是否正在绘制
-           * @returns {boolean}
-           */
           isDrawing: function() {
             return interactiveDrawer.isDrawing();
           },
-          /**
-           * 获取当前绘制模式
-           * @returns {string|null}
-           */
           getDrawMode: function() {
             return interactiveDrawer.getMode();
           },
-          /**
-           * 获取绘制状态（用于渲染预览）
-           * @returns {Object}
-           */
           getDrawState: function() {
             return interactiveDrawer.getState();
           },
-          /**
-           * 获取临时点
-           * @returns {Array}
-           */
           getTempPoints: function() {
             return interactiveDrawer.getTempPoints();
           },
           // ========================================
-          // 数据操作 API
+          // 数据操作 API（委托给 Overlay + StaticDrawer）
           // ========================================
-          /**
-           * 获取单个元素
-           * @param {string} id - 元素ID
-           * @returns {Object|null}
-           */
           getItem: function(id) {
             return overlay.get(id);
           },
-          /**
-           * 获取某类型的所有元素
-           * @param {string} type - 元素类型
-           * @returns {Array}
-           */
           getItemsByType: function(type) {
             return overlay.getByType(type);
           },
-          /**
-           * 获取所有元素
-           * @returns {Array}
-           */
           getAllItems: function() {
             return overlay.getAll();
           },
-          /**
-           * 更新元素
-           * @param {string} id - 元素ID
-           * @param {Object} data - 更新数据
-           * @returns {Object|null}
-           */
           updateItem: function(id, data) {
             return staticDrawer.update(id, data);
           },
-          /**
-           * 删除元素
-           * @param {string} id - 元素ID
-           * @returns {boolean}
-           */
           removeItem: function(id) {
             return staticDrawer.remove(id);
           },
-          /**
-           * 清空元素
-           * @param {string} [type] - 元素类型，不传则清空所有
-           */
           clear: function(type) {
             overlay.clear(type);
             refresh();
           },
-          /**
-           * 获取元素数量
-           * @param {string} [type] - 元素类型
-           * @returns {number}
-           */
           count: function(type) {
             return overlay.count(type);
           },
           // ========================================
+          // 管理 API（委托给 OverlayManager）
+          // ========================================
+          hide: function(id) {
+            return overlayManager.hide(id);
+          },
+          show: function(id) {
+            return overlayManager.show(id);
+          },
+          toggle: function(id) {
+            return overlayManager.toggle(id);
+          },
+          isHidden: function(id) {
+            return overlayManager.isHidden(id);
+          },
+          hideAll: function() {
+            overlayManager.hideAll();
+          },
+          showAll: function() {
+            overlayManager.showAll();
+          },
+          hideByType: function(type) {
+            overlayManager.hideByType(type);
+          },
+          showByType: function(type) {
+            overlayManager.showByType(type);
+          },
+          getVisibleItems: function() {
+            return overlayManager.getVisibleItems();
+          },
+          getHiddenItems: function() {
+            return overlayManager.getHiddenItems();
+          },
+          focusTo: function(id, options) {
+            overlayManager.setViewManager(getViewManager);
+            return overlayManager.focusTo(id, options);
+          },
+          focusToBounds: function(ids, options) {
+            overlayManager.setViewManager(getViewManager);
+            return overlayManager.focusToBounds(ids, options);
+          },
+          highlight: function(id, options) {
+            return overlayManager.highlight(id, options);
+          },
+          clearHighlight: function(id) {
+            return overlayManager.clearHighlight(id);
+          },
+          clearAllHighlights: function() {
+            overlayManager.clearAllHighlights();
+          },
+          isHighlighted: function(id) {
+            return overlayManager.isHighlighted(id);
+          },
+          getHighlightedIds: function() {
+            return overlayManager.getHighlightedIds();
+          },
+          updateStyle: function(id, style) {
+            return overlayManager.updateStyle(id, style);
+          },
+          updateData: function(id, data) {
+            return overlayManager.updateData(id, data);
+          },
+          updateStyles: function(ids, style) {
+            return overlayManager.updateStyles(ids, style);
+          },
+          updateDataList: function(dataList) {
+            return overlayManager.updateDataList(dataList);
+          },
+          // ========================================
           // 渲染 API
           // ========================================
-          /**
-           * 渲染所有覆盖物
-           * @param {CanvasRenderingContext2D} ctx - 画布上下文
-           */
           render: function(ctx) {
             overlayRenderer.render(ctx, overlay, coordSystem.getDrawingArea());
             overlayRenderer.renderTemp(ctx, interactiveDrawer.getState(), coordSystem.getDrawingArea());
           },
-          /**
-           * 刷新（触发父渲染器重绘）
-           */
           refresh,
           // ========================================
           // 坐标转换 API
           // ========================================
-          /**
-           * 数据坐标 → 画布坐标
-           * @param {number} x - 数据 X 坐标
-           * @param {number} y - 数据 Y 坐标
-           * @returns {Object|null}
-           */
           dataToCanvas: function(x, y) {
             return coordSystem.toCanvas(x, y);
           },
-          /**
-           * 画布坐标 → 数据坐标
-           * @param {number} x - 画布 X 坐标
-           * @param {number} y - 画布 Y 坐标
-           * @returns {Object|null}
-           */
           canvasToData: function(x, y) {
             return coordSystem.toData(x, y);
           },
-          /**
-           * 获取缩放比例
-           * @returns {Object}
-           */
           getScale: function() {
             return coordSystem.getScale();
           },
-          /**
-           * 检查是否在绘制区域内
-           * @param {number} x - 画布 X 坐标
-           * @param {number} y - 画布 Y 坐标
-           * @returns {boolean}
-           */
           isInBounds: function(x, y) {
             return coordSystem.isInBounds(x, y);
           },
           // ========================================
           // 事件订阅 API
           // ========================================
-          /**
-           * 订阅绘制事件
-           * @param {string} event - 事件名称
-           * @param {Function} handler - 处理函数
-           */
           on: function(event, handler) {
             return interactiveDrawer.on(event, handler);
           },
-          /**
-           * 取消订阅
-           * @param {string} event - 事件名称
-           * @param {Function} handler - 处理函数
-           */
           off: function(event, handler) {
             return interactiveDrawer.off(event, handler);
           }
         };
-        return system;
       }
       module.exports = createOverlaySystem;
       module.exports.Overlay = Overlay;
@@ -6788,6 +7577,7 @@ var contourCore = (() => {
       module.exports.StaticDrawer = StaticDrawer;
       module.exports.InteractiveDrawer = InteractiveDrawer;
       module.exports.OverlayRenderer = OverlayRenderer;
+      module.exports.OverlayManager = OverlayManager;
       module.exports.renderers = {
         line: require_line(),
         point: require_point(),
@@ -6957,6 +7747,7 @@ var contourCore = (() => {
   var require_canvas = __commonJS({
     "renderers/canvas/index.js"(exports, module) {
       "use strict";
+      var compute = require_compute();
       var drawPaths = require_paths();
       var drawLabels = require_labels2();
       var drawColorbar = require_colorbar2();
@@ -7089,6 +7880,20 @@ var contourCore = (() => {
         var _overlay = null;
         var _fullRange = fullRange;
         var _drawingArea = drawingArea;
+        var _gridData = {
+          z: style.z,
+          x: style.x,
+          y: style.y
+        };
+        var _computeOptions = {
+          autocontour: style.autocontour !== false,
+          ncontours: style.ncontours || 15,
+          smoothing: style.smoothing !== void 0 ? style.smoothing : 0.5,
+          start: style.start,
+          end: style.end,
+          size: style.size,
+          valueColorMap: style.valueColorMap
+        };
         function render() {
           var ctx = canvas.getContext("2d");
           var visibleRange = viewManager.getState();
@@ -7194,7 +7999,180 @@ var contourCore = (() => {
           destroy: function() {
             interaction.destroy();
           },
-          render
+          render,
+          // ========================================
+          // 数据更新 API
+          // ========================================
+          /**
+           * 更新数据（重新计算等值线）
+           * @param {Object} newData - 新数据
+           * @param {Array} newData.z - Z 值矩阵
+           * @param {Array} [newData.x] - X 坐标数组
+           * @param {Array} [newData.y] - Y 坐标数组
+           */
+          updateData: function(newData) {
+            if (!newData)
+              return;
+            if (newData.z)
+              _gridData.z = newData.z;
+            if (newData.x)
+              _gridData.x = newData.x;
+            if (newData.y)
+              _gridData.y = newData.y;
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+            currentStyle.z = _gridData.z;
+            currentStyle.x = _gridData.x;
+            currentStyle.y = _gridData.y;
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
+            render();
+          },
+          /**
+           * 更新 ColorScale（重新计算等值线，因为 levels 会变化）
+           * @param {Array} valueColorMap - 颜色映射数组 [[value, color], ...]
+           */
+          updateColorScale: function(valueColorMap) {
+            if (!Array.isArray(valueColorMap))
+              return;
+            _computeOptions.valueColorMap = valueColorMap;
+            currentStyle.valueColorMap = valueColorMap;
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            render();
+          },
+          /**
+           * 更新 ColorBar
+           * @param {Object} config - ColorBar 配置
+           * @param {Array} [config.valueColorMap] - 颜色映射数组
+           * @param {string} [config.title] - 标题
+           * @param {number} [config.thickness] - 厚度
+           * @param {string} [config.position] - 位置 ('left' | 'right')
+           * @param {number} [config.tickInterval] - 刻度间隔
+           */
+          updateColorbar: function(config) {
+            if (!config)
+              return;
+            if (config.valueColorMap && Array.isArray(config.valueColorMap)) {
+              _computeOptions.valueColorMap = config.valueColorMap;
+              currentStyle.valueColorMap = config.valueColorMap;
+              contourResult = compute.computeContours(_gridData, _computeOptions);
+              pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            }
+            if (!currentStyle.colorbar) {
+              currentStyle.colorbar = {};
+            }
+            Object.assign(currentStyle.colorbar, config);
+            render();
+          },
+          /**
+           * 更新等值线参数（重新计算）
+           * @param {Object} options - 等值线参数
+           * @param {number} [options.smoothing] - 平滑度 0-1
+           * @param {boolean} [options.autocontour] - 是否自动计算等值线
+           * @param {number} [options.ncontours] - 等值线数量
+           * @param {number} [options.start] - 起始值
+           * @param {number} [options.end] - 结束值
+           * @param {number} [options.size] - 步长
+           */
+          updateContours: function(options) {
+            if (!options)
+              return;
+            if (options.smoothing !== void 0)
+              _computeOptions.smoothing = options.smoothing;
+            if (options.autocontour !== void 0)
+              _computeOptions.autocontour = options.autocontour;
+            if (options.ncontours !== void 0)
+              _computeOptions.ncontours = options.ncontours;
+            if (options.start !== void 0)
+              _computeOptions.start = options.start;
+            if (options.end !== void 0)
+              _computeOptions.end = options.end;
+            if (options.size !== void 0)
+              _computeOptions.size = options.size;
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+            currentStyle.smoothing = _computeOptions.smoothing;
+            render();
+          },
+          /**
+           * 批量更新（智能合并）
+           * @param {Object} config - 配置对象
+           * @param {Object} [config.data] - 数据更新
+           * @param {Array} [config.colorScale] - 颜色映射
+           * @param {Object} [config.contours] - 等值线参数
+           * @param {Object} [config.colorbar] - ColorBar 配置
+           */
+          update: function(config) {
+            if (!config)
+              return;
+            if (config.data) {
+              if (config.data.z)
+                _gridData.z = config.data.z;
+              if (config.data.x)
+                _gridData.x = config.data.x;
+              if (config.data.y)
+                _gridData.y = config.data.y;
+            }
+            if (config.colorScale && Array.isArray(config.colorScale)) {
+              _computeOptions.valueColorMap = config.colorScale;
+              currentStyle.valueColorMap = config.colorScale;
+            }
+            if (config.contours) {
+              var opts = config.contours;
+              if (opts.smoothing !== void 0)
+                _computeOptions.smoothing = opts.smoothing;
+              if (opts.autocontour !== void 0)
+                _computeOptions.autocontour = opts.autocontour;
+              if (opts.ncontours !== void 0)
+                _computeOptions.ncontours = opts.ncontours;
+              if (opts.start !== void 0)
+                _computeOptions.start = opts.start;
+              if (opts.end !== void 0)
+                _computeOptions.end = opts.end;
+              if (opts.size !== void 0)
+                _computeOptions.size = opts.size;
+            }
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+            currentStyle.z = _gridData.z;
+            currentStyle.x = _gridData.x;
+            currentStyle.y = _gridData.y;
+            currentStyle.smoothing = _computeOptions.smoothing;
+            if (config.colorbar) {
+              if (!currentStyle.colorbar) {
+                currentStyle.colorbar = {};
+              }
+              Object.assign(currentStyle.colorbar, config.colorbar);
+            }
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
+            render();
+          },
+          /**
+           * 获取当前数据
+           * @returns {Object} 数据对象 { z, x, y }
+           */
+          getData: function() {
+            return {
+              z: _gridData.z,
+              x: _gridData.x,
+              y: _gridData.y
+            };
+          },
+          /**
+           * 获取当前 ColorScale
+           * @returns {Array} valueColorMap
+           */
+          getColorScale: function() {
+            return currentStyle.valueColorMap;
+          }
         };
       }
       function getFullRange(pathInfo) {

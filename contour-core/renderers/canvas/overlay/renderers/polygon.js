@@ -3,6 +3,12 @@
 /**
  * Polygon drawing module
  * 使用 CoordSystem 进行坐标转换
+ *
+ * 支持两种样式格式：
+ * 1. 扁平格式（推荐）：
+ *    { color: '#ff0000', strokeColor: '#000', strokeWidth: 1 }
+ * 2. 嵌套格式（兼容）：
+ *    { fill: { type: 'color', color: '#ff0000' }, stroke: { color: '#000', width: 1 } }
  */
 
 var patterns = require('./patterns');
@@ -18,6 +24,76 @@ var DEFAULT_STROKE = {
     width: 1,
     style: 'solid'
 };
+
+/**
+ * 规范化多边形选项（支持扁平格式和嵌套格式）
+ * @param {Object} options - 原始选项
+ * @returns {Object} 规范化后的选项
+ */
+function normalizeOptions(options) {
+    options = options || {};
+
+    var fill, stroke;
+
+    // 处理填充：优先使用嵌套的 fill，其次使用扁平格式的 fillColor（不使用 color，因为 color 可能是边框色）
+    if (options.fill) {
+        // 嵌套格式（最高优先级）
+        fill = options.fill;
+    } else if (options.fillColor) {
+        // 扁平格式 fillColor
+        fill = {
+            type: 'color',
+            color: options.fillColor
+        };
+    } else if (options.color && !options.strokeColor && !options.stroke) {
+        // 扁平格式 color（仅在没有明确边框色时才作为填充色）
+        fill = {
+            type: 'color',
+            color: options.color
+        };
+    } else {
+        fill = DEFAULT_FILL;
+    }
+
+    // 处理边框：优先使用嵌套的 stroke，其次使用扁平格式
+    if (options.stroke !== undefined) {
+        // 嵌套格式（最高优先级）
+        stroke = options.stroke;
+    } else if (options.strokeColor !== undefined || options.strokeWidth !== undefined) {
+        // 扁平格式
+        stroke = {
+            color: options.strokeColor || DEFAULT_STROKE.color,
+            width: options.strokeWidth !== undefined ? options.strokeWidth : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+        };
+    } else if (options.color && (options.strokeColor !== undefined || options.width !== undefined)) {
+        // 如果有 color 且同时有 stroke 相关属性，color 作为边框色
+        stroke = {
+            color: options.color,
+            width: options.width !== undefined ? options.width : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+        };
+    } else if (options.color && options.fill) {
+        // 如果同时有 color 和 fill，color 可能是边框色
+        stroke = {
+            color: options.color,
+            width: options.width !== undefined ? options.width : DEFAULT_STROKE.width,
+            style: options.strokeStyle || DEFAULT_STROKE.style
+        };
+    } else if (options.stroke === null) {
+        // 明确禁用边框
+        stroke = null;
+    } else {
+        stroke = null; // 默认无边框
+    }
+
+    return {
+        fill: fill,
+        stroke: stroke,
+        opacity: options.opacity,
+        text: options.text
+    };
+}
 
 function calculateCenter(points) {
     if (!points || points.length === 0) {
@@ -47,7 +123,8 @@ function calculateCenter(points) {
 function drawPolygon(ctx, points, options, coordSystem) {
     if (!points || points.length < 3) return;
 
-    options = options || {};
+    // 规范化选项（支持扁平格式和嵌套格式）
+    var opts = normalizeOptions(options);
 
     // Convert coordinates using CoordSystem
     var canvasPoints = [];
@@ -74,8 +151,13 @@ function drawPolygon(ctx, points, options, coordSystem) {
     }
     ctx.closePath();
 
+    // Apply opacity if specified
+    if (opts.opacity !== undefined) {
+        ctx.globalAlpha = opts.opacity;
+    }
+
     // Fill
-    var fill = options.fill || DEFAULT_FILL;
+    var fill = opts.fill || DEFAULT_FILL;
     if (fill.type === 'pattern') {
         var pattern = patterns.getPattern(fill, ctx);
         if (pattern) {
@@ -89,7 +171,7 @@ function drawPolygon(ctx, points, options, coordSystem) {
     ctx.fill();
 
     // Stroke
-    var stroke = options.stroke;
+    var stroke = opts.stroke;
     if (stroke && stroke.color) {
         ctx.strokeStyle = stroke.color;
         ctx.lineWidth = stroke.width || DEFAULT_STROKE.width;
@@ -113,8 +195,8 @@ function drawPolygon(ctx, points, options, coordSystem) {
     ctx.restore();
 
     // Draw text label
-    if (options.text && options.text.content) {
-        var textOpts = options.text;
+    if (opts.text && opts.text.content) {
+        var textOpts = opts.text;
         var center;
 
         if (textOpts.position === 'center' || !textOpts.position) {

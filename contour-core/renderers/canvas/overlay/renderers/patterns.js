@@ -35,23 +35,14 @@ function createCanvas(size) {
 }
 
 /**
- * Create a pattern from canvas (works in both environments)
- * @param {CanvasRenderingContext2D} ctx - Context
- * @param {Object} canvas - Canvas element
- * @returns {CanvasPattern} Pattern object
- */
-function createPattern(ctx, canvas) {
-    return ctx.createPattern(canvas, 'repeat');
-}
-
-/**
  * Create a grid pattern
  * @param {number} size - Pattern size
  * @param {string} color - Pattern color
  * @param {number} lineWidth - Line width
+ * @param {CanvasRenderingContext2D} targetCtx - Target canvas context
  * @returns {CanvasPattern} Pattern object
  */
-function createGridPattern(size, color, lineWidth) {
+function createGridPattern(size, color, lineWidth, targetCtx) {
     var cacheKey = 'grid_' + size + '_' + color + '_' + lineWidth;
     if (patternCache[cacheKey]) {
         return patternCache[cacheKey];
@@ -77,7 +68,9 @@ function createGridPattern(size, color, lineWidth) {
     ctx.lineTo(size, size / 2);
     ctx.stroke();
 
-    var pattern = createPattern(ctx, canvas);
+    // Use target context to create pattern
+    var patternCtx = targetCtx || ctx;
+    var pattern = patternCtx.createPattern(canvas, 'repeat');
     patternCache[cacheKey] = pattern;
     return pattern;
 }
@@ -88,9 +81,10 @@ function createGridPattern(size, color, lineWidth) {
  * @param {string} color - Pattern color
  * @param {number} lineWidth - Line width
  * @param {number} angle - Diagonal angle in degrees
+ * @param {CanvasRenderingContext2D} targetCtx - Target canvas context
  * @returns {CanvasPattern} Pattern object
  */
-function createHashPattern(size, color, lineWidth, angle) {
+function createHashPattern(size, color, lineWidth, angle, targetCtx) {
     var cacheKey = 'hash_' + size + '_' + color + '_' + lineWidth + '_' + angle;
     if (patternCache[cacheKey]) {
         return patternCache[cacheKey];
@@ -119,7 +113,9 @@ function createHashPattern(size, color, lineWidth, angle) {
     ctx.lineTo(offset + size * Math.tan(rad), size);
     ctx.stroke();
 
-    var pattern = createPattern(ctx, canvas);
+    // Use target context to create pattern
+    var patternCtx = targetCtx || ctx;
+    var pattern = patternCtx.createPattern(canvas, 'repeat');
     patternCache[cacheKey] = pattern;
     return pattern;
 }
@@ -130,9 +126,10 @@ function createHashPattern(size, color, lineWidth, angle) {
  * @param {string} color - Pattern color
  * @param {number} lineWidth - Line width
  * @param {number} angle - Diagonal angle in degrees
+ * @param {CanvasRenderingContext2D} targetCtx - Target canvas context
  * @returns {CanvasPattern} Pattern object
  */
-function createDiagonalPattern(size, color, lineWidth, angle) {
+function createDiagonalPattern(size, color, lineWidth, angle, targetCtx) {
     var cacheKey = 'diagonal_' + size + '_' + color + '_' + lineWidth + '_' + angle;
     if (patternCache[cacheKey]) {
         return patternCache[cacheKey];
@@ -148,12 +145,15 @@ function createDiagonalPattern(size, color, lineWidth, angle) {
 
     var rad = ((angle || 45) * Math.PI) / 180;
 
+    // Draw diagonal lines across the pattern tile
     ctx.beginPath();
     ctx.moveTo(0, size);
-    ctx.lineTo(size * Math.cos(rad), size - size * Math.sin(rad));
+    ctx.lineTo(size, 0);
     ctx.stroke();
 
-    var pattern = createPattern(ctx, canvas);
+    // Use target context to create pattern
+    var patternCtx = targetCtx || ctx;
+    var pattern = patternCtx.createPattern(canvas, 'repeat');
     patternCache[cacheKey] = pattern;
     return pattern;
 }
@@ -163,9 +163,10 @@ function createDiagonalPattern(size, color, lineWidth, angle) {
  * @param {number} size - Pattern size
  * @param {string} color - Dot color
  * @param {number} dotSize - Dot radius
+ * @param {CanvasRenderingContext2D} targetCtx - Target canvas context
  * @returns {CanvasPattern} Pattern object
  */
-function createDotsPattern(size, color, dotSize) {
+function createDotsPattern(size, color, dotSize, targetCtx) {
     var cacheKey = 'dots_' + size + '_' + color + '_' + dotSize;
     if (patternCache[cacheKey]) {
         return patternCache[cacheKey];
@@ -181,7 +182,9 @@ function createDotsPattern(size, color, dotSize) {
     ctx.arc(size / 2, size / 2, dotSize || (size / 6), 0, Math.PI * 2);
     ctx.fill();
 
-    var pattern = createPattern(ctx, canvas);
+    // Use target context to create pattern
+    var patternCtx = targetCtx || ctx;
+    var pattern = patternCtx.createPattern(canvas, 'repeat');
     patternCache[cacheKey] = pattern;
     return pattern;
 }
@@ -190,9 +193,10 @@ function createDotsPattern(size, color, dotSize) {
  * Create an SVG pattern from data URL
  * @param {string} svgSource - SVG data URL
  * @param {number} size - Pattern size
+ * @param {CanvasRenderingContext2D} targetCtx - Target canvas context
  * @param {Function} callback - Callback(pattern) when loaded
  */
-function createSVGPattern(svgSource, size, callback) {
+function createSVGPattern(svgSource, size, targetCtx, callback) {
     // Browser only for Image loading
     if (typeof Image === 'undefined') {
         if (callback) callback(null);
@@ -209,7 +213,9 @@ function createSVGPattern(svgSource, size, callback) {
         var ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, size, size);
 
-        var pattern = createPattern(ctx, canvas);
+        // Use target context to create pattern
+        var patternCtx = targetCtx || ctx;
+        var pattern = patternCtx.createPattern(canvas, 'repeat');
         if (callback) callback(pattern);
     };
     img.onerror = function() {
@@ -230,20 +236,20 @@ function getPattern(fillConfig, ctx) {
     }
 
     var pattern = fillConfig.pattern;
-    var color = fillConfig.patternColor || '#000000';
+    var color = fillConfig.patternColor || fillConfig.color || '#000000';
     var size = fillConfig.patternSize || 10;
     var lineWidth = fillConfig.patternLineWidth || 1;
 
     if (typeof pattern === 'string') {
         switch (pattern) {
             case 'grid':
-                return createGridPattern(size, color, lineWidth);
+                return createGridPattern(size, color, lineWidth, ctx);
             case 'hash':
-                return createHashPattern(size, color, lineWidth, fillConfig.patternAngle);
+                return createHashPattern(size, color, lineWidth, fillConfig.patternAngle, ctx);
             case 'diagonal':
-                return createDiagonalPattern(size, color, lineWidth, fillConfig.patternAngle);
+                return createDiagonalPattern(size, color, lineWidth, fillConfig.patternAngle, ctx);
             case 'dots':
-                return createDotsPattern(size, color, fillConfig.patternDotSize);
+                return createDotsPattern(size, color, fillConfig.patternDotSize, ctx);
         }
     }
 

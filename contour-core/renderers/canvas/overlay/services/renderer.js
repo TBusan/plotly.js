@@ -21,6 +21,7 @@ OverlayRenderer.prototype = {
      * @param {Object} drawingArea - 绘制区域 {x, y, width, height}
      */
     render: function(ctx, overlay, drawingArea) {
+        var self = this;
         ctx.save();
 
         // 应用裁剪区域
@@ -30,11 +31,18 @@ OverlayRenderer.prototype = {
             ctx.clip();
         }
 
-        // 按顺序渲染：面 → 线 → 点 → 文字
-        polygonRenderer.render(ctx, overlay.getByType('polygon'), this._coordSystem);
-        lineRenderer.render(ctx, overlay.getByType('line'), this._coordSystem);
-        pointRenderer.render(ctx, overlay.getByType('point'), this._coordSystem);
-        textRenderer.render(ctx, overlay.getByType('text'), this._coordSystem);
+        // 过滤隐藏元素的辅助函数
+        function filterVisible(items) {
+            return items.filter(function(item) {
+                return !overlay.isHidden(item.id);
+            });
+        }
+
+        // 按顺序渲染：面 → 线 → 点 → 文字（跳过隐藏元素）
+        polygonRenderer.render(ctx, filterVisible(overlay.getByType('polygon')), self._coordSystem);
+        lineRenderer.render(ctx, filterVisible(overlay.getByType('line')), self._coordSystem);
+        pointRenderer.render(ctx, filterVisible(overlay.getByType('point')), self._coordSystem);
+        textRenderer.render(ctx, filterVisible(overlay.getByType('text')), self._coordSystem);
 
         ctx.restore();
     },

@@ -5,6 +5,7 @@
  * Main entry point for canvas rendering
  */
 
+var compute = require('../../compute');
 var drawPaths = require('./paths');
 var drawLabels = require('./labels');
 var drawColorbar = require('./colorbar');
@@ -241,6 +242,22 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var _fullRange = fullRange;
     var _drawingArea = drawingArea;
 
+    // Store original data for dynamic updates
+    var _gridData = {
+        z: style.z,
+        x: style.x,
+        y: style.y
+    };
+    var _computeOptions = {
+        autocontour: style.autocontour !== false,
+        ncontours: style.ncontours || 15,
+        smoothing: style.smoothing !== undefined ? style.smoothing : 0.5,
+        start: style.start,
+        end: style.end,
+        size: style.size,
+        valueColorMap: style.valueColorMap
+    };
+
     /**
      * Render all layers
      */
@@ -386,7 +403,211 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             interaction.destroy();
         },
 
-        render: render
+        render: render,
+
+        // ========================================
+        // 数据更新 API
+        // ========================================
+
+        /**
+         * 更新数据（重新计算等值线）
+         * @param {Object} newData - 新数据
+         * @param {Array} newData.z - Z 值矩阵
+         * @param {Array} [newData.x] - X 坐标数组
+         * @param {Array} [newData.y] - Y 坐标数组
+         */
+        updateData: function(newData) {
+            if (!newData) return;
+
+            if (newData.z) _gridData.z = newData.z;
+            if (newData.x) _gridData.x = newData.x;
+            if (newData.y) _gridData.y = newData.y;
+
+            // 重新计算等值线
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+
+            // 更新 pathInfo 和 fullRange
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+
+            // 更新 currentStyle 中的数据引用
+            currentStyle.z = _gridData.z;
+            currentStyle.x = _gridData.x;
+            currentStyle.y = _gridData.y;
+
+            // 重新计算绘图区域
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
+
+            render();
+        },
+
+        /**
+         * 更新 ColorScale（重新计算等值线，因为 levels 会变化）
+         * @param {Array} valueColorMap - 颜色映射数组 [[value, color], ...]
+         */
+        updateColorScale: function(valueColorMap) {
+            if (!Array.isArray(valueColorMap)) return;
+
+            _computeOptions.valueColorMap = valueColorMap;
+            currentStyle.valueColorMap = valueColorMap;
+
+            // 重新计算等值线（levels 会根据 valueColorMap 变化）
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+
+            // 更新 pathInfo
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+
+            render();
+        },
+
+        /**
+         * 更新 ColorBar
+         * @param {Object} config - ColorBar 配置
+         * @param {Array} [config.valueColorMap] - 颜色映射数组
+         * @param {string} [config.title] - 标题
+         * @param {number} [config.thickness] - 厚度
+         * @param {string} [config.position] - 位置 ('left' | 'right')
+         * @param {number} [config.tickInterval] - 刻度间隔
+         */
+        updateColorbar: function(config) {
+            if (!config) return;
+
+            // 如果提供了新的 valueColorMap，需要重新计算等值线
+            if (config.valueColorMap && Array.isArray(config.valueColorMap)) {
+                _computeOptions.valueColorMap = config.valueColorMap;
+                currentStyle.valueColorMap = config.valueColorMap;
+                contourResult = compute.computeContours(_gridData, _computeOptions);
+                pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            }
+
+            // 更新 colorbar 配置
+            if (!currentStyle.colorbar) {
+                currentStyle.colorbar = {};
+            }
+            Object.assign(currentStyle.colorbar, config);
+
+            render();
+        },
+
+        /**
+         * 更新等值线参数（重新计算）
+         * @param {Object} options - 等值线参数
+         * @param {number} [options.smoothing] - 平滑度 0-1
+         * @param {boolean} [options.autocontour] - 是否自动计算等值线
+         * @param {number} [options.ncontours] - 等值线数量
+         * @param {number} [options.start] - 起始值
+         * @param {number} [options.end] - 结束值
+         * @param {number} [options.size] - 步长
+         */
+        updateContours: function(options) {
+            if (!options) return;
+
+            if (options.smoothing !== undefined) _computeOptions.smoothing = options.smoothing;
+            if (options.autocontour !== undefined) _computeOptions.autocontour = options.autocontour;
+            if (options.ncontours !== undefined) _computeOptions.ncontours = options.ncontours;
+            if (options.start !== undefined) _computeOptions.start = options.start;
+            if (options.end !== undefined) _computeOptions.end = options.end;
+            if (options.size !== undefined) _computeOptions.size = options.size;
+
+            // 重新计算等值线
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+
+            // 更新 pathInfo 和 fullRange
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+
+            // 更新 currentStyle
+            currentStyle.smoothing = _computeOptions.smoothing;
+
+            render();
+        },
+
+        /**
+         * 批量更新（智能合并）
+         * @param {Object} config - 配置对象
+         * @param {Object} [config.data] - 数据更新
+         * @param {Array} [config.colorScale] - 颜色映射
+         * @param {Object} [config.contours] - 等值线参数
+         * @param {Object} [config.colorbar] - ColorBar 配置
+         */
+        update: function(config) {
+            if (!config) return;
+
+            // 数据更新
+            if (config.data) {
+                if (config.data.z) _gridData.z = config.data.z;
+                if (config.data.x) _gridData.x = config.data.x;
+                if (config.data.y) _gridData.y = config.data.y;
+            }
+
+            // ColorScale 更新
+            if (config.colorScale && Array.isArray(config.colorScale)) {
+                _computeOptions.valueColorMap = config.colorScale;
+                currentStyle.valueColorMap = config.colorScale;
+            }
+
+            // 等值线参数更新
+            if (config.contours) {
+                var opts = config.contours;
+                if (opts.smoothing !== undefined) _computeOptions.smoothing = opts.smoothing;
+                if (opts.autocontour !== undefined) _computeOptions.autocontour = opts.autocontour;
+                if (opts.ncontours !== undefined) _computeOptions.ncontours = opts.ncontours;
+                if (opts.start !== undefined) _computeOptions.start = opts.start;
+                if (opts.end !== undefined) _computeOptions.end = opts.end;
+                if (opts.size !== undefined) _computeOptions.size = opts.size;
+            }
+
+            // 统一重新计算等值线
+            contourResult = compute.computeContours(_gridData, _computeOptions);
+
+            // 更新 pathInfo 和 fullRange
+            pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
+            fullRange = getFullRange(pathInfo);
+            _fullRange = fullRange;
+
+            // 更新 currentStyle
+            currentStyle.z = _gridData.z;
+            currentStyle.x = _gridData.x;
+            currentStyle.y = _gridData.y;
+            currentStyle.smoothing = _computeOptions.smoothing;
+
+            // ColorBar 更新
+            if (config.colorbar) {
+                if (!currentStyle.colorbar) {
+                    currentStyle.colorbar = {};
+                }
+                Object.assign(currentStyle.colorbar, config.colorbar);
+            }
+
+            // 重新计算绘图区域
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
+
+            render();
+        },
+
+        /**
+         * 获取当前数据
+         * @returns {Object} 数据对象 { z, x, y }
+         */
+        getData: function() {
+            return {
+                z: _gridData.z,
+                x: _gridData.x,
+                y: _gridData.y
+            };
+        },
+
+        /**
+         * 获取当前 ColorScale
+         * @returns {Array} valueColorMap
+         */
+        getColorScale: function() {
+            return currentStyle.valueColorMap;
+        }
     };
 }
 

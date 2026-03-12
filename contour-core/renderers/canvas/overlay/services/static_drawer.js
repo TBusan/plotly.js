@@ -118,6 +118,132 @@ StaticDrawer.prototype = {
         return result;
     },
 
+    /**
+     * 只更新样式（不影响数据）
+     * @param {string} id - 元素ID
+     * @param {Object} style - 样式对象
+     * @returns {Object|null} 更新后的元素
+     */
+    updateStyle: function(id, style) {
+        var item = this._overlay.get(id);
+        if (!item) return null;
+
+        // 确保 options 对象存在
+        if (!item.options) {
+            item.options = {};
+        }
+
+        // 只更新样式属性到 options 中
+        var styleProps = [
+            // 通用样式
+            'color', 'opacity', 'visible',
+            // 点样式
+            'size', 'shape', 'strokeColor', 'strokeWidth',
+            // 线样式
+            'width', 'lineWidth', 'lineDash', 'lineCap', 'lineJoin',
+            // 多边形样式
+            'fill', 'fillColor', 'stroke', 'strokeColor',
+            // 文字样式
+            'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
+            'textAlign', 'textBaseline', 'angle', 'offsetX', 'offsetY',
+            'backgroundColor', 'padding', 'borderRadius', 'borderColor', 'borderWidth'
+        ];
+
+        for (var i = 0; i < styleProps.length; i++) {
+            var prop = styleProps[i];
+            if (style[prop] !== undefined) {
+                item.options[prop] = style[prop];
+            }
+        }
+
+        // 支持直接传入 options 对象
+        if (style.options) {
+            Object.assign(item.options, style.options);
+        }
+
+        this._refresh();
+        return item;
+    },
+
+    /**
+     * 只更新数据（不影响样式）
+     * @param {string} id - 元素ID
+     * @param {Object} data - 数据对象
+     * @returns {Object|null} 更新后的元素
+     */
+    updateData: function(id, data) {
+        var item = this._overlay.get(id);
+        if (!item) return null;
+
+        switch (item.type) {
+            case 'point':
+                // 点数据：x, y
+                if (data.x !== undefined) item.x = data.x;
+                if (data.y !== undefined) item.y = data.y;
+                break;
+
+            case 'line':
+            case 'polygon':
+                // 线/多边形数据：points
+                if (data.points !== undefined) {
+                    item.points = this._normalizePoints(data.points);
+                }
+                break;
+
+            case 'text':
+                // 文字数据：x, y, content
+                if (data.x !== undefined) item.x = data.x;
+                if (data.y !== undefined) item.y = data.y;
+                if (data.content !== undefined) item.content = data.content;
+                break;
+        }
+
+        this._refresh();
+        return item;
+    },
+
+    /**
+     * 批量更新样式
+     * @param {Array} ids - 元素ID数组
+     * @param {Object} style - 样式对象
+     * @returns {Array} 更新成功的元素数组
+     */
+    updateStyles: function(ids, style) {
+        var self = this;
+        var updated = [];
+        for (var i = 0; i < ids.length; i++) {
+            var item = this.updateStyle(ids[i], style);
+            if (item) updated.push(item);
+        }
+        // updateStyle 已经调用了 refresh，这里不需要再调用
+        return updated;
+    },
+
+    /**
+     * 批量更新数据
+     * @param {Array} dataList - 数据列表 [{id, ...data}]
+     * @returns {Array} 更新成功的元素数组
+     */
+    updateDataList: function(dataList) {
+        var updated = [];
+        for (var i = 0; i < dataList.length; i++) {
+            var data = dataList[i];
+            var id = data.id;
+            if (id) {
+                var item = this._overlay.get(id);
+                if (item) {
+                    // 复制数据，移除 id 字段
+                    var updateData = Object.assign({}, data);
+                    delete updateData.id;
+                    this.updateData(id, updateData);
+                    updated.push(item);
+                }
+            }
+        }
+        this._refresh();
+        return updated;
+    },
+
     // ========================================
     // 内部方法
     // ========================================
