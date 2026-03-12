@@ -157,7 +157,10 @@
             width: 900,
             height: 800,
             padding: 50,
-            coloring: 'fill+lines',
+            // coloring: 'fill+lines',
+            coloring: 'lines',
+            aspectRatio: 'equal',
+            showLabels:true,
             interaction: { zoom: true, pan: true, dblclickReset: true }
         });
         debug('渲染器创建完成');
