@@ -48,7 +48,7 @@ var contourCore = {
     renderers: require('./renderers'),
     axes: require('./axes'),
     interaction: require('./interaction'),
-    Overlay: require('./renderers/canvas/overlay'),
+    Overlay: require('./overlay'),
 
     // ============================================
     // Utilities

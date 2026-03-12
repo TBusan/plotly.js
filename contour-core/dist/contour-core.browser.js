@@ -4918,9 +4918,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/core/overlay.js
+  // overlay/core/overlay.js
   var require_overlay = __commonJS({
-    "renderers/canvas/overlay/core/overlay.js"(exports, module) {
+    "overlay/core/overlay.js"(exports, module) {
       "use strict";
       function Overlay() {
         this._items = /* @__PURE__ */ new Map();
@@ -5166,9 +5166,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/core/coord_system.js
+  // overlay/core/coord_system.js
   var require_coord_system = __commonJS({
-    "renderers/canvas/overlay/core/coord_system.js"(exports, module) {
+    "overlay/core/coord_system.js"(exports, module) {
       "use strict";
       function CoordSystem(getDrawingArea, getVisibleRange) {
         this._getDrawingArea = getDrawingArea;
@@ -5292,9 +5292,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/core/event_emitter.js
+  // overlay/core/event_emitter.js
   var require_event_emitter = __commonJS({
-    "renderers/canvas/overlay/core/event_emitter.js"(exports, module) {
+    "overlay/core/event_emitter.js"(exports, module) {
       "use strict";
       function EventEmitter() {
         this._events = {};
@@ -5367,9 +5367,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/services/static_drawer.js
+  // overlay/services/static_drawer.js
   var require_static_drawer = __commonJS({
-    "renderers/canvas/overlay/services/static_drawer.js"(exports, module) {
+    "overlay/services/static_drawer.js"(exports, module) {
       "use strict";
       function StaticDrawer(overlay, refreshCallback) {
         this._overlay = overlay;
@@ -5637,9 +5637,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/services/interactive_drawer.js
+  // overlay/services/interactive_drawer.js
   var require_interactive_drawer = __commonJS({
-    "renderers/canvas/overlay/services/interactive_drawer.js"(exports, module) {
+    "overlay/services/interactive_drawer.js"(exports, module) {
       "use strict";
       var EventEmitter = require_event_emitter();
       function InteractiveDrawer(config) {
@@ -5941,9 +5941,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/text.js
+  // overlay/renderers/text.js
   var require_text = __commonJS({
-    "renderers/canvas/overlay/renderers/text.js"(exports, module) {
+    "overlay/renderers/text.js"(exports, module) {
       "use strict";
       var DEFAULT_OPTIONS = {
         fontSize: 12,
@@ -6066,9 +6066,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/line.js
+  // overlay/renderers/line.js
   var require_line = __commonJS({
-    "renderers/canvas/overlay/renderers/line.js"(exports, module) {
+    "overlay/renderers/line.js"(exports, module) {
       "use strict";
       var textDrawer = require_text();
       var DEFAULTS = {
@@ -6189,9 +6189,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/shapes.js
+  // overlay/renderers/shapes.js
   var require_shapes = __commonJS({
-    "renderers/canvas/overlay/renderers/shapes.js"(exports, module) {
+    "overlay/renderers/shapes.js"(exports, module) {
       "use strict";
       function drawCircle(ctx, x, y, size) {
         var radius = size / 2;
@@ -6275,9 +6275,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/point.js
+  // overlay/renderers/point.js
   var require_point = __commonJS({
-    "renderers/canvas/overlay/renderers/point.js"(exports, module) {
+    "overlay/renderers/point.js"(exports, module) {
       "use strict";
       var shapes = require_shapes();
       var textDrawer = require_text();
@@ -6368,9 +6368,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/patterns.js
+  // overlay/renderers/patterns.js
   var require_patterns = __commonJS({
-    "renderers/canvas/overlay/renderers/patterns.js"(exports, module) {
+    "overlay/renderers/patterns.js"(exports, module) {
       "use strict";
       var patternCache = {};
       var isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
@@ -6546,9 +6546,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/renderers/polygon.js
+  // overlay/renderers/polygon.js
   var require_polygon = __commonJS({
-    "renderers/canvas/overlay/renderers/polygon.js"(exports, module) {
+    "overlay/renderers/polygon.js"(exports, module) {
       "use strict";
       var patterns = require_patterns();
       var textDrawer = require_text();
@@ -6725,9 +6725,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/services/renderer.js
+  // overlay/services/renderer.js
   var require_renderer = __commonJS({
-    "renderers/canvas/overlay/services/renderer.js"(exports, module) {
+    "overlay/services/renderer.js"(exports, module) {
       "use strict";
       var lineRenderer = require_line();
       var pointRenderer = require_point();
@@ -6813,9 +6813,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/services/overlay_manager.js
+  // overlay/services/overlay_manager.js
   var require_overlay_manager = __commonJS({
-    "renderers/canvas/overlay/services/overlay_manager.js"(exports, module) {
+    "overlay/services/overlay_manager.js"(exports, module) {
       "use strict";
       function OverlayManager(config) {
         this._overlay = config.overlay;
@@ -7343,9 +7343,9 @@ var contourCore = (() => {
     }
   });
 
-  // renderers/canvas/overlay/index.js
+  // overlay/index.js
   var require_overlay2 = __commonJS({
-    "renderers/canvas/overlay/index.js"(exports, module) {
+    "overlay/index.js"(exports, module) {
       "use strict";
       var Overlay = require_overlay();
       var CoordSystem = require_coord_system();

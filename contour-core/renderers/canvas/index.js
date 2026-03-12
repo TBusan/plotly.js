@@ -14,7 +14,7 @@ var drawHeatmap = require('./heatmap');
 var axesRenderer = require('./axes');
 var nullHandling = require('../../null_handling');
 var axes = require('../../axes');
-var createOverlaySystem = require('./overlay');
+var createOverlaySystem = require('../../overlay');
 
 /**
  * Calculate adjusted drawing area based on aspect ratio
