@@ -1,9 +1,9 @@
 'use strict';
 
-var lineRenderer = require('../renderers/line');
-var pointRenderer = require('../renderers/point');
-var polygonRenderer = require('../renderers/polygon');
-var textRenderer = require('../renderers/text');
+var lineRenderer = require('../primitives/line');
+var pointRenderer = require('../primitives/point');
+var polygonRenderer = require('../primitives/polygon');
+var textRenderer = require('../primitives/text');
 
 /**
  * OverlayRenderer - 渲染服务

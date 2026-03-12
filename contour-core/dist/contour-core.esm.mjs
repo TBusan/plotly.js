@@ -5939,9 +5939,9 @@ var require_interactive_drawer = __commonJS({
   }
 });
 
-// overlay/renderers/text.js
+// overlay/primitives/text.js
 var require_text = __commonJS({
-  "overlay/renderers/text.js"(exports, module) {
+  "overlay/primitives/text.js"(exports, module) {
     "use strict";
     var DEFAULT_OPTIONS = {
       fontSize: 12,
@@ -6064,9 +6064,9 @@ var require_text = __commonJS({
   }
 });
 
-// overlay/renderers/line.js
+// overlay/primitives/line.js
 var require_line = __commonJS({
-  "overlay/renderers/line.js"(exports, module) {
+  "overlay/primitives/line.js"(exports, module) {
     "use strict";
     var textDrawer = require_text();
     var DEFAULTS = {
@@ -6187,9 +6187,9 @@ var require_line = __commonJS({
   }
 });
 
-// overlay/renderers/shapes.js
+// overlay/primitives/shapes.js
 var require_shapes = __commonJS({
-  "overlay/renderers/shapes.js"(exports, module) {
+  "overlay/primitives/shapes.js"(exports, module) {
     "use strict";
     function drawCircle(ctx, x, y, size) {
       var radius = size / 2;
@@ -6273,9 +6273,9 @@ var require_shapes = __commonJS({
   }
 });
 
-// overlay/renderers/point.js
+// overlay/primitives/point.js
 var require_point = __commonJS({
-  "overlay/renderers/point.js"(exports, module) {
+  "overlay/primitives/point.js"(exports, module) {
     "use strict";
     var shapes = require_shapes();
     var textDrawer = require_text();
@@ -6366,9 +6366,9 @@ var require_point = __commonJS({
   }
 });
 
-// overlay/renderers/patterns.js
+// overlay/primitives/patterns.js
 var require_patterns = __commonJS({
-  "overlay/renderers/patterns.js"(exports, module) {
+  "overlay/primitives/patterns.js"(exports, module) {
     "use strict";
     var patternCache = {};
     var isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
@@ -6544,9 +6544,9 @@ var require_patterns = __commonJS({
   }
 });
 
-// overlay/renderers/polygon.js
+// overlay/primitives/polygon.js
 var require_polygon = __commonJS({
-  "overlay/renderers/polygon.js"(exports, module) {
+  "overlay/primitives/polygon.js"(exports, module) {
     "use strict";
     var patterns = require_patterns();
     var textDrawer = require_text();
@@ -6723,9 +6723,9 @@ var require_polygon = __commonJS({
   }
 });
 
-// overlay/services/renderer.js
-var require_renderer = __commonJS({
-  "overlay/services/renderer.js"(exports, module) {
+// overlay/services/drawing.js
+var require_drawing = __commonJS({
+  "overlay/services/drawing.js"(exports, module) {
     "use strict";
     var lineRenderer = require_line();
     var pointRenderer = require_point();
@@ -7350,7 +7350,7 @@ var require_overlay2 = __commonJS({
     var EventEmitter = require_event_emitter();
     var StaticDrawer = require_static_drawer();
     var InteractiveDrawer = require_interactive_drawer();
-    var OverlayRenderer = require_renderer();
+    var OverlayRenderer = require_drawing();
     var OverlayManager = require_overlay_manager();
     function createOverlaySystem(renderer) {
       var overlay = new Overlay();
@@ -7576,7 +7576,7 @@ var require_overlay2 = __commonJS({
     module.exports.InteractiveDrawer = InteractiveDrawer;
     module.exports.OverlayRenderer = OverlayRenderer;
     module.exports.OverlayManager = OverlayManager;
-    module.exports.renderers = {
+    module.exports.primitives = {
       line: require_line(),
       point: require_point(),
       polygon: require_polygon(),

@@ -37,7 +37,7 @@ var EventEmitter = require('./core/event_emitter');
 // 服务层
 var StaticDrawer = require('./services/static_drawer');
 var InteractiveDrawer = require('./services/interactive_drawer');
-var OverlayRenderer = require('./services/renderer');
+var OverlayRenderer = require('./services/drawing');
 var OverlayManager = require('./services/overlay_manager');
 
 /**
@@ -353,12 +353,12 @@ module.exports.InteractiveDrawer = InteractiveDrawer;
 module.exports.OverlayRenderer = OverlayRenderer;
 module.exports.OverlayManager = OverlayManager;
 
-// 底层渲染器（可独立使用）
-module.exports.renderers = {
-    line: require('./renderers/line'),
-    point: require('./renderers/point'),
-    polygon: require('./renderers/polygon'),
-    text: require('./renderers/text'),
-    shapes: require('./renderers/shapes'),
-    patterns: require('./renderers/patterns')
+// 基础图元（可独立使用）
+module.exports.primitives = {
+    line: require('./primitives/line'),
+    point: require('./primitives/point'),
+    polygon: require('./primitives/polygon'),
+    text: require('./primitives/text'),
+    shapes: require('./primitives/shapes'),
+    patterns: require('./primitives/patterns')
 };
