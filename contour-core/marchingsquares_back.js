@@ -6,7 +6,7 @@ var constants = require('./constants');
 var BOTTOMSTART_SET = new Set(constants.BOTTOMSTART);
 var TOPSTART_SET = new Set(constants.TOPSTART);
 var LEFTSTART_SET = new Set(constants.LEFTSTART);
-var RIGHTSTART_SET = new Set(constants.RIGHTSTART);
+var RIGHTSTART_SET = new Set(constants.RIGHTSTART); 
 
 /**
  * Calculate all the marching indices for ALL levels at once.
