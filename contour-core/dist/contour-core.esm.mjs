@@ -5696,96 +5696,148 @@ var require_interactive_drawer = __commonJS({
       this._coordSystem = config.coordSystem;
       this._refresh = config.refresh || function() {
       };
-      this._state = {
-        mode: null,
-        // 'point' | 'line' | 'polygon' | 'text' | null
-        status: "idle",
-        // 'idle' | 'drawing' | 'completed'
-        tempPoints: [],
-        options: {},
-        mousePos: null
-      };
-      this._events = new EventEmitter();
+      this._status = Status.IDLE;
+      this._mode = null;
+      this._options = {};
+      this._tempPoints = [];
+      this._mousePos = null;
       this._canvas = null;
+      this._events = new EventEmitter();
       this._boundHandlers = {};
     }
+    var Status = {
+      IDLE: "idle",
+      DRAWING: "drawing",
+      COMPLETED: "completed"
+    };
+    var Events = {
+      START: "draw:start",
+      POINT: "draw:point",
+      PREVIEW: "draw:preview",
+      COMPLETE: "draw:complete",
+      CANCEL: "draw:cancel",
+      STOP: "draw:stop"
+    };
     InteractiveDrawer.prototype = {
       // ========================================
       // 生命周期
       // ========================================
       /**
        * 开始交互绘制
-       * @param {string} mode - 绘制模式
+       * @param {string} mode - 绘制模式 ('point' | 'line' | 'polygon' | 'text')
        * @param {Object} options - 绘制选项
        * @param {HTMLCanvasElement} canvas - 画布元素
-       * @param {Function} onComplete - 完成回调
        */
-      start: function(mode, options, canvas, onComplete) {
-        this.stop();
-        this._events.off("complete");
-        this._state.mode = mode;
-        this._state.status = "drawing";
-        this._state.options = options || {};
-        this._state.tempPoints = [];
-        this._state.mousePos = null;
-        this._canvas = canvas;
-        if (onComplete) {
-          this._events.once("complete", onComplete);
+      start: function(mode, options, canvas) {
+        if (this._status === Status.DRAWING) {
+          this._transitionToIdle("restart");
         }
+        this._mode = mode;
+        this._options = options || {};
+        this._tempPoints = [];
+        this._mousePos = null;
+        this._canvas = canvas;
+        this._status = Status.DRAWING;
         this._bindEvents();
-        this._events.emit("start", { mode });
+        this._events.emit(Events.START, { mode });
       },
       /**
        * 停止交互绘制
        */
       stop: function() {
+        if (this._status === Status.IDLE)
+          return;
+        this._transitionToIdle("manual");
+      },
+      /**
+       * 取消当前绘制
+       */
+      cancel: function() {
+        if (this._status !== Status.DRAWING)
+          return;
+        var tempPoints = this._tempPoints.slice();
+        this._transitionToIdle("cancel");
+        this._events.emit(Events.CANCEL, {
+          reason: "user_cancel",
+          discardedPoints: tempPoints
+        });
+      },
+      // ========================================
+      // 状态转换（私有）
+      // ========================================
+      /**
+       * 转换到 idle 状态
+       * @param {string} reason - 原因
+       */
+      _transitionToIdle: function(reason) {
         this._unbindEvents();
-        this._state.mode = null;
-        this._state.status = "idle";
-        this._state.tempPoints = [];
-        this._state.mousePos = null;
+        this._status = Status.IDLE;
+        this._mode = null;
+        this._tempPoints = [];
+        this._mousePos = null;
         this._canvas = null;
-        this._events.emit("stop");
+        this._events.emit(Events.STOP, { reason });
+        this._refresh();
+      },
+      /**
+       * 完成绘制并转换状态
+       * @param {Object} result - 绘制结果
+       */
+      _completeAndTransition: function(result) {
+        this._unbindEvents();
+        this._status = Status.COMPLETED;
+        this._events.emit(Events.COMPLETE, result);
+        this._status = Status.IDLE;
+        this._mode = null;
+        this._tempPoints = [];
+        this._mousePos = null;
+        this._canvas = null;
+        this._events.emit(Events.STOP, { reason: "completed" });
+        this._refresh();
       },
       // ========================================
       // 状态查询
       // ========================================
       /**
-       * 获取当前绘制状态（用于渲染预览）
-       * @returns {Object} 状态对象
-       */
-      getState: function() {
-        return {
-          mode: this._state.mode,
-          status: this._state.status,
-          points: this._state.tempPoints.slice(),
-          mousePos: this._state.mousePos ? {
-            x: this._state.mousePos.x,
-            y: this._state.mousePos.y
-          } : null,
-          options: Object.assign({}, this._state.options)
-        };
-      },
-      /**
        * 是否正在绘制
        * @returns {boolean}
        */
       isDrawing: function() {
-        return this._state.status === "drawing";
+        return this._status === Status.DRAWING;
       },
       /**
        * 获取当前模式
        * @returns {string|null}
        */
       getMode: function() {
-        return this._state.mode;
+        return this._mode;
+      },
+      /**
+       * 获取当前状态
+       * @returns {string}
+       */
+      getStatus: function() {
+        return this._status;
+      },
+      /**
+       * 获取绘制状态（用于渲染预览）
+       * @returns {Object}
+       */
+      getState: function() {
+        return {
+          mode: this._mode,
+          status: this._status,
+          points: this._tempPoints.slice(),
+          mousePos: this._mousePos ? { x: this._mousePos.x, y: this._mousePos.y } : null,
+          options: Object.assign({}, this._options)
+        };
       },
       /**
        * 获取临时点
        * @returns {Array}
        */
       getTempPoints: function() {
-        return this._state.tempPoints.slice();
+        return this._tempPoints.slice();
       },
       // ========================================
       // 事件订阅
@@ -5808,8 +5860,22 @@ var require_interactive_drawer = __commonJS({
         this._events.off(event, handler);
         return this;
       },
+      /**
+       * 订阅一次（自动取消）
+       * @param {string} event - 事件名称
+       * @param {Function} handler - 处理函数
+       */
+      once: function(event, handler) {
+        var self = this;
+        var wrapper = function(data) {
+          self._events.off(event, wrapper);
+          handler(data);
+        };
+        this._events.on(event, wrapper);
+        return this;
+      },
       // ========================================
-      // 内部方法 - 事件处理
+      // 内部方法 - 事件绑定
       // ========================================
       _bindEvents: function() {
         if (!this._canvas)
@@ -5843,35 +5909,42 @@ var require_interactive_drawer = __commonJS({
         document.removeEventListener("keydown", this._boundHandlers.keydown);
         this._boundHandlers = {};
       },
+      // ========================================
+      // 内部方法 - 事件处理
+      // ========================================
       _handleClick: function(e) {
+        if (this._status !== Status.DRAWING)
+          return;
         var pos = this._getCanvasPos(e);
         if (!this._coordSystem.isInBounds(pos.x, pos.y))
           return;
         var dataPos = this._coordSystem.toData(pos.x, pos.y);
         if (!dataPos)
           return;
-        switch (this._state.mode) {
+        switch (this._mode) {
           case "point":
-            this._completePoint(dataPos);
+            this._handlePointComplete(dataPos);
             break;
           case "line":
           case "polygon":
-            this._addTempPoint(dataPos);
+            this._handlePointAdd(dataPos);
             break;
           case "text":
-            this._completeText(dataPos);
+            this._handleTextComplete(dataPos);
             break;
         }
       },
       _handleDblClick: function(e) {
-        if (this._state.mode === "line" || this._state.mode === "polygon") {
-          this._completeMultiPoint();
+        if (this._status !== Status.DRAWING)
+          return;
+        if (this._mode === "line" || this._mode === "polygon") {
+          this._handleMultiPointComplete();
         }
       },
       _handleMouseMove: function(e) {
-        if (!this.isDrawing())
+        if (this._status !== Status.DRAWING)
           return;
-        if (this._state.mode !== "line" && this._state.mode !== "polygon")
+        if (this._mode !== "line" && this._mode !== "polygon")
           return;
         var pos = this._getCanvasPos(e);
         if (!this._coordSystem.isInBounds(pos.x, pos.y))
@@ -5879,55 +5952,52 @@ var require_interactive_drawer = __commonJS({
         var dataPos = this._coordSystem.toData(pos.x, pos.y);
         if (!dataPos)
           return;
-        this._state.mousePos = dataPos;
-        this._events.emit("preview", this.getState());
+        this._mousePos = dataPos;
+        this._events.emit(Events.PREVIEW, this.getState());
         this._refresh();
       },
       _handleKeyDown: function(e) {
+        if (this._status !== Status.DRAWING)
+          return;
         if (e.key === "Escape") {
-          this.stop();
-          this._refresh();
+          this.cancel();
         } else if (e.key === "Enter") {
-          if (this._state.mode === "line" || this._state.mode === "polygon") {
-            this._completeMultiPoint();
+          if (this._mode === "line" || this._mode === "polygon") {
+            this._handleMultiPointComplete();
           }
         }
       },
       // ========================================
-      // 内部方法 - 状态转换
+      // 内部方法 - 绘制处理
       // ========================================
-      _addTempPoint: function(dataPos) {
-        this._state.tempPoints.push([dataPos.x, dataPos.y]);
-        this._events.emit("point", {
-          index: this._state.tempPoints.length - 1,
-          position: dataPos
+      _handlePointAdd: function(dataPos) {
+        this._tempPoints.push([dataPos.x, dataPos.y]);
+        this._events.emit(Events.POINT, {
+          index: this._tempPoints.length - 1,
+          position: { x: dataPos.x, y: dataPos.y },
+          total: this._tempPoints.length
         });
         this._refresh();
       },
-      _completePoint: function(dataPos) {
+      _handlePointComplete: function(dataPos) {
         var id = this._overlay.add("point", {
           x: dataPos.x,
           y: dataPos.y,
-          options: this._state.options
+          options: this._options
         });
-        var result = {
+        this._completeAndTransition({
           type: "point",
           id,
-          x: dataPos.x,
-          y: dataPos.y
-        };
-        this._state.status = "completed";
-        this.stop();
-        this._events.emit("complete", result);
-        this._refresh();
+          position: { x: dataPos.x, y: dataPos.y }
+        });
       },
-      _completeText: function(dataPos) {
-        var text = this._state.options.text || this._state.options.content || "";
+      _handleTextComplete: function(dataPos) {
+        var text = this._options.text || this._options.content || "";
         if (!text) {
-          this.stop();
+          this.cancel();
           return;
         }
-        var textOptions = Object.assign({}, this._state.options);
+        var textOptions = Object.assign({}, this._options);
         delete textOptions.text;
         delete textOptions.content;
         var id = this._overlay.add("text", {
@@ -5936,55 +6006,28 @@ var require_interactive_drawer = __commonJS({
           content: text,
           options: textOptions
         });
-        var result = {
+        this._completeAndTransition({
           type: "text",
           id,
-          x: dataPos.x,
-          y: dataPos.y,
+          position: { x: dataPos.x, y: dataPos.y },
           content: text
-        };
-        this._state.status = "completed";
-        this.stop();
-        this._events.emit("complete", result);
-        this._refresh();
+        });
       },
-      _completeMultiPoint: function() {
-        if (this._state.tempPoints.length < 2) {
-          this.stop();
+      _handleMultiPointComplete: function() {
+        var minPoints = this._mode === "line" ? 2 : 3;
+        if (this._tempPoints.length < minPoints) {
+          this.cancel();
           return;
         }
-        var type = this._state.mode;
-        var id;
-        var result;
-        if (type === "line") {
-          id = this._overlay.add("line", {
-            points: this._state.tempPoints.slice(),
-            options: this._state.options
-          });
-          result = {
-            type: "line",
-            id,
-            points: this._state.tempPoints.slice()
-          };
-        } else if (type === "polygon" && this._state.tempPoints.length >= 3) {
-          id = this._overlay.add("polygon", {
-            points: this._state.tempPoints.slice(),
-            options: this._state.options
-          });
-          result = {
-            type: "polygon",
-            id,
-            points: this._state.tempPoints.slice()
-          };
-        }
-        if (result) {
-          this._state.status = "completed";
-          this.stop();
-          this._events.emit("complete", result);
-          this._refresh();
-        } else {
-          this.stop();
-        }
+        var id = this._overlay.add(this._mode, {
+          points: this._tempPoints.slice(),
+          options: this._options
+        });
+        this._completeAndTransition({
+          type: this._mode,
+          id,
+          points: this._tempPoints.slice()
+        });
       },
       _getCanvasPos: function(e) {
         var rect = this._canvas.getBoundingClientRect();
@@ -5995,6 +6038,8 @@ var require_interactive_drawer = __commonJS({
       }
     };
     module.exports = InteractiveDrawer;
+    module.exports.Status = Status;
+    module.exports.Events = Events;
   }
 });
 
@@ -7482,21 +7527,54 @@ var require_overlay2 = __commonJS({
         // ========================================
         // 交互绘制 API（委托给 InteractiveDrawer）
         // ========================================
-        startDrawing: function(mode, options, canvas, onComplete) {
-          return interactiveDrawer.start(mode, options, canvas, onComplete);
+        /**
+         * 开始交互绘制
+         * @param {string} mode - 绘制模式 ('point' | 'line' | 'polygon' | 'text')
+         * @param {Object} options - 绘制选项
+         * @param {HTMLCanvasElement} canvas - 画布元素
+         */
+        startDrawing: function(mode, options, canvas) {
+          return interactiveDrawer.start(mode, options, canvas);
         },
+        /**
+         * 停止交互绘制
+         */
         stopDrawing: function() {
           return interactiveDrawer.stop();
         },
+        /**
+         * 取消当前绘制（会触发 draw:cancel 事件）
+         */
+        cancelDrawing: function() {
+          return interactiveDrawer.cancel();
+        },
+        /**
+         * 是否正在绘制
+         */
         isDrawing: function() {
           return interactiveDrawer.isDrawing();
         },
+        /**
+         * 获取当前绘制模式
+         */
         getDrawMode: function() {
           return interactiveDrawer.getMode();
         },
+        /**
+         * 获取当前绘制状态 ('idle' | 'drawing' | 'completed')
+         */
+        getDrawStatus: function() {
+          return interactiveDrawer.getStatus();
+        },
+        /**
+         * 获取绘制状态（用于渲染预览）
+         */
         getDrawState: function() {
           return interactiveDrawer.getState();
         },
+        /**
+         * 获取临时点
+         */
         getTempPoints: function() {
           return interactiveDrawer.getTempPoints();
         },
@@ -7635,6 +7713,8 @@ var require_overlay2 = __commonJS({
     module.exports.InteractiveDrawer = InteractiveDrawer;
     module.exports.OverlayRenderer = OverlayRenderer;
     module.exports.OverlayManager = OverlayManager;
+    module.exports.DrawEvents = InteractiveDrawer.Events;
+    module.exports.DrawStatus = InteractiveDrawer.Status;
     module.exports.primitives = {
       line: require_line(),
       point: require_point(),

@@ -239,6 +239,10 @@
                 </div>
             </div>
 
+            <button id="cancelBtn" class="action-btn btn-cancel" style="margin-bottom: 10px;">
+                取消当前绘制 (Esc)
+            </button>
+
             <button id="clearBtn" class="action-btn btn-clear">
                 清除所有 Overlay
             </button>
@@ -290,6 +294,7 @@
         // DOM 元素
         var modeButtons = document.querySelectorAll('.mode-btn');
         var clearBtn = document.getElementById('clearBtn');
+        var cancelBtn = document.getElementById('cancelBtn');
         var statusEl = document.getElementById('status');
         var logEl = document.getElementById('log');
 
@@ -353,21 +358,10 @@
             // 设置 canvas 光标
             canvas.style.cursor = mode === 'none' ? 'grab' : 'crosshair';
 
-            // 启动绘制模式
+            // 启动绘制模式（不再传入回调，使用事件订阅）
             if (mode !== 'none') {
                 var options = getOptionsForMode(mode);
-                overlaySystem.startDrawing(mode, options, canvas, function(result) {
-                    // log('绘制完成: ' + result.type);
-                    // debugger
-                    console.log('绘制结果---:', result);
-                    updateStatus();
-                    // 自动重新开始相同模式
-                    if (currentMode === mode) {
-                        setTimeout(function() {
-                            setMode(mode);
-                        }, 100);
-                    }
-                });
+                overlaySystem.startDrawing(mode, options, canvas);
             }
 
             updateStatus();
@@ -430,22 +424,55 @@
             updateStatus();
         });
 
-        // 监听绘制事件
-        overlaySystem.on('point', function(data) {
-            log('添加点: ' + data.index);
+        // 取消按钮
+        cancelBtn.addEventListener('click', function() {
+            overlaySystem.cancelDrawing();
+        });
+
+        // ========================================
+        // 事件订阅（使用新的事件名称）
+        // ========================================
+
+        // 开始绘制
+        overlaySystem.on('draw:start', function(data) {
+            log('开始绘制: ' + data.mode);
             updateStatus();
         });
 
-        overlaySystem.on('preview', function(state) {
+        // 添加点
+        overlaySystem.on('draw:point', function(data) {
+            log('添加点 #' + (data.index + 1) + ' at (' + data.position.x.toFixed(2) + ', ' + data.position.y.toFixed(2) + ')');
             updateStatus();
         });
 
-        overlaySystem.on('complete', function(result) {
+        // 预览更新
+        overlaySystem.on('draw:preview', function(state) {
+            updateStatus();
+        });
+
+        // 绘制完成（核心事件）
+        overlaySystem.on('draw:complete', function(result) {
+            console.log('绘制结果:', result);
             log('绘制完成: ' + JSON.stringify(result));
+            updateStatus();
+
+            // 自动重新开始相同模式
+            if (currentMode !== 'none') {
+                setTimeout(function() {
+                    setMode(currentMode);
+                }, 100);
+            }
         });
 
-        overlaySystem.on('stop', function() {
-            log('绘制停止');
+        // 绘制取消
+        overlaySystem.on('draw:cancel', function(data) {
+            log('绘制取消: ' + data.reason + ', 丢弃 ' + data.discardedPoints.length + ' 个点');
+            updateStatus();
+        });
+
+        // 绘制停止
+        overlaySystem.on('draw:stop', function(data) {
+            // log('绘制停止: ' + data.reason);
         });
 
         // 监听选项变化，重新设置模式
@@ -453,22 +480,14 @@
             el.addEventListener('change', function() {
                 if (currentMode !== 'none' && overlaySystem.isDrawing()) {
                     // 重新设置模式以应用新选项
-                    var newOptions = getOptionsForMode(currentMode);
-                    overlaySystem.stopDrawing();
-                    overlaySystem.startDrawing(currentMode, newOptions, canvas, function(result) {
-                        log('绘制完成: ' + result.type);
-                        updateStatus();
-                        setTimeout(function() {
-                            setMode(currentMode);
-                        }, 100);
-                    });
+                    setMode(currentMode);
                 }
             });
         });
 
         // 初始化
         setMode('point');
-        log('系统初始化完成');
+        log('系统初始化完成（重构版 API）');
     </script>
 </body>
 </html>

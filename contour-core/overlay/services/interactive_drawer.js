@@ -4,9 +4,44 @@ var EventEmitter = require('../core/event_emitter');
 
 /**
  * InteractiveDrawer - 交互绘制服务
- * 职责：管理交互绘制流程，响应用户输入
  *
- * 设计模式：状态机 + 观察者
+ * ========================================
+ * 设计原则
+ * ========================================
+ *
+ * 1. 单一事件源：所有事件都通过 on/off 订阅
+ * 2. 明确的生命周期：idle → drawing → completed → idle
+ * 3. 状态驱动：状态转换时自动触发对应事件
+ * 4. 事件数据规范化：每个事件都有明确的数据结构
+ *
+ * ========================================
+ * 事件生命周期
+ * ========================================
+ *
+ * 开始绘制：
+ *   start(mode) → 状态变为 drawing → 触发 'draw:start' 事件
+ *
+ * 绘制过程：
+ *   点击 → 触发 'draw:point' 事件（每个点）
+ *   移动 → 触发 'draw:preview' 事件（预览）
+ *
+ * 完成绘制：
+ *   完成 → 状态变为 completed → 触发 'draw:complete' 事件 → 状态变为 idle
+ *   取消 → 状态变为 idle → 触发 'draw:cancel' 事件
+ *
+ * 手动停止：
+ *   stop() → 状态变为 idle → 触发 'draw:stop' 事件
+ *
+ * ========================================
+ * 事件列表
+ * ========================================
+ *
+ * 'draw:start'   - 开始绘制 { mode: string }
+ * 'draw:point'   - 添加点 { index: number, position: {x, y}, total: number }
+ * 'draw:preview' - 预览更新 { mode, status, points, mousePos, options }
+ * 'draw:complete'- 绘制完成 { type: string, id: string, ...data }
+ * 'draw:cancel'  - 绘制取消 { reason: string, discardedPoints: [] }
+ * 'draw:stop'    - 绘制停止 { reason: string }
  */
 function InteractiveDrawer(config) {
     this._overlay = config.overlay;
@@ -14,21 +49,40 @@ function InteractiveDrawer(config) {
     this._refresh = config.refresh || function() {};
 
     // 状态机
-    this._state = {
-        mode: null,           // 'point' | 'line' | 'polygon' | 'text' | null
-        status: 'idle',       // 'idle' | 'drawing' | 'completed'
-        tempPoints: [],
-        options: {},
-        mousePos: null
-    };
+    this._status = Status.IDLE;
+    this._mode = null;
+    this._options = {};
+    this._tempPoints = [];
+    this._mousePos = null;
+    this._canvas = null;
 
     // 事件系统
     this._events = new EventEmitter();
 
-    // 事件绑定状态
-    this._canvas = null;
+    // 事件绑定引用
     this._boundHandlers = {};
 }
+
+// ========================================
+// 状态枚举
+// ========================================
+var Status = {
+    IDLE: 'idle',
+    DRAWING: 'drawing',
+    COMPLETED: 'completed'
+};
+
+// ========================================
+// 事件类型枚举
+// ========================================
+var Events = {
+    START: 'draw:start',
+    POINT: 'draw:point',
+    PREVIEW: 'draw:preview',
+    COMPLETE: 'draw:complete',
+    CANCEL: 'draw:cancel',
+    STOP: 'draw:stop'
+};
 
 InteractiveDrawer.prototype = {
     // ========================================
@@ -37,48 +91,99 @@ InteractiveDrawer.prototype = {
 
     /**
      * 开始交互绘制
-     * @param {string} mode - 绘制模式
+     * @param {string} mode - 绘制模式 ('point' | 'line' | 'polygon' | 'text')
      * @param {Object} options - 绘制选项
      * @param {HTMLCanvasElement} canvas - 画布元素
-     * @param {Function} onComplete - 完成回调
      */
-    start: function(mode, options, canvas, onComplete) {
-        // 停止之前的绘制
-        this.stop();
-
-        // 清理之前的 complete 回调，防止重复执行
-        this._events.off('complete');
+    start: function(mode, options, canvas) {
+        // 如果正在绘制，先停止
+        if (this._status === Status.DRAWING) {
+            this._transitionToIdle('restart');
+        }
 
         // 初始化状态
-        this._state.mode = mode;
-        this._state.status = 'drawing';
-        this._state.options = options || {};
-        this._state.tempPoints = [];
-        this._state.mousePos = null;
+        this._mode = mode;
+        this._options = options || {};
+        this._tempPoints = [];
+        this._mousePos = null;
         this._canvas = canvas;
 
-        // 注册完成回调
-        if (onComplete) {
-            this._events.once('complete', onComplete);
-        }
+        // 状态转换：idle → drawing
+        this._status = Status.DRAWING;
 
         // 绑定事件
         this._bindEvents();
 
-        this._events.emit('start', { mode: mode });
+        // 触发开始事件
+        this._events.emit(Events.START, { mode: mode });
     },
 
     /**
      * 停止交互绘制
      */
     stop: function() {
+        if (this._status === Status.IDLE) return;
+        this._transitionToIdle('manual');
+    },
+
+    /**
+     * 取消当前绘制
+     */
+    cancel: function() {
+        if (this._status !== Status.DRAWING) return;
+
+        var tempPoints = this._tempPoints.slice();
+        this._transitionToIdle('cancel');
+
+        this._events.emit(Events.CANCEL, {
+            reason: 'user_cancel',
+            discardedPoints: tempPoints
+        });
+    },
+
+    // ========================================
+    // 状态转换（私有）
+    // ========================================
+
+    /**
+     * 转换到 idle 状态
+     * @param {string} reason - 原因
+     */
+    _transitionToIdle: function(reason) {
         this._unbindEvents();
-        this._state.mode = null;
-        this._state.status = 'idle';
-        this._state.tempPoints = [];
-        this._state.mousePos = null;
+        this._status = Status.IDLE;
+        this._mode = null;
+        this._tempPoints = [];
+        this._mousePos = null;
         this._canvas = null;
-        this._events.emit('stop');
+
+        this._events.emit(Events.STOP, { reason: reason });
+        this._refresh();
+    },
+
+    /**
+     * 完成绘制并转换状态
+     * @param {Object} result - 绘制结果
+     */
+    _completeAndTransition: function(result) {
+        // 先解绑事件，防止回调中再次触发
+        this._unbindEvents();
+
+        // 标记完成状态
+        this._status = Status.COMPLETED;
+
+        // 触发完成事件
+        this._events.emit(Events.COMPLETE, result);
+
+        // 转换到 idle
+        this._status = Status.IDLE;
+        this._mode = null;
+        this._tempPoints = [];
+        this._mousePos = null;
+        this._canvas = null;
+
+        this._events.emit(Events.STOP, { reason: 'completed' });
+        this._refresh();
     },
 
     // ========================================
@@ -86,28 +191,11 @@ InteractiveDrawer.prototype = {
     // ========================================
 
     /**
-     * 获取当前绘制状态（用于渲染预览）
-     * @returns {Object} 状态对象
-     */
-    getState: function() {
-        return {
-            mode: this._state.mode,
-            status: this._state.status,
-            points: this._state.tempPoints.slice(),
-            mousePos: this._state.mousePos ? {
-                x: this._state.mousePos.x,
-                y: this._state.mousePos.y
-            } : null,
-            options: Object.assign({}, this._state.options)
-        };
-    },
-
-    /**
      * 是否正在绘制
      * @returns {boolean}
      */
     isDrawing: function() {
-        return this._state.status === 'drawing';
+        return this._status === Status.DRAWING;
     },
 
     /**
@@ -115,7 +203,29 @@ InteractiveDrawer.prototype = {
      * @returns {string|null}
      */
     getMode: function() {
-        return this._state.mode;
+        return this._mode;
+    },
+
+    /**
+     * 获取当前状态
+     * @returns {string}
+     */
+    getStatus: function() {
+        return this._status;
+    },
+
+    /**
+     * 获取绘制状态（用于渲染预览）
+     * @returns {Object}
+     */
+    getState: function() {
+        return {
+            mode: this._mode,
+            status: this._status,
+            points: this._tempPoints.slice(),
+            mousePos: this._mousePos ? { x: this._mousePos.x, y: this._mousePos.y } : null,
+            options: Object.assign({}, this._options)
+        };
     },
 
     /**
@@ -123,7 +233,7 @@ InteractiveDrawer.prototype = {
      * @returns {Array}
      */
     getTempPoints: function() {
-        return this._state.tempPoints.slice();
+        return this._tempPoints.slice();
     },
 
     // ========================================
@@ -150,8 +260,23 @@ InteractiveDrawer.prototype = {
         return this;
     },
 
+    /**
+     * 订阅一次（自动取消）
+     * @param {string} event - 事件名称
+     * @param {Function} handler - 处理函数
+     */
+    once: function(event, handler) {
+        var self = this;
+        var wrapper = function(data) {
+            self._events.off(event, wrapper);
+            handler(data);
+        };
+        this._events.on(event, wrapper);
+        return this;
+    },
+
     // ========================================
-    // 内部方法 - 事件处理
+    // 内部方法 - 事件绑定
     // ========================================
 
     _bindEvents: function() {
@@ -182,36 +307,44 @@ InteractiveDrawer.prototype = {
         this._boundHandlers = {};
     },
 
+    // ========================================
+    // 内部方法 - 事件处理
+    // ========================================
+
     _handleClick: function(e) {
+        if (this._status !== Status.DRAWING) return;
+
         var pos = this._getCanvasPos(e);
         if (!this._coordSystem.isInBounds(pos.x, pos.y)) return;
 
         var dataPos = this._coordSystem.toData(pos.x, pos.y);
         if (!dataPos) return;
 
-        switch (this._state.mode) {
+        switch (this._mode) {
             case 'point':
-                this._completePoint(dataPos);
+                this._handlePointComplete(dataPos);
                 break;
             case 'line':
             case 'polygon':
-                this._addTempPoint(dataPos);
+                this._handlePointAdd(dataPos);
                 break;
             case 'text':
-                this._completeText(dataPos);
+                this._handleTextComplete(dataPos);
                 break;
         }
     },
 
     _handleDblClick: function(e) {
-        if (this._state.mode === 'line' || this._state.mode === 'polygon') {
-            this._completeMultiPoint();
+        if (this._status !== Status.DRAWING) return;
+
+        if (this._mode === 'line' || this._mode === 'polygon') {
+            this._handleMultiPointComplete();
         }
     },
 
     _handleMouseMove: function(e) {
-        if (!this.isDrawing()) return;
-        if (this._state.mode !== 'line' && this._state.mode !== 'polygon') return;
+        if (this._status !== Status.DRAWING) return;
+        if (this._mode !== 'line' && this._mode !== 'polygon') return;
 
         var pos = this._getCanvasPos(e);
         if (!this._coordSystem.isInBounds(pos.x, pos.y)) return;
@@ -219,65 +352,62 @@ InteractiveDrawer.prototype = {
         var dataPos = this._coordSystem.toData(pos.x, pos.y);
         if (!dataPos) return;
 
-        this._state.mousePos = dataPos;
+        this._mousePos = dataPos;
 
-        this._events.emit('preview', this.getState());
+        this._events.emit(Events.PREVIEW, this.getState());
         this._refresh();
     },
 
     _handleKeyDown: function(e) {
+        if (this._status !== Status.DRAWING) return;
+
         if (e.key === 'Escape') {
-            this.stop();
-            this._refresh();
+            this.cancel();
         } else if (e.key === 'Enter') {
-            if (this._state.mode === 'line' || this._state.mode === 'polygon') {
-                this._completeMultiPoint();
+            if (this._mode === 'line' || this._mode === 'polygon') {
+                this._handleMultiPointComplete();
             }
         }
     },
 
     // ========================================
-    // 内部方法 - 状态转换
+    // 内部方法 - 绘制处理
     // ========================================
 
-    _addTempPoint: function(dataPos) {
-        this._state.tempPoints.push([dataPos.x, dataPos.y]);
-        this._events.emit('point', {
-            index: this._state.tempPoints.length - 1,
-            position: dataPos
+    _handlePointAdd: function(dataPos) {
+        this._tempPoints.push([dataPos.x, dataPos.y]);
+
+        this._events.emit(Events.POINT, {
+            index: this._tempPoints.length - 1,
+            position: { x: dataPos.x, y: dataPos.y },
+            total: this._tempPoints.length
         });
+
         this._refresh();
     },
 
-    _completePoint: function(dataPos) {
+    _handlePointComplete: function(dataPos) {
         var id = this._overlay.add('point', {
             x: dataPos.x,
             y: dataPos.y,
-            options: this._state.options
+            options: this._options
         });
 
-        var result = {
+        this._completeAndTransition({
             type: 'point',
             id: id,
-            x: dataPos.x,
-            y: dataPos.y
-        };
-
-        // 先调用 stop() 清理状态，再触发 complete 事件
-        this._state.status = 'completed';
-        this.stop();
-        this._events.emit('complete', result);
-        this._refresh();
+            position: { x: dataPos.x, y: dataPos.y }
+        });
     },
 
-    _completeText: function(dataPos) {
-        var text = this._state.options.text || this._state.options.content || '';
+    _handleTextComplete: function(dataPos) {
+        var text = this._options.text || this._options.content || '';
         if (!text) {
-            this.stop();
+            this.cancel();
             return;
         }
 
-        var textOptions = Object.assign({}, this._state.options);
+        var textOptions = Object.assign({}, this._options);
         delete textOptions.text;
         delete textOptions.content;
 
@@ -288,64 +418,32 @@ InteractiveDrawer.prototype = {
             options: textOptions
         });
 
-        var result = {
+        this._completeAndTransition({
             type: 'text',
             id: id,
-            x: dataPos.x,
-            y: dataPos.y,
+            position: { x: dataPos.x, y: dataPos.y },
             content: text
-        };
-
-        // 先调用 stop() 清理状态，再触发 complete 事件
-        this._state.status = 'completed';
-        this.stop();
-        this._events.emit('complete', result);
-        this._refresh();
+        });
     },
 
-    _completeMultiPoint: function() {
-        if (this._state.tempPoints.length < 2) {
-            this.stop();
+    _handleMultiPointComplete: function() {
+        var minPoints = this._mode === 'line' ? 2 : 3;
+
+        if (this._tempPoints.length < minPoints) {
+            this.cancel();
             return;
         }
 
-        var type = this._state.mode;
-        var id;
-        var result;
+        var id = this._overlay.add(this._mode, {
+            points: this._tempPoints.slice(),
+            options: this._options
+        });
 
-        if (type === 'line') {
-            id = this._overlay.add('line', {
-                points: this._state.tempPoints.slice(),
-                options: this._state.options
-            });
-
-            result = {
-                type: 'line',
-                id: id,
-                points: this._state.tempPoints.slice()
-            };
-        } else if (type === 'polygon' && this._state.tempPoints.length >= 3) {
-            id = this._overlay.add('polygon', {
-                points: this._state.tempPoints.slice(),
-                options: this._state.options
-            });
-
-            result = {
-                type: 'polygon',
-                id: id,
-                points: this._state.tempPoints.slice()
-            };
-        }
-
-        // 先调用 stop() 清理状态，再触发 complete 事件
-        if (result) {
-            this._state.status = 'completed';
-            this.stop();
-            this._events.emit('complete', result);
-            this._refresh();
-        } else {
-            this.stop();
-        }
+        this._completeAndTransition({
+            type: this._mode,
+            id: id,
+            points: this._tempPoints.slice()
+        });
     },
 
     _getCanvasPos: function(e) {
@@ -357,4 +455,12 @@ InteractiveDrawer.prototype = {
     }
 };
 
+// ========================================
+// 导出
+// ========================================
+
 module.exports = InteractiveDrawer;
+
+// 导出枚举（方便外部使用）
+module.exports.Status = Status;
+module.exports.Events = Events;

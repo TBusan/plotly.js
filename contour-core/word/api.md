@@ -682,35 +682,101 @@ overlay.isInBounds(10, 20);
 
 ### 交互绘制 API
 
+**注意： v0.3.0 版本重构了交互绘制 API，使用统一的事件驱动模式。**
+
 ```javascript
-// 开始交互绘制
-overlay.startDrawing('point', options, canvas, function(result) {
+// ========================================
+// 推荐方式：使用事件订阅
+// ========================================
+
+// 订阅事件
+overlay.on('draw:complete', function(result) {
   console.log('绘制完成:', result);
 });
 
-overlay.startDrawing('line', options, canvas, onComplete);
-overlay.startDrawing('polygon', options, canvas, onComplete);
+overlay.on('draw:cancel', function(data) {
+  console.log('绘制取消:', data.reason);
+});
+
+overlay.on('draw:point', function(data) {
+  console.log('添加点:', data.position);
+});
+
+overlay.on('draw:preview', function(state) {
+  // 预览更新，});
+
+// 开始绘制（不再需要回调参数）
+overlay.startDrawing('point', options, canvas);
+overlay.startDrawing('line', options, canvas);
+overlay.startDrawing('polygon', options, canvas);
+overlay.startDrawing('text', options, canvas);
 
 // 停止绘制
 overlay.stopDrawing();
 
+// 取消绘制（触发 draw:cancel 事件）
+overlay.cancelDrawing();
+
 // 查询状态
 overlay.isDrawing();                  // 是否正在绘制
 overlay.getDrawMode();                // 当前绘制模式
-overlay.getDrawState();               // 绘制状态
+overlay.getDrawStatus();              // 当前状态 ('idle' | 'drawing' | 'completed')
+overlay.getDrawState();               // 绘制状态详情
 overlay.getTempPoints();              // 临时点
+```
+
+#### 事件列表
+
+| 事件名 | 触发时机 | 数据结构 |
+|------|----------|----------|
+| `draw:start` | 开始绘制 | `{ mode: string }` |
+| `draw:point` | 添加点 | `{ index: number, position: {x, y}, total: number }` |
+| `draw:preview` | 预览更新 | `{ mode, status, points, mousePos, options }` |
+| `draw:complete` | 绘制完成 | `{ type: string, id: string, ...data }` |
+| `draw:cancel` | 绘制取消 | `{ reason: string, discardedPoints: [] }` |
+| `draw:stop` | 绘制停止 | `{ reason: string }` |
+
+#### 状态枚举
+
+```javascript
+contourCore.DrawStatus.IDLE      // 'idle' - 空闲状态
+contourCore.DrawStatus.DRAWING   // 'drawing' - 绘制中
+contourCore.DrawStatus.COMPLETED // 'completed' - 已完成
+```
+
+#### 事件枚举
+
+```javascript
+contourCore.DrawEvents.START    // 'draw:start'
+contourCore.DrawEvents.POINT    // 'draw:point'
+contourCore.DrawEvents.PREVIEW  // 'draw:preview'
+contourCore.DrawEvents.COMPLETE // 'draw:complete'
+contourCore.DrawEvents.CANCEL   // 'draw:cancel'
+contourCore.DrawEvents.STOP     // 'draw:stop'
 ```
 
 ### 事件订阅 API
 
 ```javascript
-// 订阅事件
-overlay.on('drawstart', function(e) { /* ... */ });
-overlay.on('drawend', function(e) { /* ... */ });
-overlay.on('drawcancel', function(e) { /* ... */ });
+// 订阅事件（使用事件枚举更安全）
+var Events = contourCore.DrawEvents;
+
+overlay.on(Events.COMPLETE, function(result) {
+  console.log('绘制完成:', result);
+});
+
+overlay.on(Events.CANCEL, function(data) {
+  console.log('取消原因:', data.reason);
+});
+
+// 也可以直接使用字符串
+overlay.on('draw:complete', handler);
 
 // 取消订阅
-overlay.off('drawstart', handler);
+overlay.off(Events.COMPLETE, handler);
+
+// 订阅一次（自动取消）
+overlay.once(Events.COMPLETE, handler);
 ```
 
 ---

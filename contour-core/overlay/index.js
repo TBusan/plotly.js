@@ -143,26 +143,61 @@ function createOverlaySystem(renderer) {
         // 交互绘制 API（委托给 InteractiveDrawer）
         // ========================================
 
-        startDrawing: function(mode, options, canvas, onComplete) {
-            return interactiveDrawer.start(mode, options, canvas, onComplete);
+        /**
+         * 开始交互绘制
+         * @param {string} mode - 绘制模式 ('point' | 'line' | 'polygon' | 'text')
+         * @param {Object} options - 绘制选项
+         * @param {HTMLCanvasElement} canvas - 画布元素
+         */
+        startDrawing: function(mode, options, canvas) {
+            return interactiveDrawer.start(mode, options, canvas);
         },
 
+        /**
+         * 停止交互绘制
+         */
         stopDrawing: function() {
             return interactiveDrawer.stop();
         },
 
+        /**
+         * 取消当前绘制（会触发 draw:cancel 事件）
+         */
+        cancelDrawing: function() {
+            return interactiveDrawer.cancel();
+        },
+
+        /**
+         * 是否正在绘制
+         */
         isDrawing: function() {
             return interactiveDrawer.isDrawing();
         },
 
+        /**
+         * 获取当前绘制模式
+         */
         getDrawMode: function() {
             return interactiveDrawer.getMode();
         },
 
+        /**
+         * 获取当前绘制状态 ('idle' | 'drawing' | 'completed')
+         */
+        getDrawStatus: function() {
+            return interactiveDrawer.getStatus();
+        },
+
+        /**
+         * 获取绘制状态（用于渲染预览）
+         */
         getDrawState: function() {
             return interactiveDrawer.getState();
         },
 
+        /**
+         * 获取临时点
+         */
         getTempPoints: function() {
             return interactiveDrawer.getTempPoints();
         },
@@ -352,6 +387,10 @@ module.exports.StaticDrawer = StaticDrawer;
 module.exports.InteractiveDrawer = InteractiveDrawer;
 module.exports.OverlayRenderer = OverlayRenderer;
 module.exports.OverlayManager = OverlayManager;
+
+// 事件枚举（方便外部使用）
+module.exports.DrawEvents = InteractiveDrawer.Events;
+module.exports.DrawStatus = InteractiveDrawer.Status;
 
 // 基础图元（可独立使用）
 module.exports.primitives = {
