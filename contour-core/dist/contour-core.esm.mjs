@@ -5722,6 +5722,7 @@ var require_interactive_drawer = __commonJS({
        */
       start: function(mode, options, canvas, onComplete) {
         this.stop();
+        this._events.off("complete");
         this._state.mode = mode;
         this._state.status = "drawing";
         this._state.options = options || {};
@@ -5909,14 +5910,15 @@ var require_interactive_drawer = __commonJS({
           y: dataPos.y,
           options: this._state.options
         });
-        this._state.status = "completed";
-        this._events.emit("complete", {
+        var result = {
           type: "point",
           id,
           x: dataPos.x,
           y: dataPos.y
-        });
+        };
+        this._state.status = "completed";
         this.stop();
+        this._events.emit("complete", result);
         this._refresh();
       },
       _completeText: function(dataPos) {
@@ -5934,15 +5936,16 @@ var require_interactive_drawer = __commonJS({
           content: text,
           options: textOptions
         });
-        this._state.status = "completed";
-        this._events.emit("complete", {
+        var result = {
           type: "text",
           id,
           x: dataPos.x,
           y: dataPos.y,
           content: text
-        });
+        };
+        this._state.status = "completed";
         this.stop();
+        this._events.emit("complete", result);
         this._refresh();
       },
       _completeMultiPoint: function() {
@@ -5952,31 +5955,36 @@ var require_interactive_drawer = __commonJS({
         }
         var type = this._state.mode;
         var id;
+        var result;
         if (type === "line") {
           id = this._overlay.add("line", {
             points: this._state.tempPoints.slice(),
             options: this._state.options
           });
-          this._state.status = "completed";
-          this._events.emit("complete", {
+          result = {
             type: "line",
             id,
             points: this._state.tempPoints.slice()
-          });
+          };
         } else if (type === "polygon" && this._state.tempPoints.length >= 3) {
           id = this._overlay.add("polygon", {
             points: this._state.tempPoints.slice(),
             options: this._state.options
           });
-          this._state.status = "completed";
-          this._events.emit("complete", {
+          result = {
             type: "polygon",
             id,
             points: this._state.tempPoints.slice()
-          });
+          };
         }
-        this.stop();
-        this._refresh();
+        if (result) {
+          this._state.status = "completed";
+          this.stop();
+          this._events.emit("complete", result);
+          this._refresh();
+        } else {
+          this.stop();
+        }
       },
       _getCanvasPos: function(e) {
         var rect = this._canvas.getBoundingClientRect();

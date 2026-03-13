@@ -357,7 +357,9 @@
             if (mode !== 'none') {
                 var options = getOptionsForMode(mode);
                 overlaySystem.startDrawing(mode, options, canvas, function(result) {
-                    log('绘制完成: ' + result.type);
+                    // log('绘制完成: ' + result.type);
+                    // debugger
+                    console.log('绘制结果---:', result);
                     updateStatus();
                     // 自动重新开始相同模式
                     if (currentMode === mode) {
