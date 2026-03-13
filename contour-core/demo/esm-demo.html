@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES Module Demo - contour-core</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            padding: 20px;
+            color: #eee;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+        .code-hint {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .code-hint .keyword {
+            color: #ff79c6;
+        }
+        .code-hint .string {
+            color: #f1fa8c;
+        }
+        .code-hint .comment {
+            color: #6272a4;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .canvas-wrapper {
+            flex: 1;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 8px;
+            background: #0f0f23;
+        }
+        .controls {
+            width: 320px;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .control-group select,
+        .control-group input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #2a2a4a;
+            border-radius: 6px;
+            background: #0f0f23;
+            color: #fff;
+            font-size: 14px;
+        }
+        .control-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .range-value {
+            text-align: right;
+            font-size: 12px;
+            color: #4CAF50;
+            margin-top: 5px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        .btn-secondary {
+            background: #2a2a4a;
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background: #3a3a5a;
+        }
+        .status-bar {
+            background: #0f0f23;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            color: #4CAF50;
+        }
+        .feature-list {
+            margin-top: 20px;
+        }
+        .feature-list h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .feature-list ul {
+            list-style: none;
+            font-size: 13px;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            color: #aaa;
+        }
+        .feature-list li::before {
+            content: "✓";
+            color: #4CAF50;
+            margin-right: 8px;
+        }
+        .log-panel {
+            margin-top: 20px;
+            background: #0f0f23;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 4px 0;
+            color: #6272a4;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-entry.success {
+            color: #4CAF50;
+        }
+        .log-entry.info {
+            color: #64b5f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ES Module Demo</h1>
+        <p>使用 ES6 import 语法加载 contour-core</p>
+    </div>
+
+    <div class="code-hint">
+        <span class="comment">// ES6 模块导入方式</span><br>
+        <span class="keyword">import</span> contourCore <span class="keyword">from</span> <span class="string">'../dist/contour-core.esm.mjs'</span>;<br><br>
+        <span class="comment">// 使用解构导入特定功能</span><br>
+        <span class="keyword">const</span> { computeContours, renderers, DrawEvents } = contourCore;
+    </div>
+
+    <div class="container">
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>配色方案</label>
+                <select id="colorscale">
+                    <option value="Viridis">Viridis</option>
+                    <option value="Plasma">Plasma</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Jet">Jet</option>
+                    <option value="Earth">Earth</option>
+                    <option value="Electric">Electric</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>平滑度</label>
+                <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.5">
+                <div class="range-value" id="smoothingValue">0.5</div>
+            </div>
+
+            <div class="control-group">
+                <label>等值线数量</label>
+                <input type="range" id="ncontours" min="5" max="30" step="1" value="15">
+                <div class="range-value" id="ncontoursValue">15</div>
+            </div>
+
+            <div class="control-group">
+                <label>渲染类型</label>
+                <select id="coloring">
+                    <option value="fill">填充</option>
+                    <option value="lines">线条</option>
+                    <option value="fill+lines" selected>填充+线条</option>
+                    <option value="heatmap">热力图</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" id="regenerateBtn">
+                重新生成数据
+            </button>
+
+            <button class="btn btn-secondary" id="exportBtn">
+                导出 GeoJSON
+            </button>
+
+            <div class="status-bar" id="status">
+                加载中...
+            </div>
+
+            <div class="feature-list">
+                <h3>ES Module 特性</h3>
+                <ul>
+                    <li>原生浏览器模块支持</li>
+                    <li>支持 tree-shaking</li>
+                    <li>异步加载</li>
+                    <li>严格模式</li>
+                    <li>更好的代码组织</li>
+                </ul>
+            </div>
+
+            <div class="log-panel" id="log">
+                <div class="log-entry">初始化中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注意：type="module" 表示使用 ES6 模块 -->
+    <script type="module">
+        // ========================================
+        // ES6 模块导入
+        // ========================================
+        import contourCore from '../dist/contour-core.esm.mjs';
+
+        // 解构获取需要的模块
+        const {
+            computeContours,
+            renderers,
+            toGeoJSON,
+            geojsonStringify,
+            DrawEvents,
+            DrawStatus
+        } = contourCore;
+
+        // ========================================
+        // 全局变量
+        // ========================================
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let controller = null;
+        let currentData = null;
+
+        // ========================================
+        // 工具函数
+        // ========================================
+        function log(message, type = '') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // 生成测试数据
+        function generateData(rows, cols) {
+            const z = [];
+            for (let i = 0; i < rows; i++) {
+                z[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    // 使用多个正弦波叠加产生复杂图案
+                    const x = i / rows * 4 * Math.PI;
+                    const y = j / cols * 4 * Math.PI;
+                    z[i][j] = Math.sin(x) * Math.cos(y) +
+                              0.5 * Math.sin(2 * x) * Math.cos(2 * y) +
+                              0.25 * Math.cos(4 * x + 4 * y);
+                }
+            }
+            return z;
+        }
+
+        // ========================================
+        // 渲染函数
+        // ========================================
+        function render() {
+            const smoothing = parseFloat(document.getElementById('smoothing').value);
+            const ncontours = parseInt(document.getElementById('ncontours').value);
+            const selectedColorscale = document.getElementById('colorscale').value;
+            const coloring = document.getElementById('coloring').value;
+
+            // 计算等值线
+            const result = computeContours({ z: currentData }, {
+                smoothing,
+                ncontours,
+                autocontour: true
+            });
+
+            // 销毁旧的控制器
+            if (controller) {
+                controller.destroy();
+            }
+
+            // 渲染
+            controller = renderers.canvas.drawContours(ctx, result, {
+                width: 800,
+                height: 600,
+                padding: 60,
+                coloring,
+                showLines: coloring.includes('lines'),
+                smoothing,
+                colorscale: selectedColorscale,
+                interaction: {
+                    zoom: true,
+                    pan: true,
+                    dblclickReset: true
+                },
+                axes: {
+                    x: { title: 'X Axis', showgrid: true },
+                    y: { title: 'Y Axis', showgrid: true }
+                },
+                colorbar: {
+                    show: true,
+                    title: 'Value'
+                }
+            });
+
+            updateStatus(`渲染完成 | ${result.levels.length} 条等值线`);
+            log('渲染完成', 'success');
+        }
+
+        // ========================================
+        // 事件绑定
+        // ========================================
+        function initEvents() {
+            // 配色方案变化
+            document.getElementById('colorscale').addEventListener('change', () => {
+                render();
+                log('配色方案已更改', 'info');
+            });
+
+            // 平滑度变化
+            const smoothingInput = document.getElementById('smoothing');
+            const smoothingValue = document.getElementById('smoothingValue');
+            smoothingInput.addEventListener('input', (e) => {
+                smoothingValue.textContent = e.target.value;
+            });
+            smoothingInput.addEventListener('change', () => {
+                render();
+                log('平滑度已更改', 'info');
+            });
+
+            // 等值线数量变化
+            const ncontoursInput = document.getElementById('ncontours');
+            const ncontoursValue = document.getElementById('ncontoursValue');
+            ncontoursInput.addEventListener('input', (e) => {
+                ncontoursValue.textContent = e.target.value;
+            });
+            ncontoursInput.addEventListener('change', () => {
+                render();
+                log('等值线数量已更改', 'info');
+            });
+
+            // 渲染类型变化
+            document.getElementById('coloring').addEventListener('change', () => {
+                render();
+                log('渲染类型已更改', 'info');
+            });
+
+            // 重新生成数据
+            document.getElementById('regenerateBtn').addEventListener('click', () => {
+                currentData = generateData(50, 50);
+                render();
+                log('数据已重新生成', 'success');
+            });
+
+            // 导出 GeoJSON
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                if (!controller) return;
+
+                const result = controller.getContourResult();
+                const geojson = toGeoJSON(result);
+                const jsonStr = geojsonStringify(geojson, { pretty: true });
+
+                // 创建下载
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'contours.geojson';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                log('GeoJSON 已导出', 'success');
+            });
+        }
+
+        // ========================================
+        // Overlay 交互示例
+        // ========================================
+        function initOverlayInteraction() {
+            if (!controller) return;
+
+            const overlay = controller.getOverlay();
+
+            // 使用新的事件 API
+            overlay.on('draw:complete', (result) => {
+                console.log('绘制完成:', result);
+                log(`绘制了 ${result.type}`, 'success');
+            });
+
+            overlay.on('draw:cancel', (data) => {
+                console.log('绘制取消:', data.reason);
+                log('绘制已取消', 'info');
+            });
+
+            // 打印事件枚举（演示 ES Module 导出）
+            console.log('DrawEvents:', DrawEvents);
+            console.log('DrawStatus:', DrawStatus);
+        }
+
+        // ========================================
+        // 初始化
+        // ========================================
+        async function init() {
+            try {
+                log('ES Module 加载成功', 'success');
+                log(`contourCore 版本: ${contourCore.VERSION || 'unknown'}`, 'info');
+
+                // 生成初始数据
+                currentData = generateData(50, 50);
+                log('测试数据生成完成');
+
+                // 初始化事件
+                initEvents();
+
+                // 首次渲染
+                render();
+
+                // 初始化 Overlay 交互
+                initOverlayInteraction();
+
+                updateStatus('就绪');
+            } catch (error) {
+                console.error('初始化失败:', error);
+                log(`错误: ${error.message}`, 'error');
+                updateStatus('初始化失败');
+            }
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>

@@ -202,6 +202,28 @@ function render(canvas, config) {
         drawColorbar(ctx, result, colors, config.colorbar, width, height);
     }
 
+    // If interaction is enabled, use interactive renderer and return controller
+    if (config.interaction) {
+        var interactiveStyle = {
+            width: width,
+            height: height,
+            x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
+            y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
+            z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
+            padding: 30,
+            coloring: contourType,
+            showLines: contourType === 'lines' || contourType === 'heatmap',
+            colorScale: colorScale,
+            valueColorMap: valueColorMap,
+            smoothing: options.smoothing,
+            colorbar: config.colorbar,
+            axes: config.axes,
+            aspectRatio: config.aspectRatio
+        };
+
+        return canvasRenderer.drawContours(ctx, result, interactiveStyle);
+    }
+
     return result;
 }
 
