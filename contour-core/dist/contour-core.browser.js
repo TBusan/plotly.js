@@ -4992,11 +4992,14 @@ var contourCore = (() => {
          * 添加一个元素
          * @param {string} type - 元素类型 ('text', 'point', 'line', 'polygon')
          * @param {Object} data - 元素数据
+         * @param {string} [data.id] - 可选的自定义ID，如果不传或已存在则自动生成
          * @returns {string} 元素ID
          */
         add: function(type, data) {
-          var id = this._generateId();
+          var customId = data && data.id;
+          var id = customId && !this._items.has(customId) ? customId : this._generateId();
           var item = Object.assign({ id, type }, data);
+          item.id = id;
           this._items.set(id, item);
           if (this._indices[type]) {
             this._indices[type].add(id);
@@ -5433,13 +5436,17 @@ var contourCore = (() => {
          * @param {number} x - X 坐标（数据坐标）
          * @param {number} y - Y 坐标（数据坐标）
          * @param {Object} options - 点选项
+         * @param {string} [options.id] - 可选的自定义ID
          * @returns {string} 元素ID
          */
         drawPoint: function(x, y, options) {
+          var opts = options || {};
           var id = this._overlay.add("point", {
             x,
             y,
-            options: options || {}
+            options: opts,
+            id: opts.id
+            // 传入自定义 ID（如果有）
           });
           this._refresh();
           return id;
@@ -5448,12 +5455,16 @@ var contourCore = (() => {
          * 绘制线
          * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
          * @param {Object} options - 线选项
+         * @param {string} [options.id] - 可选的自定义ID
          * @returns {string} 元素ID
          */
         drawLine: function(points, options) {
+          var opts = options || {};
           var id = this._overlay.add("line", {
             points: this._normalizePoints(points),
-            options: options || {}
+            options: opts,
+            id: opts.id
+            // 传入自定义 ID（如果有）
           });
           this._refresh();
           return id;
@@ -5462,12 +5473,16 @@ var contourCore = (() => {
          * 绘制多边形
          * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
          * @param {Object} options - 多边形选项
+         * @param {string} [options.id] - 可选的自定义ID
          * @returns {string} 元素ID
          */
         drawPolygon: function(points, options) {
+          var opts = options || {};
           var id = this._overlay.add("polygon", {
             points: this._normalizePoints(points),
-            options: options || {}
+            options: opts,
+            id: opts.id
+            // 传入自定义 ID（如果有）
           });
           this._refresh();
           return id;
@@ -5478,14 +5493,18 @@ var contourCore = (() => {
          * @param {number} y - Y 坐标（数据坐标）
          * @param {string} content - 文本内容
          * @param {Object} options - 文本选项
+         * @param {string} [options.id] - 可选的自定义ID
          * @returns {string} 元素ID
          */
         drawText: function(x, y, content, options) {
+          var opts = options || {};
           var id = this._overlay.add("text", {
             x,
             y,
             content,
-            options: options || {}
+            options: opts,
+            id: opts.id
+            // 传入自定义 ID（如果有）
           });
           this._refresh();
           return id;
@@ -8970,6 +8989,25 @@ var contourCore = (() => {
         }
         if (config.colorbar && config.colorbar.show !== false && contourType !== "lines") {
           drawColorbar(ctx, result, colors, config.colorbar, width, height);
+        }
+        if (config.interaction) {
+          var interactiveStyle = {
+            width,
+            height,
+            x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
+            y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
+            z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
+            padding: 30,
+            coloring: contourType,
+            showLines: contourType === "lines" || contourType === "heatmap",
+            colorScale,
+            valueColorMap,
+            smoothing: options.smoothing,
+            colorbar: config.colorbar,
+            axes: config.axes,
+            aspectRatio: config.aspectRatio
+          };
+          return canvasRenderer.drawContours(ctx, result, interactiveStyle);
         }
         return result;
       }

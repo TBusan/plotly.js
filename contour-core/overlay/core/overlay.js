@@ -26,11 +26,19 @@ Overlay.prototype = {
      * 添加一个元素
      * @param {string} type - 元素类型 ('text', 'point', 'line', 'polygon')
      * @param {Object} data - 元素数据
+     * @param {string} [data.id] - 可选的自定义ID，如果不传或已存在则自动生成
      * @returns {string} 元素ID
      */
     add: function(type, data) {
-        var id = this._generateId();
+        // 如果传入了 id 且不冲突，使用传入的 id；否则自动生成
+        var customId = data && data.id;
+        var id = (customId && !this._items.has(customId))
+            ? customId
+            : this._generateId();
+
         var item = Object.assign({ id: id, type: type }, data);
+        // 确保使用最终确定的 id（防止 data.id 被覆盖）
+        item.id = id;
         this._items.set(id, item);
         if (this._indices[type]) {
             this._indices[type].add(id);

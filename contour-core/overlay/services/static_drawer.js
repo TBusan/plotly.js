@@ -19,13 +19,16 @@ StaticDrawer.prototype = {
      * @param {number} x - X 坐标（数据坐标）
      * @param {number} y - Y 坐标（数据坐标）
      * @param {Object} options - 点选项
+     * @param {string} [options.id] - 可选的自定义ID
      * @returns {string} 元素ID
      */
     drawPoint: function(x, y, options) {
+        var opts = options || {};
         var id = this._overlay.add('point', {
             x: x,
             y: y,
-            options: options || {}
+            options: opts,
+            id: opts.id  // 传入自定义 ID（如果有）
         });
         this._refresh();
         return id;
@@ -35,12 +38,15 @@ StaticDrawer.prototype = {
      * 绘制线
      * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
      * @param {Object} options - 线选项
+     * @param {string} [options.id] - 可选的自定义ID
      * @returns {string} 元素ID
      */
     drawLine: function(points, options) {
+        var opts = options || {};
         var id = this._overlay.add('line', {
             points: this._normalizePoints(points),
-            options: options || {}
+            options: opts,
+            id: opts.id  // 传入自定义 ID（如果有）
         });
         this._refresh();
         return id;
@@ -50,12 +56,15 @@ StaticDrawer.prototype = {
      * 绘制多边形
      * @param {Array} points - 点数组 [{x, y} 或 [x, y]]
      * @param {Object} options - 多边形选项
+     * @param {string} [options.id] - 可选的自定义ID
      * @returns {string} 元素ID
      */
     drawPolygon: function(points, options) {
+        var opts = options || {};
         var id = this._overlay.add('polygon', {
             points: this._normalizePoints(points),
-            options: options || {}
+            options: opts,
+            id: opts.id  // 传入自定义 ID（如果有）
         });
         this._refresh();
         return id;
@@ -67,14 +76,17 @@ StaticDrawer.prototype = {
      * @param {number} y - Y 坐标（数据坐标）
      * @param {string} content - 文本内容
      * @param {Object} options - 文本选项
+     * @param {string} [options.id] - 可选的自定义ID
      * @returns {string} 元素ID
      */
     drawText: function(x, y, content, options) {
+        var opts = options || {};
         var id = this._overlay.add('text', {
             x: x,
             y: y,
             content: content,
-            options: options || {}
+            options: opts,
+            id: opts.id  // 传入自定义 ID（如果有）
         });
         this._refresh();
         return id;
