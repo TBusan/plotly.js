@@ -225,6 +225,7 @@
                     </div>
                     <div class="btn-group">
                         <button class="btn-warning" onclick="updateSelectedStyle()">更新选中样式</button>
+                        <button class="btn-info" onclick="updateTextContent()">更新文字内容</button>
                     </div>
                 </div>
 
@@ -529,6 +530,49 @@
             var color = document.getElementById('styleColor').value;
             var size = parseInt(document.getElementById('styleSize').value);
             overlay.updateStyle(selectedId, { color: color, size: size });
+        }
+
+        // 更新文字内容
+        function updateTextContent() {
+            if (!selectedId) {
+                alert('请先选择一个元素');
+                return;
+            }
+            var item = overlay.getItem(selectedId);
+            if (!item) {
+                alert('找不到选中的元素');
+                return;
+            }
+
+            // 随机生成文字内容
+            var randomTexts = [
+                '标注', '标签', '记号', '节点', '位置',
+                'Point', 'Label', 'Tag', 'Mark', 'Spot',
+                'A点', 'B点', 'C点', '中心', '边缘',
+                '起点', '终点', '中点', '拐点', '交点'
+            ];
+            var randomText = randomTexts[Math.floor(Math.random() * randomTexts.length)];
+            var timestamp = Date.now().toString().slice(-4);
+            var newText = randomText + '_' + timestamp;
+
+            // 根据类型更新文字内容
+            if (item.type === 'text') {
+                // text 类型直接更新 content 字段
+                overlay.updateData(selectedId, { content: newText });
+            } else if (item.type === 'line' || item.type === 'polygon') {
+                // line/polygon 类型更新 options.text.content
+                var options = item.options || {};
+                var textOpts = options.text || {};
+                textOpts.content = newText;
+                // 保持其他 text 配置
+                overlay.updateStyle(selectedId, { text: textOpts });
+            } else {
+                alert('该类型不支持文字内容更新');
+                return;
+            }
+
+            console.log('更新文字内容:', selectedId, '->', newText);
+            refreshItemList();
         }
 
         // 聚焦到选中

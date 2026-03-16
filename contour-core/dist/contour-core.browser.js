@@ -6227,19 +6227,62 @@ var contourCore = (() => {
         var dy = points[next].y - points[prev].y;
         return Math.atan2(dy, dx);
       }
+      function getCentroidPosition(points) {
+        if (!points || points.length < 2) {
+          return { point: points[0] || { x: 0, y: 0 }, angle: 0 };
+        }
+        var totalLen = 0;
+        var segments = [];
+        for (var i = 0; i < points.length - 1; i++) {
+          var dx = points[i + 1].x - points[i].x;
+          var dy = points[i + 1].y - points[i].y;
+          var len = Math.sqrt(dx * dx + dy * dy);
+          segments.push({
+            p1: points[i],
+            p2: points[i + 1],
+            len,
+            dx,
+            dy
+          });
+          totalLen += len;
+        }
+        if (totalLen === 0) {
+          return { point: points[0], angle: 0 };
+        }
+        var halfLen = totalLen / 2;
+        var accLen = 0;
+        for (var j = 0; j < segments.length; j++) {
+          var seg = segments[j];
+          if (accLen + seg.len >= halfLen) {
+            var t = (halfLen - accLen) / seg.len;
+            var centroidPoint = {
+              x: seg.p1.x + t * seg.dx,
+              y: seg.p1.y + t * seg.dy
+            };
+            var angle = Math.atan2(seg.dy, seg.dx);
+            return { point: centroidPoint, angle };
+          }
+          accLen += seg.len;
+        }
+        return { point: points[points.length - 1], angle: 0 };
+      }
       function getPointAtPosition(points, position) {
         if (position === "start") {
-          return { index: 0, point: points[0] };
+          return { index: 0, point: points[0], isCentroid: false };
         }
         if (position === "end") {
-          return { index: points.length - 1, point: points[points.length - 1] };
+          return { index: points.length - 1, point: points[points.length - 1], isCentroid: false };
         }
-        if (position === "middle" || typeof position === "undefined") {
+        if (position === "middle") {
           var midIndex = Math.floor(points.length / 2);
-          return { index: midIndex, point: points[midIndex] };
+          return { index: midIndex, point: points[midIndex], isCentroid: false };
+        }
+        if (position === "centroid" || typeof position === "undefined") {
+          var centroidInfo = getCentroidPosition(points);
+          return { index: -1, point: centroidInfo.point, angle: centroidInfo.angle, isCentroid: true };
         }
         var idx = Math.min(Math.max(0, position), points.length - 1);
-        return { index: idx, point: points[idx] };
+        return { index: idx, point: points[idx], isCentroid: false };
       }
       function drawLine(ctx, points, options, coordSystem) {
         if (!points || points.length < 2)
@@ -6274,8 +6317,19 @@ var contourCore = (() => {
         ctx.restore();
         if (options && options.text && options.text.content) {
           var textOpts = options.text;
-          var posInfo = getPointAtPosition(canvasPoints, textOpts.position);
-          var angle = textOpts.rotation === "auto" ? getAngleAtPoint(canvasPoints, posInfo.index) : textOpts.rotation || 0;
+          var position = textOpts.position || "centroid";
+          var posInfo = getPointAtPosition(canvasPoints, position);
+          var rotation = textOpts.rotation !== void 0 ? textOpts.rotation : "auto";
+          var angle;
+          if (rotation === "auto") {
+            if (posInfo.isCentroid && posInfo.angle !== void 0) {
+              angle = posInfo.angle;
+            } else {
+              angle = getAngleAtPoint(canvasPoints, posInfo.index);
+            }
+          } else {
+            angle = rotation || 0;
+          }
           var offsetX = textOpts.offset ? textOpts.offset[0] : 0;
           var offsetY = textOpts.offset ? textOpts.offset[1] : -opts.width - 10;
           var perpAngle = angle + Math.PI / 2;
