@@ -112,7 +112,8 @@ function drawDiscreteColorbar(ctx, blocks, style) {
         padding: padding,
         width: width,
         height: height,
-        blockCount: blocks.length
+        blockCount: blocks.length,
+        labelWidth: colorbarConfig.labelWidth || 45
     });
 
     // Compute discrete colorbar data
@@ -283,7 +284,9 @@ function drawGradientColorbar(ctx, contourResult, style) {
     var thickness = style.colorbarThickness || 20;
     var len = style.colorbarLen || 0.8;
     var barHeight = height * len;
-    var x = width - thickness - 10;
+    // 为标签文字预留空间（约45像素）
+    var labelWidth = style.colorbarLabelWidth || 45;
+    var x = width - thickness - 10 - labelWidth;
     var y = (height - barHeight) / 2;
 
     var colorscale = style.colorscale || 'Viridis';

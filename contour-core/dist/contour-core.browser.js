@@ -3235,6 +3235,7 @@ var contourCore = (() => {
         var position = options.position || "right";
         var thickness = options.thickness || 25;
         var padding = options.padding || 10;
+        var labelWidth = options.labelWidth || 45;
         var width = options.width;
         var height = options.height;
         var blockCount = options.blockCount || 10;
@@ -3244,17 +3245,17 @@ var contourCore = (() => {
           length = height * 0.8;
           y = (height - length) / 2;
           if (position === "right") {
-            x = width - thickness - padding;
+            x = width - thickness - padding - labelWidth;
           } else {
-            x = padding;
+            x = padding + labelWidth;
           }
         } else {
           length = width * 0.8;
           x = (width - length) / 2;
           if (position === "bottom") {
-            y = height - thickness - padding;
+            y = height - thickness - padding - 15;
           } else {
-            y = padding;
+            y = padding + 15;
           }
         }
         return {
@@ -3527,7 +3528,8 @@ var contourCore = (() => {
           padding,
           width,
           height,
-          blockCount: blocks.length
+          blockCount: blocks.length,
+          labelWidth: colorbarConfig.labelWidth || 45
         });
         var discreteData = computeDiscreteColorbar(blocks, {
           tickInterval
@@ -3643,7 +3645,8 @@ var contourCore = (() => {
         var thickness = style.colorbarThickness || 20;
         var len = style.colorbarLen || 0.8;
         var barHeight = height * len;
-        var x = width - thickness - 10;
+        var labelWidth = style.colorbarLabelWidth || 45;
+        var x = width - thickness - 10 - labelWidth;
         var y = (height - barHeight) / 2;
         var colorscale = style.colorscale || "Viridis";
         var zmin = style.zmin !== void 0 ? style.zmin : levels[0];
@@ -5066,6 +5069,39 @@ var contourCore = (() => {
           return false;
         },
         /**
+         * 更新元素的ID
+         * @param {string} oldId - 旧ID
+         * @param {string} newId - 新ID
+         * @returns {Object|null} 更新后的元素，失败返回 null
+         */
+        updateId: function(oldId, newId) {
+          var item = this._items.get(oldId);
+          if (!item) {
+            return null;
+          }
+          if (!newId || typeof newId !== "string") {
+            return null;
+          }
+          if (this._items.has(newId)) {
+            return null;
+          }
+          if (oldId === newId) {
+            return item;
+          }
+          this._items.delete(oldId);
+          if (this._indices[item.type]) {
+            this._indices[item.type].delete(oldId);
+            this._indices[item.type].add(newId);
+          }
+          if (this._hidden.has(oldId)) {
+            this._hidden.delete(oldId);
+            this._hidden.add(newId);
+          }
+          item.id = newId;
+          this._items.set(newId, item);
+          return item;
+        },
+        /**
          * 清空某类型或所有元素
          * @param {string} [type] - 元素类型，不传则清空所有
          */
@@ -5541,6 +5577,17 @@ var contourCore = (() => {
          */
         remove: function(id) {
           var result = this._overlay.remove(id);
+          this._refresh();
+          return result;
+        },
+        /**
+         * 更新元素的ID
+         * @param {string} oldId - 旧ID
+         * @param {string} newId - 新ID
+         * @returns {Object|null} 更新后的元素，失败返回 null
+         */
+        updateId: function(oldId, newId) {
+          var result = this._overlay.updateId(oldId, newId);
           this._refresh();
           return result;
         },
@@ -7667,6 +7714,15 @@ var contourCore = (() => {
           },
           updateItem: function(id, data) {
             return staticDrawer.update(id, data);
+          },
+          /**
+           * 更新元素的ID
+           * @param {string} oldId - 旧ID
+           * @param {string} newId - 新ID
+           * @returns {Object|null} 更新后的元素，失败返回 null
+           */
+          updateItemId: function(oldId, newId) {
+            return staticDrawer.updateId(oldId, newId);
           },
           removeItem: function(id) {
             return staticDrawer.remove(id);

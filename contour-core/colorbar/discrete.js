@@ -54,12 +54,14 @@ function computeDiscreteColorbar(blocks, options) {
  * @param {number} options.width - Canvas width
  * @param {number} options.height - Canvas height
  * @param {number} options.blockCount - Number of blocks
+ * @param {number} [options.labelWidth] - Width reserved for labels (default: 45)
  * @returns {Object} Dimension data {x, y, thickness, length, isVertical, blockThickness}
  */
 function calculateColorbarDimensions(options) {
     var position = options.position || 'right';
     var thickness = options.thickness || 25;
     var padding = options.padding || 10;
+    var labelWidth = options.labelWidth || 45;  // 预留标签文字宽度
     var width = options.width;
     var height = options.height;
     var blockCount = options.blockCount || 10;
@@ -72,18 +74,22 @@ function calculateColorbarDimensions(options) {
         y = (height - length) / 2;
 
         if (position === 'right') {
-            x = width - thickness - padding;
+            // 右侧：需要为标签文字预留空间
+            x = width - thickness - padding - labelWidth;
         } else {
-            x = padding;
+            // 左侧：标签在左边，colorbar 在右边
+            x = padding + labelWidth;
         }
     } else {
         length = width * 0.8;
         x = (width - length) / 2;
 
         if (position === 'bottom') {
-            y = height - thickness - padding;
+            // 底部：需要为标签文字预留空间
+            y = height - thickness - padding - 15;
         } else {
-            y = padding;
+            // 顶部：标签在上方
+            y = padding + 15;
         }
     }
 
