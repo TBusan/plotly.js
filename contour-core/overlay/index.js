@@ -222,6 +222,16 @@ function createOverlaySystem(renderer) {
             return staticDrawer.update(id, data);
         },
 
+        /**
+         * 更新元素的ID
+         * @param {string} oldId - 旧ID
+         * @param {string} newId - 新ID
+         * @returns {Object|null} 更新后的元素，失败返回 null
+         */
+        updateItemId: function(oldId, newId) {
+            return staticDrawer.updateId(oldId, newId);
+        },
+
         removeItem: function(id) {
             return staticDrawer.remove(id);
         },

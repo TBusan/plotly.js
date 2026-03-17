@@ -110,6 +110,58 @@ Overlay.prototype = {
     },
 
     /**
+     * 更新元素的ID
+     * @param {string} oldId - 旧ID
+     * @param {string} newId - 新ID
+     * @returns {Object|null} 更新后的元素，失败返回 null
+     */
+    updateId: function(oldId, newId) {
+        // 检查旧ID是否存在
+        var item = this._items.get(oldId);
+        if (!item) {
+            return null;
+        }
+
+        // 检查新ID是否有效
+        if (!newId || typeof newId !== 'string') {
+            return null;
+        }
+
+        // 检查新ID是否已被使用
+        if (this._items.has(newId)) {
+            return null;
+        }
+
+        // 如果新ID和旧ID相同，直接返回
+        if (oldId === newId) {
+            return item;
+        }
+
+        // 从旧位置删除
+        this._items.delete(oldId);
+
+        // 更新类型索引
+        if (this._indices[item.type]) {
+            this._indices[item.type].delete(oldId);
+            this._indices[item.type].add(newId);
+        }
+
+        // 更新隐藏状态
+        if (this._hidden.has(oldId)) {
+            this._hidden.delete(oldId);
+            this._hidden.add(newId);
+        }
+
+        // 更新元素ID
+        item.id = newId;
+
+        // 添加到新位置
+        this._items.set(newId, item);
+
+        return item;
+    },
+
+    /**
      * 清空某类型或所有元素
      * @param {string} [type] - 元素类型，不传则清空所有
      */

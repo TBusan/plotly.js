@@ -131,6 +131,18 @@ StaticDrawer.prototype = {
     },
 
     /**
+     * 更新元素的ID
+     * @param {string} oldId - 旧ID
+     * @param {string} newId - 新ID
+     * @returns {Object|null} 更新后的元素，失败返回 null
+     */
+    updateId: function(oldId, newId) {
+        var result = this._overlay.updateId(oldId, newId);
+        this._refresh();
+        return result;
+    },
+
+    /**
      * 只更新样式（不影响数据）
      * @param {string} id - 元素ID
      * @param {Object} style - 样式对象
