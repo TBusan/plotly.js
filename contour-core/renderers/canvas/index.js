@@ -366,11 +366,8 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     // Initial render
     render();
 
-    // Create interaction manager
-    var interactionConfig = Object.assign({}, interactionConfig, {
-        contourResult: contourResult  // Pass contour result for hover detection
-    });
-    var interaction = createInteractionManagerInternal(canvas, drawingArea, viewManager, render, interactionConfig);
+    // Create interaction manager with getter for drawingArea (to support aspectRatio changes)
+    var interaction = createInteractionManagerInternal(canvas, function() { return drawingArea; }, viewManager, render, interactionConfig);
     return {
         getViewState: function() {
             return viewManager.getState();
@@ -934,8 +931,13 @@ function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
 /**
  * Create internal interaction manager
  * @private
+ * @param {HTMLCanvasElement} canvas - Canvas element
+ * @param {Function} getDrawingArea - Function that returns current drawing area
+ * @param {Object} viewManager - View state manager
+ * @param {Function} render - Render function
+ * @param {Object} config - Configuration options
  */
-function createInteractionManagerInternal(canvas, drawingArea, viewManager, render, config) {
+function createInteractionManagerInternal(canvas, getDrawingArea, viewManager, render, config) {
     config = config || {};
 
     var isDragging = false;
@@ -969,10 +971,11 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
     }
 
     function isInDrawingArea(pos) {
-        return pos.x >= drawingArea.x &&
-               pos.x <= drawingArea.x + drawingArea.width &&
-               pos.y >= drawingArea.y &&
-               pos.y <= drawingArea.y + drawingArea.height;
+        var area = getDrawingArea();
+        return pos.x >= area.x &&
+               pos.x <= area.x + area.width &&
+               pos.y >= area.y &&
+               pos.y <= area.y + area.height;
     }
 
     function handleWheel(e) {
@@ -983,13 +986,14 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
 
         e.preventDefault();
 
-        var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
+        var area = getDrawingArea();
+        var dataPos = viewManager.pixelToData(pos.x, pos.y, area);
 
         var delta = -e.deltaY;
         var factor = 1 + delta * zoomSensitivity;
         factor = Math.max(0.5, Math.min(2, factor));
 
-        viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
+        viewManager.zoomAt(factor, dataPos.x, dataPos.y, area);
         render();
 
         if (config.onZoom) {
@@ -1024,7 +1028,8 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
 
-            viewManager.pan(dx, dy, drawingArea);
+            var area = getDrawingArea();
+            viewManager.pan(dx, dy, area);
 
             lastX = pos.x;
             lastY = pos.y;
@@ -1056,6 +1061,7 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
 
     /**
      * Detect contour line at given pixel position
+     * Returns the CLOSEST contour within hit radius (not just the first one found)
      */
     function detectContourAtPosition(px, py) {
         if (!contourResult || !contourResult.paths) return null;
@@ -1063,6 +1069,9 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
         var paths = contourResult.paths;
         var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
         if (!pathInfo) return null;
+
+        // Get current drawing area (may change with aspectRatio updates)
+        var drawingArea = getDrawingArea();
 
         // Get visible range
         var state = viewManager.getState();
@@ -1072,6 +1081,10 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
         var yMax = state.yMax;
         var xRange = xMax - xMin || 1;
         var yRange = yMax - yMin || 1;
+
+        // Track the closest contour found
+        var closestResult = null;
+        var minDistance = Infinity;
 
         // Check each contour level
         for (var i = 0; i < paths.length; i++) {
@@ -1099,12 +1112,14 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
                     // Calculate distance from point to line segment
                     var dist = pointToSegmentDistance(px, py, px1, py1, px2, py2);
 
-                    if (dist <= hoverHitRadius) {
+                    // Track the closest contour within hit radius
+                    if (dist <= hoverHitRadius && dist < minDistance) {
+                        minDistance = dist;
                         // Convert pixel back to data coordinates for tooltip
                         var dataX = xMin + (px - drawingArea.x) / drawingArea.width * xRange;
                         var dataY = yMin + (1 - (py - drawingArea.y) / drawingArea.height) * yRange;
 
-                        return {
+                        closestResult = {
                             level: level,
                             x: dataX,
                             y: dataY,
@@ -1115,7 +1130,7 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
             }
         }
 
-        return null;
+        return closestResult;
     }
 
     /**
@@ -1279,7 +1294,8 @@ function createInteractionManagerInternal(canvas, drawingArea, viewManager, rend
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
 
-            viewManager.pan(dx, dy, drawingArea);
+            var area = getDrawingArea();
+            viewManager.pan(dx, dy, area);
 
             lastX = pos.x;
             lastY = pos.y;

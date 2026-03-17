@@ -63,31 +63,56 @@ function drawLabels(ctx, contourResult, style) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Get grid dimensions for coordinate system
+    // Get data coordinate arrays (paths are in data coordinates, not grid indices)
+    var xData = style.x;
+    var yData = style.y;
+
+    // Get grid dimensions for fallback
     var m = style.z ? style.z.length : 10;
     var n = style.z && style.z[0] ? style.z[0].length : 10;
 
-    // Calculate plot bounds in GRID COORDINATES (not canvas coordinates)
-    // This is key for unified coordinate system
-    var plotBounds = {
-        left: 0,
-        right: n - 1,
-        top: 0,
-        bottom: m - 1,
-        center: (n - 1) / 2,
-        middle: (m - 1) / 2
-    };
+    // Calculate plot bounds in DATA COORDINATES (matching path coordinates)
+    // Paths from computeContours are in data coordinates, so bounds must match
+    var plotBounds;
+    if (xData && xData.length > 0 && yData && yData.length > 0) {
+        var xMin = Math.min.apply(Math, xData);
+        var xMax = Math.max.apply(Math, xData);
+        var yMin = Math.min.apply(Math, yData);
+        var yMax = Math.max.apply(Math, yData);
+        plotBounds = {
+            left: xMin,
+            right: xMax,
+            top: yMax,  // Note: in data coords, top is max Y
+            bottom: yMin,
+            center: (xMin + xMax) / 2,
+            middle: (yMin + yMax) / 2
+        };
+    } else {
+        // Fallback to grid coordinates if no data arrays
+        plotBounds = {
+            left: 0,
+            right: n - 1,
+            top: m - 1,
+            bottom: 0,
+            center: (n - 1) / 2,
+            middle: (m - 1) / 2
+        };
+    }
 
     // Calculate canvas dimensions for scaling
     var width = style.width || 500;
     var height = style.height || 400;
     // Support both number and object format for padding
     var padding = normalizePadding(style.padding, 30);
-    var scaleX = (width - padding.left - padding.right) / (n - 1);
-    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
-    var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
 
-    // Track existing labels in GRID COORDINATES for consistent cost calculation
+    // Calculate scale based on data range, not grid size
+    var dataXRange = plotBounds.right - plotBounds.left;
+    var dataYRange = plotBounds.top - plotBounds.bottom;
+    var scaleX = (width - padding.left - padding.right) / (dataXRange || 1);
+    var scaleY = (height - padding.top - padding.bottom) / (dataYRange || 1);
+    var plotDiagonal = Math.sqrt(dataXRange * dataXRange + dataYRange * dataYRange);
+
+    // Track existing labels in DATA COORDINATES (matching path coordinates)
     var existingLabels = [];
 
     // Track placed labels for rendering
@@ -227,23 +252,27 @@ function drawLabels(ctx, contourResult, style) {
 }
 
 /**
- * Scale a point from grid coordinates to canvas coordinates
- * Now supports visibleRange for zoom/pan interaction and drawArea for aspect ratio
- * @param {Object} pt - Point with {x, y} in grid coordinates
- * @param {number} n - Number of columns in grid
- * @param {number} m - Number of rows in grid
+ * Scale a point from DATA coordinates to canvas coordinates
+ * IMPORTANT: Path points from computeContours are in DATA coordinates (not grid indices)
+ * This function transforms data coordinates to canvas pixel coordinates
+ * @param {Object} pt - Point with {x, y} in DATA coordinates
+ * @param {number} n - Number of columns in grid (for fallback)
+ * @param {number} m - Number of rows in grid (for fallback)
  * @param {number} width - Canvas width
  * @param {number} height - Canvas height
  * @param {number} padding - Canvas padding
  * @param {Object} visibleRange - Optional visible range {xMin, xMax, yMin, yMax} in data coordinates
- * @param {Object} xData - Optional x data array for coordinate mapping
- * @param {Object} yData - Optional y data array for coordinate mapping
+ * @param {Object} xData - Optional x data array (for fallback bounds)
+ * @param {Object} yData - Optional y data array (for fallback bounds)
  * @param {Object} drawArea - Optional adjusted drawing area for aspect ratio support
- * @returns {Object} Scaled point with {x, y}
+ * @returns {Object} Scaled point with {x, y} in canvas pixels
  */
 function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData, drawArea) {
+    // pt.x and pt.y are already in DATA coordinates (from computeContours paths)
+    var dataX = pt.x;
+    var dataY = pt.y;
+
     // If drawArea is provided (for aspectRatio: 'equal' support), use it for coordinate transformation
-    // This ensures labels stay in sync with contours when aspect ratio is adjusted
     if (drawArea) {
         var plotWidth = drawArea.width;
         var plotHeight = drawArea.height;
@@ -252,40 +281,6 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
 
         // If visibleRange is provided, use it for coordinate transformation
         if (visibleRange) {
-            // Convert grid coordinates to data coordinates first
-            var dataX, dataY;
-
-            if (xData && xData.length > 0) {
-                var xIdx = pt.x;
-                var xIdx0 = Math.floor(xIdx);
-                var xFrac = xIdx - xIdx0;
-                if (xIdx0 >= xData.length - 1) {
-                    dataX = xData[xData.length - 1];
-                } else if (xIdx0 < 0) {
-                    dataX = xData[0];
-                } else {
-                    dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
-                }
-            } else {
-                dataX = pt.x;
-            }
-
-            if (yData && yData.length > 0) {
-                var yIdx = pt.y;
-                var yIdx0 = Math.floor(yIdx);
-                var yFrac = yIdx - yIdx0;
-                if (yIdx0 >= yData.length - 1) {
-                    dataY = yData[yData.length - 1];
-                } else if (yIdx0 < 0) {
-                    dataY = yData[0];
-                } else {
-                    dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
-                }
-            } else {
-                dataY = pt.y;
-            }
-
-            // Now convert data coordinates to canvas coordinates using visibleRange and drawArea
             var xRange = visibleRange.xMax - visibleRange.xMin;
             var yRange = visibleRange.yMax - visibleRange.yMin;
 
@@ -298,13 +293,31 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
             };
         }
 
-        // Fallback with drawArea but no visibleRange
+        // Fallback with drawArea but no visibleRange - use data bounds
+        if (xData && xData.length > 0 && yData && yData.length > 0) {
+            var xMin = Math.min.apply(Math, xData);
+            var xMax = Math.max.apply(Math, xData);
+            var yMin = Math.min.apply(Math, yData);
+            var yMax = Math.max.apply(Math, yData);
+            var xRange = xMax - xMin || 1;
+            var yRange = yMax - yMin || 1;
+
+            var canvasX = offsetX + (dataX - xMin) / xRange * plotWidth;
+            var canvasY = offsetY + plotHeight - (dataY - yMin) / yRange * plotHeight;
+
+            return {
+                x: canvasX,
+                y: canvasY
+            };
+        }
+
+        // Final fallback with drawArea - use grid dimensions
         var scaleX = plotWidth / (n - 1);
         var scaleY = plotHeight / (m - 1);
 
         return {
-            x: offsetX + pt.x * scaleX,
-            y: offsetY + (m - 1 - pt.y) * scaleY
+            x: offsetX + dataX * scaleX,
+            y: offsetY + (m - 1 - dataY) * scaleY
         };
     }
 
@@ -316,44 +329,6 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
 
     // If visibleRange is provided, use it for coordinate transformation
     if (visibleRange) {
-        // Convert grid coordinates to data coordinates first
-        // Grid x (0 to n-1) maps to data x (xData[0] to xData[n-1])
-        // Grid y (0 to m-1) maps to data y (yData[0] to yData[m-1])
-        var dataX, dataY;
-
-        if (xData && xData.length > 0) {
-            // Interpolate to get data coordinate
-            var xIdx = pt.x;
-            var xIdx0 = Math.floor(xIdx);
-            var xFrac = xIdx - xIdx0;
-            if (xIdx0 >= xData.length - 1) {
-                dataX = xData[xData.length - 1];
-            } else if (xIdx0 < 0) {
-                dataX = xData[0];
-            } else {
-                dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
-            }
-        } else {
-            // Fallback: assume grid coordinates equal data coordinates
-            dataX = pt.x;
-        }
-
-        if (yData && yData.length > 0) {
-            var yIdx = pt.y;
-            var yIdx0 = Math.floor(yIdx);
-            var yFrac = yIdx - yIdx0;
-            if (yIdx0 >= yData.length - 1) {
-                dataY = yData[yData.length - 1];
-            } else if (yIdx0 < 0) {
-                dataY = yData[0];
-            } else {
-                dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
-            }
-        } else {
-            dataY = pt.y;
-        }
-
-        // Now convert data coordinates to canvas coordinates using visibleRange
         var xRange = visibleRange.xMax - visibleRange.xMin;
         var yRange = visibleRange.yMax - visibleRange.yMin;
 
@@ -366,13 +341,31 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
         };
     }
 
-    // Fallback to original behavior (no visibleRange)
+    // Fallback - use data bounds if available
+    if (xData && xData.length > 0 && yData && yData.length > 0) {
+        var xMin = Math.min.apply(Math, xData);
+        var xMax = Math.max.apply(Math, xData);
+        var yMin = Math.min.apply(Math, yData);
+        var yMax = Math.max.apply(Math, yData);
+        var xRange = xMax - xMin || 1;
+        var yRange = yMax - yMin || 1;
+
+        var canvasX = normalizedPadding.left + (dataX - xMin) / xRange * plotWidth;
+        var canvasY = normalizedPadding.top + plotHeight - (dataY - yMin) / yRange * plotHeight;
+
+        return {
+            x: canvasX,
+            y: canvasY
+        };
+    }
+
+    // Final fallback to grid-based behavior (legacy compatibility)
     var scaleX = plotWidth / (n - 1);
     var scaleY = plotHeight / (m - 1);
 
     return {
-        x: normalizedPadding.left + pt.x * scaleX,
-        y: normalizedPadding.top + (m - 1 - pt.y) * scaleY
+        x: normalizedPadding.left + dataX * scaleX,
+        y: normalizedPadding.top + (m - 1 - dataY) * scaleY
     };
 }
 

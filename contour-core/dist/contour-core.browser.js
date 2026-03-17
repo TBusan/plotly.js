@@ -3056,22 +3056,43 @@ var contourCore = (() => {
         ctx.fillStyle = labelColor;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        var xData = style.x;
+        var yData = style.y;
         var m = style.z ? style.z.length : 10;
         var n = style.z && style.z[0] ? style.z[0].length : 10;
-        var plotBounds = {
-          left: 0,
-          right: n - 1,
-          top: 0,
-          bottom: m - 1,
-          center: (n - 1) / 2,
-          middle: (m - 1) / 2
-        };
+        var plotBounds;
+        if (xData && xData.length > 0 && yData && yData.length > 0) {
+          var xMin = Math.min.apply(Math, xData);
+          var xMax = Math.max.apply(Math, xData);
+          var yMin = Math.min.apply(Math, yData);
+          var yMax = Math.max.apply(Math, yData);
+          plotBounds = {
+            left: xMin,
+            right: xMax,
+            top: yMax,
+            // Note: in data coords, top is max Y
+            bottom: yMin,
+            center: (xMin + xMax) / 2,
+            middle: (yMin + yMax) / 2
+          };
+        } else {
+          plotBounds = {
+            left: 0,
+            right: n - 1,
+            top: m - 1,
+            bottom: 0,
+            center: (n - 1) / 2,
+            middle: (m - 1) / 2
+          };
+        }
         var width = style.width || 500;
         var height = style.height || 400;
         var padding = normalizePadding(style.padding, 30);
-        var scaleX = (width - padding.left - padding.right) / (n - 1);
-        var scaleY = (height - padding.top - padding.bottom) / (m - 1);
-        var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
+        var dataXRange = plotBounds.right - plotBounds.left;
+        var dataYRange = plotBounds.top - plotBounds.bottom;
+        var scaleX = (width - padding.left - padding.right) / (dataXRange || 1);
+        var scaleY = (height - padding.top - padding.bottom) / (dataYRange || 1);
+        var plotDiagonal = Math.sqrt(dataXRange * dataXRange + dataYRange * dataYRange);
         var existingLabels = [];
         var labelsToDraw = [];
         for (var i = 0; i < paths.length; i++) {
@@ -3171,41 +3192,14 @@ var contourCore = (() => {
         }
       }
       function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData, drawArea) {
+        var dataX = pt.x;
+        var dataY = pt.y;
         if (drawArea) {
           var plotWidth = drawArea.width;
           var plotHeight = drawArea.height;
           var offsetX = drawArea.x;
           var offsetY = drawArea.y;
           if (visibleRange) {
-            var dataX, dataY;
-            if (xData && xData.length > 0) {
-              var xIdx = pt.x;
-              var xIdx0 = Math.floor(xIdx);
-              var xFrac = xIdx - xIdx0;
-              if (xIdx0 >= xData.length - 1) {
-                dataX = xData[xData.length - 1];
-              } else if (xIdx0 < 0) {
-                dataX = xData[0];
-              } else {
-                dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
-              }
-            } else {
-              dataX = pt.x;
-            }
-            if (yData && yData.length > 0) {
-              var yIdx = pt.y;
-              var yIdx0 = Math.floor(yIdx);
-              var yFrac = yIdx - yIdx0;
-              if (yIdx0 >= yData.length - 1) {
-                dataY = yData[yData.length - 1];
-              } else if (yIdx0 < 0) {
-                dataY = yData[0];
-              } else {
-                dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
-              }
-            } else {
-              dataY = pt.y;
-            }
             var xRange = visibleRange.xMax - visibleRange.xMin;
             var yRange = visibleRange.yMax - visibleRange.yMin;
             var canvasX = offsetX + (dataX - visibleRange.xMin) / xRange * plotWidth;
@@ -3215,46 +3209,31 @@ var contourCore = (() => {
               y: canvasY
             };
           }
+          if (xData && xData.length > 0 && yData && yData.length > 0) {
+            var xMin = Math.min.apply(Math, xData);
+            var xMax = Math.max.apply(Math, xData);
+            var yMin = Math.min.apply(Math, yData);
+            var yMax = Math.max.apply(Math, yData);
+            var xRange = xMax - xMin || 1;
+            var yRange = yMax - yMin || 1;
+            var canvasX = offsetX + (dataX - xMin) / xRange * plotWidth;
+            var canvasY = offsetY + plotHeight - (dataY - yMin) / yRange * plotHeight;
+            return {
+              x: canvasX,
+              y: canvasY
+            };
+          }
           var scaleX = plotWidth / (n - 1);
           var scaleY = plotHeight / (m - 1);
           return {
-            x: offsetX + pt.x * scaleX,
-            y: offsetY + (m - 1 - pt.y) * scaleY
+            x: offsetX + dataX * scaleX,
+            y: offsetY + (m - 1 - dataY) * scaleY
           };
         }
         var normalizedPadding = normalizePadding(padding, 30);
         var plotWidth = width - normalizedPadding.left - normalizedPadding.right;
         var plotHeight = height - normalizedPadding.top - normalizedPadding.bottom;
         if (visibleRange) {
-          var dataX, dataY;
-          if (xData && xData.length > 0) {
-            var xIdx = pt.x;
-            var xIdx0 = Math.floor(xIdx);
-            var xFrac = xIdx - xIdx0;
-            if (xIdx0 >= xData.length - 1) {
-              dataX = xData[xData.length - 1];
-            } else if (xIdx0 < 0) {
-              dataX = xData[0];
-            } else {
-              dataX = xData[xIdx0] + xFrac * (xData[xIdx0 + 1] - xData[xIdx0]);
-            }
-          } else {
-            dataX = pt.x;
-          }
-          if (yData && yData.length > 0) {
-            var yIdx = pt.y;
-            var yIdx0 = Math.floor(yIdx);
-            var yFrac = yIdx - yIdx0;
-            if (yIdx0 >= yData.length - 1) {
-              dataY = yData[yData.length - 1];
-            } else if (yIdx0 < 0) {
-              dataY = yData[0];
-            } else {
-              dataY = yData[yIdx0] + yFrac * (yData[yIdx0 + 1] - yData[yIdx0]);
-            }
-          } else {
-            dataY = pt.y;
-          }
           var xRange = visibleRange.xMax - visibleRange.xMin;
           var yRange = visibleRange.yMax - visibleRange.yMin;
           var canvasX = normalizedPadding.left + (dataX - visibleRange.xMin) / xRange * plotWidth;
@@ -3264,11 +3243,25 @@ var contourCore = (() => {
             y: canvasY
           };
         }
+        if (xData && xData.length > 0 && yData && yData.length > 0) {
+          var xMin = Math.min.apply(Math, xData);
+          var xMax = Math.max.apply(Math, xData);
+          var yMin = Math.min.apply(Math, yData);
+          var yMax = Math.max.apply(Math, yData);
+          var xRange = xMax - xMin || 1;
+          var yRange = yMax - yMin || 1;
+          var canvasX = normalizedPadding.left + (dataX - xMin) / xRange * plotWidth;
+          var canvasY = normalizedPadding.top + plotHeight - (dataY - yMin) / yRange * plotHeight;
+          return {
+            x: canvasX,
+            y: canvasY
+          };
+        }
         var scaleX = plotWidth / (n - 1);
         var scaleY = plotHeight / (m - 1);
         return {
-          x: normalizedPadding.left + pt.x * scaleX,
-          y: normalizedPadding.top + (m - 1 - pt.y) * scaleY
+          x: normalizedPadding.left + dataX * scaleX,
+          y: normalizedPadding.top + (m - 1 - dataY) * scaleY
         };
       }
       module.exports = drawLabels;
@@ -4709,9 +4702,9 @@ var contourCore = (() => {
         config = config || {};
         var width = config.width || 600;
         var height = config.height || 500;
-        var drawingArea;
+        var drawingArea2;
         if (config.margins) {
-          drawingArea = {
+          drawingArea2 = {
             x: config.margins.left,
             y: config.margins.top,
             width: width - config.margins.left - config.margins.right,
@@ -4719,7 +4712,7 @@ var contourCore = (() => {
             margins: config.margins
           };
         } else {
-          drawingArea = position.calculateDrawingArea(
+          drawingArea2 = position.calculateDrawingArea(
             width,
             height,
             config.x || {},
@@ -4746,8 +4739,8 @@ var contourCore = (() => {
         var ticksResult;
         if (visibleRange) {
           ticksResult = calcTicks.calcDynamicTicks(visibleRange, {
-            width: drawingArea.width,
-            height: drawingArea.height,
+            width: drawingArea2.width,
+            height: drawingArea2.height,
             x: xConfig,
             y: yConfig
           });
@@ -4777,12 +4770,12 @@ var contourCore = (() => {
         var yIsReversed = yRange[0] < yRange[1];
         var xL2P = position.createLinearToPixel(
           xRange,
-          drawingArea.width,
+          drawingArea2.width,
           xIsReversed
         );
         var yL2P = position.createLinearToPixel(
           yRange,
-          drawingArea.height,
+          drawingArea2.height,
           yIsReversed
         );
         var xTicksWithPos = ticksResult.xTicks.map(function(tick) {
@@ -4809,7 +4802,7 @@ var contourCore = (() => {
         };
         return {
           // Drawing area
-          drawingArea,
+          drawingArea: drawingArea2,
           // Visible range (for dynamic mode)
           visibleRange,
           // Full data range
@@ -4871,7 +4864,7 @@ var contourCore = (() => {
         var xAxis = axisSetup.x;
         var config = xAxis.config;
         var ticks = xAxis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (config.show === false) {
           return;
         }
@@ -4885,19 +4878,19 @@ var contourCore = (() => {
         var labelAlign = "center";
         var labelBaseline = "top";
         if (side === "top") {
-          axisY = drawingArea.margins.top;
+          axisY = drawingArea2.margins.top;
           labelY = axisY - tickLength - 5;
           labelBaseline = "bottom";
         } else {
-          axisY = drawingArea.y + drawingArea.height;
+          axisY = drawingArea2.y + drawingArea2.height;
           labelY = axisY + tickLength + 5;
           labelBaseline = "top";
         }
         ctx.beginPath();
         ctx.strokeStyle = config.linecolor || "#333";
         ctx.lineWidth = config.linewidth || 1;
-        ctx.moveTo(drawingArea.x, axisY);
-        ctx.lineTo(drawingArea.x + drawingArea.width, axisY);
+        ctx.moveTo(drawingArea2.x, axisY);
+        ctx.lineTo(drawingArea2.x + drawingArea2.width, axisY);
         ctx.stroke();
         ctx.font = config.tickfont || "12px Arial, sans-serif";
         ctx.fillStyle = config.tickfontcolor || "#333";
@@ -4905,8 +4898,8 @@ var contourCore = (() => {
         ctx.textBaseline = labelBaseline;
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          var x = drawingArea.x + tick.pixel;
-          if (tick.pixel < -10 || tick.pixel > drawingArea.width + 10) {
+          var x = drawingArea2.x + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea2.width + 10) {
             continue;
           }
           ctx.beginPath();
@@ -4935,7 +4928,7 @@ var contourCore = (() => {
           } else {
             titleY = labelY + 20;
           }
-          ctx.fillText(config.title, drawingArea.x + drawingArea.width / 2, titleY);
+          ctx.fillText(config.title, drawingArea2.x + drawingArea2.width / 2, titleY);
           ctx.restore();
         }
       }
@@ -4943,7 +4936,7 @@ var contourCore = (() => {
         var yAxis = axisSetup.y;
         var config = yAxis.config;
         var ticks = yAxis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (config.show === false) {
           return;
         }
@@ -4957,19 +4950,19 @@ var contourCore = (() => {
         var labelAlign = "end";
         var labelBaseline = "middle";
         if (side === "right") {
-          axisX = drawingArea.x + drawingArea.width;
+          axisX = drawingArea2.x + drawingArea2.width;
           labelX = axisX + tickLength + 5;
           labelAlign = "start";
         } else {
-          axisX = drawingArea.margins.left;
+          axisX = drawingArea2.margins.left;
           labelX = axisX - tickLength - 5;
           labelAlign = "end";
         }
         ctx.beginPath();
         ctx.strokeStyle = config.linecolor || "#333";
         ctx.lineWidth = config.linewidth || 1;
-        ctx.moveTo(axisX, drawingArea.y);
-        ctx.lineTo(axisX, drawingArea.y + drawingArea.height);
+        ctx.moveTo(axisX, drawingArea2.y);
+        ctx.lineTo(axisX, drawingArea2.y + drawingArea2.height);
         ctx.stroke();
         ctx.font = config.tickfont || "12px Arial, sans-serif";
         ctx.fillStyle = config.tickfontcolor || "#333";
@@ -4977,8 +4970,8 @@ var contourCore = (() => {
         ctx.textBaseline = labelBaseline;
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          var y = drawingArea.y + tick.pixel;
-          if (tick.pixel < -10 || tick.pixel > drawingArea.height + 10) {
+          var y = drawingArea2.y + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea2.height + 10) {
             continue;
           }
           ctx.beginPath();
@@ -5002,7 +4995,7 @@ var contourCore = (() => {
           ctx.fillStyle = config.titlefontcolor || "#000";
           ctx.textAlign = "center";
           var titleX;
-          var titleY = drawingArea.y + drawingArea.height / 2;
+          var titleY = drawingArea2.y + drawingArea2.height / 2;
           if (side === "right") {
             titleX = labelX + 30;
           } else {
@@ -5018,7 +5011,7 @@ var contourCore = (() => {
         var axis = isXAxis ? axisSetup.x : axisSetup.y;
         var config = axis.config;
         var ticks = axis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (!config.showgrid) {
           return;
         }
@@ -5033,17 +5026,17 @@ var contourCore = (() => {
         }
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea.width : drawingArea.height)) {
+          if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea2.width : drawingArea2.height)) {
             continue;
           }
           if (isXAxis) {
-            var x = drawingArea.x + tick.pixel;
-            ctx.moveTo(x, drawingArea.y);
-            ctx.lineTo(x, drawingArea.y + drawingArea.height);
+            var x = drawingArea2.x + tick.pixel;
+            ctx.moveTo(x, drawingArea2.y);
+            ctx.lineTo(x, drawingArea2.y + drawingArea2.height);
           } else {
-            var y = drawingArea.y + tick.pixel;
-            ctx.moveTo(drawingArea.x, y);
-            ctx.lineTo(drawingArea.x + drawingArea.width, y);
+            var y = drawingArea2.y + tick.pixel;
+            ctx.moveTo(drawingArea2.x, y);
+            ctx.lineTo(drawingArea2.x + drawingArea2.width, y);
           }
         }
         ctx.stroke();
@@ -7078,12 +7071,12 @@ var contourCore = (() => {
          * @param {Overlay} overlay - 数据容器
          * @param {Object} drawingArea - 绘制区域 {x, y, width, height}
          */
-        render: function(ctx, overlay, drawingArea) {
+        render: function(ctx, overlay, drawingArea2) {
           var self = this;
           ctx.save();
-          if (drawingArea) {
+          if (drawingArea2) {
             ctx.beginPath();
-            ctx.rect(drawingArea.x, drawingArea.y, drawingArea.width, drawingArea.height);
+            ctx.rect(drawingArea2.x, drawingArea2.y, drawingArea2.width, drawingArea2.height);
             ctx.clip();
           }
           function filterVisible(items) {
@@ -7340,8 +7333,8 @@ var contourCore = (() => {
           }
           if (!isFinite(bounds.xMin))
             return null;
-          var drawingArea = this._coordSystem.getDrawingArea();
-          if (!drawingArea)
+          var drawingArea2 = this._coordSystem.getDrawingArea();
+          if (!drawingArea2)
             return null;
           var xRange = bounds.xMax - bounds.xMin;
           var yRange = bounds.yMax - bounds.yMin;
@@ -7355,8 +7348,8 @@ var contourCore = (() => {
             bounds.yMin -= 0.5;
             bounds.yMax += 0.5;
           }
-          var paddingRatioX = padding / drawingArea.width;
-          var paddingRatioY = padding / drawingArea.height;
+          var paddingRatioX = padding / drawingArea2.width;
+          var paddingRatioY = padding / drawingArea2.height;
           return {
             xMin: bounds.xMin - xRange * paddingRatioX,
             xMax: bounds.xMax + xRange * paddingRatioX,
@@ -8243,7 +8236,7 @@ var contourCore = (() => {
         };
         var fullRange = getFullRange(pathInfo);
         var aspectRatio = style.aspectRatio || "auto";
-        var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
+        var drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
         ctx.clearRect(0, 0, width, height);
         if (style.backgroundColor) {
           ctx.fillStyle = style.backgroundColor;
@@ -8251,11 +8244,11 @@ var contourCore = (() => {
         }
         var showGrid = style.showGrid !== false && hasAxes;
         if (showGrid) {
-          renderGridLayer(ctx, drawingArea, fullRange, style);
+          renderGridLayer(ctx, drawingArea2, fullRange, style);
         }
-        renderContourLayer(ctx, drawingArea, fullRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo);
+        renderContourLayer(ctx, drawingArea2, fullRange, fullRange, contourResult, style, useClipMask, coloring, showLines, pathInfo);
         if (hasAxes) {
-          renderAxesLayer(ctx, drawingArea, fullRange, fullRange, style);
+          renderAxesLayer(ctx, drawingArea2, fullRange, fullRange, style);
         }
         var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
         if (showColorbar && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
@@ -8291,7 +8284,7 @@ var contourCore = (() => {
         var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
         var fullRange = getFullRange(pathInfo);
         var aspectRatio = style.aspectRatio || "auto";
-        var drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
+        var drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, aspectRatio);
         var viewState = require_view_state();
         var viewManager = viewState.createViewManager(fullRange, {
           minZoom: interactionConfig.minZoom || 0.1,
@@ -8302,7 +8295,7 @@ var contourCore = (() => {
         var currentAspectRatio = aspectRatio;
         var _overlay = null;
         var _fullRange = fullRange;
-        var _drawingArea = drawingArea;
+        var _drawingArea = drawingArea2;
         var _gridData = {
           z: style.z,
           x: style.x,
@@ -8327,11 +8320,11 @@ var contourCore = (() => {
           }
           var showGrid = currentStyle.showGrid === true;
           if (showGrid) {
-            renderGridLayer(ctx, drawingArea, visibleRange, currentStyle);
+            renderGridLayer(ctx, drawingArea2, visibleRange, currentStyle);
           }
-          renderContourLayer(ctx, drawingArea, visibleRange, fullRange, contourResult, currentStyle, currentStyle.useClipMask !== false, currentStyle.coloring || "lines", currentStyle.showLines !== false, pathInfo);
+          renderContourLayer(ctx, drawingArea2, visibleRange, fullRange, contourResult, currentStyle, currentStyle.useClipMask !== false, currentStyle.coloring || "lines", currentStyle.showLines !== false, pathInfo);
           if (hasAxes) {
-            renderAxesLayer(ctx, drawingArea, visibleRange, fullRange, currentStyle);
+            renderAxesLayer(ctx, drawingArea2, visibleRange, fullRange, currentStyle);
           }
           var showColorbarInteractive = currentStyle.showColorbar !== false && (currentStyle.colorbar === void 0 || currentStyle.colorbar === true || currentStyle.colorbar.show !== false);
           if (showColorbarInteractive && (currentStyle.coloring === "fill" || currentStyle.coloring === "fill+lines" || currentStyle.coloring === "heatmap")) {
@@ -8342,11 +8335,9 @@ var contourCore = (() => {
           }
         }
         render();
-        var interactionConfig = Object.assign({}, interactionConfig, {
-          contourResult
-          // Pass contour result for hover detection
-        });
-        var interaction = createInteractionManagerInternal(canvas, drawingArea, viewManager, render, interactionConfig);
+        var interaction = createInteractionManagerInternal(canvas, function() {
+          return drawingArea2;
+        }, viewManager, render, interactionConfig);
         return {
           getViewState: function() {
             return viewManager.getState();
@@ -8368,7 +8359,7 @@ var contourCore = (() => {
             var newAspectRatio = currentStyle.aspectRatio || "auto";
             if (newAspectRatio !== currentAspectRatio) {
               currentAspectRatio = newAspectRatio;
-              drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+              drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
             }
             render();
           },
@@ -8389,7 +8380,7 @@ var contourCore = (() => {
                 bottom: padding.bottom
               }
             };
-            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
             render();
           },
           getContourResult: function() {
@@ -8399,7 +8390,7 @@ var contourCore = (() => {
             return viewManager;
           },
           getDrawingArea: function() {
-            return drawingArea;
+            return drawingArea2;
           },
           /**
            * Get overlay manager for drawing overlay elements
@@ -8409,7 +8400,7 @@ var contourCore = (() => {
             if (!_overlay) {
               var rendererLike = {
                 _fullRange,
-                _drawingArea: drawingArea,
+                _drawingArea: drawingArea2,
                 getViewManager: function() {
                   return viewManager;
                 },
@@ -8449,8 +8440,8 @@ var contourCore = (() => {
             currentStyle.z = _gridData.z;
             currentStyle.x = _gridData.x;
             currentStyle.y = _gridData.y;
-            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
-            _drawingArea = drawingArea;
+            drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea2;
             render();
           },
           /**
@@ -8574,8 +8565,8 @@ var contourCore = (() => {
               }
               Object.assign(currentStyle.colorbar, config.colorbar);
             }
-            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
-            _drawingArea = drawingArea;
+            drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea2;
             render();
           },
           /**
@@ -8781,7 +8772,7 @@ var contourCore = (() => {
         });
         axesRenderer.drawAxesFromSetup(ctx, axisSetup);
       }
-      function createInteractionManagerInternal(canvas, drawingArea, viewManager, render, config) {
+      function createInteractionManagerInternal(canvas, getDrawingArea, viewManager, render, config) {
         config = config || {};
         var isDragging = false;
         var isBoxZooming = false;
@@ -8808,7 +8799,8 @@ var contourCore = (() => {
           };
         }
         function isInDrawingArea(pos) {
-          return pos.x >= drawingArea.x && pos.x <= drawingArea.x + drawingArea.width && pos.y >= drawingArea.y && pos.y <= drawingArea.y + drawingArea.height;
+          var area = getDrawingArea();
+          return pos.x >= area.x && pos.x <= area.x + area.width && pos.y >= area.y && pos.y <= area.y + area.height;
         }
         function handleWheel(e) {
           if (!zoomEnabled)
@@ -8817,11 +8809,12 @@ var contourCore = (() => {
           if (!isInDrawingArea(pos))
             return;
           e.preventDefault();
-          var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
+          var area = getDrawingArea();
+          var dataPos = viewManager.pixelToData(pos.x, pos.y, area);
           var delta = -e.deltaY;
           var factor = 1 + delta * zoomSensitivity;
           factor = Math.max(0.5, Math.min(2, factor));
-          viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
+          viewManager.zoomAt(factor, dataPos.x, dataPos.y, area);
           render();
           if (config.onZoom) {
             config.onZoom(viewManager.getState());
@@ -8850,7 +8843,8 @@ var contourCore = (() => {
             e.preventDefault();
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
+            var area = getDrawingArea();
+            viewManager.pan(dx, dy, area);
             lastX = pos.x;
             lastY = pos.y;
             render();
@@ -8880,6 +8874,7 @@ var contourCore = (() => {
           var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
           if (!pathInfo)
             return null;
+          var drawingArea2 = getDrawingArea();
           var state = viewManager.getState();
           var xMin = state.xMin;
           var xMax = state.xMax;
@@ -8887,6 +8882,8 @@ var contourCore = (() => {
           var yMax = state.yMax;
           var xRange = xMax - xMin || 1;
           var yRange = yMax - yMin || 1;
+          var closestResult = null;
+          var minDistance = Infinity;
           for (var i = 0; i < paths.length; i++) {
             var pathData = paths[i];
             var level = pathData.level;
@@ -8898,15 +8895,16 @@ var contourCore = (() => {
               for (var k = 0; k < path.length - 1; k++) {
                 var p1 = path[k];
                 var p2 = path[k + 1];
-                var px1 = drawingArea.x + (p1[0] - xMin) / xRange * drawingArea.width;
-                var py1 = drawingArea.y + drawingArea.height - (p1[1] - yMin) / yRange * drawingArea.height;
-                var px2 = drawingArea.x + (p2[0] - xMin) / xRange * drawingArea.width;
-                var py2 = drawingArea.y + drawingArea.height - (p2[1] - yMin) / yRange * drawingArea.height;
+                var px1 = drawingArea2.x + (p1[0] - xMin) / xRange * drawingArea2.width;
+                var py1 = drawingArea2.y + drawingArea2.height - (p1[1] - yMin) / yRange * drawingArea2.height;
+                var px2 = drawingArea2.x + (p2[0] - xMin) / xRange * drawingArea2.width;
+                var py2 = drawingArea2.y + drawingArea2.height - (p2[1] - yMin) / yRange * drawingArea2.height;
                 var dist = pointToSegmentDistance(px, py, px1, py1, px2, py2);
-                if (dist <= hoverHitRadius) {
-                  var dataX = xMin + (px - drawingArea.x) / drawingArea.width * xRange;
-                  var dataY = yMin + (1 - (py - drawingArea.y) / drawingArea.height) * yRange;
-                  return {
+                if (dist <= hoverHitRadius && dist < minDistance) {
+                  minDistance = dist;
+                  var dataX = xMin + (px - drawingArea2.x) / drawingArea2.width * xRange;
+                  var dataY = yMin + (1 - (py - drawingArea2.y) / drawingArea2.height) * yRange;
+                  closestResult = {
                     level,
                     x: dataX,
                     y: dataY,
@@ -8916,7 +8914,7 @@ var contourCore = (() => {
               }
             }
           }
-          return null;
+          return closestResult;
         }
         function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
           var dx = x2 - x1;
@@ -9032,7 +9030,8 @@ var contourCore = (() => {
             var pos = getMousePos(touch);
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
+            var area = getDrawingArea();
+            viewManager.pan(dx, dy, area);
             lastX = pos.x;
             lastY = pos.y;
             render();
@@ -10593,7 +10592,7 @@ var contourCore = (() => {
         var xAxis = axisSetup.x;
         var config = xAxis.config;
         var ticks = xAxis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (config.show === false) {
           return "";
         }
@@ -10609,17 +10608,17 @@ var contourCore = (() => {
         var labelY;
         var labelBaseline = "start";
         if (side === "top") {
-          axisY = drawingArea.margins.top;
+          axisY = drawingArea2.margins.top;
           labelY = axisY - tickLength - 5;
         } else {
-          axisY = drawingArea.y + drawingArea.height;
+          axisY = drawingArea2.y + drawingArea2.height;
           labelY = axisY + tickLength + 5;
         }
-        parts.push('<line class="axis-line x-axis-line" x1="' + drawingArea.x + '" y1="' + axisY + '" x2="' + (drawingArea.x + drawingArea.width) + '" y2="' + axisY + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
+        parts.push('<line class="axis-line x-axis-line" x1="' + drawingArea2.x + '" y1="' + axisY + '" x2="' + (drawingArea2.x + drawingArea2.width) + '" y2="' + axisY + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          var x = drawingArea.x + tick.pixel;
-          if (tick.pixel < -10 || tick.pixel > drawingArea.width + 10) {
+          var x = drawingArea2.x + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea2.width + 10) {
             continue;
           }
           var tickY2 = side === "top" ? axisY - tickLength : axisY + tickLength;
@@ -10635,7 +10634,7 @@ var contourCore = (() => {
           } else {
             titleY = labelY + 20;
           }
-          parts.push('<text class="axis-title x-axis-title" x="' + (drawingArea.x + drawingArea.width / 2) + '" y="' + titleY + '" text-anchor="middle">' + config.title + "</text>");
+          parts.push('<text class="axis-title x-axis-title" x="' + (drawingArea2.x + drawingArea2.width / 2) + '" y="' + titleY + '" text-anchor="middle">' + config.title + "</text>");
         }
         return parts.join("\n");
       }
@@ -10643,7 +10642,7 @@ var contourCore = (() => {
         var yAxis = axisSetup.y;
         var config = yAxis.config;
         var ticks = yAxis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (config.show === false) {
           return "";
         }
@@ -10659,19 +10658,19 @@ var contourCore = (() => {
         var labelX;
         var labelAnchor = "end";
         if (side === "right") {
-          axisX = drawingArea.x + drawingArea.width;
+          axisX = drawingArea2.x + drawingArea2.width;
           labelX = axisX + tickLength + 5;
           labelAnchor = "start";
         } else {
-          axisX = drawingArea.margins.left;
+          axisX = drawingArea2.margins.left;
           labelX = axisX - tickLength - 5;
           labelAnchor = "end";
         }
-        parts.push('<line class="axis-line y-axis-line" x1="' + axisX + '" y1="' + drawingArea.y + '" x2="' + axisX + '" y2="' + (drawingArea.y + drawingArea.height) + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
+        parts.push('<line class="axis-line y-axis-line" x1="' + axisX + '" y1="' + drawingArea2.y + '" x2="' + axisX + '" y2="' + (drawingArea2.y + drawingArea2.height) + '" stroke="' + lineColor + '" stroke-width="' + lineWidth + '"/>');
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          var y = drawingArea.y + tick.pixel;
-          if (tick.pixel < -10 || tick.pixel > drawingArea.height + 10) {
+          var y = drawingArea2.y + tick.pixel;
+          if (tick.pixel < -10 || tick.pixel > drawingArea2.height + 10) {
             continue;
           }
           var tickX2 = side === "right" ? axisX + tickLength : axisX - tickLength;
@@ -10682,7 +10681,7 @@ var contourCore = (() => {
         }
         if (config.title) {
           var titleX;
-          var titleY = drawingArea.y + drawingArea.height / 2;
+          var titleY = drawingArea2.y + drawingArea2.height / 2;
           if (side === "right") {
             titleX = labelX + 30;
           } else {
@@ -10696,7 +10695,7 @@ var contourCore = (() => {
         var axis = isXAxis ? axisSetup.x : axisSetup.y;
         var config = axis.config;
         var ticks = axis.ticks;
-        var drawingArea = axisSetup.drawingArea;
+        var drawingArea2 = axisSetup.drawingArea;
         if (!config.showgrid) {
           return "";
         }
@@ -10714,15 +10713,15 @@ var contourCore = (() => {
         }
         for (var i = 0; i < ticks.length; i++) {
           var tick = ticks[i];
-          if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea.width : drawingArea.height)) {
+          if (tick.pixel < 0 || tick.pixel > (isXAxis ? drawingArea2.width : drawingArea2.height)) {
             continue;
           }
           if (isXAxis) {
-            var x = drawingArea.x + tick.pixel;
-            parts.push('<line class="axis-grid x-grid-line" x1="' + x + '" y1="' + drawingArea.y + '" x2="' + x + '" y2="' + (drawingArea.y + drawingArea.height) + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
+            var x = drawingArea2.x + tick.pixel;
+            parts.push('<line class="axis-grid x-grid-line" x1="' + x + '" y1="' + drawingArea2.y + '" x2="' + x + '" y2="' + (drawingArea2.y + drawingArea2.height) + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
           } else {
-            var y = drawingArea.y + tick.pixel;
-            parts.push('<line class="axis-grid y-grid-line" x1="' + drawingArea.x + '" y1="' + y + '" x2="' + (drawingArea.x + drawingArea.width) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
+            var y = drawingArea2.y + tick.pixel;
+            parts.push('<line class="axis-grid y-grid-line" x1="' + drawingArea2.x + '" y1="' + y + '" x2="' + (drawingArea2.x + drawingArea2.width) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="' + gridWidth + '" ' + strokeDasharray + "/>");
           }
         }
         return parts.join("\n");
@@ -10863,7 +10862,7 @@ var contourCore = (() => {
       function createInteractionManager(canvas, layeredRenderer, config) {
         config = config || {};
         var viewManager = layeredRenderer.getViewManager();
-        var drawingArea = layeredRenderer.getDrawingArea();
+        var drawingArea2 = layeredRenderer.getDrawingArea();
         var isDragging = false;
         var isBoxZooming = false;
         var lastX = 0;
@@ -10884,7 +10883,7 @@ var contourCore = (() => {
           };
         }
         function isInDrawingArea(pos) {
-          return pos.x >= drawingArea.x && pos.x <= drawingArea.x + drawingArea.width && pos.y >= drawingArea.y && pos.y <= drawingArea.y + drawingArea.height;
+          return pos.x >= drawingArea2.x && pos.x <= drawingArea2.x + drawingArea2.width && pos.y >= drawingArea2.y && pos.y <= drawingArea2.y + drawingArea2.height;
         }
         function handleWheel(e) {
           if (!zoomEnabled)
@@ -10893,11 +10892,11 @@ var contourCore = (() => {
           if (!isInDrawingArea(pos))
             return;
           e.preventDefault();
-          var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea);
+          var dataPos = viewManager.pixelToData(pos.x, pos.y, drawingArea2);
           var delta = -e.deltaY;
           var factor = 1 + delta * zoomSensitivity;
           factor = Math.max(0.5, Math.min(2, factor));
-          viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea);
+          viewManager.zoomAt(factor, dataPos.x, dataPos.y, drawingArea2);
           layeredRenderer.render();
           if (config.onZoom) {
             config.onZoom(viewManager.getState());
@@ -10926,7 +10925,7 @@ var contourCore = (() => {
             e.preventDefault();
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
+            viewManager.pan(dx, dy, drawingArea2);
             lastX = pos.x;
             lastY = pos.y;
             layeredRenderer.render();
@@ -10953,8 +10952,8 @@ var contourCore = (() => {
             var y1 = Math.min(boxStartY, pos.y);
             var y2 = Math.max(boxStartY, pos.y);
             if (x2 - x1 > 10 && y2 - y1 > 10) {
-              var dataStart = viewManager.pixelToData(x1, y2, drawingArea);
-              var dataEnd = viewManager.pixelToData(x2, y1, drawingArea);
+              var dataStart = viewManager.pixelToData(x1, y2, drawingArea2);
+              var dataEnd = viewManager.pixelToData(x2, y1, drawingArea2);
               viewManager.setRange(dataStart.x, dataEnd.x, dataStart.y, dataEnd.y);
               layeredRenderer.render();
               if (config.onZoom) {
@@ -10994,7 +10993,7 @@ var contourCore = (() => {
             var pos = getMousePos(touch);
             var dx = pos.x - lastX;
             var dy = pos.y - lastY;
-            viewManager.pan(dx, dy, drawingArea);
+            viewManager.pan(dx, dy, drawingArea2);
             lastX = pos.x;
             lastY = pos.y;
             layeredRenderer.render();

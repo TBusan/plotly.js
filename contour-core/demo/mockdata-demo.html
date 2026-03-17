@@ -796,6 +796,7 @@ function generateData8() {
 
                 // Custom hover formatter function
                 function customHoverFormatter(data) {
+                    console.log('Hover data---:', data);
                     var html = '<div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">等值线信息</div>';
                     html += '<div>数值: <span style="color: #cc0000; font-weight: bold;">' + data.level.toFixed(2) + '</span></div>';
                     if (data.x !== undefined && data.y !== undefined) {
