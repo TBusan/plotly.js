@@ -1937,6 +1937,31 @@ var require_paths = __commonJS({
   "renderers/canvas/paths.js"(exports, module) {
     "use strict";
     var smooth = require_smooth();
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     function createIndexArray(length, offset) {
       var arr = [];
       for (var i = 0; i < length; i++) {
@@ -1949,11 +1974,11 @@ var require_paths = __commonJS({
       var n = style.z && style.z[0] && style.z[0].length ? style.z[0].length : 10;
       var width = style.width || 500;
       var height = style.height || 400;
-      var padding = style.padding || 30;
-      var xMin = padding;
-      var xMax = width - padding;
-      var yMin = padding;
-      var yMax = height - padding;
+      var padding = normalizePadding(style.padding, 30);
+      var xMin = padding.left;
+      var xMax = width - padding.right;
+      var yMin = padding.top;
+      var yMax = height - padding.bottom;
       return [
         [xMin, yMin],
         // 0: top-left
@@ -2441,10 +2466,10 @@ var require_paths = __commonJS({
       } else {
         var width = style.width || 500;
         var height = style.height || 400;
-        var padding = style.padding || 30;
-        canvasX = padding + (pt[0] - xMin) / xRange * (width - 2 * padding);
-        canvasY = padding + (pt[1] - yMin) / yRange * (height - 2 * padding);
-        canvasY = height - padding - (canvasY - padding);
+        var padding = normalizePadding(style.padding, 30);
+        canvasX = padding.left + (pt[0] - xMin) / xRange * (width - padding.left - padding.right);
+        canvasY = padding.top + (pt[1] - yMin) / yRange * (height - padding.top - padding.bottom);
+        canvasY = height - padding.bottom - (canvasY - padding.top);
       }
       return [canvasX, canvasY];
     }
@@ -2971,6 +2996,26 @@ var require_labels2 = __commonJS({
     var calculateMaxLabels = labels.calculateMaxLabels;
     var pathLength = labels.pathLength;
     var isPathClosed = labels.isPathClosed;
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return { top: defaultVal, right: defaultVal, bottom: defaultVal, left: defaultVal };
+    }
     function drawLabels(ctx, contourResult, style) {
       style = style || {};
       var paths = contourResult.paths;
@@ -2996,9 +3041,9 @@ var require_labels2 = __commonJS({
       };
       var width = style.width || 500;
       var height = style.height || 400;
-      var padding = style.padding || 30;
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+      var padding = normalizePadding(style.padding, 30);
+      var scaleX = (width - padding.left - padding.right) / (n - 1);
+      var scaleY = (height - padding.top - padding.bottom) / (m - 1);
       var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
       var existingLabels = [];
       var labelsToDraw = [];
@@ -3150,8 +3195,9 @@ var require_labels2 = __commonJS({
           y: offsetY + (m - 1 - pt.y) * scaleY
         };
       }
-      var plotWidth = width - 2 * padding;
-      var plotHeight = height - 2 * padding;
+      var normalizedPadding = normalizePadding(padding, 30);
+      var plotWidth = width - normalizedPadding.left - normalizedPadding.right;
+      var plotHeight = height - normalizedPadding.top - normalizedPadding.bottom;
       if (visibleRange) {
         var dataX, dataY;
         if (xData && xData.length > 0) {
@@ -3184,8 +3230,8 @@ var require_labels2 = __commonJS({
         }
         var xRange = visibleRange.xMax - visibleRange.xMin;
         var yRange = visibleRange.yMax - visibleRange.yMin;
-        var canvasX = padding + (dataX - visibleRange.xMin) / xRange * plotWidth;
-        var canvasY = padding + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
+        var canvasX = normalizedPadding.left + (dataX - visibleRange.xMin) / xRange * plotWidth;
+        var canvasY = normalizedPadding.top + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
         return {
           x: canvasX,
           y: canvasY
@@ -3194,8 +3240,8 @@ var require_labels2 = __commonJS({
       var scaleX = plotWidth / (n - 1);
       var scaleY = plotHeight / (m - 1);
       return {
-        x: padding + pt.x * scaleX,
-        y: padding + (m - 1 - pt.y) * scaleY
+        x: normalizedPadding.left + pt.x * scaleX,
+        y: normalizedPadding.top + (m - 1 - pt.y) * scaleY
       };
     }
     module.exports = drawLabels;
@@ -3691,6 +3737,31 @@ var require_colorbar2 = __commonJS({
 var require_nulls = __commonJS({
   "renderers/canvas/nulls.js"(exports, module) {
     "use strict";
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     function drawNulls(ctx, contourResult, style) {
       var nullMask = contourResult.nullMask;
       if (!nullMask)
@@ -3707,12 +3778,12 @@ var require_nulls = __commonJS({
       var visibleRange = style.visibleRange;
       var width = style.width || 500;
       var height = style.height || 400;
-      var padding = style.padding || 30;
+      var padding = normalizePadding(style.padding, 30);
       var drawArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding,
-        height: height - 2 * padding
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right,
+        height: height - padding.top - padding.bottom
       };
       var xMin, xMax, yMin, yMax;
       if (visibleRange) {
@@ -3809,6 +3880,21 @@ var require_heatmap = __commonJS({
   "renderers/canvas/heatmap.js"(exports, module) {
     "use strict";
     var colors = require_colors();
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return { top: padding, right: padding, bottom: padding, left: padding };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return { top: defaultVal, right: defaultVal, bottom: defaultVal, left: defaultVal };
+    }
     var isNodeJS = typeof window === "undefined" || typeof document === "undefined";
     var createCanvasElement;
     if (isNodeJS) {
@@ -3841,9 +3927,9 @@ var require_heatmap = __commonJS({
       }
       var width = style.width || ctx.canvas.width;
       var height = style.height || ctx.canvas.height;
-      var padding = style.padding || 30;
-      var plotWidth = width - 2 * padding;
-      var plotHeight = height - 2 * padding;
+      var padding = normalizePadding(style.padding, 30);
+      var plotWidth = width - padding.left - padding.right;
+      var plotHeight = height - padding.top - padding.bottom;
       var cellWidth = plotWidth / (n - 1);
       var cellHeight = plotHeight / (m - 1);
       var colorscale = style.colorscale || "Viridis";
@@ -3889,8 +3975,8 @@ var require_heatmap = __commonJS({
               dataMax: style.dataRange ? style.dataRange.max : void 0
             }
           );
-          var x = padding + j * cellWidth;
-          var y = padding + (m - 1 - i) * cellHeight;
+          var x = padding.left + j * cellWidth;
+          var y = padding.top + (m - 1 - i) * cellHeight;
           ctx.fillStyle = color;
           ctx.fillRect(
             x - cellWidth / 2,
@@ -3915,9 +4001,9 @@ var require_heatmap = __commonJS({
       }
       var width = style.width || ctx.canvas.width;
       var height = style.height || ctx.canvas.height;
-      var padding = style.padding || 30;
-      var plotWidth = width - 2 * padding;
-      var plotHeight = height - 2 * padding;
+      var padding = normalizePadding(style.padding, 30);
+      var plotWidth = width - padding.left - padding.right;
+      var plotHeight = height - padding.top - padding.bottom;
       var zmin, zmax;
       if (style.dataRange && style.dataRange.min !== void 0) {
         zmin = style.dataRange.min;
@@ -3976,7 +4062,7 @@ var require_heatmap = __commonJS({
       }
       heatmapCtx.putImageData(imageData, 0, 0);
       ctx.save();
-      ctx.translate(padding, padding);
+      ctx.translate(padding.left, padding.top);
       ctx.scale(plotWidth / n, plotHeight / m);
       ctx.translate(0, m);
       ctx.scale(1, -1);
@@ -3995,9 +4081,9 @@ var require_heatmap = __commonJS({
       }
       var width = style.width || ctx.canvas.width;
       var height = style.height || ctx.canvas.height;
-      var padding = style.padding || 30;
-      var plotWidth = width - 2 * padding;
-      var plotHeight = height - 2 * padding;
+      var padding = normalizePadding(style.padding, 30);
+      var plotWidth = width - padding.left - padding.right;
+      var plotHeight = height - padding.top - padding.bottom;
       var scaleFactor = Math.max(1, Math.min(10, Math.ceil(100 / Math.max(n, m))));
       var hiresCanvas = createCanvasElement(n * scaleFactor, m * scaleFactor);
       var hiresCtx = hiresCanvas.getContext("2d");
@@ -4012,7 +4098,7 @@ var require_heatmap = __commonJS({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.save();
-      ctx.translate(padding, padding);
+      ctx.translate(padding.left, padding.top);
       ctx.scale(plotWidth / hiresCanvas.width, plotHeight / hiresCanvas.height);
       ctx.translate(0, hiresCanvas.height);
       ctx.scale(1, -1);
@@ -8014,6 +8100,31 @@ var require_canvas = __commonJS({
   "renderers/canvas/index.js"(exports, module) {
     "use strict";
     var compute = require_compute();
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 50;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     var drawPaths = require_paths();
     var drawLabels = require_labels2();
     var drawColorbar = require_colorbar2();
@@ -8081,7 +8192,7 @@ var require_canvas = __commonJS({
       return null;
     }
     function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
-      var padding = style.padding || 50;
+      var padding = normalizePadding(style.padding, 50);
       var colorbarSpace = 0;
       var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
       if (showColorbar && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
@@ -8092,15 +8203,15 @@ var require_canvas = __commonJS({
         colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
       }
       var baseDrawingArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding - colorbarSpace,
-        height: height - 2 * padding,
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right - colorbarSpace,
+        height: height - padding.top - padding.bottom,
         margins: {
-          left: padding,
-          right: padding + colorbarSpace,
-          top: padding,
-          bottom: padding
+          left: padding.left,
+          right: padding.right + colorbarSpace,
+          top: padding.top,
+          bottom: padding.bottom
         }
       };
       var fullRange = getFullRange(pathInfo);
@@ -8127,7 +8238,7 @@ var require_canvas = __commonJS({
     function createInteractiveRenderer(canvas, contourResult, style, interactionConfig) {
       var width = style.width || canvas.width;
       var height = style.height || canvas.height;
-      var padding = style.padding || 50;
+      var padding = normalizePadding(style.padding, 50);
       var coloring = style.coloring || "fill";
       var colorbarSpace = 0;
       var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
@@ -8139,15 +8250,15 @@ var require_canvas = __commonJS({
         colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
       }
       var baseDrawingArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding - colorbarSpace,
-        height: height - 2 * padding,
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right - colorbarSpace,
+        height: height - padding.top - padding.bottom,
         margins: {
-          left: padding,
-          right: padding + colorbarSpace,
-          top: padding,
-          bottom: padding
+          left: padding.left,
+          right: padding.right + colorbarSpace,
+          top: padding.top,
+          bottom: padding.bottom
         }
       };
       var pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];

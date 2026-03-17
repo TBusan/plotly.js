@@ -7,6 +7,39 @@
 var smooth = require('../../smooth');
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Create index array for coordinate generation
  * @private
  */
@@ -27,12 +60,14 @@ function createPerimeter(style) {
     var n = (style.z && style.z[0] && style.z[0].length) ? style.z[0].length : 10;
     var width = style.width || 500;
     var height = style.height || 400;
-    var padding = style.padding || 30;
 
-    var xMin = padding;
-    var xMax = width - padding;
-    var yMin = padding;
-    var yMax = height - padding;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
+
+    var xMin = padding.left;
+    var xMax = width - padding.right;
+    var yMin = padding.top;
+    var yMax = height - padding.bottom;
 
     // Clockwise perimeter starting from top-left
     return [
@@ -795,14 +830,15 @@ function scalePoint(style, pt) {
         // Legacy calculation using padding
         var width = style.width || 500;
         var height = style.height || 400;
-        var padding = style.padding || 30;
+        // Support both number and object format for padding
+        var padding = normalizePadding(style.padding, 30);
 
         // Normalize to [0, 1] and scale to canvas
-        canvasX = padding + ((pt[0] - xMin) / xRange) * (width - 2 * padding);
-        canvasY = padding + ((pt[1] - yMin) / yRange) * (height - 2 * padding);
+        canvasX = padding.left + ((pt[0] - xMin) / xRange) * (width - padding.left - padding.right);
+        canvasY = padding.top + ((pt[1] - yMin) / yRange) * (height - padding.top - padding.bottom);
 
         // Flip Y axis (canvas Y increases downward)
-        canvasY = height - padding - (canvasY - padding);
+        canvasY = height - padding.bottom - (canvasY - padding.top);
     }
 
     return [canvasX, canvasY];

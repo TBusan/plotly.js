@@ -7,6 +7,25 @@
 
 var colors = require('../../colorbar/colors');
 
+/**
+ * Normalize padding to support both number and object formats
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return { top: padding, right: padding, bottom: padding, left: padding };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    return { top: defaultVal, right: defaultVal, bottom: defaultVal, left: defaultVal };
+}
+
 // Detect environment and get canvas factory
 var isNodeJS = typeof window === 'undefined' || typeof document === 'undefined';
 var createCanvasElement;
@@ -62,9 +81,10 @@ function drawHeatmapBackground(ctx, grid, style) {
 
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
-    var padding = style.padding || 30;
-    var plotWidth = width - 2 * padding;
-    var plotHeight = height - 2 * padding;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
+    var plotWidth = width - padding.left - padding.right;
+    var plotHeight = height - padding.top - padding.bottom;
 
     var cellWidth = plotWidth / (n - 1);
     var cellHeight = plotHeight / (m - 1);
@@ -124,8 +144,8 @@ function drawHeatmapBackground(ctx, grid, style) {
 
             // Calculate cell position
             // Note: y is inverted (0 at top in canvas, but at bottom in grid)
-            var x = padding + j * cellWidth;
-            var y = padding + (m - 1 - i) * cellHeight;
+            var x = padding.left + j * cellWidth;
+            var y = padding.top + (m - 1 - i) * cellHeight;
 
             // Draw cell (slightly overlap to avoid gaps)
             ctx.fillStyle = color;
@@ -164,9 +184,10 @@ function drawInterpolatedHeatmap(ctx, grid, style) {
 
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
-    var padding = style.padding || 30;
-    var plotWidth = width - 2 * padding;
-    var plotHeight = height - 2 * padding;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
+    var plotWidth = width - padding.left - padding.right;
+    var plotHeight = height - padding.top - padding.bottom;
 
     // Determine data range
     var zmin, zmax;
@@ -239,7 +260,7 @@ function drawInterpolatedHeatmap(ctx, grid, style) {
 
     // Draw scaled to main canvas
     ctx.save();
-    ctx.translate(padding, padding);
+    ctx.translate(padding.left, padding.top);
     ctx.scale(plotWidth / n, plotHeight / m);
     ctx.translate(0, m);
     ctx.scale(1, -1);
@@ -270,9 +291,10 @@ function drawSmoothHeatmap(ctx, grid, style) {
 
     var width = style.width || ctx.canvas.width;
     var height = style.height || ctx.canvas.height;
-    var padding = style.padding || 30;
-    var plotWidth = width - 2 * padding;
-    var plotHeight = height - 2 * padding;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
+    var plotWidth = width - padding.left - padding.right;
+    var plotHeight = height - padding.top - padding.bottom;
 
     // Create high-resolution offscreen canvas
     var scaleFactor = Math.max(1, Math.min(10, Math.ceil(100 / Math.max(n, m))));
@@ -295,7 +317,7 @@ function drawSmoothHeatmap(ctx, grid, style) {
 
     // Draw scaled down to main canvas with smoothing
     ctx.save();
-    ctx.translate(padding, padding);
+    ctx.translate(padding.left, padding.top);
     ctx.scale(plotWidth / hiresCanvas.width, plotHeight / hiresCanvas.height);
     ctx.translate(0, hiresCanvas.height);
     ctx.scale(1, -1);

@@ -6,6 +6,39 @@
  */
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Draw null regions on canvas
  * This function masks out contour lines and fills in null data areas
  * @param {CanvasRenderingContext2D} ctx - Canvas context
@@ -34,14 +67,15 @@ function drawNulls(ctx, contourResult, style) {
 
     var width = style.width || 500;
     var height = style.height || 400;
-    var padding = style.padding || 30;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
 
     // Calculate drawing area
     var drawArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding,
-        height: height - 2 * padding
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right,
+        height: height - padding.top - padding.bottom
     };
 
     // Determine coordinate range for transformation

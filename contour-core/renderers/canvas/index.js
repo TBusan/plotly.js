@@ -6,6 +6,39 @@
  */
 
 var compute = require('../../compute');
+
+/**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 50)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 50;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
 var drawPaths = require('./paths');
 var drawLabels = require('./labels');
 var drawColorbar = require('./colorbar');
@@ -140,7 +173,8 @@ function drawContours(ctx, contourResult, style) {
  * @private
  */
 function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
-    var padding = style.padding || 50;
+    // Normalize padding to support both number and object formats
+    var padding = normalizePadding(style.padding, 50);
 
     // Calculate colorbar space if shown
     var colorbarSpace = 0;
@@ -156,15 +190,15 @@ function renderStatic(ctx, contourResult, style, width, height, coloring, showLi
 
     // Calculate base drawing area (reduce width for colorbar)
     var baseDrawingArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding - colorbarSpace,
-        height: height - 2 * padding,
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right - colorbarSpace,
+        height: height - padding.top - padding.bottom,
         margins: {
-            left: padding,
-            right: padding + colorbarSpace,
-            top: padding,
-            bottom: padding
+            left: padding.left,
+            right: padding.right + colorbarSpace,
+            top: padding.top,
+            bottom: padding.bottom
         }
     };
 
@@ -213,7 +247,8 @@ function renderStatic(ctx, contourResult, style, width, height, coloring, showLi
 function createInteractiveRenderer(canvas, contourResult, style, interactionConfig) {
     var width = style.width || canvas.width;
     var height = style.height || canvas.height;
-    var padding = style.padding || 50;
+    // Normalize padding to support both number and object formats
+    var padding = normalizePadding(style.padding, 50);
     var coloring = style.coloring || 'fill';
 
     // Calculate colorbar space if shown
@@ -230,15 +265,15 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
 
     // Calculate base drawing area (reduce width for colorbar)
     var baseDrawingArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding - colorbarSpace,
-        height: height - 2 * padding,
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right - colorbarSpace,
+        height: height - padding.top - padding.bottom,
         margins: {
-            left: padding,
-            right: padding + colorbarSpace,
-            top: padding,
-            bottom: padding
+            left: padding.left,
+            right: padding.right + colorbarSpace,
+            top: padding.top,
+            bottom: padding.bottom
         }
     };
 

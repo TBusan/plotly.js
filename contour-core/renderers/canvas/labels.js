@@ -13,6 +13,33 @@ var pathLength = labels.pathLength;
 var isPathClosed = labels.isPathClosed;
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    return { top: defaultVal, right: defaultVal, bottom: defaultVal, left: defaultVal };
+}
+
+/**
  * Draw contour labels with overlap avoidance
  * Now supports multiple labels per path and uses unified coordinate system
  * @param {CanvasRenderingContext2D} ctx - Canvas context
@@ -54,9 +81,10 @@ function drawLabels(ctx, contourResult, style) {
     // Calculate canvas dimensions for scaling
     var width = style.width || 500;
     var height = style.height || 400;
-    var padding = style.padding || 30;
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
+    var scaleX = (width - padding.left - padding.right) / (n - 1);
+    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
     var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
 
     // Track existing labels in GRID COORDINATES for consistent cost calculation
@@ -281,8 +309,10 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
     }
 
     // Original behavior (no drawArea)
-    var plotWidth = width - 2 * padding;
-    var plotHeight = height - 2 * padding;
+    // Support both number and object format for padding
+    var normalizedPadding = normalizePadding(padding, 30);
+    var plotWidth = width - normalizedPadding.left - normalizedPadding.right;
+    var plotHeight = height - normalizedPadding.top - normalizedPadding.bottom;
 
     // If visibleRange is provided, use it for coordinate transformation
     if (visibleRange) {
@@ -327,8 +357,8 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
         var xRange = visibleRange.xMax - visibleRange.xMin;
         var yRange = visibleRange.yMax - visibleRange.yMin;
 
-        var canvasX = padding + (dataX - visibleRange.xMin) / xRange * plotWidth;
-        var canvasY = padding + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
+        var canvasX = normalizedPadding.left + (dataX - visibleRange.xMin) / xRange * plotWidth;
+        var canvasY = normalizedPadding.top + plotHeight - (dataY - visibleRange.yMin) / yRange * plotHeight;
 
         return {
             x: canvasX,
@@ -341,8 +371,8 @@ function scalePoint(pt, n, m, width, height, padding, visibleRange, xData, yData
     var scaleY = plotHeight / (m - 1);
 
     return {
-        x: padding + pt.x * scaleX,
-        y: padding + (m - 1 - pt.y) * scaleY
+        x: normalizedPadding.left + pt.x * scaleX,
+        y: normalizedPadding.top + (m - 1 - pt.y) * scaleY
     };
 }
 
@@ -355,13 +385,14 @@ function calculatePlotBounds(style, contourResult) {
     var n = style.z && style.z[0] ? style.z[0].length : 10;
     var width = style.width || 500;
     var height = style.height || 400;
-    var padding = style.padding || 30;
+    // Support both number and object format for padding
+    var padding = normalizePadding(style.padding, 30);
 
     return {
-        left: padding,
-        right: width - padding,
-        top: padding,
-        bottom: height - padding,
+        left: padding.left,
+        right: width - padding.right,
+        top: padding.top,
+        bottom: height - padding.bottom,
         center: width / 2,
         middle: height / 2
     };
