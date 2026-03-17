@@ -409,17 +409,17 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             canvas.width = width;
             canvas.height = height;
 
-            // Recalculate base drawing area
+            // Recalculate base drawing area (padding is already normalized to object)
             baseDrawingArea = {
-                x: padding,
-                y: padding,
-                width: width - 2 * padding,
-                height: height - 2 * padding,
+                x: padding.left,
+                y: padding.top,
+                width: width - padding.left - padding.right - colorbarSpace,
+                height: height - padding.top - padding.bottom,
                 margins: {
-                    left: padding,
-                    right: padding,
-                    top: padding,
-                    bottom: padding
+                    left: padding.left,
+                    right: padding.right + colorbarSpace,
+                    top: padding.top,
+                    bottom: padding.bottom
                 }
             };
 
@@ -777,8 +777,8 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
         visibleRange: visibleRange,
         fullRange: fullRange,
         drawArea: drawArea,  // Pass drawArea for scalePoint to use
-        width: drawArea.width + 2 * drawArea.margins.left,
-        height: drawArea.height + 2 * drawArea.margins.top,
+        width: drawArea.width + drawArea.margins.left + drawArea.margins.right,
+        height: drawArea.height + drawArea.margins.top + drawArea.margins.bottom,
         padding: drawArea.x,  // Keep for backward compatibility
         z: style.z || (pathInfo ? pathInfo.z : null),
         x: style.x || (pathInfo ? pathInfo.x : null),
@@ -919,8 +919,8 @@ function renderAxesLayer(ctx, drawArea, visibleRange, fullRange, style) {
     var yOptions = axesConfig.y || {};
 
     var axisSetup = axes.setupAxes({
-        width: drawArea.width + 2 * drawArea.x,
-        height: drawArea.height + 2 * drawArea.y,
+        width: drawArea.width + drawArea.margins.left + drawArea.margins.right,
+        height: drawArea.height + drawArea.margins.top + drawArea.margins.bottom,
         margins: drawArea.margins,
         visibleRange: visibleRange,
         fullRange: fullRange,

@@ -8351,15 +8351,15 @@ var require_canvas = __commonJS({
           canvas.width = width;
           canvas.height = height;
           baseDrawingArea = {
-            x: padding,
-            y: padding,
-            width: width - 2 * padding,
-            height: height - 2 * padding,
+            x: padding.left,
+            y: padding.top,
+            width: width - padding.left - padding.right - colorbarSpace,
+            height: height - padding.top - padding.bottom,
             margins: {
-              left: padding,
-              right: padding,
-              top: padding,
-              bottom: padding
+              left: padding.left,
+              right: padding.right + colorbarSpace,
+              top: padding.top,
+              bottom: padding.bottom
             }
           };
           drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
@@ -8640,8 +8640,8 @@ var require_canvas = __commonJS({
         fullRange,
         drawArea,
         // Pass drawArea for scalePoint to use
-        width: drawArea.width + 2 * drawArea.margins.left,
-        height: drawArea.height + 2 * drawArea.margins.top,
+        width: drawArea.width + drawArea.margins.left + drawArea.margins.right,
+        height: drawArea.height + drawArea.margins.top + drawArea.margins.bottom,
         padding: drawArea.x,
         // Keep for backward compatibility
         z: style.z || (pathInfo ? pathInfo.z : null),
@@ -8744,8 +8744,8 @@ var require_canvas = __commonJS({
       var xOptions = axesConfig.x || {};
       var yOptions = axesConfig.y || {};
       var axisSetup = axes.setupAxes({
-        width: drawArea.width + 2 * drawArea.x,
-        height: drawArea.height + 2 * drawArea.y,
+        width: drawArea.width + drawArea.margins.left + drawArea.margins.right,
+        height: drawArea.height + drawArea.margins.top + drawArea.margins.bottom,
         margins: drawArea.margins,
         visibleRange,
         fullRange,
