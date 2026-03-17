@@ -3097,8 +3097,15 @@ var contourCore = (() => {
         var labelsToDraw = [];
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
-          for (var j = 0; j < pathInfo.paths.length; j++) {
-            var path = pathInfo.paths[j];
+          var allPaths = (pathInfo.paths || []).concat(pathInfo.edgepaths || []);
+          var pathIsClosed = (pathInfo.paths || []).map(function() {
+            return true;
+          }).concat((pathInfo.edgepaths || []).map(function() {
+            return false;
+          }));
+          for (var j = 0; j < allPaths.length; j++) {
+            var path = allPaths[j];
+            var closed = pathIsClosed[j];
             if (path.length < 3)
               continue;
             var labelText = formatContourLabel(pathInfo.level, ".1f");
@@ -3115,7 +3122,6 @@ var contourCore = (() => {
             );
             if (maxLabels === 0)
               continue;
-            var closed = isPathClosed(path);
             var usedPositions = [];
             for (var k = 0; k < maxLabels; k++) {
               var labelPos = findBestTextLocation(

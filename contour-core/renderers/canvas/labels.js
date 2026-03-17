@@ -122,9 +122,17 @@ function drawLabels(ctx, contourResult, style) {
     for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
 
-        // Find best position for label(s) on each path
-        for (var j = 0; j < pathInfo.paths.length; j++) {
-            var path = pathInfo.paths[j];
+        // Combine closed paths and edge paths for label placement
+        // edgepaths are open paths that touch the boundary
+        var allPaths = (pathInfo.paths || []).concat(pathInfo.edgepaths || []);
+        // Track which paths are closed (edge paths are always open)
+        var pathIsClosed = (pathInfo.paths || []).map(function() { return true; })
+            .concat((pathInfo.edgepaths || []).map(function() { return false; }));
+
+        // Find best position for label(s) on each path (both closed and edge paths)
+        for (var j = 0; j < allPaths.length; j++) {
+            var path = allPaths[j];
+            var closed = pathIsClosed[j];
             if (path.length < 3) continue; // Skip very short paths
 
             // Estimate text dimensions
@@ -147,9 +155,6 @@ function drawLabels(ctx, contourResult, style) {
             );
 
             if (maxLabels === 0) continue;
-
-            // Check if path is closed
-            var closed = isPathClosed(path);
 
             // Track used positions on this path to avoid placing labels too close
             var usedPositions = [];

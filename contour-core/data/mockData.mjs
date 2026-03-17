@@ -2708,7 +2708,7 @@ export  const data111 = {
 }
 
 
-export const data11 = {
+export const data1 = {
     "x": [
         0.03567333333333333,
         1.1752332659932663,
@@ -6216,7 +6216,7 @@ export const data11 = {
     ]
 }
 
-export const  data1 = {
+export const  data1111 = {
   "x": [
     0.2436333333333334,
     1.4286472390572391,
