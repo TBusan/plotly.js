@@ -8082,14 +8082,23 @@ var require_canvas = __commonJS({
     }
     function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
       var padding = style.padding || 50;
+      var colorbarSpace = 0;
+      var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
+      if (showColorbar && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
+        var colorbarConfig = style.colorbar || {};
+        var colorbarThickness = colorbarConfig.thickness || 25;
+        var colorbarPadding = colorbarConfig.padding || 10;
+        var colorbarLabelWidth = colorbarConfig.labelWidth || 45;
+        colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
+      }
       var baseDrawingArea = {
         x: padding,
         y: padding,
-        width: width - 2 * padding,
+        width: width - 2 * padding - colorbarSpace,
         height: height - 2 * padding,
         margins: {
           left: padding,
-          right: padding,
+          right: padding + colorbarSpace,
           top: padding,
           bottom: padding
         }
@@ -8119,14 +8128,24 @@ var require_canvas = __commonJS({
       var width = style.width || canvas.width;
       var height = style.height || canvas.height;
       var padding = style.padding || 50;
+      var coloring = style.coloring || "fill";
+      var colorbarSpace = 0;
+      var showColorbar = style.showColorbar !== false && (style.colorbar === void 0 || style.colorbar === true || style.colorbar.show !== false);
+      if (showColorbar && (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap")) {
+        var colorbarConfig = style.colorbar || {};
+        var colorbarThickness = colorbarConfig.thickness || 25;
+        var colorbarPadding = colorbarConfig.padding || 10;
+        var colorbarLabelWidth = colorbarConfig.labelWidth || 45;
+        colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
+      }
       var baseDrawingArea = {
         x: padding,
         y: padding,
-        width: width - 2 * padding,
+        width: width - 2 * padding - colorbarSpace,
         height: height - 2 * padding,
         margins: {
           left: padding,
-          right: padding,
+          right: padding + colorbarSpace,
           top: padding,
           bottom: padding
         }

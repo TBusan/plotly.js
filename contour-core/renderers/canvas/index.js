@@ -142,15 +142,27 @@ function drawContours(ctx, contourResult, style) {
 function renderStatic(ctx, contourResult, style, width, height, coloring, showLines, useClipMask, hasAxes, pathInfo) {
     var padding = style.padding || 50;
 
-    // Calculate base drawing area
+    // Calculate colorbar space if shown
+    var colorbarSpace = 0;
+    var showColorbar = style.showColorbar !== false &&
+                       (style.colorbar === undefined || style.colorbar === true || style.colorbar.show !== false);
+    if (showColorbar && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
+        var colorbarConfig = style.colorbar || {};
+        var colorbarThickness = colorbarConfig.thickness || 25;
+        var colorbarPadding = colorbarConfig.padding || 10;
+        var colorbarLabelWidth = colorbarConfig.labelWidth || 45;
+        colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
+    }
+
+    // Calculate base drawing area (reduce width for colorbar)
     var baseDrawingArea = {
         x: padding,
         y: padding,
-        width: width - 2 * padding,
+        width: width - 2 * padding - colorbarSpace,
         height: height - 2 * padding,
         margins: {
             left: padding,
-            right: padding,
+            right: padding + colorbarSpace,
             top: padding,
             bottom: padding
         }
@@ -202,16 +214,29 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var width = style.width || canvas.width;
     var height = style.height || canvas.height;
     var padding = style.padding || 50;
+    var coloring = style.coloring || 'fill';
 
-    // Calculate base drawing area
+    // Calculate colorbar space if shown
+    var colorbarSpace = 0;
+    var showColorbar = style.showColorbar !== false &&
+                       (style.colorbar === undefined || style.colorbar === true || style.colorbar.show !== false);
+    if (showColorbar && (coloring === 'fill' || coloring === 'fill+lines' || coloring === 'heatmap')) {
+        var colorbarConfig = style.colorbar || {};
+        var colorbarThickness = colorbarConfig.thickness || 25;
+        var colorbarPadding = colorbarConfig.padding || 10;
+        var colorbarLabelWidth = colorbarConfig.labelWidth || 45;
+        colorbarSpace = colorbarThickness + colorbarPadding + colorbarLabelWidth;
+    }
+
+    // Calculate base drawing area (reduce width for colorbar)
     var baseDrawingArea = {
         x: padding,
         y: padding,
-        width: width - 2 * padding,
+        width: width - 2 * padding - colorbarSpace,
         height: height - 2 * padding,
         margins: {
             left: padding,
-            right: padding,
+            right: padding + colorbarSpace,
             top: padding,
             bottom: padding
         }
