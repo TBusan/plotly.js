@@ -202,6 +202,12 @@
                 <span class="value" id="clipSmoothingValue">0.3</span>
                 <span style="margin-left: 10px; color: #666; font-size: 12px;">(0=无平滑, 0.3=推荐, 1=最大平滑)</span>
             </div>
+            <div class="control-row">
+                <label>简化容差:</label>
+                <input type="range" id="simplifyTolerance" min="0" max="2" step="0.1" value="0.5" onchange="updateRender()">
+                <span class="value" id="simplifyToleranceValue">0.5</span>
+                <span style="margin-left: 10px; color: #666; font-size: 12px;">(0=无简化, 0.5=推荐, 越大简化越多)</span>
+            </div>
         </div>
 
         <div class="info-box">
@@ -295,6 +301,10 @@
             document.getElementById('clipSmoothingValue').textContent = this.value;
             updateRender();
         });
+        document.getElementById('simplifyTolerance').addEventListener('input', function() {
+            document.getElementById('simplifyToleranceValue').textContent = this.value;
+            updateRender();
+        });
 
         function updateRender() {
             var mode = document.getElementById('renderMode').value;
@@ -305,6 +315,7 @@
             var upsampleScale = parseFloat(document.getElementById('upsampleScale').value);
             var clipLevel = parseFloat(document.getElementById('clipLevel').value);
             var clipSmoothing = parseFloat(document.getElementById('clipSmoothing').value);
+            var simplifyTolerance = parseFloat(document.getElementById('simplifyTolerance').value);
 
             var grid = createGrid(testData);
             var options = {
@@ -339,7 +350,8 @@
                 smoothingMethod: smoothingMethod,
                 upsampleScale: upsampleScale,
                 clipLevel: clipLevel,
-                clipSmoothing: clipSmoothing
+                clipSmoothing: clipSmoothing,
+                simplifyTolerance: simplifyTolerance
             });
             contourCore.renderers.canvas.drawContours(ctx1, result, style1);
 
@@ -357,7 +369,8 @@
                 smoothingMethod: smoothingMethod,
                 upsampleScale: upsampleScale,
                 clipLevel: clipLevel,
-                clipSmoothing: clipSmoothing
+                clipSmoothing: clipSmoothing,
+                simplifyTolerance: simplifyTolerance
             });
             var svg1 = contourCore.renderers.svg.renderSVG(result, style3);
             document.getElementById('svgClip').innerHTML = svg1;
@@ -375,7 +388,7 @@
                 '空值数量: ' + result.nullCount + '\n' +
                 '等值线级别: ' + result.levels.length + '\n' +
                 'connectgaps: ' + connectGaps + '\n' +
-                '抗锯齿参数: 方法=' + smoothingMethod + ', 超采样=' + upsampleScale + 'x, 边界级别=' + clipLevel + ', 平滑=' + clipSmoothing;
+                '抗锯齿参数: 方法=' + smoothingMethod + ', 超采样=' + upsampleScale + 'x, 边界级别=' + clipLevel + ', 平滑=' + clipSmoothing + ', 简化容差=' + simplifyTolerance;
         }
 
         // 初始化
