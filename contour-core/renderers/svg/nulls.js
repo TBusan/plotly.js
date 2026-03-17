@@ -6,6 +6,39 @@
  */
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Create SVG null regions
  * @param {Object} contourResult - Contour result (must have nullMask)
  * @param {Object} options - Style options
@@ -25,10 +58,10 @@ function createNullRegions(contourResult, options) {
 
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
+    var padding = normalizePadding(options.padding, 30);
 
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    var scaleX = (width - padding.left - padding.right) / (n - 1);
+    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
 
     var fill = nullRegion.fill || '#ffffff';
     var stroke = nullRegion.stroke || '#cccccc';
@@ -39,8 +72,8 @@ function createNullRegions(contourResult, options) {
     for (var i = 0; i < m; i++) {
         for (var j = 0; j < n; j++) {
             if (nullMask[i][j]) {
-                var x = padding + j * scaleX;
-                var y = padding + (m - 1 - i) * scaleY;
+                var x = padding.left + j * scaleX;
+                var y = padding.top + (m - 1 - i) * scaleY;
                 var sizeX = scaleX + 1;
                 var sizeY = scaleY + 1;
 

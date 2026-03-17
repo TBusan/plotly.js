@@ -23,6 +23,39 @@ var nullHandling = require('../../null_handling');
 var viewState = require('../../interaction/view_state');
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 50)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 50;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Create a layered renderer
  *
  * @param {HTMLCanvasElement} canvas - Canvas element
@@ -40,7 +73,8 @@ function createLayeredRenderer(canvas, config) {
     var ctx = canvas.getContext('2d');
     var width = config.width || canvas.width;
     var height = config.height || canvas.height;
-    var padding = config.padding || 50;
+    // Normalize padding to support both number and object formats
+    var padding = normalizePadding(config.padding, 50);
 
     // Store original config for re-rendering
     var contourResult = null;
@@ -49,15 +83,15 @@ function createLayeredRenderer(canvas, config) {
 
     // Calculate drawing area
     var drawingArea = {
-        x: padding,
-        y: padding,
-        width: width - 2 * padding,
-        height: height - 2 * padding,
+        x: padding.left,
+        y: padding.top,
+        width: width - padding.left - padding.right,
+        height: height - padding.top - padding.bottom,
         margins: {
-            left: padding,
-            right: padding,
-            top: padding,
-            bottom: padding
+            left: padding.left,
+            right: padding.right,
+            top: padding.top,
+            bottom: padding.bottom
         }
     };
 
@@ -460,8 +494,9 @@ function createLayeredRenderer(canvas, config) {
         canvas.width = width;
         canvas.height = height;
 
-        drawingArea.width = width - 2 * padding;
-        drawingArea.height = height - 2 * padding;
+        // padding is already normalized to object
+        drawingArea.width = width - padding.left - padding.right;
+        drawingArea.height = height - padding.top - padding.bottom;
 
         if (contourResult) {
             render();

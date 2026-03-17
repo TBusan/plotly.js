@@ -25,6 +25,39 @@ var marchingSquares = require('../marchingsquares');
 var pathFinding = require('../pathfinding');
 var closeBoundaries = require('../close_boundaries');
 
+/**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
 // Default anti-aliasing options
 var DEFAULT_UPSAMPLE_SCALE = 2;    // 2x upsampling
 var DEFAULT_CLIP_LEVEL = 0.95;     // Higher level = boundary closer to data region
@@ -517,7 +550,7 @@ function generateClipPath(contourResult, options) {
     // For static mode, convert to canvas coordinates
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
+    var padding = normalizePadding(options.padding, 30);
     return createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
 }
 
@@ -699,22 +732,22 @@ function pathToSVG(path, isClosed) {
  * @param {Object} clipPathInfo - Pathinfo from marching squares
  * @param {Number} width - Canvas/SVG width
  * @param {Number} height - Canvas/SVG height
- * @param {Number} padding - Padding around plot
+ * @param {Object} padding - Padding object { top, right, bottom, left }
  * @param {Number} m - Number of rows
  * @param {Number} n - Number of columns
  * @returns {String} SVG path data string
  */
 function createClipPathSVG(clipPathInfo, width, height, padding, m, n) {
     var perimeter = createPerimeter(width, height, padding);
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    var scaleX = (width - padding.left - padding.right) / (n - 1);
+    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
 
     // Scale path from grid space to canvas space
     function scalePath(path) {
         return path.map(function(pt) {
             return [
-                padding + pt[0] * scaleX,
-                padding + (m - 1 - pt[1]) * scaleY
+                padding.left + pt[0] * scaleX,
+                padding.top + (m - 1 - pt[1]) * scaleY
             ];
         });
     }
@@ -735,10 +768,10 @@ function createClipPathSVG(clipPathInfo, width, height, padding, m, n) {
  * Create perimeter path for boundary closing
  */
 function createPerimeter(width, height, padding) {
-    var xMin = padding;
-    var xMax = width - padding;
-    var yMin = padding;
-    var yMax = height - padding;
+    var xMin = padding.left;
+    var xMax = width - padding.right;
+    var yMin = padding.top;
+    var yMax = height - padding.bottom;
 
     // Clockwise perimeter starting from top-left
     return [

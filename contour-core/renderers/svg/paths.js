@@ -6,6 +6,39 @@
  */
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Convert path array to SVG path string
  * @param {Array} path - Array of [x, y] points
  * @param {Boolean} isClosed - Whether path is closed
@@ -50,12 +83,12 @@ function svgPathElement(d, attrs) {
 function createPerimeter(options) {
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
+    var padding = normalizePadding(options.padding, 30);
 
-    var xMin = padding;
-    var xMax = width - padding;
-    var yMin = padding;
-    var yMax = height - padding;
+    var xMin = padding.left;
+    var xMax = width - padding.right;
+    var yMin = padding.top;
+    var yMax = height - padding.bottom;
 
     // Clockwise perimeter starting from top-left
     return [
@@ -83,15 +116,15 @@ function scalePath(path, options) {
 
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
+    var padding = normalizePadding(options.padding, 30);
 
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    var scaleX = (width - padding.left - padding.right) / (n - 1);
+    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
 
     return path.map(function(pt) {
         return [
-            padding + pt[0] * scaleX,
-            padding + (m - 1 - pt[1]) * scaleY
+            padding.left + pt[0] * scaleX,
+            padding.top + (m - 1 - pt[1]) * scaleY
         ];
     });
 }

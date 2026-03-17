@@ -974,6 +974,31 @@ var require_clip_mask = __commonJS({
     var marchingSquares = require_marchingsquares();
     var pathFinding = require_pathfinding();
     var closeBoundaries = require_close_boundaries();
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     var DEFAULT_UPSAMPLE_SCALE = 2;
     var DEFAULT_CLIP_LEVEL = 0.95;
     var DEFAULT_SMOOTHING = 0.3;
@@ -1245,7 +1270,7 @@ var require_clip_mask = __commonJS({
       }
       var width = options.width || 500;
       var height = options.height || 400;
-      var padding = options.padding || 30;
+      var padding = normalizePadding(options.padding, 30);
       return createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
     }
     function createClipPathDataCoords(clipPathInfo, m, n) {
@@ -1375,13 +1400,13 @@ var require_clip_mask = __commonJS({
     }
     function createClipPathSVG(clipPathInfo, width, height, padding, m, n) {
       var perimeter = createPerimeter(width, height, padding);
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+      var scaleX = (width - padding.left - padding.right) / (n - 1);
+      var scaleY = (height - padding.top - padding.bottom) / (m - 1);
       function scalePath(path) {
         return path.map(function(pt) {
           return [
-            padding + pt[0] * scaleX,
-            padding + (m - 1 - pt[1]) * scaleY
+            padding.left + pt[0] * scaleX,
+            padding.top + (m - 1 - pt[1]) * scaleY
           ];
         });
       }
@@ -1389,10 +1414,10 @@ var require_clip_mask = __commonJS({
       return joinedPaths;
     }
     function createPerimeter(width, height, padding) {
-      var xMin = padding;
-      var xMax = width - padding;
-      var yMin = padding;
-      var yMax = height - padding;
+      var xMin = padding.left;
+      var xMax = width - padding.right;
+      var yMin = padding.top;
+      var yMax = height - padding.bottom;
       return [
         [xMin, yMin],
         // 0: top-left
@@ -10005,6 +10030,31 @@ var require_geojson = __commonJS({
 var require_paths2 = __commonJS({
   "renderers/svg/paths.js"(exports, module) {
     "use strict";
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     function pathToSVG(path, isClosed) {
       if (!path || path.length === 0)
         return "";
@@ -10028,11 +10078,11 @@ var require_paths2 = __commonJS({
     function createPerimeter(options) {
       var width = options.width || 500;
       var height = options.height || 400;
-      var padding = options.padding || 30;
-      var xMin = padding;
-      var xMax = width - padding;
-      var yMin = padding;
-      var yMax = height - padding;
+      var padding = normalizePadding(options.padding, 30);
+      var xMin = padding.left;
+      var xMax = width - padding.right;
+      var yMin = padding.top;
+      var yMax = height - padding.bottom;
       return [
         [xMin, yMin],
         // 0: top-left
@@ -10056,13 +10106,13 @@ var require_paths2 = __commonJS({
       }
       var width = options.width || 500;
       var height = options.height || 400;
-      var padding = options.padding || 30;
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+      var padding = normalizePadding(options.padding, 30);
+      var scaleX = (width - padding.left - padding.right) / (n - 1);
+      var scaleY = (height - padding.top - padding.bottom) / (m - 1);
       return path.map(function(pt) {
         return [
-          padding + pt[0] * scaleX,
-          padding + (m - 1 - pt[1]) * scaleY
+          padding.left + pt[0] * scaleX,
+          padding.top + (m - 1 - pt[1]) * scaleY
         ];
       });
     }
@@ -10265,6 +10315,31 @@ var require_labels3 = __commonJS({
     var calculateMaxLabels = labels.calculateMaxLabels;
     var pathLength = labels.pathLength;
     var isPathClosed = labels.isPathClosed;
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     function createLabels(contourResult, options) {
       options = options || {};
       var paths = contourResult.paths;
@@ -10290,9 +10365,9 @@ var require_labels3 = __commonJS({
       };
       var width = options.width || 500;
       var height = options.height || 400;
-      var padding = options.padding || 30;
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+      var padding = normalizePadding(options.padding, 30);
+      var scaleX = (width - padding.left - padding.right) / (n - 1);
+      var scaleY = (height - padding.top - padding.bottom) / (m - 1);
       var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
       var existingLabels = [];
       for (var i = 0; i < paths.length; i++) {
@@ -10344,8 +10419,8 @@ var require_labels3 = __commonJS({
             if (tooClose)
               break;
             var scaled = {
-              x: padding + labelPos.x * scaleX,
-              y: padding + (m - 1 - labelPos.y) * scaleY
+              x: padding.left + labelPos.x * scaleX,
+              y: padding.top + (m - 1 - labelPos.y) * scaleY
             };
             var transform = "translate(" + scaled.x + " " + scaled.y + ") rotate(" + (labelPos.theta || 0) * 180 / Math.PI + ")";
             svgParts.push(
@@ -10441,6 +10516,31 @@ var require_colorbar3 = __commonJS({
 var require_nulls2 = __commonJS({
   "renderers/svg/nulls.js"(exports, module) {
     "use strict";
+    function normalizePadding(padding, defaultVal) {
+      defaultVal = defaultVal || 30;
+      if (typeof padding === "number") {
+        return {
+          top: padding,
+          right: padding,
+          bottom: padding,
+          left: padding
+        };
+      }
+      if (typeof padding === "object" && padding !== null) {
+        return {
+          top: padding.top !== void 0 ? padding.top : defaultVal,
+          right: padding.right !== void 0 ? padding.right : defaultVal,
+          bottom: padding.bottom !== void 0 ? padding.bottom : defaultVal,
+          left: padding.left !== void 0 ? padding.left : defaultVal
+        };
+      }
+      return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+      };
+    }
     function createNullRegions(contourResult, options) {
       var nullMask = contourResult.nullMask;
       if (!nullMask)
@@ -10454,9 +10554,9 @@ var require_nulls2 = __commonJS({
       var n = nullMask[0].length;
       var width = options.width || 500;
       var height = options.height || 400;
-      var padding = options.padding || 30;
-      var scaleX = (width - 2 * padding) / (n - 1);
-      var scaleY = (height - 2 * padding) / (m - 1);
+      var padding = normalizePadding(options.padding, 30);
+      var scaleX = (width - padding.left - padding.right) / (n - 1);
+      var scaleY = (height - padding.top - padding.bottom) / (m - 1);
       var fill = nullRegion.fill || "#ffffff";
       var stroke = nullRegion.stroke || "#cccccc";
       var strokeWidth = nullRegion.strokeWidth !== void 0 ? nullRegion.strokeWidth : 1;
@@ -10464,8 +10564,8 @@ var require_nulls2 = __commonJS({
       for (var i = 0; i < m; i++) {
         for (var j = 0; j < n; j++) {
           if (nullMask[i][j]) {
-            var x = padding + j * scaleX;
-            var y = padding + (m - 1 - i) * scaleY;
+            var x = padding.left + j * scaleX;
+            var y = padding.top + (m - 1 - i) * scaleY;
             var sizeX = scaleX + 1;
             var sizeY = scaleY + 1;
             svgParts.push(

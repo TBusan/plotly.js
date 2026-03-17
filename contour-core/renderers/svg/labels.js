@@ -13,6 +13,39 @@ var pathLength = labels.pathLength;
 var isPathClosed = labels.isPathClosed;
 
 /**
+ * Normalize padding to support both number and object formats
+ * @param {number|Object} padding - Padding value or object
+ * @param {number} [defaultVal] - Default padding value (default: 30)
+ * @returns {Object} Normalized padding object { top, right, bottom, left }
+ */
+function normalizePadding(padding, defaultVal) {
+    defaultVal = defaultVal || 30;
+    if (typeof padding === 'number') {
+        return {
+            top: padding,
+            right: padding,
+            bottom: padding,
+            left: padding
+        };
+    }
+    if (typeof padding === 'object' && padding !== null) {
+        return {
+            top: padding.top !== undefined ? padding.top : defaultVal,
+            right: padding.right !== undefined ? padding.right : defaultVal,
+            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
+            left: padding.left !== undefined ? padding.left : defaultVal
+        };
+    }
+    // Default case
+    return {
+        top: defaultVal,
+        right: defaultVal,
+        bottom: defaultVal,
+        left: defaultVal
+    };
+}
+
+/**
  * Create SVG label elements
  * Now supports multiple labels per path and uses unified coordinate system
  * @param {Object} contourResult - Contour computation result
@@ -51,9 +84,9 @@ function createLabels(contourResult, options) {
     // Calculate canvas dimensions for scaling
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
-    var scaleX = (width - 2 * padding) / (n - 1);
-    var scaleY = (height - 2 * padding) / (m - 1);
+    var padding = normalizePadding(options.padding, 30);
+    var scaleX = (width - padding.left - padding.right) / (n - 1);
+    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
     var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
 
     // Track existing labels in GRID COORDINATES
@@ -127,8 +160,8 @@ function createLabels(contourResult, options) {
 
                 // Scale position to canvas coordinates
                 var scaled = {
-                    x: padding + labelPos.x * scaleX,
-                    y: padding + (m - 1 - labelPos.y) * scaleY
+                    x: padding.left + labelPos.x * scaleX,
+                    y: padding.top + (m - 1 - labelPos.y) * scaleY
                 };
 
                 // Create SVG text element
@@ -171,13 +204,13 @@ function createLabels(contourResult, options) {
 function calculatePlotBounds(options) {
     var width = options.width || 500;
     var height = options.height || 400;
-    var padding = options.padding || 30;
+    var padding = normalizePadding(options.padding, 30);
 
     return {
-        left: padding,
-        right: width - padding,
-        top: padding,
-        bottom: height - padding,
+        left: padding.left,
+        right: width - padding.right,
+        top: padding.top,
+        bottom: height - padding.bottom,
         center: width / 2,
         middle: height / 2
     };
