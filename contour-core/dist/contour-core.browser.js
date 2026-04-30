@@ -8302,6 +8302,9 @@ var contourCore = (() => {
         var _overlay = null;
         var _fullRange = fullRange;
         var _drawingArea = drawingArea2;
+        var _originalNullMask = contourResult.nullMask;
+        var _originalNullCount = contourResult.nullCount || 0;
+        var _originalValidCount = contourResult.validCount || 0;
         var _gridData = {
           z: style.z,
           x: style.x,
@@ -8314,8 +8317,17 @@ var contourCore = (() => {
           start: style.start,
           end: style.end,
           size: style.size,
-          valueColorMap: style.valueColorMap
+          valueColorMap: style.valueColorMap,
+          connectgaps: contourResult.connectgaps
         };
+        function restoreNullInfo(result) {
+          if (_originalNullCount > 0) {
+            result.nullMask = _originalNullMask;
+            result.nullCount = _originalNullCount;
+            result.validCount = _originalValidCount;
+          }
+          return result;
+        }
         function render() {
           var ctx = canvas.getContext("2d");
           var visibleRange = viewManager.getState();
@@ -8440,6 +8452,9 @@ var contourCore = (() => {
             if (newData.y)
               _gridData.y = newData.y;
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            _originalNullMask = contourResult.nullMask;
+            _originalNullCount = contourResult.nullCount || 0;
+            _originalValidCount = contourResult.validCount || 0;
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
             _fullRange = fullRange;
@@ -8460,6 +8475,7 @@ var contourCore = (() => {
             _computeOptions.valueColorMap = valueColorMap;
             currentStyle.valueColorMap = valueColorMap;
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            restoreNullInfo(contourResult);
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             render();
           },
@@ -8479,6 +8495,7 @@ var contourCore = (() => {
               _computeOptions.valueColorMap = config.valueColorMap;
               currentStyle.valueColorMap = config.valueColorMap;
               contourResult = compute.computeContours(_gridData, _computeOptions);
+              restoreNullInfo(contourResult);
               pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             }
             if (!currentStyle.colorbar) {
@@ -8512,7 +8529,10 @@ var contourCore = (() => {
               _computeOptions.end = options.end;
             if (options.size !== void 0)
               _computeOptions.size = options.size;
+            if (options.connectgaps !== void 0)
+              _computeOptions.connectgaps = options.connectgaps;
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            restoreNullInfo(contourResult);
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
             _fullRange = fullRange;
@@ -8556,8 +8576,17 @@ var contourCore = (() => {
                 _computeOptions.end = opts.end;
               if (opts.size !== void 0)
                 _computeOptions.size = opts.size;
+              if (opts.connectgaps !== void 0)
+                _computeOptions.connectgaps = opts.connectgaps;
             }
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            if (config.data && config.data.z) {
+              _originalNullMask = contourResult.nullMask;
+              _originalNullCount = contourResult.nullCount || 0;
+              _originalValidCount = contourResult.validCount || 0;
+            } else {
+              restoreNullInfo(contourResult);
+            }
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
             _fullRange = fullRange;

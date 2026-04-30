@@ -303,6 +303,14 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
     var _drawingArea = drawingArea;
 
     // Store original data for dynamic updates
+    // IMPORTANT: style.z here comes from pathInfo.z which is the INTERPOLATED (cleaned) data
+    // from computeContours - it has no null values left. We need to preserve the original
+    // nullMask and nullCount from the initial contourResult so that after re-computation
+    // (which will find no nulls in the cleaned data), we can restore them for proper
+    // null region masking when connectgaps=false.
+    var _originalNullMask = contourResult.nullMask;
+    var _originalNullCount = contourResult.nullCount || 0;
+    var _originalValidCount = contourResult.validCount || 0;
     var _gridData = {
         z: style.z,
         x: style.x,
@@ -315,8 +323,25 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
         start: style.start,
         end: style.end,
         size: style.size,
-        valueColorMap: style.valueColorMap
+        valueColorMap: style.valueColorMap,
+        connectgaps: contourResult.connectgaps
     };
+
+    /**
+     * Restore original null info onto a re-computed contourResult.
+     * Because _gridData.z is the interpolated (cleaned) data with no nulls,
+     * re-computation will always produce nullCount=0. We must restore the
+     * original nullMask/nullCount so the renderer can properly mask null
+     * regions when connectgaps=false.
+     */
+    function restoreNullInfo(result) {
+        if (_originalNullCount > 0) {
+            result.nullMask = _originalNullMask;
+            result.nullCount = _originalNullCount;
+            result.validCount = _originalValidCount;
+        }
+        return result;
+    }
 
     /**
      * Render all layers
@@ -483,6 +508,12 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             // 重新计算等值线
             contourResult = compute.computeContours(_gridData, _computeOptions);
 
+            // updateData receives fresh user data (may contain new nulls),
+            // so update the saved null info from the new computation result
+            _originalNullMask = contourResult.nullMask;
+            _originalNullCount = contourResult.nullCount || 0;
+            _originalValidCount = contourResult.validCount || 0;
+
             // 更新 pathInfo 和 fullRange
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
@@ -512,6 +543,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
 
             // 重新计算等值线（levels 会根据 valueColorMap 变化）
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            restoreNullInfo(contourResult);
 
             // 更新 pathInfo
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
@@ -536,6 +568,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
                 _computeOptions.valueColorMap = config.valueColorMap;
                 currentStyle.valueColorMap = config.valueColorMap;
                 contourResult = compute.computeContours(_gridData, _computeOptions);
+                restoreNullInfo(contourResult);
                 pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             }
 
@@ -567,9 +600,11 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             if (options.start !== undefined) _computeOptions.start = options.start;
             if (options.end !== undefined) _computeOptions.end = options.end;
             if (options.size !== undefined) _computeOptions.size = options.size;
+            if (options.connectgaps !== undefined) _computeOptions.connectgaps = options.connectgaps;
 
             // 重新计算等值线
             contourResult = compute.computeContours(_gridData, _computeOptions);
+            restoreNullInfo(contourResult);
 
             // 更新 pathInfo 和 fullRange
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
@@ -615,10 +650,21 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
                 if (opts.start !== undefined) _computeOptions.start = opts.start;
                 if (opts.end !== undefined) _computeOptions.end = opts.end;
                 if (opts.size !== undefined) _computeOptions.size = opts.size;
+                if (opts.connectgaps !== undefined) _computeOptions.connectgaps = opts.connectgaps;
             }
 
             // 统一重新计算等值线
             contourResult = compute.computeContours(_gridData, _computeOptions);
+
+            // If new data was provided, update saved null info from fresh computation;
+            // otherwise restore the original null info (since _gridData.z is cleaned/interpolated)
+            if (config.data && config.data.z) {
+                _originalNullMask = contourResult.nullMask;
+                _originalNullCount = contourResult.nullCount || 0;
+                _originalValidCount = contourResult.validCount || 0;
+            } else {
+                restoreNullInfo(contourResult);
+            }
 
             // 更新 pathInfo 和 fullRange
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
