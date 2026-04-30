@@ -894,24 +894,45 @@ var contourCore = (() => {
             var na = pi0.x.length;
             var nb = pi0.y.length;
             var boundaryMin = Infinity;
+            var boundaryMax = -Infinity;
             for (i = 0; i < nb; i++) {
-              if (z[i][0] !== null && z[i][0] < boundaryMin)
-                boundaryMin = z[i][0];
-              if (z[i][na - 1] !== null && z[i][na - 1] < boundaryMin)
-                boundaryMin = z[i][na - 1];
+              if (z[i][0] !== null) {
+                if (z[i][0] < boundaryMin)
+                  boundaryMin = z[i][0];
+                if (z[i][0] > boundaryMax)
+                  boundaryMax = z[i][0];
+              }
+              if (z[i][na - 1] !== null) {
+                if (z[i][na - 1] < boundaryMin)
+                  boundaryMin = z[i][na - 1];
+                if (z[i][na - 1] > boundaryMax)
+                  boundaryMax = z[i][na - 1];
+              }
             }
             for (i = 1; i < na - 1; i++) {
-              if (z[0][i] !== null && z[0][i] < boundaryMin)
-                boundaryMin = z[0][i];
-              if (z[nb - 1][i] !== null && z[nb - 1][i] < boundaryMin)
-                boundaryMin = z[nb - 1][i];
+              if (z[0][i] !== null) {
+                if (z[0][i] < boundaryMin)
+                  boundaryMin = z[0][i];
+                if (z[0][i] > boundaryMax)
+                  boundaryMax = z[0][i];
+              }
+              if (z[nb - 1][i] !== null) {
+                if (z[nb - 1][i] < boundaryMin)
+                  boundaryMin = z[nb - 1][i];
+                if (z[nb - 1][i] > boundaryMax)
+                  boundaryMax = z[nb - 1][i];
+              }
             }
             if (boundaryMin === Infinity) {
               boundaryMin = Math.min(z[0][0] || Infinity, z[0][1] || Infinity);
             }
+            if (boundaryMax === -Infinity) {
+              boundaryMax = Math.max(z[0][0] || -Infinity, z[0][1] || -Infinity);
+            }
             for (i = 0; i < pathinfo.length; i++) {
               var pi = pathinfo[i];
-              pi.prefixBoundary = !pi.edgepaths.length && (boundaryMin > pi.level || pi.starts.length && boundaryMin === pi.level);
+              var allDataBelow = boundaryMax < pi.level;
+              pi.prefixBoundary = !pi.edgepaths.length && (boundaryMin > pi.level || allDataBelow && i === 0 || pi.starts.length && boundaryMin === pi.level);
             }
             break;
           case "constraint":
