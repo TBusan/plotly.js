@@ -1,6 +1,6 @@
 {
   "name": "contour-core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Advanced contour calculation library with smart algorithms - Extracted from Plotly.js",
   "main": "index.js",
   "type": "commonjs",

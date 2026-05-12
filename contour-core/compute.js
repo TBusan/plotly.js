@@ -141,34 +141,6 @@ function computeContours(grid, options) {
     };
 }
 
-/**
- * Scale paths from grid index space to data space
- */
-function scalePathsToData(result, x, y) {
-    var n = x.length;
-    var m = y.length;
-
-    function scalePointToData(pt) {
-        var ix = Math.max(0, Math.min(n - 1, Math.round(pt[0])));
-        var iy = Math.max(0, Math.min(m - 1, Math.round(pt[1])));
-        return [x[ix], y[iy]];
-    }
-
-    result.paths.forEach(function(pathInfo) {
-        pathInfo.edgepaths = pathInfo.edgepaths.map(function(path) {
-            return path.map(scalePointToData);
-        });
-        pathInfo.paths = pathInfo.paths.map(function(path) {
-            return path.map(scalePointToData);
-        });
-    });
-
-    return result;
-}
-
-/**
- * Create index array [0, 1, 2, ..., n-1]
- */
 function createIndexArray(n) {
     var arr = [];
     for (var i = 0; i < n; i++) {
@@ -178,6 +150,5 @@ function createIndexArray(n) {
 }
 
 module.exports = {
-    computeContours: computeContours,
-    scalePathsToData: scalePathsToData
+    computeContours: computeContours
 };

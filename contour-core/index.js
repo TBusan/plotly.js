@@ -4,7 +4,7 @@
  * contour-core - Standalone contour calculation library
  * Extracted from Plotly.js for SSR and performance optimization
  *
- * v0.2.0 - Null value support + Simplified rendering API
+ * v0.4.0 - GeoJSON refactor: removed clip logic, dynamic tolerance, smooth/transform/crs options, removed scalePathsToData
  */
 
 var api = require('./api');
@@ -15,7 +15,6 @@ var contourCore = {
     // Core computation
     // ============================================
     computeContours: require('./compute').computeContours,
-    scalePathsToData: require('./compute').scalePathsToData,
 
     // ============================================
     // Simplified rendering API (NEW in v0.2.0)
