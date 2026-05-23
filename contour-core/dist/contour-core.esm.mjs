@@ -1657,24 +1657,6 @@ var require_compute = __commonJS({
         // Include connectgaps flag for renderer reference
       };
     }
-    function scalePathsToData(result, x, y) {
-      var n = x.length;
-      var m = y.length;
-      function scalePointToData(pt) {
-        var ix = Math.max(0, Math.min(n - 1, Math.round(pt[0])));
-        var iy = Math.max(0, Math.min(m - 1, Math.round(pt[1])));
-        return [x[ix], y[iy]];
-      }
-      result.paths.forEach(function(pathInfo) {
-        pathInfo.edgepaths = pathInfo.edgepaths.map(function(path) {
-          return path.map(scalePointToData);
-        });
-        pathInfo.paths = pathInfo.paths.map(function(path) {
-          return path.map(scalePointToData);
-        });
-      });
-      return result;
-    }
     function createIndexArray(n) {
       var arr = [];
       for (var i = 0; i < n; i++) {
@@ -1683,8 +1665,7 @@ var require_compute = __commonJS({
       return arr;
     }
     module.exports = {
-      computeContours,
-      scalePathsToData
+      computeContours
     };
   }
 });
@@ -9649,6 +9630,144 @@ var require_api = __commonJS({
 var require_geojson = __commonJS({
   "geojson.js"(exports, module) {
     "use strict";
+    var CatmullRomExp = 0.5;
+    function smoothClosedCoords(pts, smoothness) {
+      if (!pts || pts.length < 3)
+        return pts;
+      if (smoothness <= 0)
+        return pts;
+      var result = [];
+      var n = pts.length;
+      var tangents = [];
+      for (var i = 0; i < n; i++) {
+        var prev = pts[(i - 1 + n) % n];
+        var curr = pts[i];
+        var next = pts[(i + 1) % n];
+        tangents.push(makeTangent(prev, curr, next, smoothness));
+      }
+      for (var i = 0; i < n; i++) {
+        var nextI = (i + 1) % n;
+        var steps = Math.max(1, Math.round(smoothness * 4));
+        for (var s = 0; s < steps; s++) {
+          var t = s / steps;
+          var t1 = tangents[i][1];
+          var t2 = tangents[nextI][0];
+          var x = Math.pow(1 - t, 3) * curr[0] + 3 * Math.pow(1 - t, 2) * t * t1[0] + 3 * (1 - t) * t * t * t2[0] + Math.pow(t, 3) * pts[nextI][0];
+          var y = Math.pow(1 - t, 3) * curr[1] + 3 * Math.pow(1 - t, 2) * t * t1[1] + 3 * (1 - t) * t * t * t2[1] + Math.pow(t, 3) * pts[nextI][1];
+          result.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100]);
+        }
+      }
+      return result;
+    }
+    function smoothOpenCoords(pts, smoothness) {
+      if (!pts || pts.length < 3)
+        return pts;
+      if (smoothness <= 0)
+        return pts;
+      var result = [];
+      var tangents = [];
+      for (var i = 1; i < pts.length - 1; i++) {
+        tangents.push(makeTangent(pts[i - 1], pts[i], pts[i + 1], smoothness));
+      }
+      result.push([pts[0][0], pts[0][1]]);
+      for (var i = 0; i < tangents.length - 1; i++) {
+        var nextPtIdx = i + 2;
+        var steps = Math.max(1, Math.round(smoothness * 4));
+        for (var s = 0; s < steps; s++) {
+          var t = s / steps;
+          var t1 = tangents[i][1];
+          var t2 = tangents[i + 1][0];
+          var x = Math.pow(1 - t, 3) * pts[i + 1][0] + 3 * Math.pow(1 - t, 2) * t * t1[0] + 3 * (1 - t) * t * t * t2[0] + Math.pow(t, 3) * pts[nextPtIdx][0];
+          var y = Math.pow(1 - t, 3) * pts[i + 1][1] + 3 * Math.pow(1 - t, 2) * t * t1[1] + 3 * (1 - t) * t * t * t2[1] + Math.pow(t, 3) * pts[nextPtIdx][1];
+          result.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100]);
+        }
+      }
+      result.push([pts[pts.length - 1][0], pts[pts.length - 1][1]]);
+      return result;
+    }
+    function makeTangent(prevpt, thispt, nextpt, smoothness) {
+      var d1x = prevpt[0] - thispt[0];
+      var d1y = prevpt[1] - thispt[1];
+      var d2x = nextpt[0] - thispt[0];
+      var d2y = nextpt[1] - thispt[1];
+      var d1a = Math.pow(d1x * d1x + d1y * d1y, CatmullRomExp / 2);
+      var d2a = Math.pow(d2x * d2x + d2y * d2y, CatmullRomExp / 2);
+      var numx = (d2a * d2a * d1x - d1a * d1a * d2x) * smoothness;
+      var numy = (d2a * d2a * d1y - d1a * d1a * d2y) * smoothness;
+      var denom1 = 3 * d2a * (d1a + d2a);
+      var denom2 = 3 * d1a * (d1a + d2a);
+      return [
+        [
+          thispt[0] + (denom1 && numx / denom1 || 0),
+          thispt[1] + (denom1 && numy / denom1 || 0)
+        ],
+        [
+          thispt[0] - (denom2 && numx / denom2 || 0),
+          thispt[1] - (denom2 && numy / denom2 || 0)
+        ]
+      ];
+    }
+    function computeTolerance(bounds) {
+      if (!bounds)
+        return 1e-10;
+      var rangeX = (bounds.maxX || 0) - (bounds.minX || 0);
+      var rangeY = (bounds.maxY || 0) - (bounds.minY || 0);
+      return Math.max(1e-10, Math.max(rangeX, rangeY) * 1e-3);
+    }
+    function perimeterParam(pt, bounds, tol) {
+      var minX = bounds.minX, maxX = bounds.maxX;
+      var minY = bounds.minY, maxY = bounds.maxY;
+      var x = pt[0], y = pt[1];
+      var rangeX = maxX - minX || 1;
+      var rangeY = maxY - minY || 1;
+      if (Math.abs(y - minY) < tol && x >= minX - tol && x <= maxX + tol) {
+        return (x - minX) / rangeX;
+      }
+      if (Math.abs(x - maxX) < tol && y >= minY - tol && y <= maxY + tol) {
+        return 1 + (y - minY) / rangeY;
+      }
+      if (Math.abs(y - maxY) < tol && x >= minX - tol && x <= maxX + tol) {
+        return 2 + (maxX - x) / rangeX;
+      }
+      if (Math.abs(x - minX) < tol && y >= minY - tol && y <= maxY + tol) {
+        return 3 + (maxY - y) / rangeY;
+      }
+      return -1;
+    }
+    function appendBoundaryPath(ring, fromPt, toPt, perimeter, bounds, tol) {
+      if (Math.abs(fromPt[0] - toPt[0]) < tol && Math.abs(fromPt[1] - toPt[1]) < tol) {
+        return;
+      }
+      var fromT = perimeterParam(fromPt, bounds, tol);
+      var toT = perimeterParam(toPt, bounds, tol);
+      var deltaT = toT - fromT;
+      if (deltaT <= 1e-10)
+        deltaT += 4;
+      var cornersToAdd = [];
+      for (var ci = 0; ci < 4; ci++) {
+        var cornerT = ci;
+        var distToCorner = cornerT - fromT;
+        if (distToCorner <= 1e-10)
+          distToCorner += 4;
+        if (distToCorner > 1e-10 && distToCorner < deltaT - 1e-10) {
+          cornersToAdd.push({ index: ci, dist: distToCorner });
+        }
+      }
+      cornersToAdd.sort(function(a, b) {
+        return a.dist - b.dist;
+      });
+      for (var i = 0; i < cornersToAdd.length; i++) {
+        var ci = cornersToAdd[i].index;
+        var last = ring[ring.length - 1];
+        if (!last || Math.abs(perimeter[ci][0] - last[0]) > tol || Math.abs(perimeter[ci][1] - last[1]) > tol) {
+          ring.push([perimeter[ci][0], perimeter[ci][1]]);
+        }
+      }
+      var last = ring[ring.length - 1];
+      if (!last || Math.abs(toPt[0] - last[0]) > tol || Math.abs(toPt[1] - last[1]) > tol) {
+        ring.push([toPt[0], toPt[1]]);
+      }
+    }
     function toGeoJSON(result, options) {
       if (!result || !result.paths) {
         throw new Error("Invalid contour result: missing paths");
@@ -9678,7 +9797,7 @@ var require_geojson = __commonJS({
                 properties: createProperties(level, propertyName, "polygon", i, j, true),
                 geometry: {
                   type: "Polygon",
-                  coordinates: [coords]
+                  coordinates: [closeRing(coords)]
                 }
               });
             } else {
@@ -9720,10 +9839,14 @@ var require_geojson = __commonJS({
       if (!separateFeatures && type === "fill") {
         features = groupFeaturesByLevel(features, propertyName);
       }
-      return {
+      var fc = {
         type: "FeatureCollection",
         features
       };
+      if (options.crs) {
+        fc.crs = options.crs;
+      }
+      return fc;
     }
     function toFilledGeoJSON(result, options) {
       if (!result || !result.paths) {
@@ -9731,7 +9854,6 @@ var require_geojson = __commonJS({
       }
       options = options || {};
       var propertyName = options.propertyName || "value";
-      var clip = options.clip || false;
       var features = [];
       var levels = result.levels;
       var paths = result.paths;
@@ -9739,267 +9861,262 @@ var require_geojson = __commonJS({
       if (!dataBounds) {
         dataBounds = { minX: 0, maxX: 100, minY: 0, maxY: 100 };
       }
+      var tol = computeTolerance(dataBounds);
       var perimeter = createPerimeter(dataBounds);
-      var numLevels = clip ? paths.length - 1 : paths.length;
-      for (var i = 0; i < numLevels; i++) {
-        var pathInfo = paths[i];
+      var allBoundaries = [];
+      for (var i = 0; i < paths.length; i++) {
+        allBoundaries.push(buildLevelBoundary(paths[i], perimeter, dataBounds, tol, options));
+      }
+      for (var i = 0; i < paths.length; i++) {
         var level = levels[i];
-        var currentBoundary = buildLevelBoundary(pathInfo, perimeter, dataBounds, options);
-        var nextBoundary = null;
-        if (i + 1 < paths.length) {
-          var nextPathInfo = paths[i + 1];
-          nextBoundary = buildLevelBoundary(nextPathInfo, perimeter, dataBounds, options);
-        }
-        var polygons = buildClippedPolygons(currentBoundary, nextBoundary, perimeter);
-        for (var j = 0; j < polygons.length; j++) {
-          var poly = polygons[j];
-          var hasHoles = poly.length > 1;
-          var value = level;
-          if (clip && i + 1 < levels.length) {
-            value = (level + levels[i + 1]) / 2;
+        var boundaries = allBoundaries[i];
+        for (var j = 0; j < boundaries.length; j++) {
+          var exteriorRing = boundaries[j];
+          if (exteriorRing.length < 4)
+            continue;
+          var rings = [exteriorRing];
+          if (i + 1 < allBoundaries.length) {
+            var nextBoundaries = allBoundaries[i + 1];
+            for (var k = 0; k < nextBoundaries.length; k++) {
+              var innerRing = nextBoundaries[k];
+              if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
+                rings.push(innerRing);
+              }
+            }
           }
           features.push({
             type: "Feature",
             properties: {
-              value,
+              value: level,
               level,
               levelIndex: i,
-              minValue: level,
-              maxValue: clip ? levels[i + 1] || level : level,
               type: "filled_contour",
-              hasHoles,
-              polygonIndex: j,
-              clipped: clip
+              hasHoles: rings.length > 1,
+              polygonIndex: j
             },
             geometry: {
               type: "Polygon",
-              coordinates: poly
+              coordinates: rings
             }
           });
         }
       }
-      return {
+      var fc = {
         type: "FeatureCollection",
         features
       };
+      if (options.crs) {
+        fc.crs = options.crs;
+      }
+      return fc;
     }
-    function buildLevelBoundary(pathInfo, perimeter, bounds, options) {
+    function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
       var boundaries = [];
       var edgepaths = pathInfo.edgepaths || [];
       var closedPaths = pathInfo.paths || [];
-      function isTop(pt) {
-        return Math.abs(pt[1] - perimeter[0][1]) < 0.1;
-      }
-      function isBottom(pt) {
-        return Math.abs(pt[1] - perimeter[2][1]) < 0.1;
-      }
-      function isLeft(pt) {
-        return Math.abs(pt[0] - perimeter[0][0]) < 0.1;
-      }
-      function isRight(pt) {
-        return Math.abs(pt[0] - perimeter[2][0]) < 0.1;
-      }
-      var startIndices = [];
+      var edges = [];
       for (var i = 0; i < edgepaths.length; i++) {
         if (edgepaths[i] && edgepaths[i].length > 0) {
-          startIndices.push(i);
+          var coords = convertPathCoordinates(edgepaths[i], options);
+          if (coords.length < 2)
+            continue;
+          edges.push({
+            index: i,
+            coords
+          });
         }
       }
-      var currentBoundary = null;
-      if (pathInfo.prefixBoundary) {
-        currentBoundary = [
+      if (pathInfo.prefixBoundary && edges.length === 0) {
+        boundaries.push([
           [perimeter[0][0], perimeter[0][1]],
           [perimeter[1][0], perimeter[1][1]],
           [perimeter[2][0], perimeter[2][1]],
           [perimeter[3][0], perimeter[3][1]],
           [perimeter[0][0], perimeter[0][1]]
-          // Close the perimeter
-        ];
+        ]);
+        for (var k = 0; k < closedPaths.length; k++) {
+          if (!closedPaths[k] || closedPaths[k].length < 3)
+            continue;
+          var closedCoords = convertPathCoordinates(closedPaths[k], options);
+          if (closedCoords.length < 3)
+            continue;
+          closeRingCoords(closedCoords);
+          boundaries.push(closedCoords);
+        }
+        return boundaries;
       }
-      while (startIndices.length > 0) {
-        var edgePath = edgepaths[startIndices[0]];
-        if (!edgePath || edgePath.length === 0) {
-          startIndices.shift();
+      if (edges.length === 0) {
+        for (var k = 0; k < closedPaths.length; k++) {
+          if (!closedPaths[k] || closedPaths[k].length < 3)
+            continue;
+          var closedCoords = convertPathCoordinates(closedPaths[k], options);
+          if (closedCoords.length < 3)
+            continue;
+          closeRingCoords(closedCoords);
+          boundaries.push(closedCoords);
+        }
+        return boundaries;
+      }
+      for (var i = 0; i < edges.length; i++) {
+        edges[i].startT = perimeterParam(edges[i].coords[0], bounds, tol);
+        edges[i].endT = perimeterParam(edges[i].coords[edges[i].coords.length - 1], bounds, tol);
+      }
+      edges.sort(function(a, b) {
+        return a.startT - b.startT;
+      });
+      var visited = new Array(edges.length);
+      for (var v = 0; v < visited.length; v++)
+        visited[v] = false;
+      for (var startIdx = 0; startIdx < edges.length; startIdx++) {
+        if (visited[startIdx])
           continue;
+        var ring = [];
+        visited[startIdx] = true;
+        for (var p = 0; p < edges[startIdx].coords.length; p++) {
+          ring.push(edges[startIdx].coords[p]);
         }
-        var edgeCoords = convertPathCoordinates(edgePath, options);
-        if (!currentBoundary) {
-          currentBoundary = edgeCoords.slice();
-        } else {
-          var lastPt = currentBoundary[currentBoundary.length - 1];
-          var firstEdgePt = edgeCoords[0];
-          addBoundaryConnection(currentBoundary, lastPt, firstEdgePt, perimeter, isTop, isBottom, isLeft, isRight);
-          currentBoundary = currentBoundary.concat(edgeCoords);
-        }
-        startIndices.shift();
-        if (edgeCoords.length > 0) {
-          var endPt = edgeCoords[edgeCoords.length - 1];
-          var foundNext = false;
-          for (var cnt = 0; cnt < 4 && !foundNext; cnt++) {
-            var nextCorner = getNextCorner(endPt, perimeter, isTop, isBottom, isLeft, isRight);
-            var nextStartIdx = -1;
-            for (var j = 0; j < startIndices.length; j++) {
-              var nextPath = edgepaths[startIndices[j]];
-              if (!nextPath || nextPath.length === 0)
-                continue;
-              var nextCoords = convertPathCoordinates(nextPath, options);
-              if (isOnEdgeSegment(nextCoords[0], endPt, nextCorner, isTop, isBottom, isLeft, isRight)) {
-                nextStartIdx = startIndices[j];
-                nextCorner = nextCoords[0];
-                break;
-              }
-            }
-            if (nextStartIdx >= 0) {
-              currentBoundary.push([nextCorner[0], nextCorner[1]]);
-              endPt = nextCorner;
-              startIndices.splice(startIndices.indexOf(nextStartIdx), 1);
-              foundNext = true;
-            } else {
-              currentBoundary.push([nextCorner[0], nextCorner[1]]);
-              endPt = nextCorner;
+        var currentEndPt = edges[startIdx].coords[edges[startIdx].coords.length - 1];
+        var currentEndT = edges[startIdx].endT;
+        var ringStartPt = edges[startIdx].coords[0];
+        var maxSteps = edges.length + 1;
+        for (var step = 0; step < maxSteps; step++) {
+          if (step > 0 && Math.abs(currentEndPt[0] - ringStartPt[0]) < tol && Math.abs(currentEndPt[1] - ringStartPt[1]) < tol) {
+            break;
+          }
+          var nextIdx = -1;
+          var bestDeltaT = Infinity;
+          for (var ni = 0; ni < edges.length; ni++) {
+            if (visited[ni])
+              continue;
+            var st = edges[ni].startT;
+            var deltaT = st - currentEndT;
+            if (deltaT <= 1e-10)
+              deltaT += 4;
+            if (deltaT < bestDeltaT) {
+              bestDeltaT = deltaT;
+              nextIdx = ni;
             }
           }
+          if (nextIdx === -1) {
+            appendBoundaryPath(ring, currentEndPt, ringStartPt, perimeter, bounds, tol);
+            break;
+          }
+          var nextStartPt = edges[nextIdx].coords[0];
+          appendBoundaryPath(ring, currentEndPt, nextStartPt, perimeter, bounds, tol);
+          for (var p = 0; p < edges[nextIdx].coords.length; p++) {
+            ring.push(edges[nextIdx].coords[p]);
+          }
+          currentEndPt = edges[nextIdx].coords[edges[nextIdx].coords.length - 1];
+          currentEndT = edges[nextIdx].endT;
+          visited[nextIdx] = true;
         }
-      }
-      if (currentBoundary && currentBoundary.length > 2) {
-        if (!pathInfo.prefixBoundary) {
-          currentBoundary.push([currentBoundary[0][0], currentBoundary[0][1]]);
+        if (ring.length > 2) {
+          closeRingCoords(ring);
+          boundaries.push(ring);
         }
-        boundaries.push(currentBoundary);
       }
       for (var k = 0; k < closedPaths.length; k++) {
         if (!closedPaths[k] || closedPaths[k].length < 3)
           continue;
         var closedCoords = convertPathCoordinates(closedPaths[k], options);
-        closedCoords.push([closedCoords[0][0], closedCoords[0][1]]);
+        if (closedCoords.length < 3)
+          continue;
+        closeRingCoords(closedCoords);
         boundaries.push(closedCoords);
       }
       return boundaries;
     }
-    function buildClippedPolygons(currentBoundary, nextBoundary, perimeter) {
-      var polygons = [];
-      if (!currentBoundary || currentBoundary.length === 0) {
-        return polygons;
-      }
-      if (!nextBoundary || nextBoundary.length === 0) {
-        for (var i = 0; i < currentBoundary.length; i++) {
-          polygons.push([currentBoundary[i]]);
-        }
-        return polygons;
-      }
-      for (i = 0; i < currentBoundary.length; i++) {
-        var exteriorRing = currentBoundary[i];
-        var rings = [exteriorRing];
-        for (var j = 0; j < nextBoundary.length; j++) {
-          var innerRing = nextBoundary[j];
-          if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
-            rings.push(innerRing);
-          }
-        }
-        polygons.push(rings);
-      }
-      return polygons;
-    }
-    function isPointInPolygon(point, polygon) {
-      if (!polygon || polygon.length < 3)
-        return false;
-      var x = point[0];
-      var y = point[1];
-      var inside = false;
-      for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        var xi = polygon[i][0];
-        var yi = polygon[i][1];
-        var xj = polygon[j][0];
-        var yj = polygon[j][1];
-        var intersect = yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi;
-        if (intersect)
-          inside = !inside;
-      }
-      return inside;
-    }
-    function getNextCorner(pt, perimeter, isTop, isBottom, isLeft, isRight) {
-      if (isTop(pt) && !isRight(pt))
-        return perimeter[1];
-      if (isLeft(pt))
-        return perimeter[0];
-      if (isBottom(pt))
-        return perimeter[3];
-      if (isRight(pt))
-        return perimeter[2];
-      return perimeter[0];
-    }
-    function isOnEdgeSegment(pt, endPt, nextCorner, isTop, isBottom, isLeft, isRight) {
-      if (Math.abs(pt[0] - endPt[0]) < 0.1 && Math.abs(pt[0] - nextCorner[0]) < 0.1) {
-        var yMin = Math.min(endPt[1], nextCorner[1]);
-        var yMax = Math.max(endPt[1], nextCorner[1]);
-        return pt[1] >= yMin - 0.1 && pt[1] <= yMax + 0.1;
-      }
-      if (Math.abs(pt[1] - endPt[1]) < 0.1 && Math.abs(pt[1] - nextCorner[1]) < 0.1) {
-        var xMin = Math.min(endPt[0], nextCorner[0]);
-        var xMax = Math.max(endPt[0], nextCorner[0]);
-        return pt[0] >= xMin - 0.1 && pt[0] <= xMax + 0.1;
-      }
-      return false;
-    }
-    function addBoundaryConnection(poly, fromPt, toPt, perimeter, isTop, isBottom, isLeft, isRight) {
-      if (!fromPt || !toPt)
+    function closeRingCoords(coords) {
+      if (coords.length < 3)
         return;
-      var currentPt = fromPt;
-      for (var cnt = 0; cnt < 4 && (Math.abs(currentPt[0] - toPt[0]) > 0.1 || Math.abs(currentPt[1] - toPt[1]) > 0.1); cnt++) {
-        var nextCorner;
-        if (isTop(currentPt) && !isRight(currentPt))
-          nextCorner = perimeter[1];
-        else if (isLeft(currentPt))
-          nextCorner = perimeter[0];
-        else if (isBottom(currentPt))
-          nextCorner = perimeter[3];
-        else if (isRight(currentPt))
-          nextCorner = perimeter[2];
-        else
-          break;
-        if (isOnEdgeSegment(toPt, currentPt, nextCorner, isTop, isBottom, isLeft, isRight)) {
-          poly.push([toPt[0], toPt[1]]);
-          return;
-        }
-        poly.push([nextCorner[0], nextCorner[1]]);
-        currentPt = nextCorner;
+      var first = coords[0];
+      var last = coords[coords.length - 1];
+      if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
+        coords.push([first[0], first[1]]);
       }
+    }
+    function closeRing(coords) {
+      if (coords.length < 2)
+        return coords;
+      var result = coords.slice();
+      var first = result[0];
+      var last = result[result.length - 1];
+      if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
+        result.push([first[0], first[1]]);
+      }
+      return result;
     }
     function createPerimeter(bounds) {
       return [
         [bounds.minX, bounds.minY],
-        // bottom-left
         [bounds.maxX, bounds.minY],
-        // bottom-right
         [bounds.maxX, bounds.maxY],
-        // top-right
         [bounds.minX, bounds.maxY]
-        // top-left
       ];
     }
     function getDataBounds(result) {
-      if (!result.pathinfo || result.pathinfo.length === 0) {
-        return null;
+      if (result.pathinfo && result.pathinfo.length > 0) {
+        var pi = result.pathinfo[0];
+        if (pi.x && pi.y) {
+          return {
+            minX: pi.x[0],
+            maxX: pi.x[pi.x.length - 1],
+            minY: pi.y[0],
+            maxY: pi.y[pi.y.length - 1]
+          };
+        }
       }
-      var pi = result.pathinfo[0];
-      if (!pi.x || !pi.y) {
-        return null;
+      if (result.paths && result.paths.length > 0) {
+        var minX = Infinity, maxX = -Infinity;
+        var minY = Infinity, maxY = -Infinity;
+        for (var i = 0; i < result.paths.length; i++) {
+          var p = result.paths[i];
+          var allPaths = (p.paths || []).concat(p.edgepaths || []);
+          for (var j = 0; j < allPaths.length; j++) {
+            var path = allPaths[j];
+            for (var k = 0; k < path.length; k++) {
+              var pt = path[k];
+              if (pt && pt.length >= 2) {
+                if (pt[0] < minX)
+                  minX = pt[0];
+                if (pt[0] > maxX)
+                  maxX = pt[0];
+                if (pt[1] < minY)
+                  minY = pt[1];
+                if (pt[1] > maxY)
+                  maxY = pt[1];
+              }
+            }
+          }
+        }
+        if (isFinite(minX)) {
+          return { minX, maxX, minY, maxY };
+        }
       }
-      var x = pi.x;
-      var y = pi.y;
-      return {
-        minX: x[0],
-        maxX: x[x.length - 1],
-        minY: y[0],
-        maxY: y[y.length - 1]
-      };
+      return null;
     }
     function convertPathCoordinates(path, options) {
+      options = options || {};
       var coords = [];
       for (var i = 0; i < path.length; i++) {
         var pt = path[i];
         if (Array.isArray(pt) && pt.length >= 2) {
-          coords.push([pt[0], pt[1]]);
+          var x = pt[0];
+          var y = pt[1];
+          if (options.transform && typeof options.transform.forward === "function") {
+            var transformed = options.transform.forward(x, y);
+            x = transformed[0];
+            y = transformed[1];
+          }
+          coords.push([x, y]);
+        }
+      }
+      if (options.smooth && options.smooth > 0) {
+        var isClosed = coords.length > 2 && Math.abs(coords[0][0] - coords[coords.length - 1][0]) < 1e-10 && Math.abs(coords[0][1] - coords[coords.length - 1][1]) < 1e-10;
+        if (isClosed) {
+          coords = smoothClosedCoords(coords, options.smooth);
+        } else {
+          coords = smoothOpenCoords(coords, options.smooth);
         }
       }
       return coords;
@@ -10069,8 +10186,30 @@ var require_geojson = __commonJS({
       }
       return result;
     }
+    function isPointInPolygon(point, polygon) {
+      if (!polygon || polygon.length < 3)
+        return false;
+      var x = point[0];
+      var y = point[1];
+      var inside = false;
+      for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        var xi = polygon[i][0];
+        var yi = polygon[i][1];
+        var xj = polygon[j][0];
+        var yj = polygon[j][1];
+        var intersect = yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi;
+        if (intersect)
+          inside = !inside;
+      }
+      return inside;
+    }
     function stringify(result, options) {
-      var geojson = toGeoJSON(result, options);
+      var geojson;
+      if (options && options.type === "fill") {
+        geojson = toFilledGeoJSON(result, options);
+      } else {
+        geojson = toGeoJSON(result, options);
+      }
       return JSON.stringify(geojson, null, options && options.indent || 2);
     }
     module.exports = {
@@ -11143,7 +11282,6 @@ var require_contour_core = __commonJS({
       // Core computation
       // ============================================
       computeContours: require_compute().computeContours,
-      scalePathsToData: require_compute().scalePathsToData,
       // ============================================
       // Simplified rendering API (NEW in v0.2.0)
       // ============================================
