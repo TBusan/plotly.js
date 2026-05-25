@@ -28,9 +28,9 @@ function smoothClosedCoords(pts, smoothness) {
 
     for (var i = 0; i < n; i++) {
         var prev = pts[(i - 1 + n) % n];
-        var curr = pts[i];
+        var currPt = pts[i];
         var next = pts[(i + 1) % n];
-        tangents.push(makeTangent(prev, curr, next, smoothness));
+        tangents.push(makeTangent(prev, currPt, next, smoothness));
     }
 
     for (var i = 0; i < n; i++) {
@@ -40,13 +40,13 @@ function smoothClosedCoords(pts, smoothness) {
             var t = s / steps;
             var t1 = tangents[i][1];
             var t2 = tangents[nextI][0];
-            var x = Math.pow(1 - t, 3) * curr[0] +
+            var x = Math.pow(1 - t, 3) * pts[i][0] +
                     3 * Math.pow(1 - t, 2) * t * t1[0] +
                     3 * (1 - t) * t * t * t2[0] +
                     Math.pow(t, 3) * pts[nextI][0];
-            var y = Math.pow(1 - t, 3) * curr[1] +
+            var y = Math.pow(1 - t, 3) * pts[i][1] +
                     3 * Math.pow(1 - t, 2) * t * t1[1] +
-                    3 * (1 - t) * t * t * t2[1] +
+                    3 * (1 - t) * t * t2[1] +
                     Math.pow(t, 3) * pts[nextI][1];
             result.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100]);
         }
@@ -132,9 +132,9 @@ function computeTolerance(bounds) {
 /**
  * Compute clockwise perimeter parameter for a boundary point.
  * Perimeter goes clockwise:
- *   bottom edge (left→right) → right edge (bottom→top) → top edge (right→left) → left edge (top→bottom)
+ *   bottom edge (left→right) �?right edge (bottom→top) �?top edge (right→left) �?left edge (top→bottom)
  *
- * Returns t ∈ [0, 4]:
+ * Returns t �?[0, 4]:
  *   bottom edge: [0, 1]  (corner at t=1 = bottom-right)
  *   right edge:  [1, 2]  (corner at t=2 = top-right)
  *   top edge:    [2, 3]  (corner at t=3 = top-left)
@@ -147,23 +147,41 @@ function perimeterParam(pt, bounds, tol) {
     var rangeX = maxX - minX || 1;
     var rangeY = maxY - minY || 1;
 
-    // Bottom edge: y=minY, x from minX→maxX → t ∈ [0, 1]
-    if (Math.abs(y - minY) < tol && x >= minX - tol && x <= maxX + tol) {
+    var onBottom = Math.abs(y - minY) < tol && x >= minX - tol && x <= maxX + tol;
+    var onRight = Math.abs(x - maxX) < tol && y >= minY - tol && y <= maxY + tol;
+    var onTop = Math.abs(y - maxY) < tol && x >= minX - tol && x <= maxX + tol;
+    var onLeft = Math.abs(x - minX) < tol && y >= minY - tol && y <= maxY + tol;
+
+    // Corner disambiguation: assign to exactly one edge
+    // Bottom-right corner (maxX, minY): prioritize bottom edge (t�?)
+    // Top-right corner (maxX, maxY): prioritize right edge (t�?)
+    // Top-left corner (minX, maxY): prioritize top edge (t�?)
+    // Bottom-left corner (minX, minY): prioritize left edge (t�?/0)
+
+    if (onBottom && !onRight) {
         return (x - minX) / rangeX;
     }
-    // Right edge: x=maxX, y from minY→maxY → t ∈ [1, 2]
-    if (Math.abs(x - maxX) < tol && y >= minY - tol && y <= maxY + tol) {
+    if (onRight && !onTop) {
         return 1 + (y - minY) / rangeY;
     }
-    // Top edge: y=maxY, x from maxX→minX → t ∈ [2, 3]
-    if (Math.abs(y - maxY) < tol && x >= minX - tol && x <= maxX + tol) {
+    if (onTop && !onLeft) {
         return 2 + (maxX - x) / rangeX;
     }
-    // Left edge: x=minX, y from maxY→minY → t ∈ [3, 4]
-    if (Math.abs(x - minX) < tol && y >= minY - tol && y <= maxY + tol) {
+    if (onLeft && !onBottom) {
         return 3 + (maxY - y) / rangeY;
     }
-    return -1; // Not on perimeter
+
+    // Corner points: assign deterministically
+    // Bottom-right: bottom edge (t�?)
+    if (onBottom && onRight) return 1;
+    // Top-right: right edge (t�?)
+    if (onRight && onTop) return 2;
+    // Top-left: top edge (t�?)
+    if (onTop && onLeft) return 3;
+    // Bottom-left: left edge (t�?/4)
+    if (onLeft && onBottom) return 0;
+
+    return -1;
 }
 
 /**
@@ -358,10 +376,23 @@ function toFilledGeoJSON(result, options) {
     var tol = computeTolerance(dataBounds);
     var perimeter = createPerimeter(dataBounds);
 
-    // Pre-compute all level boundaries
+    var zData = null;
+    if (result.pathinfo && result.pathinfo.length > 0 && result.pathinfo[0].z) {
+        zData = result.pathinfo[0].z;
+    }
+    var xData = null;
+    var yData = null;
+    if (result.pathinfo && result.pathinfo.length > 0) {
+        xData = result.pathinfo[0].x;
+        yData = result.pathinfo[0].y;
+    }
+
     var allBoundaries = [];
     for (var i = 0; i < paths.length; i++) {
-        allBoundaries.push(buildLevelBoundary(paths[i], perimeter, dataBounds, tol, options));
+        allBoundaries.push(buildLevelBoundary(
+            paths[i], perimeter, dataBounds, tol, options,
+            levels[i], zData, xData, yData
+        ));
     }
 
     for (var i = 0; i < paths.length; i++) {
@@ -372,14 +403,15 @@ function toFilledGeoJSON(result, options) {
             var exteriorRing = boundaries[j];
             if (exteriorRing.length < 4) continue;
 
-            var rings = [exteriorRing];
+var rings = [exteriorRing];
+            ensureCCW(exteriorRing);
 
-            // Next-level boundaries that are fully inside this ring become holes
             if (i + 1 < allBoundaries.length) {
                 var nextBoundaries = allBoundaries[i + 1];
                 for (var k = 0; k < nextBoundaries.length; k++) {
                     var innerRing = nextBoundaries[k];
                     if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
+                        ensureCW(innerRing);
                         rings.push(innerRing);
                     }
                 }
@@ -422,22 +454,24 @@ function toFilledGeoJSON(result, options) {
 /**
  * Build closed boundary rings for a contour level.
  *
- * Uses perimeter parameterization to correctly order edge paths
- * along the boundary, preventing self-intersecting polygons.
+ * Uses z-value boundary classification to correctly determine which boundary
+ * segments belong to the fill area (z >= level), preventing self-intersecting
+ * polygons and cross-region jumping.
  *
  * Strategy:
- * 1. Assign each edge path start/end a parameter t ∈ [0,4) representing
- *    its position along the clockwise perimeter
- * 2. Sort edge paths by their start position
- * 3. Connect consecutive edge paths by walking clockwise along the boundary
- * 4. Interior closed paths are added as separate rings
+ * 1. Collect all edge path endpoints on the data boundary
+ * 2. Create boundary nodes at each endpoint and each corner
+ * 3. Walk the boundary clockwise, marking each segment as "fill" (z >= level)
+ *    or "skip" (z < level)
+ * 4. Trace fill rings by following: edge paths + fill boundary segments
+ * 5. Interior closed paths are added as separate rings
  */
-function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
+function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options,
+                            level, zData, xData, yData) {
     var boundaries = [];
     var edgepaths = pathInfo.edgepaths || [];
     var closedPaths = pathInfo.paths || [];
 
-    // Convert edge paths to coordinate arrays
     var edges = [];
     for (var i = 0; i < edgepaths.length; i++) {
         if (edgepaths[i] && edgepaths[i].length > 0) {
@@ -445,13 +479,13 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
             if (coords.length < 2) continue;
             edges.push({
                 index: i,
-                coords: coords
+                coords: coords,
+                startPt: coords[0],
+                endPt: coords[coords.length - 1]
             });
         }
     }
 
-    // prefixBoundary = true means the fill area extends to the entire perimeter.
-    // Per close_boundaries.js, this is only set when edgepaths.length === 0.
     if (pathInfo.prefixBoundary && edges.length === 0) {
         boundaries.push([
             [perimeter[0][0], perimeter[0][1]],
@@ -460,7 +494,6 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
             [perimeter[3][0], perimeter[3][1]],
             [perimeter[0][0], perimeter[0][1]]
         ]);
-        // Interior closed paths at this level become separate boundary rings
         for (var k = 0; k < closedPaths.length; k++) {
             if (!closedPaths[k] || closedPaths[k].length < 3) continue;
             var closedCoords = convertPathCoordinates(closedPaths[k], options);
@@ -471,7 +504,6 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
         return boundaries;
     }
 
-    // No edge paths and no prefixBoundary: only interior closed paths
     if (edges.length === 0) {
         for (var k = 0; k < closedPaths.length; k++) {
             if (!closedPaths[k] || closedPaths[k].length < 3) continue;
@@ -484,17 +516,27 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
     }
 
     // --- Connect edge paths into closed rings ---
+    //
+    // Strategy: Walk the boundary clockwise. When we encounter an edge path's
+    // start point, follow that edge path to its end. Then continue walking the
+    // boundary clockwise from the edge path's end, collecting boundary points,
+    // until we reach the next edge path's start. Repeat until we close the ring.
+    //
+    // Key fix: Only include boundary segments where z >= level. Skip boundary
+    // segments where z < level — those gaps separate distinct fill regions.
+    // When we encounter a non-fill gap, we close the current ring and start a new one.
 
-    // Compute perimeter parameter for each edge path's start and end
     for (var i = 0; i < edges.length; i++) {
-        edges[i].startT = perimeterParam(edges[i].coords[0], bounds, tol);
-        edges[i].endT = perimeterParam(edges[i].coords[edges[i].coords.length - 1], bounds, tol);
+        edges[i].startT = perimeterParam(edges[i].startPt, bounds, tol);
+        edges[i].endT = perimeterParam(edges[i].endPt, bounds, tol);
     }
 
-    // Sort edges by their start position on the perimeter (clockwise)
+    // Build fill/skip boundary segments for boundary walk
+    var boundarySegs = buildBoundarySegments(bounds, level, zData, xData, yData, tol);
+
+    // Sort edges by start position (clockwise)
     edges.sort(function(a, b) { return a.startT - b.startT; });
 
-    // Connect edge paths in clockwise order along the perimeter
     var visited = new Array(edges.length);
     for (var v = 0; v < visited.length; v++) visited[v] = false;
 
@@ -509,9 +551,10 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
             ring.push(edges[startIdx].coords[p]);
         }
 
-        var currentEndPt = edges[startIdx].coords[edges[startIdx].coords.length - 1];
+        var currentEndPt = edges[startIdx].endPt;
         var currentEndT = edges[startIdx].endT;
-        var ringStartPt = edges[startIdx].coords[0];
+        var ringStartPt = edges[startIdx].startPt;
+        var ringStartT = edges[startIdx].startT;
 
         var maxSteps = edges.length + 1;
 
@@ -523,8 +566,9 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
                 break;
             }
 
-            // Find the unvisited edge with the closest start position
-            // clockwise after currentEndT
+            // Find the next reachable edge path — the closest unvisited one
+            // clockwise from currentEndT, but ONLY if the boundary between
+            // them is all fill (z >= level segments).
             var nextIdx = -1;
             var bestDeltaT = Infinity;
 
@@ -533,21 +577,26 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
                 var st = edges[ni].startT;
                 var deltaT = st - currentEndT;
                 if (deltaT <= 1e-10) deltaT += 4;
-                if (deltaT < bestDeltaT) {
+                if (deltaT < bestDeltaT && isFillBoundaryPath(currentEndT, st, boundarySegs, tol)) {
                     bestDeltaT = deltaT;
                     nextIdx = ni;
                 }
             }
 
             if (nextIdx === -1) {
-                // No more edges — close the ring along the boundary
-                appendBoundaryPath(ring, currentEndPt, ringStartPt, perimeter, bounds, tol);
+                // No reachable edge path — try to close the ring along the boundary
+                if (isFillBoundaryPath(currentEndT, ringStartT, boundarySegs, tol)) {
+                    appendBoundaryPath(ring, currentEndPt, ringStartPt, perimeter, bounds, tol);
+                } else {
+                    // Discard this ring — it crosses non-fill boundary
+                    ring = null;
+                }
                 break;
             }
 
             var nextStartPt = edges[nextIdx].coords[0];
 
-            // Add boundary path from current end to next edge's start (clockwise)
+            // Add boundary path from current end to next edge's start
             appendBoundaryPath(ring, currentEndPt, nextStartPt, perimeter, bounds, tol);
 
             // Add next edge's points
@@ -555,13 +604,12 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
                 ring.push(edges[nextIdx].coords[p]);
             }
 
-            currentEndPt = edges[nextIdx].coords[edges[nextIdx].coords.length - 1];
+            currentEndPt = edges[nextIdx].endPt;
             currentEndT = edges[nextIdx].endT;
             visited[nextIdx] = true;
         }
 
-        // Close the ring
-        if (ring.length > 2) {
+        if (ring && ring.length > 2) {
             closeRingCoords(ring);
             boundaries.push(ring);
         }
@@ -579,6 +627,108 @@ function buildLevelBoundary(pathInfo, perimeter, bounds, tol, options) {
     return boundaries;
 }
 
+/**
+ * Build an array of boundary segments classified as "fill" (z >= level) or not.
+ *
+ * Each boundary segment represents the edge between two consecutive grid nodes
+ * on the data perimeter. A segment is "fill" if ANY adjacent boundary cell
+ * has z >= level — meaning the fill polygon's boundary could pass through
+ * that segment.
+ */
+function buildBoundarySegments(bounds, level, zData, xData, yData, tol) {
+    if (!zData || !xData || !yData) {
+        return [];
+    }
+
+    var minX = bounds.minX, maxX = bounds.maxX;
+    var minY = bounds.minY, maxY = bounds.maxY;
+    var na = xData.length;
+    var nb = yData.length;
+
+    function gridNodeT(xi, yi) {
+        if (yi === 0 && xi >= 0 && xi < na) {
+            return (xData[xi] - minX) / (maxX - minX || 1);
+        }
+        if (xi === na - 1 && yi >= 0 && yi < nb) {
+            return 1 + (yData[yi] - minY) / (maxY - minY || 1);
+        }
+        if (yi === nb - 1 && xi >= 0 && xi < na) {
+            return 2 + (maxX - xData[xi]) / (maxX - minX || 1);
+        }
+        if (xi === 0 && yi >= 0 && yi < nb) {
+            return 3 + (maxY - yData[yi]) / (maxY - minY || 1);
+        }
+        return -1;
+    }
+
+    var segs = [];
+
+    // Bottom edge segments: clockwise from left to right
+    for (var xi = 0; xi < na - 1; xi++) {
+        var fromT = gridNodeT(xi, 0);
+        var toT = gridNodeT(xi + 1, 0);
+        var isFill = (zData[0][xi] >= level) || (zData[0][xi + 1] >= level);
+        segs.push({ fromT: fromT, toT: toT, isFill: isFill });
+    }
+
+    // Right edge segments: clockwise from bottom to top
+    for (var yi = 0; yi < nb - 1; yi++) {
+        var fromT = gridNodeT(na - 1, yi);
+        var toT = gridNodeT(na - 1, yi + 1);
+        var isFill = (zData[yi][na - 1] >= level) || (zData[yi + 1][na - 1] >= level);
+        segs.push({ fromT: fromT, toT: toT, isFill: isFill });
+    }
+
+    // Top edge segments: clockwise from right to left
+    for (var xi = na - 1; xi > 0; xi--) {
+        var fromT = gridNodeT(xi, nb - 1);
+        var toT = gridNodeT(xi - 1, nb - 1);
+        var isFill = (zData[nb - 1][xi] >= level) || (zData[nb - 1][xi - 1] >= level);
+        segs.push({ fromT: fromT, toT: toT, isFill: isFill });
+    }
+
+    // Left edge segments: clockwise from top to bottom
+    for (var yi = nb - 1; yi > 0; yi--) {
+        var fromT = gridNodeT(0, yi);
+        var toT = gridNodeT(0, yi - 1);
+        var isFill = (zData[yi][0] >= level) || (zData[yi - 1][0] >= level);
+        segs.push({ fromT: fromT, toT: toT, isFill: isFill });
+    }
+
+    return segs;
+}
+
+/**
+ * Check if the clockwise boundary path from fromT to toT passes through
+ * ONLY fill segments (z >= level boundary cells).
+ */
+function isFillBoundaryPath(fromT, toT, boundarySegs, tol) {
+    if (!boundarySegs || boundarySegs.length === 0) {
+        return true;
+    }
+
+    var totalDist = toT - fromT;
+    if (totalDist <= 1e-10) totalDist += 4;
+
+    for (var i = 0; i < boundarySegs.length; i++) {
+        var seg = boundarySegs[i];
+        if (seg.isFill) continue;
+
+        // This is a non-fill segment. Check if it overlaps with [fromT, toT].
+        var normStart = seg.fromT - fromT;
+        if (normStart < -1e-10) normStart += 4;
+        var normEnd = normStart + (seg.toT - seg.fromT <= 1e-10 ? (seg.toT - seg.fromT + 4) : (seg.toT - seg.fromT));
+
+        if (normStart < totalDist - 1e-10 && normEnd > 1e-10) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// ==============================
+// Utilities
 // ==============================
 // Utilities
 // ==============================
@@ -601,6 +751,26 @@ function closeRing(coords) {
         result.push([first[0], first[1]]);
     }
     return result;
+}
+
+function signedArea(coords) {
+    var area = 0;
+    for (var i = 0; i < coords.length - 1; i++) {
+        area += coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1];
+    }
+    return area / 2;
+}
+
+function ensureCCW(coords) {
+    if (signedArea(coords) < 0) {
+        coords.reverse();
+    }
+}
+
+function ensureCW(coords) {
+    if (signedArea(coords) > 0) {
+        coords.reverse();
+    }
 }
 
 function createPerimeter(bounds) {

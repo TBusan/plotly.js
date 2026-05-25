@@ -329,7 +329,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="sample-data1.js"></script>
+    <script src="sample-data2.js"></script>
     <script src="../dist/contour-core.browser.js"></script>
     <script>
     (function() {
@@ -364,7 +364,7 @@
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
 
-        function renderCanvas(result, fillMode) {
+        function renderCanvas(geojson, result, fillMode) {
             ctx.fillStyle = '#fff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -372,7 +372,6 @@
             var minL = levels[0];
             var maxL = levels[levels.length - 1];
 
-            // Compute view bounds from pathinfo
             var pi = result.pathinfo && result.pathinfo[0];
             var xMin = pi ? pi.x[0] : 0;
             var xMax = pi ? pi.x[pi.x.length - 1] : 1;
@@ -387,60 +386,75 @@
                 return canvas.height - pad - (y - yMin) / (yMax - yMin) * (canvas.height - 2 * pad);
             }
 
-            function drawPath(pts) {
-                if (pts.length < 2) return;
-                ctx.beginPath();
-                ctx.moveTo(toCanvasX(pts[0][0]), toCanvasY(pts[0][1]));
-                for (var i = 1; i < pts.length; i++) {
-                    ctx.lineTo(toCanvasX(pts[i][0]), toCanvasY(pts[i][1]));
+            function drawRing(coords) {
+                if (!coords || coords.length < 3) return;
+                ctx.moveTo(toCanvasX(coords[0][0]), toCanvasY(coords[0][1]));
+                for (var k = 1; k < coords.length; k++) {
+                    ctx.lineTo(toCanvasX(coords[k][0]), toCanvasY(coords[k][1]));
                 }
+                ctx.closePath();
             }
 
-            // Draw filled contours
-            if (fillMode) {
-                for (var i = 0; i < result.paths.length; i++) {
-                    var pathInfo = result.paths[i];
-                    var t = (i + 1) / result.paths.length;
+            if (fillMode && geojson && geojson.features) {
+                // Use toFilledGeoJSON output: each feature is a Polygon with exterior ring + holes
+                for (var i = 0; i < geojson.features.length; i++) {
+                    var f = geojson.features[i];
+                    var val = f.properties.value || f.properties.level || 0;
+                    var t = maxL > minL ? (val - minL) / (maxL - minL) : 0.5;
                     ctx.fillStyle = getColor(t);
-                    ctx.strokeStyle = getColor(t);
+                    ctx.strokeStyle = '#fff';
                     ctx.lineWidth = 0.5;
 
-                    // Interior closed paths
-                    var closedPaths = pathInfo.paths || [];
-                    for (var j = 0; j < closedPaths.length; j++) {
-                        drawPath(closedPaths[j]);
-                        ctx.closePath();
-                        ctx.fill();
-                    }
+                    var geom = f.geometry;
+                    var rings = geom.type === 'Polygon' ? geom.coordinates :
+                                geom.type === 'MultiPolygon' ? geom.coordinates[0] : null;
+                    if (!rings) continue;
 
-                    // Edge paths + boundary
-                    var edgePaths = pathInfo.edgepaths || [];
-                    if (edgePaths.length > 0 || pathInfo.prefixBoundary) {
-                        for (var j = 0; j < edgePaths.length; j++) {
-                            drawPath(edgePaths[j]);
+                    if (geom.type === 'MultiPolygon') {
+                        for (var p = 0; p < geom.coordinates.length; p++) {
+                            ctx.beginPath();
+                            drawRing(geom.coordinates[p][0]);
+                            for (var h = 1; h < geom.coordinates[p].length; h++) {
+                                drawRing(geom.coordinates[p][h]);
+                            }
+                            ctx.fill('evenodd');
                         }
-                        if (pathInfo.prefixBoundary) {
-                            ctx.lineTo(toCanvasX(xMax), toCanvasY(yMin));
-                            ctx.lineTo(toCanvasX(xMax), toCanvasY(yMax));
-                            ctx.lineTo(toCanvasX(xMin), toCanvasY(yMax));
-                            ctx.closePath();
+                    } else {
+                        ctx.beginPath();
+                        drawRing(rings[0]);
+                        for (var h = 1; h < rings.length; h++) {
+                            drawRing(rings[h]);
                         }
-                        ctx.fill();
+                        ctx.fill('evenodd');
                     }
                 }
-            }
+            } else if (!fillMode) {
+                // Line mode: draw each feature as LineString
+                for (var i = 0; i < geojson.features.length; i++) {
+                    var f = geojson.features[i];
+                    var val = f.properties.value || f.properties.level || 0;
+                    var t = maxL > minL ? (val - minL) / (maxL - minL) : 0.5;
+                    ctx.strokeStyle = getColor(t);
+                    ctx.lineWidth = 1.5;
 
-            // Draw line contours on top
-            ctx.lineWidth = 1.5;
-            for (var i = 0; i < result.paths.length; i++) {
-                var pathInfo = result.paths[i];
-                var t = (i + 0.5) / result.paths.length;
-                ctx.strokeStyle = getColor(t);
+                    var geom = f.geometry;
+                    var coordsList = [];
+                    if (geom.type === 'LineString') {
+                        coordsList = [geom.coordinates];
+                    } else if (geom.type === 'MultiLineString') {
+                        coordsList = geom.coordinates;
+                    }
 
-                var allPaths = (pathInfo.paths || []).concat(pathInfo.edgepaths || []);
-                for (var j = 0; j < allPaths.length; j++) {
-                    drawPath(allPaths[j]);
-                    ctx.stroke();
+                    for (var j = 0; j < coordsList.length; j++) {
+                        var coords = coordsList[j];
+                        if (coords.length < 2) continue;
+                        ctx.beginPath();
+                        ctx.moveTo(toCanvasX(coords[0][0]), toCanvasY(coords[0][1]));
+                        for (var k = 1; k < coords.length; k++) {
+                            ctx.lineTo(toCanvasX(coords[k][0]), toCanvasY(coords[k][1]));
+                        }
+                        ctx.stroke();
+                    }
                 }
             }
 
@@ -517,13 +531,12 @@
             // 1. Compute contours
             var computeOpts = {
                 ncontours: numLevels,
-                smoothing: smoothing
+                smoothing: smoothing,
+                connectgaps: false
             };
             if (contourType === 'fill') {
                 computeOpts.contours = { type: 'fill' };
             }
-
-            debugger
 
             try {
                 var result = contourCore.computeContours(
@@ -537,9 +550,6 @@
             }
 
             lastResult = result;
-
-            // 2. Render on canvas
-            renderCanvas(result, contourType === 'fill');
 
             // 3. Build GeoJSON options
             var geojsonOpts = {
@@ -579,7 +589,6 @@
             var geojson;
             if (contourType === 'fill') {
                 geojson = contourCore.toFilledGeoJSON(result, geojsonOpts);
-                debugger;
             } else {
                 geojsonOpts.type = 'lines';
                 geojsonOpts.separateFeatures = false;
@@ -588,18 +597,18 @@
 
             lastGeoJSON = geojson;
 
-            // 5. Display preview & stats
-            // displayGeoJSON(geojson, result);
+            // 5. Render on canvas using the GeoJSON polygons
+            renderCanvas(geojson, result, contourType === 'fill');
 
-            // 6. Render on map
+            // 6. Display preview & stats
+            displayGeoJSON(geojson, result);
+
+            // 7. Render on map
             renderOnMap(geojson, result.levels, contourType === 'fill');
         }
 
         function displayGeoJSON(geojson, result) {
-            var jsonStr = contourCore.geojsonStringify(result, {
-                type: geojson.features[0] && geojson.features[0].geometry.type === 'Polygon' ? 'fill' : 'lines',
-                smooth: parseFloat(document.getElementById('smoothing').value) || 0
-            });
+            var jsonStr = JSON.stringify(geojson, null, 2);
 
             var preview = document.getElementById('geojsonPreview');
             preview.dataset.json = jsonStr;
@@ -645,9 +654,26 @@
                 '<div class="stat-item"><span class="stat-label">CRS</span><span class="stat-value">' + (geojson.crs ? 'EPSG:4326' : 'None') + '</span></div>';
         }
 
-        function downloadGeoJSON(filename, type) {
-            if (!lastResult) { alert('请先点击「计算 & 导出」'); return; }
+function downloadGeoJSON(filename, type) {
+            if (!lastGeoJSON) { alert('请先点击「计算 & 导出」'); return; }
 
+            // If the requested type matches current display, reuse cached GeoJSON
+            var contourType = document.getElementById('contourType').value;
+            if (type === contourType || !lastResult) {
+                var jsonStr = JSON.stringify(lastGeoJSON, null, 2);
+                var blob = new Blob([jsonStr], { type: 'application/geo+json' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                return;
+            }
+
+            // Otherwise regenerate for the alternate type
             var smoothing = parseFloat(document.getElementById('smoothing').value) || 0;
             var opts = { smooth: smoothing };
 
@@ -675,19 +701,18 @@
                 opts.crs = { type: 'name', properties: { name: 'urn:ogc:def:crs:EPSG::4326' } };
             }
 
-            var jsonStr;
+            var geojson;
             if (type === 'lines') {
                 opts.type = 'lines';
                 opts.includeEdgePaths = document.getElementById('includeEdgePaths').checked;
                 opts.separateFeatures = false;
-                jsonStr = contourCore.geojsonStringify(lastResult, opts);
+                geojson = contourCore.toGeoJSON(lastResult, opts);
             } else {
-                opts.type = 'fill';
-                jsonStr = contourCore.geojsonStringify(lastResult, opts);
+                geojson = contourCore.toFilledGeoJSON(lastResult, opts);
             }
 
-            let kk = JSON.parse(jsonStr);
-            debugger;
+            var jsonStr = JSON.stringify(geojson, null, 2);
+
             var blob = new Blob([jsonStr], { type: 'application/geo+json' });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
