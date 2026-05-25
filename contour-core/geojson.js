@@ -964,8 +964,150 @@ function stringify(result, options) {
     return JSON.stringify(geojson, null, (options && options.indent) || 2);
 }
 
+/**
+ * Export null mask regions as GeoJSON FeatureCollection.
+ * Produces Polygon features representing the valid data region(s).
+ * When rendered with evenodd fill rule, null areas appear as holes.
+ *
+ * @param {Object} result - Result from computeContours()
+ * @param {Object} options - Export options
+ * @param {Number} options.smooth - Smoothing factor 0-1 (default: 0)
+ * @param {Object} options.transform - Coordinate transform { forward: function(x, y): [x', y'] }
+ * @param {Object} options.crs - CRS declaration to add to FeatureCollection
+ * @param {Number} options.clipLevel - Marching squares level (default: 0.95)
+ * @param {Number} options.clipSmoothing - Smoothing factor for clip (default: 0.3)
+ * @returns {Object} GeoJSON FeatureCollection with null mask polygons
+ */
+function toNullMaskGeoJSON(result, options) {
+    options = options || {};
+
+    if (result.connectgaps || !result.nullMask || result.nullCount === 0) {
+        return { type: 'FeatureCollection', features: [] };
+    }
+
+    var nullHandling = require('./null_handling');
+    var polygonData = nullHandling.generateNullMaskPolygons(result, {
+        dataX: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : undefined,
+        dataY: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : undefined,
+        clipLevel: options.clipLevel,
+        clipSmoothing: options.clipSmoothing,
+        simplifyTolerance: options.simplifyTolerance
+    });
+
+    if (!polygonData || !polygonData.regions || polygonData.regions.length === 0) {
+        return { type: 'FeatureCollection', features: [] };
+    }
+
+    var bounds = polygonData.bounds;
+    var regions = polygonData.regions;
+
+    var boundingRect = [
+        [bounds.minX, bounds.minY],
+        [bounds.maxX, bounds.minY],
+        [bounds.maxX, bounds.maxY],
+        [bounds.minX, bounds.maxY],
+        [bounds.minX, bounds.minY]
+    ];
+
+    if (options.transform && typeof options.transform.forward === 'function') {
+        boundingRect = transformCoords(boundingRect, options.transform);
+    }
+    if (options.smooth && options.smooth > 0) {
+        boundingRect = smoothClosedCoords(boundingRect, options.smooth);
+    }
+
+    var allHoles = [];
+    var separateNullRegions = [];
+
+    for (var i = 0; i < regions.length; i++) {
+        var region = regions[i];
+        var exterior = region.exterior;
+        var holes = region.holes || [];
+
+        if (options.transform && typeof options.transform.forward === 'function') {
+            exterior = transformCoords(exterior, options.transform);
+            for (var h = 0; h < holes.length; h++) {
+                holes[h] = transformCoords(holes[h], options.transform);
+            }
+        }
+
+        if (options.smooth && options.smooth > 0) {
+            exterior = smoothClosedCoords(exterior, options.smooth);
+            for (var h = 0; h < holes.length; h++) {
+                holes[h] = smoothClosedCoords(holes[h], options.smooth);
+            }
+        }
+
+        allHoles.push(exterior);
+
+        for (var h = 0; h < holes.length; h++) {
+            separateNullRegions.push(holes[h]);
+        }
+    }
+
+    var features = [];
+
+    if (allHoles.length > 0) {
+        var coordinates = [boundingRect];
+        for (var i = 0; i < allHoles.length; i++) {
+            coordinates.push(allHoles[i]);
+        }
+
+        features.push({
+            type: 'Feature',
+            properties: {
+                type: 'null_region',
+                regionIndex: 0,
+                holeCount: allHoles.length,
+                description: 'Bounding rectangle minus data regions'
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates: coordinates
+            }
+        });
+    }
+
+    for (var i = 0; i < separateNullRegions.length; i++) {
+        features.push({
+            type: 'Feature',
+            properties: {
+                type: 'null_region',
+                regionIndex: features.length,
+                isHoleIsland: true,
+                description: 'Null island inside data region'
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [separateNullRegions[i]]
+            }
+        });
+    }
+
+    var fc = {
+        type: 'FeatureCollection',
+        features: features
+    };
+
+    if (options.crs) {
+        fc.crs = options.crs;
+    }
+
+    return fc;
+}
+
+function transformCoords(coords, transform) {
+    var result = [];
+    for (var i = 0; i < coords.length; i++) {
+        var pt = transform.forward(coords[i][0], coords[i][1]);
+        result.push(pt);
+    }
+    return result;
+}
+
 module.exports = {
     toGeoJSON: toGeoJSON,
     stringify: stringify,
-    toFilledGeoJSON: toFilledGeoJSON
+    toFilledGeoJSON: toFilledGeoJSON,
+    toNullMaskGeoJSON: toNullMaskGeoJSON
 };

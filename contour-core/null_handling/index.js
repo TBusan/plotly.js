@@ -12,5 +12,6 @@ module.exports = {
     findEmpties: require('./find_empties'),
     interp2d: require('./interp2d'),
     generateClipPath: require('./clip_mask').generateClipPath,
+    generateNullMaskPolygons: require('./clip_mask').generateNullMaskPolygons,
     makeBinaryMask: require('./clip_mask').makeBinaryMask
 };

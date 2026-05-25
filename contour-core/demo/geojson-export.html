@@ -281,6 +281,14 @@
                         <input type="checkbox" id="includeEdgePaths" checked>
                         <label for="includeEdgePaths">包含边界路径 (edge paths)</label>
                     </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="connectGaps">
+                        <label for="connectGaps">连接空值 (connectgaps)</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="showNullMask" checked>
+                        <label for="showNullMask">显示空值掩膜</label>
+                    </div>
                 </div>
 
                 <div class="panel">
@@ -298,8 +306,9 @@
                     <code>computeContours(grid, opts)</code><br>
                     &rarr; <code>toGeoJSON(result, opts)</code><br>
                     &rarr; <code>toFilledGeoJSON(result, opts)</code><br>
+                    &rarr; <code>toNullMaskGeoJSON(result, opts)</code><br>
                     <br>
-                    新增选项：<code>smooth</code>, <code>transform</code>, <code>crs</code>
+                    新增选项：<code>smooth</code>, <code>transform</code>, <code>crs</code>, <code>connectgaps</code>
                 </div>
             </div>
 
@@ -329,7 +338,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="sample-data2.js"></script>
+    <script src="sample-data1.js"></script>
     <script src="../dist/contour-core.browser.js"></script>
     <script>
     (function() {
@@ -364,7 +373,7 @@
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
 
-        function renderCanvas(geojson, result, fillMode) {
+        function renderCanvas(geojson, result, fillMode, nullMaskGeoJSON) {
             ctx.fillStyle = '#fff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -428,6 +437,25 @@
                         ctx.fill('evenodd');
                     }
                 }
+
+                // Draw null region overlay: bounding rect with data_region holes
+                // evenodd fill = white only in null areas
+                if (nullMaskGeoJSON && nullMaskGeoJSON.features && nullMaskGeoJSON.features.length > 0) {
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    for (var ni = 0; ni < nullMaskGeoJSON.features.length; ni++) {
+                        var nf = nullMaskGeoJSON.features[ni];
+                        if (nf.geometry.type !== 'Polygon') continue;
+                        var ncoords = nf.geometry.coordinates;
+                        ctx.beginPath();
+                        drawRing(ncoords[0]);
+                        for (var nh = 1; nh < ncoords.length; nh++) {
+                            drawRing(ncoords[nh]);
+                        }
+                        ctx.fill('evenodd');
+                    }
+                    ctx.restore();
+                }
             } else if (!fillMode) {
                 // Line mode: draw each feature as LineString
                 for (var i = 0; i < geojson.features.length; i++) {
@@ -456,6 +484,28 @@
                         ctx.stroke();
                     }
                 }
+
+                // Draw null region overlay in line mode: semi-transparent gray over null areas
+                // evenodd fill = gray only in null areas (bounding rect minus data regions)
+                if (nullMaskGeoJSON && nullMaskGeoJSON.features && nullMaskGeoJSON.features.length > 0) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(220, 220, 220, 0.6)';
+                    ctx.strokeStyle = 'rgba(180, 180, 180, 0.8)';
+                    ctx.lineWidth = 1;
+                    for (var ni = 0; ni < nullMaskGeoJSON.features.length; ni++) {
+                        var nf = nullMaskGeoJSON.features[ni];
+                        if (nf.geometry.type !== 'Polygon') continue;
+                        var ncoords = nf.geometry.coordinates;
+                        ctx.beginPath();
+                        drawRing(ncoords[0]);
+                        for (var nh = 1; nh < ncoords.length; nh++) {
+                            drawRing(ncoords[nh]);
+                        }
+                        ctx.fill('evenodd');
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
             }
 
             // Draw axes labels
@@ -476,9 +526,11 @@
             maxZoom: 18
         }).addTo(map);
         var geojsonLayer = null;
+        var geojsonLayer2 = null;
 
-        function renderOnMap(geojson, levels, fillMode) {
+        function renderOnMap(geojson, levels, fillMode, nullMaskGeoJSON) {
             if (geojsonLayer) map.removeLayer(geojsonLayer);
+            if (geojsonLayer2) map.removeLayer(geojsonLayer2);
             if (!geojson || !geojson.features || geojson.features.length === 0) return;
 
             var minL = levels[0];
@@ -503,6 +555,26 @@
                 }
             }).addTo(map);
 
+            // Render null region on map: bounding rect minus data regions = null areas
+            // Must use evenodd fill rule so holes (data regions) are transparent
+            if (nullMaskGeoJSON && nullMaskGeoJSON.features && nullMaskGeoJSON.features.length > 0) {
+                geojsonLayer2 = L.geoJSON(nullMaskGeoJSON, {
+                    style: function(feature) {
+                        return {
+                            fillColor: '#d0d0d0',
+                            fillOpacity: fillMode ? 0.85 : 0.4,
+                            fillRule: 'evenodd',
+                            color: fillMode ? 'rgba(150,150,150,0.3)' : '#999999',
+                            weight: fillMode ? 0 : 1,
+                            dashArray: fillMode ? null : '4 2'
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        layer.bindPopup('<b>Null Region</b><br>No data here' + (feature.properties.isHoleIsland ? ' (island)' : ''));
+                    }
+                }).addTo(map);
+            }
+
             try {
                 var bounds = geojsonLayer.getBounds();
                 if (bounds && bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
@@ -520,6 +592,8 @@
             var enableTransform = document.getElementById('enableTransform').checked;
             var enableCrs = document.getElementById('enableCrs').checked;
             var includeEdgePaths = document.getElementById('includeEdgePaths').checked;
+            var connectGaps = document.getElementById('connectGaps').checked;
+            var showNullMask = document.getElementById('showNullMask').checked;
 
             // Use data1 from sample-data1.js (35 rows x 45 cols, with null values)
             var z = data1;
@@ -532,7 +606,7 @@
             var computeOpts = {
                 ncontours: numLevels,
                 smoothing: smoothing,
-                connectgaps: false
+                connectgaps: connectGaps
             };
             if (contourType === 'fill') {
                 computeOpts.contours = { type: 'fill' };
@@ -543,6 +617,7 @@
                     { z: z, x: x, y: y },
                     computeOpts
                 );
+                debugger
             } catch (e) {
                 console.error('computeContours error:', e);
                 alert('计算错误: ' + e.message);
@@ -595,20 +670,42 @@
                 geojson = contourCore.toGeoJSON(result, geojsonOpts);
             }
 
+            // 4b. Generate null mask if needed
+            var nullMaskGeoJSON = null;
+            if (!connectGaps && result.nullCount > 0 && showNullMask) {
+                var nullMaskOpts = {
+                    smooth: smoothing
+                };
+                if (geojsonOpts.transform) nullMaskOpts.transform = geojsonOpts.transform;
+                if (geojsonOpts.crs) nullMaskOpts.crs = geojsonOpts.crs;
+                nullMaskGeoJSON = contourCore.toNullMaskGeoJSON(result, nullMaskOpts);
+            }
+
             lastGeoJSON = geojson;
 
             // 5. Render on canvas using the GeoJSON polygons
-            renderCanvas(geojson, result, contourType === 'fill');
-
+            renderCanvas(geojson, result, contourType === 'fill', nullMaskGeoJSON);
+            debugger;
             // 6. Display preview & stats
-            displayGeoJSON(geojson, result);
+            displayGeoJSON(geojson, result, nullMaskGeoJSON);
 
             // 7. Render on map
-            renderOnMap(geojson, result.levels, contourType === 'fill');
+            renderOnMap(geojson, result.levels, contourType === 'fill', nullMaskGeoJSON);
         }
 
-        function displayGeoJSON(geojson, result) {
-            var jsonStr = JSON.stringify(geojson, null, 2);
+        function displayGeoJSON(geojson, result, nullMaskGeoJSON) {
+            // Combine contour GeoJSON with null mask features for full preview
+            var combinedFeatures = geojson.features.slice();
+            if (nullMaskGeoJSON && nullMaskGeoJSON.features) {
+                combinedFeatures = combinedFeatures.concat(nullMaskGeoJSON.features);
+            }
+            var combinedGeoJSON = {
+                type: 'FeatureCollection',
+                features: combinedFeatures
+            };
+            if (geojson.crs) combinedGeoJSON.crs = geojson.crs;
+
+            var jsonStr = JSON.stringify(combinedGeoJSON, null, 2);
 
             var preview = document.getElementById('geojsonPreview');
             preview.dataset.json = jsonStr;
@@ -644,12 +741,15 @@
             });
 
             var stats = document.getElementById('stats');
+            var nullCount = result.nullCount || 0;
+            var nullMaskRegions = (nullMaskGeoJSON && nullMaskGeoJSON.features) ? nullMaskGeoJSON.features.length : 0;
             stats.innerHTML =
-                '<div class="stat-item"><span class="stat-label">Features</span><span class="stat-value">' + geojson.features.length + '</span></div>' +
+                '<div class="stat-item"><span class="stat-label">Features</span><span class="stat-value">' + combinedGeoJSON.features.length + '</span></div>' +
                 '<div class="stat-item"><span class="stat-label">Geometry</span><span class="stat-value">' + Object.keys(geomTypes).join(', ') + '</span></div>' +
                 '<div class="stat-item"><span class="stat-label">Value Range</span><span class="stat-value">' + (isFinite(valMin) ? valMin.toFixed(1) + ' ~ ' + valMax.toFixed(1) : 'N/A') + '</span></div>' +
                 '<div class="stat-item"><span class="stat-label">Levels</span><span class="stat-value">' + result.levels.length + '</span></div>' +
-                '<div class="stat-item"><span class="stat-label">Total Coords</span><span class="stat-value">' + totalCoords + '</span></div>' +
+                '<div class="stat-item"><span class="stat-label">Null Cells</span><span class="stat-value">' + nullCount + '</span></div>' +
+                '<div class="stat-item"><span class="stat-label">Null Regions</span><span class="stat-value">' + nullMaskRegions + '</span></div>' +
                 '<div class="stat-item"><span class="stat-label">JSON Size</span><span class="stat-value">' + (preview.dataset.json.length / 1024).toFixed(1) + ' KB</span></div>' +
                 '<div class="stat-item"><span class="stat-label">CRS</span><span class="stat-value">' + (geojson.crs ? 'EPSG:4326' : 'None') + '</span></div>';
         }

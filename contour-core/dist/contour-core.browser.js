@@ -1535,13 +1535,290 @@ var contourCore = (() => {
         }
         return fullpath;
       }
+      function generateNullMaskPolygons(contourResult, options) {
+        options = options || {};
+        var nullMask = contourResult.nullMask;
+        if (!nullMask || contourResult.nullCount === 0) {
+          return null;
+        }
+        var binaryMask = makeBinaryMask(nullMask);
+        if (!binaryMask)
+          return null;
+        var originalM = binaryMask.length;
+        var originalN = binaryMask[0].length;
+        var clipLevel = options.clipLevel !== void 0 ? options.clipLevel : DEFAULT_CLIP_LEVEL;
+        var clipSmoothing = options.clipSmoothing !== void 0 ? options.clipSmoothing : DEFAULT_SMOOTHING;
+        var smoothingMethod = options.smoothingMethod || "direct";
+        var workingMask, scale, m, n;
+        if (smoothingMethod === "upsample") {
+          var upsampleScale = options.upsampleScale !== void 0 ? options.upsampleScale : DEFAULT_UPSAMPLE_SCALE;
+          var upsampled = upsampleMask(binaryMask, upsampleScale);
+          workingMask = upsampled.mask;
+          scale = upsampled.scale;
+          m = workingMask.length;
+          n = workingMask[0].length;
+        } else {
+          workingMask = binaryMask;
+          scale = 1;
+          m = originalM;
+          n = originalN;
+        }
+        var clipPathInfo = {
+          level: clipLevel,
+          crossings: {},
+          starts: [],
+          edgepaths: [],
+          paths: [],
+          z: workingMask,
+          x: [],
+          y: [],
+          smoothing: clipSmoothing
+        };
+        var dataX = options.dataX || (contourResult.pathinfo && contourResult.pathinfo[0] ? contourResult.pathinfo[0].x : null);
+        var dataY = options.dataY || (contourResult.pathinfo && contourResult.pathinfo[0] ? contourResult.pathinfo[0].y : null);
+        if (dataX && dataY) {
+          for (var i = 0; i < n; i++) {
+            var origIdx = i / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+            if (origIdxFloor >= dataX.length - 1) {
+              clipPathInfo.x.push(dataX[dataX.length - 1]);
+            } else if (origIdxFloor < 0) {
+              clipPathInfo.x.push(dataX[0]);
+            } else {
+              clipPathInfo.x.push(dataX[origIdxFloor] + (dataX[origIdxFloor + 1] - dataX[origIdxFloor]) * origIdxFrac);
+            }
+          }
+          for (var j = 0; j < m; j++) {
+            var origIdx = j / scale;
+            var origIdxFloor = Math.floor(origIdx);
+            var origIdxFrac = origIdx - origIdxFloor;
+            if (origIdxFloor >= dataY.length - 1) {
+              clipPathInfo.y.push(dataY[dataY.length - 1]);
+            } else if (origIdxFloor < 0) {
+              clipPathInfo.y.push(dataY[0]);
+            } else {
+              clipPathInfo.y.push(dataY[origIdxFloor] + (dataY[origIdxFloor + 1] - dataY[origIdxFloor]) * origIdxFrac);
+            }
+          }
+        } else {
+          for (var i = 0; i < n; i++)
+            clipPathInfo.x.push(i / scale);
+          for (var j = 0; j < m; j++)
+            clipPathInfo.y.push(j / scale);
+        }
+        marchingSquares.makeCrossings([clipPathInfo]);
+        var xRange = clipPathInfo.x.length > 1 ? clipPathInfo.x[clipPathInfo.x.length - 1] - clipPathInfo.x[0] : 1;
+        var yRange = clipPathInfo.y.length > 1 ? clipPathInfo.y[clipPathInfo.y.length - 1] - clipPathInfo.y[0] : 1;
+        var xTol = Math.max(1e-10, xRange * 1e-3 / scale);
+        var yTol = Math.max(1e-10, yRange * 1e-3 / scale);
+        pathFinding.findAllPaths([clipPathInfo], xTol, yTol);
+        closeBoundaries([clipPathInfo], { type: "levels" });
+        var simplifyTolerance = options.simplifyTolerance !== void 0 ? options.simplifyTolerance : DEFAULT_SIMPLIFY_TOLERANCE;
+        if (simplifyTolerance > 0) {
+          var baseTol = Math.min(xRange, yRange) / Math.max(m, n) * 2;
+          var scaledTolerance = baseTol * simplifyTolerance;
+          simplifyPathInfoPaths(clipPathInfo, scaledTolerance);
+        }
+        var minX = clipPathInfo.x[0];
+        var maxX = clipPathInfo.x[clipPathInfo.x.length - 1];
+        var minY = clipPathInfo.y[0];
+        var maxY = clipPathInfo.y[clipPathInfo.y.length - 1];
+        var bounds = { minX, maxX, minY, maxY };
+        var tol = Math.max(1e-10, Math.max(xRange, yRange) * 1e-3);
+        var perimeter = [minX, minY, maxX, maxY, minX, maxY];
+        var regions = buildMaskRegions(clipPathInfo, perimeter, bounds, tol);
+        return {
+          regions,
+          bounds
+        };
+      }
+      function buildMaskRegions(pathInfo, perimeter, bounds, tol) {
+        var regions = [];
+        var edgepaths = pathInfo.edgepaths || [];
+        var closedPaths = pathInfo.paths || [];
+        if (edgepaths.length === 0 && pathInfo.prefixBoundary) {
+          var exterior = [
+            [bounds.minX, bounds.minY],
+            [bounds.maxX, bounds.minY],
+            [bounds.maxX, bounds.maxY],
+            [bounds.minX, bounds.maxY],
+            [bounds.minX, bounds.minY]
+          ];
+          var holes = [];
+          for (var k = 0; k < closedPaths.length; k++) {
+            if (closedPaths[k] && closedPaths[k].length >= 3) {
+              holes.push(closeRingArray(copyCoords(closedPaths[k])));
+            }
+          }
+          regions.push({ exterior, holes });
+          return regions;
+        }
+        if (edgepaths.length === 0) {
+          for (var k = 0; k < closedPaths.length; k++) {
+            if (closedPaths[k] && closedPaths[k].length >= 3) {
+              regions.push({
+                exterior: closeRingArray(copyCoords(closedPaths[k])),
+                holes: []
+              });
+            }
+          }
+          return regions;
+        }
+        for (var i = 0; i < edgepaths.length; i++) {
+          edgepaths[i].startT = perimeterParam(edgepaths[i][0], bounds, tol);
+          edgepaths[i].endT = perimeterParam(edgepaths[i][edgepaths[i].length - 1], bounds, tol);
+        }
+        var visited = new Array(edgepaths.length);
+        for (var v = 0; v < visited.length; v++)
+          visited[v] = false;
+        for (var startIdx = 0; startIdx < edgepaths.length; startIdx++) {
+          if (visited[startIdx])
+            continue;
+          var ring = copyCoords(edgepaths[startIdx]);
+          visited[startIdx] = true;
+          var currentEndPt = edgepaths[startIdx][edgepaths[startIdx].length - 1];
+          var currentEndT = edgepaths[startIdx].endT;
+          var ringStartPt = edgepaths[startIdx][0];
+          var ringStartT = edgepaths[startIdx].startT;
+          var maxSteps = edgepaths.length + 1;
+          for (var step = 0; step < maxSteps; step++) {
+            if (step > 0 && Math.abs(currentEndPt[0] - ringStartPt[0]) < tol && Math.abs(currentEndPt[1] - ringStartPt[1]) < tol) {
+              break;
+            }
+            var nextIdx = -1;
+            var bestDeltaT = Infinity;
+            for (var ni = 0; ni < edgepaths.length; ni++) {
+              if (visited[ni])
+                continue;
+              var st = edgepaths[ni].startT;
+              var deltaT = st - currentEndT;
+              if (deltaT <= 1e-10)
+                deltaT += 4;
+              if (deltaT < bestDeltaT) {
+                bestDeltaT = deltaT;
+                nextIdx = ni;
+              }
+            }
+            if (nextIdx === -1) {
+              appendBoundaryToArray(ring, currentEndPt, ringStartPt, perimeter, bounds, tol);
+              break;
+            }
+            var nextStartPt = edgepaths[nextIdx][0];
+            appendBoundaryToArray(ring, currentEndPt, nextStartPt, perimeter, bounds, tol);
+            for (var p = 0; p < edgepaths[nextIdx].length; p++) {
+              ring.push([edgepaths[nextIdx][p][0], edgepaths[nextIdx][p][1]]);
+            }
+            currentEndPt = edgepaths[nextIdx][edgepaths[nextIdx].length - 1];
+            currentEndT = edgepaths[nextIdx].endT;
+            visited[nextIdx] = true;
+          }
+          if (ring.length > 2) {
+            ring = closeRingArray(ring);
+            regions.push({ exterior: ring, holes: [] });
+          }
+        }
+        for (var k = 0; k < closedPaths.length; k++) {
+          if (!closedPaths[k] || closedPaths[k].length < 3)
+            continue;
+          var closedCoords = copyCoords(closedPaths[k]);
+          closedCoords = closeRingArray(closedCoords);
+          regions.push({ exterior: closedCoords, holes: [] });
+        }
+        return regions;
+      }
+      function perimeterParam(pt, bounds, tol) {
+        var x = pt[0], y = pt[1];
+        var minX = bounds.minX, maxX = bounds.maxX;
+        var minY = bounds.minY, maxY = bounds.maxY;
+        var rangeX = maxX - minX || 1;
+        var rangeY = maxY - minY || 1;
+        var onBottom = Math.abs(y - minY) < tol && x >= minX - tol && x <= maxX + tol;
+        var onRight = Math.abs(x - maxX) < tol && y >= minY - tol && y <= maxY + tol;
+        var onTop = Math.abs(y - maxY) < tol && x >= minX - tol && x <= maxX + tol;
+        var onLeft = Math.abs(x - minX) < tol && y >= minY - tol && y <= maxY + tol;
+        if (onBottom && !onRight)
+          return (x - minX) / rangeX;
+        if (onRight && !onTop)
+          return 1 + (y - minY) / rangeY;
+        if (onTop && !onLeft)
+          return 2 + (maxX - x) / rangeX;
+        if (onLeft && !onBottom)
+          return 3 + (maxY - y) / rangeY;
+        if (onBottom && onRight)
+          return 1;
+        if (onRight && onTop)
+          return 2;
+        if (onTop && onLeft)
+          return 3;
+        if (onLeft && onBottom)
+          return 0;
+        return -1;
+      }
+      function appendBoundaryToArray(ring, fromPt, toPt, perimeter, bounds, tol) {
+        if (Math.abs(fromPt[0] - toPt[0]) < tol && Math.abs(fromPt[1] - toPt[1]) < tol) {
+          return;
+        }
+        var fromT = perimeterParam(fromPt, bounds, tol);
+        var toT = perimeterParam(toPt, bounds, tol);
+        var deltaT = toT - fromT;
+        if (deltaT <= 1e-10)
+          deltaT += 4;
+        var corners = [
+          [bounds.minX, bounds.minY],
+          [bounds.maxX, bounds.minY],
+          [bounds.maxX, bounds.maxY],
+          [bounds.minX, bounds.maxY]
+        ];
+        var cornersToAdd = [];
+        for (var ci = 0; ci < 4; ci++) {
+          var cornerT = ci;
+          var distToCorner = cornerT - fromT;
+          if (distToCorner <= 1e-10)
+            distToCorner += 4;
+          if (distToCorner > 1e-10 && distToCorner < deltaT - 1e-10) {
+            cornersToAdd.push({ index: ci, dist: distToCorner });
+          }
+        }
+        cornersToAdd.sort(function(a, b) {
+          return a.dist - b.dist;
+        });
+        for (var i = 0; i < cornersToAdd.length; i++) {
+          var ci = cornersToAdd[i].index;
+          var last = ring[ring.length - 1];
+          if (!last || Math.abs(corners[ci][0] - last[0]) > tol || Math.abs(corners[ci][1] - last[1]) > tol) {
+            ring.push([corners[ci][0], corners[ci][1]]);
+          }
+        }
+        var last = ring[ring.length - 1];
+        if (!last || Math.abs(toPt[0] - last[0]) > tol || Math.abs(toPt[1] - last[1]) > tol) {
+          ring.push([toPt[0], toPt[1]]);
+        }
+      }
+      function copyCoords(path) {
+        var result = [];
+        for (var i = 0; i < path.length; i++) {
+          result.push([path[i][0], path[i][1]]);
+        }
+        return result;
+      }
+      function closeRingArray(coords) {
+        if (coords.length < 3)
+          return coords;
+        var first = coords[0];
+        var last = coords[coords.length - 1];
+        if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
+          coords.push([first[0], first[1]]);
+        }
+        return coords;
+      }
       module.exports = {
         generateClipPath,
+        generateNullMaskPolygons,
         makeBinaryMask,
         upsampleMask,
         bilinearInterpolate,
         createClipPathSVG,
-        // Export default options for reference
         DEFAULT_UPSAMPLE_SCALE,
         DEFAULT_CLIP_LEVEL,
         DEFAULT_SMOOTHING
@@ -1560,6 +1837,7 @@ var contourCore = (() => {
         findEmpties: require_find_empties(),
         interp2d: require_interp2d(),
         generateClipPath: require_clip_mask().generateClipPath,
+        generateNullMaskPolygons: require_clip_mask().generateNullMaskPolygons,
         makeBinaryMask: require_clip_mask().makeBinaryMask
       };
     }
@@ -10344,10 +10622,117 @@ var contourCore = (() => {
         }
         return JSON.stringify(geojson, null, options && options.indent || 2);
       }
+      function toNullMaskGeoJSON(result, options) {
+        options = options || {};
+        if (result.connectgaps || !result.nullMask || result.nullCount === 0) {
+          return { type: "FeatureCollection", features: [] };
+        }
+        var nullHandling = require_null_handling();
+        var polygonData = nullHandling.generateNullMaskPolygons(result, {
+          dataX: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : void 0,
+          dataY: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : void 0,
+          clipLevel: options.clipLevel,
+          clipSmoothing: options.clipSmoothing,
+          simplifyTolerance: options.simplifyTolerance
+        });
+        if (!polygonData || !polygonData.regions || polygonData.regions.length === 0) {
+          return { type: "FeatureCollection", features: [] };
+        }
+        var bounds = polygonData.bounds;
+        var regions = polygonData.regions;
+        var boundingRect = [
+          [bounds.minX, bounds.minY],
+          [bounds.maxX, bounds.minY],
+          [bounds.maxX, bounds.maxY],
+          [bounds.minX, bounds.maxY],
+          [bounds.minX, bounds.minY]
+        ];
+        if (options.transform && typeof options.transform.forward === "function") {
+          boundingRect = transformCoords(boundingRect, options.transform);
+        }
+        if (options.smooth && options.smooth > 0) {
+          boundingRect = smoothClosedCoords(boundingRect, options.smooth);
+        }
+        var allHoles = [];
+        var separateNullRegions = [];
+        for (var i = 0; i < regions.length; i++) {
+          var region = regions[i];
+          var exterior = region.exterior;
+          var holes = region.holes || [];
+          if (options.transform && typeof options.transform.forward === "function") {
+            exterior = transformCoords(exterior, options.transform);
+            for (var h = 0; h < holes.length; h++) {
+              holes[h] = transformCoords(holes[h], options.transform);
+            }
+          }
+          if (options.smooth && options.smooth > 0) {
+            exterior = smoothClosedCoords(exterior, options.smooth);
+            for (var h = 0; h < holes.length; h++) {
+              holes[h] = smoothClosedCoords(holes[h], options.smooth);
+            }
+          }
+          allHoles.push(exterior);
+          for (var h = 0; h < holes.length; h++) {
+            separateNullRegions.push(holes[h]);
+          }
+        }
+        var features = [];
+        if (allHoles.length > 0) {
+          var coordinates = [boundingRect];
+          for (var i = 0; i < allHoles.length; i++) {
+            coordinates.push(allHoles[i]);
+          }
+          features.push({
+            type: "Feature",
+            properties: {
+              type: "null_region",
+              regionIndex: 0,
+              holeCount: allHoles.length,
+              description: "Bounding rectangle minus data regions"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates
+            }
+          });
+        }
+        for (var i = 0; i < separateNullRegions.length; i++) {
+          features.push({
+            type: "Feature",
+            properties: {
+              type: "null_region",
+              regionIndex: features.length,
+              isHoleIsland: true,
+              description: "Null island inside data region"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [separateNullRegions[i]]
+            }
+          });
+        }
+        var fc = {
+          type: "FeatureCollection",
+          features
+        };
+        if (options.crs) {
+          fc.crs = options.crs;
+        }
+        return fc;
+      }
+      function transformCoords(coords, transform) {
+        var result = [];
+        for (var i = 0; i < coords.length; i++) {
+          var pt = transform.forward(coords[i][0], coords[i][1]);
+          result.push(pt);
+        }
+        return result;
+      }
       module.exports = {
         toGeoJSON,
         stringify,
-        toFilledGeoJSON
+        toFilledGeoJSON,
+        toNullMaskGeoJSON
       };
     }
   });
@@ -11424,6 +11809,7 @@ var contourCore = (() => {
         // ============================================
         toGeoJSON: require_geojson().toGeoJSON,
         toFilledGeoJSON: require_geojson().toFilledGeoJSON,
+        toNullMaskGeoJSON: require_geojson().toNullMaskGeoJSON,
         geojsonStringify: require_geojson().stringify,
         // ============================================
         // Low-level modules

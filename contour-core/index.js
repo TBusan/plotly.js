@@ -27,6 +27,7 @@ var contourCore = {
     // ============================================
     toGeoJSON: require('./geojson').toGeoJSON,
     toFilledGeoJSON: require('./geojson').toFilledGeoJSON,
+    toNullMaskGeoJSON: require('./geojson').toNullMaskGeoJSON,
     geojsonStringify: require('./geojson').stringify,
 
     // ============================================
