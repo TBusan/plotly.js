@@ -368,6 +368,310 @@ console.log('\n\x1b[33m═══ scalePathsToData removed ═══\x1b[0m\n');
 })();
 
 // ========================================
+console.log('\n\x1b[33m═══ Cesium compliance tests ═══\x1b[0m\n');
+
+(function testStrictRingClosure() {
+    var grid = makeSimpleGrid();
+    var result = ContourCore.computeContours({ z: grid }, { autocontour: true });
+
+    // Test toFilledGeoJSON: all polygon rings must have strict first===last
+    var fc = geojson.toFilledGeoJSON(result);
+    fc.features.forEach(function(f, fi) {
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates.forEach(function(ring, ri) {
+                var first = ring[0];
+                var last = ring[ring.length - 1];
+                assert(first[0] === last[0] && first[1] === last[1],
+                    'filled feature ' + fi + ' ring ' + ri + ': strict closure first[0]=' + first[0] + ' last[0]=' + last[0]);
+            });
+        } else if (f.geometry.type === 'MultiPolygon') {
+            f.geometry.coordinates.forEach(function(poly, pi) {
+                poly.forEach(function(ring, ri) {
+                    var first = ring[0];
+                    var last = ring[ring.length - 1];
+                    assert(first[0] === last[0] && first[1] === last[1],
+                        'filled multi feature ' + fi + ' poly ' + pi + ' ring ' + ri + ': strict closure');
+                });
+            });
+        }
+    });
+})();
+
+(function testWindingOrder() {
+    var grid = makeSimpleGrid();
+    var result = ContourCore.computeContours({ z: grid }, { autocontour: true });
+
+    // Test toFilledGeoJSON: outer rings CCW, inner rings CW
+    var fc = geojson.toFilledGeoJSON(result);
+    fc.features.forEach(function(f, fi) {
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates.forEach(function(ring, ri) {
+                var area = ringSignedArea(ring);
+                if (ri === 0) {
+                    assert(area > 0,
+                        'feature ' + fi + ' exterior ring ' + ri + ': CCW (positive area=' + area.toFixed(6) + ')');
+                } else {
+                    assert(area < 0,
+                        'feature ' + fi + ' inner ring ' + ri + ': CW (negative area=' + area.toFixed(6) + ')');
+                }
+            });
+        }
+    });
+
+    function ringSignedArea(ring) {
+        var area = 0;
+        for (var i = 0; i < ring.length - 1; i++) {
+            area += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+        }
+        return area / 2;
+    }
+})();
+
+(function testNoConsecutiveDuplicates() {
+    var grid = makeSimpleGrid();
+    var result = ContourCore.computeContours({ z: grid }, { autocontour: true });
+
+    var fc = geojson.toFilledGeoJSON(result);
+    var duplicateCount = 0;
+    fc.features.forEach(function(f) {
+        var rings = f.geometry.type === 'Polygon' ? f.geometry.coordinates : [];
+        rings.forEach(function(ring) {
+            for (var i = 1; i < ring.length; i++) {
+                var dx = Math.abs(ring[i][0] - ring[i - 1][0]);
+                var dy = Math.abs(ring[i][1] - ring[i - 1][1]);
+                if (dx < 1e-10 && dy < 1e-10) {
+                    duplicateCount++;
+                }
+            }
+        });
+    });
+    assert(duplicateCount === 0, 'no consecutive duplicate points in filled polygons (found ' + duplicateCount + ')');
+})();
+
+(function testNoDegenerateRings() {
+    var grid = makeSimpleGrid();
+    var result = ContourCore.computeContours({ z: grid }, { autocontour: true });
+
+    var fc = geojson.toFilledGeoJSON(result);
+    var degenerateCount = 0;
+    fc.features.forEach(function(f) {
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates.forEach(function(ring, ri) {
+                // Ring must have at least 4 points (3 unique + 1 closing)
+                if (ring.length < 4) {
+                    degenerateCount++;
+                }
+            });
+        }
+    });
+    assert(degenerateCount === 0, 'no degenerate rings (< 4 points) in filled polygons (found ' + degenerateCount + ')');
+})();
+
+(function testSanitizeRingForCesiumBasic() {
+    // Test utility function directly
+    // CCW ring (positive area)
+    var ccwRing = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+    var result1 = geojson.sanitizeRingForCesium(ccwRing, false);
+    assert(result1 !== null, 'CCW ring: not null');
+    assert(result1.length >= 4, 'CCW ring: >= 4 points');
+    assert(result1[0][0] === result1[result1.length - 1][0] &&
+           result1[0][1] === result1[result1.length - 1][1],
+           'CCW ring: strict closure');
+
+    // CW ring (negative area) should be reversed to CCW when isInner=false
+    var cwRing = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
+    var result2 = geojson.sanitizeRingForCesium(cwRing, false);
+    assert(result2 !== null, 'CW->CCW ring: not null');
+    var area = 0;
+    for (var i = 0; i < result2.length - 1; i++) {
+        area += result2[i][0] * result2[i + 1][1] - result2[i + 1][0] * result2[i][1];
+    }
+    area /= 2;
+    assert(area > 0, 'CW->CCW ring: positive area after sanitization (area=' + area.toFixed(2) + ')');
+
+    // Inner ring CW (should stay CW when isInner=true)
+    var ccwInner = [[2, 2], [8, 2], [8, 8], [2, 8], [2, 2]];
+    var result3 = geojson.sanitizeRingForCesium(ccwInner, true);
+    assert(result3 !== null, 'inner ring: not null');
+    var area3 = 0;
+    for (var i = 0; i < result3.length - 1; i++) {
+        area3 += result3[i][0] * result3[i + 1][1] - result3[i + 1][0] * result3[i][1];
+    }
+    area3 /= 2;
+    assert(area3 < 0, 'inner ring: negative area (CW) after sanitization (area=' + area3.toFixed(2) + ')');
+})();
+
+(function testSanitizeRemovesDuplicates() {
+    // Ring with consecutive duplicate point
+    var ring = [[0, 0], [10, 0], [10, 10], [10, 10], [0, 10], [0, 0]];
+    var result = geojson.sanitizeRingForCesium(ring, false);
+    assert(result !== null, 'ring with duplicate: not null');
+    // Should have 5 points (4 unique + 1 closing)
+    assert(result.length === 5, 'ring with duplicate: 5 points (got ' + result.length + ')');
+})();
+
+(function testSanitizeRemovesCollinear() {
+    // Ring with collinear point: (5,0) is collinear with (0,0)-(10,0)
+    var ring = [[0, 0], [5, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+    var result = geojson.sanitizeRingForCesium(ring, false);
+    assert(result !== null, 'ring with collinear: not null');
+    // Should have 5 points (4 unique corners + 1 closing), (5,0) removed
+    assert(result.length === 5, 'ring with collinear: 5 points (got ' + result.length + ')');
+})();
+
+(function testSanitizeNearZeroArea() {
+    // Degenerate ring with near-zero area should not be reversed
+    var degenerate = [[0, 0], [1e-15, 0], [1e-15, 1e-15], [0, 0]];
+    var result = geojson.sanitizeRingForCesium(degenerate, false);
+    // Should return null (less than 3 unique points after dedup)
+    assert(result === null, 'degenerate ring: returns null');
+})();
+
+(function testLargeRangeCesiumCompliance() {
+    var grid = makeLargeRangeGrid();
+    var x = [];
+    var y = [];
+    for (var i = 0; i < 10; i++) {
+        x.push(100 + i);
+        y.push(30 + i);
+    }
+
+    var result = ContourCore.computeContours({ z: grid, x: x, y: y }, { autocontour: true });
+
+    // Transform to geographic coordinates
+    var transform = {
+        forward: function(px, py) {
+            return [116.0 + (px - 100) * 0.1, 39.5 + (py - 30) * 0.1];
+        }
+    };
+
+    var fc = geojson.toFilledGeoJSON(result, { transform: transform });
+
+    fc.features.forEach(function(f, fi) {
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates.forEach(function(ring, ri) {
+                // Check strict closure
+                var first = ring[0];
+                var last = ring[ring.length - 1];
+                assert(first[0] === last[0] && first[1] === last[1],
+                    'large range feature ' + fi + ' ring ' + ri + ': strict closure');
+
+                // Check no consecutive duplicates
+                for (var k = 1; k < ring.length; k++) {
+                    var dx = Math.abs(ring[k][0] - ring[k - 1][0]);
+                    var dy = Math.abs(ring[k][1] - ring[k - 1][1]);
+                    assert(dx >= 1e-10 || dy >= 1e-10,
+                        'large range feature ' + fi + ' ring ' + ri + ' no dup at ' + k);
+                }
+            });
+        }
+    });
+})();
+
+// ========================================
+console.log('\n\x1b[33m═══ Self-intersection tests ═══\x1b[0m\n');
+
+(function testBowtieSplit() {
+    // Classic bow-tie (self-intersecting) polygon: (0,0) → (2,1) → (0,2) → (2,3) → (0,0)
+    // Segments (0,0)→(2,1) and (0,2)→(2,3) cross at (1,0.5)? No...
+    // Let me use a proper bow-tie:
+    // (0,0) → (2,2) → (0,2) → (2,0) → (0,0)
+    // Seg 0: (0,0)→(2,2), Seg 2: (0,2)→(2,0) — these cross at (1,1)
+    var bowtie = [[0, 0], [2, 2], [0, 2], [2, 0], [0, 0]];
+    var results = geojson.fixSelfIntersections(bowtie);
+    assert(results.length === 2, 'bowtie splits into 2 rings (got ' + results.length + ')');
+
+    // Each resulting ring should be simple (no self-intersections)
+    results.forEach(function(ring, ri) {
+        var recheck = geojson.fixSelfIntersections(ring);
+        assert(recheck.length === 1, 'sub-ring ' + ri + ' is simple (no more splits)');
+    });
+})();
+
+(function testAlreadySimpleRing() {
+    // A simple square should not be split
+    var square = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+    var results = geojson.fixSelfIntersections(square);
+    assert(results.length === 1, 'simple square returns 1 ring (got ' + results.length + ')');
+    assert(results[0].length === square.length, 'simple square unchanged length');
+})();
+
+(function testTriangleNoSplit() {
+    var triangle = [[0, 0], [5, 0], [2.5, 4], [0, 0]];
+    var results = geojson.fixSelfIntersections(triangle);
+    assert(results.length === 1, 'triangle returns 1 ring');
+})();
+
+(function testComplexBowtie() {
+    // More complex: (0,0) → (3,0) → (1,3) → (2,-1) → (0,2) → (0,0)
+    // This should have a crossing somewhere
+    var ring = [[0, 0], [3, 0], [1, 3], [2, -1], [0, 2], [0, 0]];
+    var results = geojson.fixSelfIntersections(ring);
+    assert(results.length >= 1, 'complex ring splits into >= 1 ring (got ' + results.length + ')');
+
+    // All resulting rings should be simple
+    results.forEach(function(ring, ri) {
+        var recheck = geojson.fixSelfIntersections(ring);
+        assert(recheck.length === 1, 'sub-ring ' + ri + ' is simple (no more splits)');
+    });
+})();
+
+(function testSegmentIntersectionNoCross() {
+    // Two parallel segments — should not intersect
+    var ip = geojson.segmentIntersection([0, 0], [1, 0], [0, 1], [1, 1]);
+    assert(ip === null, 'parallel segments: no intersection');
+
+    // Two segments that share an endpoint — should not intersect (adjacent)
+    var ip2 = geojson.segmentIntersection([0, 0], [1, 1], [1, 1], [2, 0]);
+    assert(ip2 === null, 'shared endpoint: no intersection (t or s at boundary)');
+})();
+
+(function testSegmentIntersectionCross() {
+    // Two segments that cross in the middle
+    var ip = geojson.segmentIntersection([0, 0], [2, 2], [0, 2], [2, 0]);
+    assert(ip !== null, 'crossing segments: found intersection');
+    assert(Math.abs(ip[0] - 1) < 1e-6 && Math.abs(ip[1] - 1) < 1e-6,
+        'crossing intersection at (1,1) (got ' + ip[0].toFixed(3) + ',' + ip[1].toFixed(3) + ')');
+})();
+
+(function testNoSelfIntersectionInFilledOutput() {
+    // Real contour data should produce no self-intersections in any polygon ring
+    var grid = makeSimpleGrid();
+    var result = ContourCore.computeContours({ z: grid }, { autocontour: true });
+    var fc = geojson.toFilledGeoJSON(result);
+
+    fc.features.forEach(function(f, fi) {
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates.forEach(function(ring, ri) {
+                var simpleRings = geojson.fixSelfIntersections(ring);
+                assert(simpleRings.length === 1,
+                    'filled feature ' + fi + ' ring ' + ri + ': no self-intersection (splits into ' + simpleRings.length + ')');
+            });
+        }
+    });
+})();
+
+(function testBowtieInFilledOutputSanitized() {
+    // A bow-tie ring fed through sanitizeRingForCesium should be handled
+    // by the pipeline (fixSelfIntersections is in the pipeline)
+    var bowtie = [[0, 0], [2, 2], [0, 2], [2, 0], [0, 0]];
+    var simpleRings = geojson.fixSelfIntersections(bowtie);
+    assert(simpleRings.length === 2, 'bowtie in pipeline: splits into 2');
+
+    // Each sub-ring should sanitize successfully
+    simpleRings.forEach(function(ring, ri) {
+        var sanitized = geojson.sanitizeRingForCesium(ring, ri === 0 ? false : true);
+        assert(sanitized !== null, 'sub-ring ' + ri + ' sanitizes successfully');
+        assert(sanitized.length >= 4, 'sub-ring ' + ri + ' has >= 4 points');
+        // Strict closure
+        assert(sanitized[0][0] === sanitized[sanitized.length - 1][0],
+            'sub-ring ' + ri + ' strict closure x');
+        assert(sanitized[0][1] === sanitized[sanitized.length - 1][1],
+            'sub-ring ' + ri + ' strict closure y');
+    });
+})();
+
+// ========================================
 console.log('\n\x1b[36m═══ Results ═══\x1b[0m');
 console.log('  Passed: ' + passed);
 console.log('  Failed: ' + failed);

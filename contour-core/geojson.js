@@ -280,14 +280,21 @@ function toGeoJSON(result, options) {
                 }
 
                 if (type === 'fill') {
-                    features.push({
-                        type: 'Feature',
-                        properties: createProperties(level, propertyName, 'polygon', i, j, true),
-                        geometry: {
-                            type: 'Polygon',
-                            coordinates: [closeRing(coords)]
+                    var ring = closeRing(coords);
+                    var simpleRings = fixSelfIntersections(ring);
+                    for (var sri = 0; sri < simpleRings.length; sri++) {
+                        var sanitized = sanitizeRingForCesium(simpleRings[sri], false);
+                        if (sanitized && sanitized.length >= 4) {
+                            features.push({
+                                type: 'Feature',
+                                properties: createProperties(level, propertyName, 'polygon', i, j, true),
+                                geometry: {
+                                    type: 'Polygon',
+                                    coordinates: [sanitized]
+                                }
+                            });
                         }
-                    });
+                    }
                 } else {
                     features.push({
                         type: 'Feature',
@@ -403,35 +410,47 @@ function toFilledGeoJSON(result, options) {
             var exteriorRing = boundaries[j];
             if (exteriorRing.length < 4) continue;
 
-var rings = [exteriorRing];
-            ensureCCW(exteriorRing);
+            // Fix self-intersections — may produce multiple simple rings
+            var simpleExteriors = fixSelfIntersections(exteriorRing);
 
-            if (i + 1 < allBoundaries.length) {
-                var nextBoundaries = allBoundaries[i + 1];
-                for (var k = 0; k < nextBoundaries.length; k++) {
-                    var innerRing = nextBoundaries[k];
-                    if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
-                        ensureCW(innerRing);
-                        rings.push(innerRing);
+            for (var si = 0; si < simpleExteriors.length; si++) {
+                var sanitizedExterior = sanitizeRingForCesium(simpleExteriors[si], false);
+                if (!sanitizedExterior || sanitizedExterior.length < 4) continue;
+
+                var rings = [sanitizedExterior];
+
+                if (i + 1 < allBoundaries.length) {
+                    var nextBoundaries = allBoundaries[i + 1];
+                    for (var k = 0; k < nextBoundaries.length; k++) {
+                        var innerRing = nextBoundaries[k];
+                        if (innerRing.length > 0 && isPointInPolygon(innerRing[0], sanitizedExterior)) {
+                            var simpleInners = fixSelfIntersections(innerRing);
+                            for (var si2 = 0; si2 < simpleInners.length; si2++) {
+                                var sanitizedInner = sanitizeRingForCesium(simpleInners[si2], true);
+                                if (sanitizedInner && sanitizedInner.length >= 4) {
+                                    rings.push(sanitizedInner);
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            features.push({
-                type: 'Feature',
-                properties: {
-                    value: level,
-                    level: level,
-                    levelIndex: i,
-                    type: 'filled_contour',
-                    hasHoles: rings.length > 1,
-                    polygonIndex: j
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: rings
-                }
-            });
+                features.push({
+                    type: 'Feature',
+                    properties: {
+                        value: level,
+                        level: level,
+                        levelIndex: i,
+                        type: 'filled_contour',
+                        hasHoles: rings.length > 1,
+                        polygonIndex: j
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: rings
+                    }
+                });
+            }
         }
     }
 
@@ -739,6 +758,8 @@ function closeRingCoords(coords) {
     var last = coords[coords.length - 1];
     if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         coords.push([first[0], first[1]]);
+    } else {
+        coords[coords.length - 1] = [first[0], first[1]];
     }
 }
 
@@ -749,6 +770,8 @@ function closeRing(coords) {
     var last = result[result.length - 1];
     if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         result.push([first[0], first[1]]);
+    } else {
+        result[result.length - 1] = [first[0], first[1]];
     }
     return result;
 }
@@ -762,15 +785,258 @@ function signedArea(coords) {
 }
 
 function ensureCCW(coords) {
-    if (signedArea(coords) < 0) {
+    var area = signedArea(coords);
+    if (area < 0 && Math.abs(area) > 1e-20) {
         coords.reverse();
     }
 }
 
 function ensureCW(coords) {
-    if (signedArea(coords) > 0) {
+    var area = signedArea(coords);
+    if (area > 0 && Math.abs(area) > 1e-20) {
         coords.reverse();
     }
+}
+
+/**
+ * Remove consecutive duplicate points from a ring (closing point excluded).
+ * Points closer than `tol` in both x and y are considered duplicates.
+ * @param {Array} pts - Array of [x, y] points (without closing point)
+ * @param {Number} tol - Tolerance for duplicate detection (default 1e-10)
+ * @returns {Array} Filtered points
+ */
+function removeDuplicatePoints(pts, tol) {
+    if (!pts || pts.length < 2) return pts ? pts.slice() : pts;
+    tol = tol || 1e-10;
+    var result = [pts[0]];
+    for (var i = 1; i < pts.length; i++) {
+        var prev = result[result.length - 1];
+        var dx = Math.abs(pts[i][0] - prev[0]);
+        var dy = Math.abs(pts[i][1] - prev[1]);
+        if (dx >= tol || dy >= tol) {
+            result.push(pts[i]);
+        }
+    }
+    return result;
+}
+
+/**
+ * Remove collinear points from a ring.
+ * Three consecutive points P1, P2, P3 are collinear if
+ * |cross(P2-P1, P3-P2)|^2 < tol^2 * |P2-P1|^2 * |P3-P2|^2
+ * i.e. |sin(angle)| < tol.
+ * @param {Array} pts - Array of [x, y] points (without closing point)
+ * @param {Number} tol - sin(theta) tolerance for collinearity (default 1e-8)
+ * @returns {Array} Filtered points
+ */
+function removeCollinearPoints(pts, tol) {
+    if (!pts || pts.length < 3) return pts ? pts.slice() : pts;
+    tol = tol || 1e-8;
+    var result = [pts[0]];
+    for (var i = 1; i < pts.length - 1; i++) {
+        var prev = result[result.length - 1];
+        var curr = pts[i];
+        var next = pts[i + 1];
+        var dx1 = curr[0] - prev[0];
+        var dy1 = curr[1] - prev[1];
+        var dx2 = next[0] - curr[0];
+        var dy2 = next[1] - curr[1];
+        var cross = dx1 * dy2 - dy1 * dx2;
+        var lenSq1 = dx1 * dx1 + dy1 * dy1;
+        var lenSq2 = dx2 * dx2 + dy2 * dy2;
+        if (lenSq1 < 1e-30 || lenSq2 < 1e-30) {
+            continue;
+        }
+        if (cross * cross >= tol * tol * lenSq1 * lenSq2) {
+            result.push(curr);
+        }
+    }
+    result.push(pts[pts.length - 1]);
+    return result;
+}
+
+/**
+ * Sanitize a polygon ring for Cesium/GeoJSON compliance.
+ *
+ * Applies the four core geometric topology rules required by Cesium:
+ *  1. Remove consecutive duplicate points (millimeter-level or closer)
+ *  2. Remove collinear points (three consecutive points on the same line)
+ *  3. Enforce winding order: CCW for outer rings, CW for inner (hole) rings
+ *  4. Enforce strict first-point === last-point closure
+ *
+ * Returns null if the ring is degenerate (< 3 unique vertices after cleanup).
+ *
+ * @param {Array} ring - Array of [x, y] coordinate pairs (may or may not be closed)
+ * @param {Boolean} isInner - True for hole rings (CW), false for outer rings (CCW)
+ * @param {Number} pointTol - Tolerance for duplicate detection (default 1e-10)
+ * @param {Number} collinearTol - sin(theta) tolerance for collinearity (default 1e-8)
+ * @returns {Array|null} Sanitized ring with strict closure, or null if degenerate
+ */
+function sanitizeRingForCesium(ring, isInner, pointTol, collinearTol) {
+    pointTol = pointTol || 1e-10;
+    collinearTol = collinearTol || 1e-8;
+    if (!ring || ring.length < 3) return null;
+
+    var pts = ring.slice();
+    var first = pts[0];
+    var last = pts[pts.length - 1];
+
+    // Strip closing point if present (work with unique vertices)
+    if (pts.length > 1 &&
+        Math.abs(first[0] - last[0]) < pointTol &&
+        Math.abs(first[1] - last[1]) < pointTol) {
+        pts = pts.slice(0, -1);
+    }
+
+    // 1. Remove consecutive duplicate points
+    pts = removeDuplicatePoints(pts, pointTol);
+
+    // 2. Remove collinear points
+    pts = removeCollinearPoints(pts, collinearTol);
+
+    // Need at least 3 unique vertices for a valid polygon ring
+    if (pts.length < 3) return null;
+
+    // 3. Enforce winding order with near-zero area protection
+    var area = 0;
+    for (var i = 0; i < pts.length; i++) {
+        var j = (i + 1) % pts.length;
+        area += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
+    }
+    area /= 2;
+
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (var i = 0; i < pts.length; i++) {
+        if (pts[i][0] < minX) minX = pts[i][0];
+        if (pts[i][0] > maxX) maxX = pts[i][0];
+        if (pts[i][1] < minY) minY = pts[i][1];
+        if (pts[i][1] > maxY) maxY = pts[i][1];
+    }
+    var range = Math.max(maxX - minX, maxY - minY, 1e-6);
+    var areaEpsilon = range * range * 1e-10;
+
+    if (Math.abs(area) > areaEpsilon) {
+        if (isInner && area > 0) {
+            pts.reverse();
+        } else if (!isInner && area < 0) {
+            pts.reverse();
+        }
+    }
+
+    // 4. Strict closure: last point exactly equals first point
+    pts.push([pts[0][0], pts[0][1]]);
+
+    return pts;
+}
+
+/**
+ * Find the intersection point of two line segments.
+ * Returns null if segments are parallel or don't properly cross.
+ * Only returns intersections where both parameters are strictly
+ * within (0, 1) — i.e. proper crossings, not endpoint touches.
+ *
+ * @param {Array} p1 - Start of segment 1 [x, y]
+ * @param {Array} p2 - End of segment 1 [x, y]
+ * @param {Array} p3 - Start of segment 2 [x, y]
+ * @param {Array} p4 - End of segment 2 [x, y]
+ * @returns {Array|null} Intersection point [x, y] or null
+ */
+function segmentIntersection(p1, p2, p3, p4) {
+    var d1x = p2[0] - p1[0], d1y = p2[1] - p1[1];
+    var d2x = p4[0] - p3[0], d2y = p4[1] - p3[1];
+
+    var denom = d1x * d2y - d1y * d2x;
+    if (Math.abs(denom) < 1e-15) return null;
+
+    var dx = p3[0] - p1[0];
+    var dy = p3[1] - p1[1];
+    var t = (dx * d2y - dy * d2x) / denom;
+    var s = (dx * d1y - dy * d1x) / denom;
+
+    var eps = 1e-10;
+    if (t > eps && t < 1 - eps && s > eps && s < 1 - eps) {
+        return [p1[0] + t * d1x, p1[1] + t * d1y];
+    }
+    return null;
+}
+
+/**
+ * Fix self-intersections in a polygon ring by splitting at crossing points.
+ *
+ * When a ring crosses itself (bow-tie / figure-8), this function finds the
+ * first crossing point and splits the ring into two sub-rings, each of which
+ * is then recursively checked. The result is an array of simple (non-self-
+ * intersecting) closed rings.
+ *
+ * This is essential for Cesium compatibility: self-intersecting polygons
+ * cause the ear-clipping triangulator to produce NaN values and visual tears.
+ *
+ * @param {Array} ring - Array of [x,y] points (may or may not have closing point)
+ * @param {Number} depth - Recursion depth (default 0, max 8)
+ * @returns {Array} Array of simple closed rings. Each ring is closed (first===last).
+ */
+function fixSelfIntersections(ring, depth) {
+    depth = depth || 0;
+    if (depth > 8) return [ring];
+
+    if (!ring || ring.length < 3) return [];
+
+    var pts = ring.slice();
+
+    // Strip closing point if present
+    if (pts.length > 1) {
+        var f = pts[0], l = pts[pts.length - 1];
+        if (Math.abs(f[0] - l[0]) < 1e-10 && Math.abs(f[1] - l[1]) < 1e-10) {
+            pts.pop();
+        }
+    }
+
+    var n = pts.length;
+    if (n < 3) return [];
+
+    // Find first crossing between non-adjacent segments
+    for (var i = 0; i < n; i++) {
+        var i2 = (i + 1) % n;
+        for (var j = i + 2; j < n; j++) {
+            var j2 = (j + 1) % n;
+            if (i === j2) continue;
+
+            var ip = segmentIntersection(pts[i], pts[i2], pts[j], pts[j2]);
+            if (ip) {
+                // Split into two sub-rings at the crossing point:
+                // Ring A: ip → pts[i+1] → ... → pts[j] → ip
+                // Ring B: ip → pts[j+1] → ... → pts[i] → ip
+                var ringAPts = [[ip[0], ip[1]]];
+                var k = i2;
+                while (true) {
+                    ringAPts.push([pts[k][0], pts[k][1]]);
+                    if (k === j) break;
+                    k = (k + 1) % n;
+                }
+                ringAPts.push([ip[0], ip[1]]);
+
+                var ringBPts = [[ip[0], ip[1]]];
+                k = j2;
+                while (true) {
+                    ringBPts.push([pts[k][0], pts[k][1]]);
+                    if (k === i) break;
+                    k = (k + 1) % n;
+                }
+                ringBPts.push([ip[0], ip[1]]);
+
+                // Recursively fix each sub-ring
+                var resultsA = fixSelfIntersections(ringAPts, depth + 1);
+                var resultsB = fixSelfIntersections(ringBPts, depth + 1);
+                var allResults = [];
+                for (var ri = 0; ri < resultsA.length; ri++) allResults.push(resultsA[ri]);
+                for (var ri = 0; ri < resultsB.length; ri++) allResults.push(resultsB[ri]);
+                return allResults;
+            }
+        }
+    }
+
+    // No crossings found — ring is simple
+    return [ring];
 }
 
 function createPerimeter(bounds) {
@@ -1016,6 +1282,9 @@ function toNullMaskGeoJSON(result, options) {
         boundingRect = smoothClosedCoords(boundingRect, options.smooth);
     }
 
+    // Sanitize bounding rect as CCW outer ring
+    boundingRect = sanitizeRingForCesium(boundingRect, false) || boundingRect;
+
     var allHoles = [];
     var separateNullRegions = [];
 
@@ -1038,10 +1307,24 @@ function toNullMaskGeoJSON(result, options) {
             }
         }
 
-        allHoles.push(exterior);
+        // Sanitize exterior as CW hole ring (inside bounding rect)
+        var simpleExteriors = fixSelfIntersections(exterior);
+        for (var sei = 0; sei < simpleExteriors.length; sei++) {
+            var sanitizedExterior = sanitizeRingForCesium(simpleExteriors[sei], true);
+            if (sanitizedExterior && sanitizedExterior.length >= 4) {
+                allHoles.push(sanitizedExterior);
+            }
+        }
 
         for (var h = 0; h < holes.length; h++) {
-            separateNullRegions.push(holes[h]);
+            // Sanitize holes as CCW standalone polygons (null islands inside data)
+            var simpleHoles = fixSelfIntersections(holes[h]);
+            for (var shi = 0; shi < simpleHoles.length; shi++) {
+                var sanitizedHole = sanitizeRingForCesium(simpleHoles[shi], false);
+                if (sanitizedHole && sanitizedHole.length >= 4) {
+                    separateNullRegions.push(sanitizedHole);
+                }
+            }
         }
     }
 
@@ -1109,5 +1392,10 @@ module.exports = {
     toGeoJSON: toGeoJSON,
     stringify: stringify,
     toFilledGeoJSON: toFilledGeoJSON,
-    toNullMaskGeoJSON: toNullMaskGeoJSON
+    toNullMaskGeoJSON: toNullMaskGeoJSON,
+    sanitizeRingForCesium: sanitizeRingForCesium,
+    removeDuplicatePoints: removeDuplicatePoints,
+    removeCollinearPoints: removeCollinearPoints,
+    fixSelfIntersections: fixSelfIntersections,
+    segmentIntersection: segmentIntersection
 };

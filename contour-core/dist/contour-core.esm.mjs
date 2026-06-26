@@ -1807,6 +1807,8 @@ var require_clip_mask = __commonJS({
       var last = coords[coords.length - 1];
       if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         coords.push([first[0], first[1]]);
+      } else {
+        coords[coords.length - 1] = [first[0], first[1]];
       }
       return coords;
     }
@@ -10082,14 +10084,21 @@ var require_geojson = __commonJS({
               continue;
             }
             if (type === "fill") {
-              features.push({
-                type: "Feature",
-                properties: createProperties(level, propertyName, "polygon", i, j, true),
-                geometry: {
-                  type: "Polygon",
-                  coordinates: [closeRing(coords)]
+              var ring = closeRing(coords);
+              var simpleRings = fixSelfIntersections(ring);
+              for (var sri = 0; sri < simpleRings.length; sri++) {
+                var sanitized = sanitizeRingForCesium(simpleRings[sri], false);
+                if (sanitized && sanitized.length >= 4) {
+                  features.push({
+                    type: "Feature",
+                    properties: createProperties(level, propertyName, "polygon", i, j, true),
+                    geometry: {
+                      type: "Polygon",
+                      coordinates: [sanitized]
+                    }
+                  });
                 }
-              });
+              }
             } else {
               features.push({
                 type: "Feature",
@@ -10184,33 +10193,43 @@ var require_geojson = __commonJS({
           var exteriorRing = boundaries[j];
           if (exteriorRing.length < 4)
             continue;
-          var rings = [exteriorRing];
-          ensureCCW(exteriorRing);
-          if (i + 1 < allBoundaries.length) {
-            var nextBoundaries = allBoundaries[i + 1];
-            for (var k = 0; k < nextBoundaries.length; k++) {
-              var innerRing = nextBoundaries[k];
-              if (innerRing.length > 0 && isPointInPolygon(innerRing[0], exteriorRing)) {
-                ensureCW(innerRing);
-                rings.push(innerRing);
+          var simpleExteriors = fixSelfIntersections(exteriorRing);
+          for (var si = 0; si < simpleExteriors.length; si++) {
+            var sanitizedExterior = sanitizeRingForCesium(simpleExteriors[si], false);
+            if (!sanitizedExterior || sanitizedExterior.length < 4)
+              continue;
+            var rings = [sanitizedExterior];
+            if (i + 1 < allBoundaries.length) {
+              var nextBoundaries = allBoundaries[i + 1];
+              for (var k = 0; k < nextBoundaries.length; k++) {
+                var innerRing = nextBoundaries[k];
+                if (innerRing.length > 0 && isPointInPolygon(innerRing[0], sanitizedExterior)) {
+                  var simpleInners = fixSelfIntersections(innerRing);
+                  for (var si2 = 0; si2 < simpleInners.length; si2++) {
+                    var sanitizedInner = sanitizeRingForCesium(simpleInners[si2], true);
+                    if (sanitizedInner && sanitizedInner.length >= 4) {
+                      rings.push(sanitizedInner);
+                    }
+                  }
+                }
               }
             }
+            features.push({
+              type: "Feature",
+              properties: {
+                value: level,
+                level,
+                levelIndex: i,
+                type: "filled_contour",
+                hasHoles: rings.length > 1,
+                polygonIndex: j
+              },
+              geometry: {
+                type: "Polygon",
+                coordinates: rings
+              }
+            });
           }
-          features.push({
-            type: "Feature",
-            properties: {
-              value: level,
-              level,
-              levelIndex: i,
-              type: "filled_contour",
-              hasHoles: rings.length > 1,
-              polygonIndex: j
-            },
-            geometry: {
-              type: "Polygon",
-              coordinates: rings
-            }
-          });
         }
       }
       var fc = {
@@ -10424,6 +10443,8 @@ var require_geojson = __commonJS({
       var last = coords[coords.length - 1];
       if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         coords.push([first[0], first[1]]);
+      } else {
+        coords[coords.length - 1] = [first[0], first[1]];
       }
     }
     function closeRing(coords) {
@@ -10434,25 +10455,166 @@ var require_geojson = __commonJS({
       var last = result[result.length - 1];
       if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         result.push([first[0], first[1]]);
+      } else {
+        result[result.length - 1] = [first[0], first[1]];
       }
       return result;
     }
-    function signedArea(coords) {
+    function removeDuplicatePoints(pts, tol) {
+      if (!pts || pts.length < 2)
+        return pts ? pts.slice() : pts;
+      tol = tol || 1e-10;
+      var result = [pts[0]];
+      for (var i = 1; i < pts.length; i++) {
+        var prev = result[result.length - 1];
+        var dx = Math.abs(pts[i][0] - prev[0]);
+        var dy = Math.abs(pts[i][1] - prev[1]);
+        if (dx >= tol || dy >= tol) {
+          result.push(pts[i]);
+        }
+      }
+      return result;
+    }
+    function removeCollinearPoints(pts, tol) {
+      if (!pts || pts.length < 3)
+        return pts ? pts.slice() : pts;
+      tol = tol || 1e-8;
+      var result = [pts[0]];
+      for (var i = 1; i < pts.length - 1; i++) {
+        var prev = result[result.length - 1];
+        var curr = pts[i];
+        var next = pts[i + 1];
+        var dx1 = curr[0] - prev[0];
+        var dy1 = curr[1] - prev[1];
+        var dx2 = next[0] - curr[0];
+        var dy2 = next[1] - curr[1];
+        var cross = dx1 * dy2 - dy1 * dx2;
+        var lenSq1 = dx1 * dx1 + dy1 * dy1;
+        var lenSq2 = dx2 * dx2 + dy2 * dy2;
+        if (lenSq1 < 1e-30 || lenSq2 < 1e-30) {
+          continue;
+        }
+        if (cross * cross >= tol * tol * lenSq1 * lenSq2) {
+          result.push(curr);
+        }
+      }
+      result.push(pts[pts.length - 1]);
+      return result;
+    }
+    function sanitizeRingForCesium(ring, isInner, pointTol, collinearTol) {
+      pointTol = pointTol || 1e-10;
+      collinearTol = collinearTol || 1e-8;
+      if (!ring || ring.length < 3)
+        return null;
+      var pts = ring.slice();
+      var first = pts[0];
+      var last = pts[pts.length - 1];
+      if (pts.length > 1 && Math.abs(first[0] - last[0]) < pointTol && Math.abs(first[1] - last[1]) < pointTol) {
+        pts = pts.slice(0, -1);
+      }
+      pts = removeDuplicatePoints(pts, pointTol);
+      pts = removeCollinearPoints(pts, collinearTol);
+      if (pts.length < 3)
+        return null;
       var area = 0;
-      for (var i = 0; i < coords.length - 1; i++) {
-        area += coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1];
+      for (var i = 0; i < pts.length; i++) {
+        var j = (i + 1) % pts.length;
+        area += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
       }
-      return area / 2;
+      area /= 2;
+      var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i][0] < minX)
+          minX = pts[i][0];
+        if (pts[i][0] > maxX)
+          maxX = pts[i][0];
+        if (pts[i][1] < minY)
+          minY = pts[i][1];
+        if (pts[i][1] > maxY)
+          maxY = pts[i][1];
+      }
+      var range = Math.max(maxX - minX, maxY - minY, 1e-6);
+      var areaEpsilon = range * range * 1e-10;
+      if (Math.abs(area) > areaEpsilon) {
+        if (isInner && area > 0) {
+          pts.reverse();
+        } else if (!isInner && area < 0) {
+          pts.reverse();
+        }
+      }
+      pts.push([pts[0][0], pts[0][1]]);
+      return pts;
     }
-    function ensureCCW(coords) {
-      if (signedArea(coords) < 0) {
-        coords.reverse();
+    function segmentIntersection(p1, p2, p3, p4) {
+      var d1x = p2[0] - p1[0], d1y = p2[1] - p1[1];
+      var d2x = p4[0] - p3[0], d2y = p4[1] - p3[1];
+      var denom = d1x * d2y - d1y * d2x;
+      if (Math.abs(denom) < 1e-15)
+        return null;
+      var dx = p3[0] - p1[0];
+      var dy = p3[1] - p1[1];
+      var t = (dx * d2y - dy * d2x) / denom;
+      var s = (dx * d1y - dy * d1x) / denom;
+      var eps = 1e-10;
+      if (t > eps && t < 1 - eps && s > eps && s < 1 - eps) {
+        return [p1[0] + t * d1x, p1[1] + t * d1y];
       }
+      return null;
     }
-    function ensureCW(coords) {
-      if (signedArea(coords) > 0) {
-        coords.reverse();
+    function fixSelfIntersections(ring, depth) {
+      depth = depth || 0;
+      if (depth > 8)
+        return [ring];
+      if (!ring || ring.length < 3)
+        return [];
+      var pts = ring.slice();
+      if (pts.length > 1) {
+        var f = pts[0], l = pts[pts.length - 1];
+        if (Math.abs(f[0] - l[0]) < 1e-10 && Math.abs(f[1] - l[1]) < 1e-10) {
+          pts.pop();
+        }
       }
+      var n = pts.length;
+      if (n < 3)
+        return [];
+      for (var i = 0; i < n; i++) {
+        var i2 = (i + 1) % n;
+        for (var j = i + 2; j < n; j++) {
+          var j2 = (j + 1) % n;
+          if (i === j2)
+            continue;
+          var ip = segmentIntersection(pts[i], pts[i2], pts[j], pts[j2]);
+          if (ip) {
+            var ringAPts = [[ip[0], ip[1]]];
+            var k = i2;
+            while (true) {
+              ringAPts.push([pts[k][0], pts[k][1]]);
+              if (k === j)
+                break;
+              k = (k + 1) % n;
+            }
+            ringAPts.push([ip[0], ip[1]]);
+            var ringBPts = [[ip[0], ip[1]]];
+            k = j2;
+            while (true) {
+              ringBPts.push([pts[k][0], pts[k][1]]);
+              if (k === i)
+                break;
+              k = (k + 1) % n;
+            }
+            ringBPts.push([ip[0], ip[1]]);
+            var resultsA = fixSelfIntersections(ringAPts, depth + 1);
+            var resultsB = fixSelfIntersections(ringBPts, depth + 1);
+            var allResults = [];
+            for (var ri = 0; ri < resultsA.length; ri++)
+              allResults.push(resultsA[ri]);
+            for (var ri = 0; ri < resultsB.length; ri++)
+              allResults.push(resultsB[ri]);
+            return allResults;
+          }
+        }
+      }
+      return [ring];
     }
     function createPerimeter(bounds) {
       return [
@@ -10622,6 +10784,9 @@ var require_geojson = __commonJS({
     }
     function toNullMaskGeoJSON(result, options) {
       options = options || {};
+      if (result.connectgaps || !result.nullMask || result.nullCount === 0) {
+        return { type: "FeatureCollection", features: [] };
+      }
       var nullHandling = require_null_handling();
       var polygonData = nullHandling.generateNullMaskPolygons(result, {
         dataX: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : void 0,
@@ -10633,8 +10798,24 @@ var require_geojson = __commonJS({
       if (!polygonData || !polygonData.regions || polygonData.regions.length === 0) {
         return { type: "FeatureCollection", features: [] };
       }
-      var features = [];
+      var bounds = polygonData.bounds;
       var regions = polygonData.regions;
+      var boundingRect = [
+        [bounds.minX, bounds.minY],
+        [bounds.maxX, bounds.minY],
+        [bounds.maxX, bounds.maxY],
+        [bounds.minX, bounds.maxY],
+        [bounds.minX, bounds.minY]
+      ];
+      if (options.transform && typeof options.transform.forward === "function") {
+        boundingRect = transformCoords(boundingRect, options.transform);
+      }
+      if (options.smooth && options.smooth > 0) {
+        boundingRect = smoothClosedCoords(boundingRect, options.smooth);
+      }
+      boundingRect = sanitizeRingForCesium(boundingRect, false) || boundingRect;
+      var allHoles = [];
+      var separateNullRegions = [];
       for (var i = 0; i < regions.length; i++) {
         var region = regions[i];
         var exterior = region.exterior;
@@ -10651,20 +10832,55 @@ var require_geojson = __commonJS({
             holes[h] = smoothClosedCoords(holes[h], options.smooth);
           }
         }
-        var coordinates = [exterior];
+        var simpleExteriors = fixSelfIntersections(exterior);
+        for (var sei = 0; sei < simpleExteriors.length; sei++) {
+          var sanitizedExterior = sanitizeRingForCesium(simpleExteriors[sei], true);
+          if (sanitizedExterior && sanitizedExterior.length >= 4) {
+            allHoles.push(sanitizedExterior);
+          }
+        }
         for (var h = 0; h < holes.length; h++) {
-          coordinates.push(holes[h]);
+          var simpleHoles = fixSelfIntersections(holes[h]);
+          for (var shi = 0; shi < simpleHoles.length; shi++) {
+            var sanitizedHole = sanitizeRingForCesium(simpleHoles[shi], false);
+            if (sanitizedHole && sanitizedHole.length >= 4) {
+              separateNullRegions.push(sanitizedHole);
+            }
+          }
+        }
+      }
+      var features = [];
+      if (allHoles.length > 0) {
+        var coordinates = [boundingRect];
+        for (var i = 0; i < allHoles.length; i++) {
+          coordinates.push(allHoles[i]);
         }
         features.push({
           type: "Feature",
           properties: {
-            type: "data_region",
-            regionIndex: i,
-            hasHoles: holes.length > 0
+            type: "null_region",
+            regionIndex: 0,
+            holeCount: allHoles.length,
+            description: "Bounding rectangle minus data regions"
           },
           geometry: {
             type: "Polygon",
             coordinates
+          }
+        });
+      }
+      for (var i = 0; i < separateNullRegions.length; i++) {
+        features.push({
+          type: "Feature",
+          properties: {
+            type: "null_region",
+            regionIndex: features.length,
+            isHoleIsland: true,
+            description: "Null island inside data region"
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [separateNullRegions[i]]
           }
         });
       }
@@ -10689,7 +10905,12 @@ var require_geojson = __commonJS({
       toGeoJSON,
       stringify,
       toFilledGeoJSON,
-      toNullMaskGeoJSON
+      toNullMaskGeoJSON,
+      sanitizeRingForCesium,
+      removeDuplicatePoints,
+      removeCollinearPoints,
+      fixSelfIntersections,
+      segmentIntersection
     };
   }
 });
@@ -11768,6 +11989,11 @@ var require_contour_core = __commonJS({
       toFilledGeoJSON: require_geojson().toFilledGeoJSON,
       toNullMaskGeoJSON: require_geojson().toNullMaskGeoJSON,
       geojsonStringify: require_geojson().stringify,
+      sanitizeRingForCesium: require_geojson().sanitizeRingForCesium,
+      removeDuplicatePoints: require_geojson().removeDuplicatePoints,
+      removeCollinearPoints: require_geojson().removeCollinearPoints,
+      fixSelfIntersections: require_geojson().fixSelfIntersections,
+      segmentIntersection: require_geojson().segmentIntersection,
       // ============================================
       // Low-level modules
       // ============================================

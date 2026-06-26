@@ -617,7 +617,6 @@
                     { z: z, x: x, y: y },
                     computeOpts
                 );
-                debugger
             } catch (e) {
                 console.error('computeContours error:', e);
                 alert('计算错误: ' + e.message);
@@ -685,7 +684,6 @@
 
             // 5. Render on canvas using the GeoJSON polygons
             renderCanvas(geojson, result, contourType === 'fill', nullMaskGeoJSON);
-            debugger;
             // 6. Display preview & stats
             displayGeoJSON(geojson, result, nullMaskGeoJSON);
 

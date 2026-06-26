@@ -29,6 +29,11 @@ var contourCore = {
     toFilledGeoJSON: require('./geojson').toFilledGeoJSON,
     toNullMaskGeoJSON: require('./geojson').toNullMaskGeoJSON,
     geojsonStringify: require('./geojson').stringify,
+    sanitizeRingForCesium: require('./geojson').sanitizeRingForCesium,
+    removeDuplicatePoints: require('./geojson').removeDuplicatePoints,
+    removeCollinearPoints: require('./geojson').removeCollinearPoints,
+    fixSelfIntersections: require('./geojson').fixSelfIntersections,
+    segmentIntersection: require('./geojson').segmentIntersection,
 
     // ============================================
     // Low-level modules

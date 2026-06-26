@@ -1212,6 +1212,8 @@ function closeRingArray(coords) {
     var last = coords[coords.length - 1];
     if (Math.abs(first[0] - last[0]) > 1e-10 || Math.abs(first[1] - last[1]) > 1e-10) {
         coords.push([first[0], first[1]]);
+    } else {
+        coords[coords.length - 1] = [first[0], first[1]];
     }
     return coords;
 }
