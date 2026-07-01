@@ -671,6 +671,12 @@ function drawStrokePaths(ctx, contourResult, style) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
+    // Apply line dash pattern
+    var lineDash = getLineDash(style.lineType);
+    if (lineDash) {
+        ctx.setLineDash(lineDash);
+    }
+
     if (!paths || paths.length === 0) {
         return;
     }
@@ -713,6 +719,9 @@ function drawStrokePaths(ctx, contourResult, style) {
             drawPathStroke(ctx, pathInfo.edgepaths[k], smoothing, false, style);
         }
     }
+
+    // Reset line dash
+    ctx.setLineDash([]);
 }
 
 /**
@@ -977,6 +986,26 @@ function parseSVGPath(pathStr) {
     }
 
     return commands;
+}
+
+/**
+ * Convert lineType string to setLineDash pattern array
+ * @param {string|Array} lineType - 'solid', 'dashed', 'dotted', or custom array
+ * @returns {Array|null} dash pattern array, or null for solid lines
+ */
+function getLineDash(lineType) {
+    if (!lineType || lineType === 'solid') {
+        return null;
+    }
+    if (Array.isArray(lineType)) {
+        return lineType;
+    }
+    var dashPatterns = {
+        dashed: [8, 4],
+        dot: [2, 4],
+        dashdot: [8, 4, 2, 4]
+    };
+    return dashPatterns[lineType] || null;
 }
 
 module.exports = {

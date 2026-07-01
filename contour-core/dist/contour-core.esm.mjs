@@ -2716,6 +2716,10 @@ var require_paths = __commonJS({
       ctx.lineWidth = style.lineWidth || 1.5;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
+      var lineDash = getLineDash(style.lineType);
+      if (lineDash) {
+        ctx.setLineDash(lineDash);
+      }
       if (!paths || paths.length === 0) {
         return;
       }
@@ -2744,6 +2748,7 @@ var require_paths = __commonJS({
           drawPathStroke(ctx, pathInfo.edgepaths[k], smoothing, false, style);
         }
       }
+      ctx.setLineDash([]);
     }
     function drawPathStroke(ctx, path, smoothing, isClosed, style) {
       if (!path || path.length < 2)
@@ -2905,6 +2910,20 @@ var require_paths = __commonJS({
         }
       }
       return commands;
+    }
+    function getLineDash(lineType) {
+      if (!lineType || lineType === "solid") {
+        return null;
+      }
+      if (Array.isArray(lineType)) {
+        return lineType;
+      }
+      var dashPatterns = {
+        dashed: [8, 4],
+        dot: [2, 4],
+        dashdot: [8, 4, 2, 4]
+      };
+      return dashPatterns[lineType] || null;
     }
     module.exports = {
       drawFilledPaths,
