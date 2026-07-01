@@ -48,6 +48,16 @@ function segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
  * @returns {number} Squared distance
  */
 function perpDistance2(xab, yab, llab, xac, yac) {
+    // Degenerate segment (A === B): the perpendicular "distance" collapses
+    // to the squared distance from C to the degenerate point. Without this
+    // guard we'd divide by zero at the cross-product branch below,
+    // returning NaN that propagates through segmentDistance → locationCost,
+    // silently dropping any label that happens to hit a duplicate-point
+    // segment (simplifyPath produces these).
+    if (llab === 0) {
+        return xac * xac + yac * yac;
+    }
+
     var fcAB = (xac * xab + yac * yab); // Dot product
 
     if (fcAB < 0) {

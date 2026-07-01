@@ -11,7 +11,10 @@
  * @returns {string} Formatted label text
  */
 function formatContourLabel(value, format) {
-    if (format === undefined) {
+    // Guard against undefined, null, and empty-string format specs.
+    // Previously only `undefined` was handled, so a `null` format would
+    // reach `format.includes(...)` below and throw TypeError.
+    if (format === undefined || format === null || format === '') {
         return String(value);
     }
 

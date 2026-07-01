@@ -327,10 +327,26 @@ function drawGradientColorbar(ctx, contourResult, style) {
     ctx.textBaseline = 'middle';
 
     var tickCount = Math.min(5, levels.length);
+
+    // Degenerate single-tick or single-level case. Without this guard
+    // `Math.floor(i * (levels.length-1) / (tickCount-1))` evaluates to
+    // `Math.floor(0 * 0 / 0) = NaN` (TypeError when indexing levels[NaN]),
+    // and the level-position division below also yields NaN/Infinity.
+    if (tickCount <= 1) {
+        var onlyLevel = levels[0];
+        var onlyTickY = y + barHeight / 2;
+        ctx.fillText(Number(onlyLevel).toFixed(1), x + thickness + 5, onlyTickY);
+        ctx.restore();
+        return;
+    }
+
+    var levelDenom = levels[levels.length - 1] - levels[0];
+    if (levelDenom === 0) levelDenom = 1;  // identical levels — saturate center
+
     for (i = 0; i < tickCount; i++) {
         var idx = Math.floor(i * (levels.length - 1) / (tickCount - 1));
         var level = levels[idx];
-        var t = (level - levels[0]) / (levels[levels.length - 1] - levels[0]);
+        var t = (level - levels[0]) / levelDenom;
         var tickY = y + barHeight * (1 - t);
 
         ctx.fillText(level.toFixed(1), x + thickness + 5, tickY);

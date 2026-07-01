@@ -80,7 +80,11 @@ function normalizeAxisConfig(axis) {
         if (axis.hasOwnProperty(key)) {
             normalized[key] = axis[key];
         } else {
-            normalized[key] = DEFAULT_AXIS_CONFIG[axis[key]];
+            // Use the literal `key` (not `axis[key]`, which is undefined for
+            // any missing property) to look up the default — otherwise every
+            // defaulted field becomes undefined and downstream behavior
+            // (tickmode, ticklen, etc.) silently breaks.
+            normalized[key] = DEFAULT_AXIS_CONFIG[key];
         }
     }
 

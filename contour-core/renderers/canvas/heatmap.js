@@ -216,10 +216,10 @@ function drawInterpolatedHeatmap(ctx, grid, style) {
 
     var colorscale = style.colorscale || 'Viridis';
 
-    // Create an offscreen canvas for the heatmap
-    var heatmapCanvas = document.createElement('canvas');
-    heatmapCanvas.width = n;
-    heatmapCanvas.height = m;
+    // Create an offscreen canvas for the heatmap (uses the SSR-safe factory
+    // configured at the top of this module — must NOT use document.createElement
+    // directly, otherwise drawInterpolatedHeatmap crashes in Node.js/SSR).
+    var heatmapCanvas = createCanvasElement(n, m);
     var heatmapCtx = heatmapCanvas.getContext('2d');
     var imageData = heatmapCtx.createImageData(n, m);
 

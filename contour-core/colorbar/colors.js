@@ -57,6 +57,11 @@ function parseColorscale(colorscale) {
     }
 
     // Convert simple color array to [[position, color], ...] format
+    // Special-case length === 1 to avoid 0/0 = NaN — a single-color
+    // scale occupies the entire [0, 1] range by definition.
+    if (colors.length === 1) {
+        return [[0, colors[0]]];
+    }
     return colors.map((color, i) => [i / (colors.length - 1), color]);
 }
 
@@ -116,8 +121,10 @@ function getColorAtPosition(colorscale, position) {
     const color1 = colorscale[i][1];
     const color2 = colorscale[i + 1][1];
 
-    // Interpolate between the two colors
-    const localT = (t - pos1) / (pos2 - pos1);
+    // Interpolate between the two colors. Guard against duplicate stop
+    // positions (pos2 === pos1 would yield NaN; the extend/unshift paths
+    // in mapColors/buildColorScale can create these).
+    const localT = (pos2 === pos1) ? 0 : (t - pos1) / (pos2 - pos1);
     return interpolateColor(color1, color2, localT);
 }
 
@@ -160,8 +167,15 @@ function mapColors(value, min, max, colorscale, options) {
         max = options.dataMax;
     }
 
-    // Normalize value to 0-1 range
-    const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+    // Normalize value to 0-1 range. Guard against zero data range
+    // (max === min) which would otherwise yield 0/0 = NaN; in that case
+    // there is only one color stop in the scale, so saturate at t=0.
+    let t;
+    if (max === min) {
+        t = 0;
+    } else {
+        t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+    }
 
     return getColorAtPosition(scale, t);
 }
@@ -204,9 +218,13 @@ function buildColorScale(levels, colorscale, options) {
     for (let i = 0; i < levels.length; i++) {
         const level = levels[i];
 
-        // Map level to colorscale position
+        // Map level to colorscale position. Special-casing length===1 is
+        // not enough — all-identical levels like [5, 5, 5] would still
+        // (level-levelMin)/(levelMax-levelMin) = 0/0 = NaN. Guard the full
+        // zero-range case so degenerate input returns a deterministic
+        // stop in the middle of the scale.
         let t;
-        if (levels.length === 1) {
+        if (levels.length === 1 || levelMax === levelMin) {
             t = 0.5;
         } else {
             t = (level - levelMin) / (levelMax - levelMin);
@@ -248,8 +266,10 @@ function createColorMapper(levels, colorscale, options) {
             const stop2 = colorStops[i + 1];
 
             if (value >= stop1[0] && value <= stop2[0]) {
-                // Interpolate between stops
-                const t = (value - stop1[0]) / (stop2[0] - stop1[0]);
+                // Interpolate between stops. The extend path in
+                // buildColorScale can create duplicate-value stops
+                // (stop2[0] === stop1[0]); guard the div-by-zero.
+                const t = (stop2[0] === stop1[0]) ? 0 : (value - stop1[0]) / (stop2[0] - stop1[0]);
                 return interpolateColor(stop1[1], stop2[1], t);
             }
         }
@@ -276,7 +296,9 @@ function getGradientStops(levels, colorscale, horizontal) {
     const max = colorStops[colorStops.length - 1][0];
 
     return colorStops.map(([value, color]) => ({
-        offset: (value - min) / (max - min),
+        // Zero-range gradient (max === min, e.g. single level) yields
+        // 0/0 otherwise — fall back to offset 0 in that degenerate case.
+        offset: (max === min) ? 0 : (value - min) / (max - min),
         color: color
     }));
 }

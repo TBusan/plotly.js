@@ -2115,6 +2115,9 @@ var contourCore = (() => {
         } else {
           colors = COLOR_SCALES.Viridis;
         }
+        if (colors.length === 1) {
+          return [[0, colors[0]]];
+        }
         return colors.map((color, i) => [i / (colors.length - 1), color]);
       }
       function interpolateColor(color1, color2, t) {
@@ -2145,7 +2148,7 @@ var contourCore = (() => {
         const pos2 = colorscale[i + 1][0];
         const color1 = colorscale[i][1];
         const color2 = colorscale[i + 1][1];
-        const localT = (t - pos1) / (pos2 - pos1);
+        const localT = pos2 === pos1 ? 0 : (t - pos1) / (pos2 - pos1);
         return interpolateColor(color1, color2, localT);
       }
       function mapColors(value, min, max, colorscale, options) {
@@ -2165,7 +2168,12 @@ var contourCore = (() => {
           scale.push([options.dataMax, lastColor]);
           max = options.dataMax;
         }
-        const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        let t;
+        if (max === min) {
+          t = 0;
+        } else {
+          t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        }
         return getColorAtPosition(scale, t);
       }
       function buildColorScale(levels, colorscale, options) {
@@ -2184,7 +2192,7 @@ var contourCore = (() => {
         for (let i = 0; i < levels.length; i++) {
           const level = levels[i];
           let t;
-          if (levels.length === 1) {
+          if (levels.length === 1 || levelMax === levelMin) {
             t = 0.5;
           } else {
             t = (level - levelMin) / (levelMax - levelMin);
@@ -2209,7 +2217,7 @@ var contourCore = (() => {
             const stop1 = colorStops[i];
             const stop2 = colorStops[i + 1];
             if (value >= stop1[0] && value <= stop2[0]) {
-              const t = (value - stop1[0]) / (stop2[0] - stop1[0]);
+              const t = stop2[0] === stop1[0] ? 0 : (value - stop1[0]) / (stop2[0] - stop1[0]);
               return interpolateColor(stop1[1], stop2[1], t);
             }
           }
@@ -2224,7 +2232,9 @@ var contourCore = (() => {
         const min = colorStops[0][0];
         const max = colorStops[colorStops.length - 1][0];
         return colorStops.map(([value, color]) => ({
-          offset: (value - min) / (max - min),
+          // Zero-range gradient (max === min, e.g. single level) yields
+          // 0/0 otherwise — fall back to offset 0 in that degenerate case.
+          offset: max === min ? 0 : (value - min) / (max - min),
           color
         }));
       }
@@ -2492,6 +2502,12 @@ var contourCore = (() => {
         return fullpath;
       }
       function interpolateColor(color1, color2, t) {
+        if (typeof color1 !== "string" || color1[0] !== "#" || color1.length < 7) {
+          return typeof color2 === "string" && color2[0] === "#" ? color2 : "#888888";
+        }
+        if (typeof color2 !== "string" || color2[0] !== "#" || color2.length < 7) {
+          return color1;
+        }
         var r1 = parseInt(color1.slice(1, 3), 16);
         var g1 = parseInt(color1.slice(3, 5), 16);
         var b1 = parseInt(color1.slice(5, 7), 16);
@@ -2518,7 +2534,8 @@ var contourCore = (() => {
           return colorScale[0][1];
         for (var i = 0; i < n - 1; i++) {
           if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
-            var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
+            var denom = colorScale[i + 1][0] - colorScale[i][0];
+            var t = denom === 0 ? 0 : (value - colorScale[i][0]) / denom;
             return interpolateColor(colorScale[i][1], colorScale[i + 1][1], t);
           }
         }
@@ -2638,9 +2655,13 @@ var contourCore = (() => {
             var minVal = levels[0];
             var maxVal = levels[levels.length - 1];
             var range = maxVal - minVal;
-            var normalizedBg = (bgValue - minVal) / range;
-            normalizedBg = Math.max(0, Math.min(1, normalizedBg));
-            bgColor = getColorForValue(normalizedBg, colorScale);
+            if (range === 0) {
+              bgColor = colorScale[0][1];
+            } else {
+              var normalizedBg = (bgValue - minVal) / range;
+              normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+              bgColor = getColorForValue(normalizedBg, colorScale);
+            }
           } else {
             bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize, null);
           }
@@ -2649,9 +2670,13 @@ var contourCore = (() => {
           var minVal = levels[0];
           var maxVal = levels[levels.length - 1];
           var range = maxVal - minVal;
-          var normalizedBg = (bgValue - minVal) / range;
-          normalizedBg = Math.max(0, Math.min(1, normalizedBg));
-          bgColor = getColorForValue(normalizedBg, colorScale);
+          if (range === 0) {
+            bgColor = colorScale[0][1];
+          } else {
+            var normalizedBg = (bgValue - minVal) / range;
+            normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+            bgColor = getColorForValue(normalizedBg, colorScale);
+          }
         }
         for (var i = 0; i < paths.length; i++) {
           var pathInfo = paths[i];
@@ -2811,9 +2836,26 @@ var contourCore = (() => {
         var match;
         while ((match = regex.exec(pathStr)) !== null) {
           var type = match[1];
-          var coords = match[2].trim().split(/[\s,]+/).map(Number).filter(function(n) {
-            return !isNaN(n);
-          });
+          var coordStrs = match[2].trim().split(/[\s,]+/);
+          var coords = [];
+          var cmdValid = true;
+          for (var ci = 0; ci < coordStrs.length; ci++) {
+            var n = Number(coordStrs[ci]);
+            if (!isFinite(n)) {
+              cmdValid = false;
+              break;
+            }
+            coords.push(n);
+          }
+          if (!cmdValid || coords.length === 0) {
+            if (commands.length > 0) {
+              var lastCmd = commands[commands.length - 1];
+              if (lastCmd.type === "M" || lastCmd.type === "L") {
+                commands.push({ type: "L", x: lastCmd.x, y: lastCmd.y });
+              }
+            }
+            continue;
+          }
           switch (type) {
             case "M":
               commands.push({ type: "M", x: coords[0], y: coords[1] });
@@ -2887,6 +2929,9 @@ var contourCore = (() => {
         return { x: x1 + a * t, y: y1 + d * t };
       }
       function perpDistance2(xab, yab, llab, xac, yac) {
+        if (llab === 0) {
+          return xac * xac + yac * yac;
+        }
         var fcAB = xac * xab + yac * yab;
         if (fcAB < 0) {
           return xac * xac + yac * yac;
@@ -3008,6 +3053,9 @@ var contourCore = (() => {
           var dx = path[i][0] - path[i - 1][0];
           var dy = path[i][1] - path[i - 1][1];
           var segLen = Math.sqrt(dx * dx + dy * dy);
+          if (segLen === 0) {
+            continue;
+          }
           if (accumulated + segLen >= targetLen) {
             var t = (targetLen - accumulated) / segLen;
             return {
@@ -3131,7 +3179,7 @@ var contourCore = (() => {
     "labels/formatter.js"(exports, module) {
       "use strict";
       function formatContourLabel(value, format) {
-        if (format === void 0) {
+        if (format === void 0 || format === null || format === "") {
           return String(value);
         }
         if (format.includes("f")) {
@@ -3446,10 +3494,6 @@ var contourCore = (() => {
                 height: textHeightGrid
               });
               usedPositions.push(labelPos);
-              if (closed) {
-                var midLen = len / 2;
-                var oppositeLen = usedPositions[usedPositions.length - 2] ? (pathLength(path) / 2 + midLen) % len : midLen;
-              }
             }
           }
         }
@@ -3461,7 +3505,11 @@ var contourCore = (() => {
           var scaled = scalePoint(label.pos, n, m, width, height, padding, visibleRange, xData, yData, style.drawArea);
           ctx.save();
           ctx.translate(scaled.x, scaled.y);
-          ctx.rotate(label.pos.theta || 0);
+          var theta = label.pos.theta || 0;
+          if (Math.abs(theta) > Math.PI / 2) {
+            theta -= Math.sign(theta) * Math.PI;
+          }
+          ctx.rotate(theta);
           if (style.labelBackground) {
             var bgPadding = 2;
             ctx.fillStyle = style.labelBackground || "rgba(255,255,255,0.8)";
@@ -3660,7 +3708,7 @@ var contourCore = (() => {
         }
         const precisionMatch = format.match(/^\.(\d+)([fse%])?$/i);
         if (precisionMatch) {
-          const precision = parseInt(precisionMatch[1], 10);
+          const precision = Math.max(0, Math.min(100, parseInt(precisionMatch[1], 10)));
           const type = (precisionMatch[2] || "f").toLowerCase();
           switch (type) {
             case "f":
@@ -3744,9 +3792,12 @@ var contourCore = (() => {
         } else if (tickMode === "array") {
           const tickValues = options.tickvals || [];
           const tickText = options.ticktext || [];
+          const rangeDenom = colorbar.zmax - colorbar.zmin || 1;
           for (let i = 0; i < tickValues.length; i++) {
             const val = tickValues[i];
-            const t = (val - colorbar.zmin) / (colorbar.zmax - colorbar.zmin);
+            let t = (val - colorbar.zmin) / rangeDenom;
+            if (!isFinite(t))
+              t = 0.5;
             ticks.push({
               position: Math.max(0, Math.min(1, t)),
               value: val,
@@ -3755,9 +3806,12 @@ var contourCore = (() => {
           }
         } else if (tickMode === "auto") {
           const smartTicks = computeSmartTicks(colorbar.zmin, colorbar.zmax, tickCount);
+          const rangeDenom = colorbar.zmax - colorbar.zmin || 1;
           for (let i = 0; i < smartTicks.values.length; i++) {
             const value = smartTicks.values[i];
-            const position = (value - colorbar.zmin) / (colorbar.zmax - colorbar.zmin);
+            let position = (value - colorbar.zmin) / rangeDenom;
+            if (!isFinite(position))
+              position = 0.5;
             ticks.push({
               position: Math.max(0, Math.min(1, position)),
               value,
@@ -3769,7 +3823,7 @@ var contourCore = (() => {
       }
       function computeSmartTicks(start, end, nTicks) {
         const range = end - start;
-        if (range <= 0 || nTicks <= 0) {
+        if (range <= 0 || nTicks <= 1) {
           return {
             values: [start],
             positions: [0.5]
@@ -4028,10 +4082,20 @@ var contourCore = (() => {
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         var tickCount = Math.min(5, levels.length);
+        if (tickCount <= 1) {
+          var onlyLevel = levels[0];
+          var onlyTickY = y + barHeight / 2;
+          ctx.fillText(Number(onlyLevel).toFixed(1), x + thickness + 5, onlyTickY);
+          ctx.restore();
+          return;
+        }
+        var levelDenom = levels[levels.length - 1] - levels[0];
+        if (levelDenom === 0)
+          levelDenom = 1;
         for (i = 0; i < tickCount; i++) {
           var idx = Math.floor(i * (levels.length - 1) / (tickCount - 1));
           var level = levels[idx];
-          var t = (level - levels[0]) / (levels[levels.length - 1] - levels[0]);
+          var t = (level - levels[0]) / levelDenom;
           var tickY = y + barHeight * (1 - t);
           ctx.fillText(level.toFixed(1), x + thickness + 5, tickY);
         }
@@ -4337,9 +4401,7 @@ var contourCore = (() => {
           return;
         }
         var colorscale = style.colorscale || "Viridis";
-        var heatmapCanvas = document.createElement("canvas");
-        heatmapCanvas.width = n;
-        heatmapCanvas.height = m;
+        var heatmapCanvas = createCanvasElement(n, m);
         var heatmapCtx = heatmapCanvas.getContext("2d");
         var imageData = heatmapCtx.createImageData(n, m);
         for (var i = 0; i < m; i++) {
@@ -4720,7 +4782,7 @@ var contourCore = (() => {
           if (axis.hasOwnProperty(key)) {
             normalized[key] = axis[key];
           } else {
-            normalized[key] = DEFAULT_AXIS_CONFIG[axis[key]];
+            normalized[key] = DEFAULT_AXIS_CONFIG[key];
           }
         }
         return normalized;
@@ -8660,6 +8722,7 @@ var contourCore = (() => {
             if (newAspectRatio !== currentAspectRatio) {
               currentAspectRatio = newAspectRatio;
               drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+              _drawingArea = drawingArea2;
             }
             render();
           },
@@ -8681,6 +8744,7 @@ var contourCore = (() => {
               }
             };
             drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea2;
             render();
           },
           getContourResult: function() {
@@ -8700,7 +8764,9 @@ var contourCore = (() => {
             if (!_overlay) {
               var rendererLike = {
                 _fullRange,
-                _drawingArea: drawingArea2,
+                _drawingArea: function() {
+                  return _drawingArea;
+                },
                 getViewManager: function() {
                   return viewManager;
                 },
@@ -8818,6 +8884,8 @@ var contourCore = (() => {
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
             _fullRange = fullRange;
+            drawingArea2 = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea2;
             currentStyle.smoothing = _computeOptions.smoothing;
             render();
           },
@@ -9423,7 +9491,6 @@ var contourCore = (() => {
       "use strict";
       var compute = require_compute();
       var canvasRenderer = require_canvas();
-      var labelUtils = require_labels();
       var COLOR_SCALES = {
         Viridis: [
           "#440154",
@@ -9733,176 +9800,9 @@ var contourCore = (() => {
           ctx.fillText(level.toFixed(1), x + thickness + 5, tickY);
         }
       }
-      function createInteractive(container, config) {
-        if (typeof container === "string") {
-          container = document.querySelector(container);
-        }
-        if (!container) {
-          throw new Error("Container element not found");
-        }
-        var isDirectArray = Array.isArray(config);
-        if (isDirectArray) {
-          config = { z: config };
-        } else {
-          config = config || {};
-        }
-        var width = config.width || container.clientWidth || 600;
-        var height = config.height || container.clientHeight || 500;
-        var renderer = zrenderRenderer.createRenderer(container, {
-          width,
-          height,
-          devicePixelRatio: config.devicePixelRatio
-        });
-        var grid = {
-          z: config.z,
-          x: config.x,
-          y: config.y
-        };
-        var options = {
-          autocontour: config.autocontour !== false,
-          ncontours: config.ncontours || 15,
-          start: config.contours ? config.contours.start : void 0,
-          end: config.contours ? config.contours.end : void 0,
-          size: config.contours ? config.contours.size : void 0,
-          smoothing: config.smoothing !== void 0 ? config.smoothing : 0.5,
-          valueColorMap: config.valueColorMap
-        };
-        var result = compute.computeContours(grid, options);
-        var colors = getColors(config.colorscale, result.levels, config.zmin, config.zmax, config.reversescale);
-        var colorScale = buildColorScale(result.levels, colors);
-        var style = {
-          width,
-          height,
-          x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
-          y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
-          z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
-          padding: 30,
-          // IMPORTANT: zrender needs padding for coordinate scaling
-          coloring: config.contours && config.contours.type || "fill",
-          showLines: config.contours ? config.contours.type === "lines" || config.contours.type === "heatmap" : true,
-          lineWidth: config.lineWidth || 1.5,
-          lineColor: config.lineColor || "#666",
-          colorScale,
-          valueColorMap: config.valueColorMap,
-          opacity: config.opacity || 1
-        };
-        renderer.renderContours(result, style);
-        if (config.contours && config.contours.showlabels) {
-          renderer.renderLabels(result, style);
-        }
-        if (config.axes) {
-          var axesConfig = Object.assign({}, config.axes, {
-            width,
-            height
-          });
-          renderer.renderAxes(axesConfig, style);
-        }
-        if (config.colorbar && config.colorbar.show !== false && style.coloring !== "lines") {
-          renderer.renderColorbar(result, colors, config.colorbar);
-        }
-        var interactionConfig = config.interaction || {};
-        renderer.options.onHoverStart = interactionConfig.hover ? interactionConfig.hover.onHoverStart : null;
-        renderer.options.onHoverEnd = interactionConfig.hover ? interactionConfig.hover.onHoverEnd : null;
-        renderer.options.onContourClick = interactionConfig.click ? interactionConfig.click.onContourClick : null;
-        renderer.options.highlightColor = interactionConfig.highlightColor || "#ffff00";
-        if (interactionConfig.zoom !== false) {
-          renderer.initZoom(interactionConfig.zoom || {});
-        }
-        if (interactionConfig.pan !== false) {
-          renderer.initPan(interactionConfig.pan || {});
-        }
-        if (interactionConfig.dblclickReset !== false) {
-          renderer.zr.on("dblclick", function() {
-            var animate = interactionConfig.animateReset !== false;
-            renderer.resetView(animate);
-            if (interactionConfig.onReset) {
-              interactionConfig.onReset();
-            }
-          });
-        }
-        return {
-          // Update data
-          update: function(newConfig) {
-            if (newConfig.z)
-              grid.z = newConfig.z;
-            if (newConfig.x)
-              grid.x = newConfig.x;
-            if (newConfig.y)
-              grid.y = newConfig.y;
-            result = compute.computeContours(grid, options);
-            style.x = result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : grid.x;
-            style.y = result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : grid.y;
-            style.z = result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : grid.z;
-            renderer.renderContours(result, style);
-            if (config.contours && config.contours.showlabels) {
-              renderer.renderLabels(result, style);
-            }
-          },
-          // Set view
-          setView: function(xMin, xMax, yMin, yMax) {
-          },
-          // Get current view
-          getView: function() {
-            return renderer.getState();
-          },
-          // Reset view
-          resetView: function() {
-            renderer.resetView();
-          },
-          // Zoom
-          zoomTo: function(scale, centerX, centerY, animate) {
-            renderer.applyZoom(scale, centerX, centerY);
-          },
-          // Pan
-          panTo: function(dx, dy, animate) {
-            var group = renderer.mainGroup;
-            group.attr({
-              x: group.x + dx,
-              y: group.y + dy
-            });
-            renderer.zr.flush();
-          },
-          // Enable/disable interaction
-          enableInteraction: function(enabled) {
-            renderer.setInteractionEnabled(enabled);
-          },
-          // Event registration
-          on: function(event, handler) {
-            if (event === "hover")
-              renderer.options.onHoverStart = handler;
-            if (event === "hoverEnd")
-              renderer.options.onHoverEnd = handler;
-            if (event === "click")
-              renderer.options.onContourClick = handler;
-          },
-          off: function(event) {
-            if (event === "hover")
-              renderer.options.onHoverStart = null;
-            if (event === "hoverEnd")
-              renderer.options.onHoverEnd = null;
-            if (event === "click")
-              renderer.options.onContourClick = null;
-          },
-          // Resize
-          resize: function(newWidth, newHeight) {
-            width = newWidth || width;
-            height = newHeight || height;
-            renderer.resize(width, height);
-          },
-          // Destroy
-          destroy: function() {
-            renderer.dispose();
-          },
-          // Get renderer
-          getRenderer: function() {
-            return renderer;
-          }
-        };
-      }
       module.exports = {
         render,
         drawTo,
-        createInteractive,
         COLOR_SCALES
       };
     }

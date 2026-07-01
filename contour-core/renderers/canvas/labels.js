@@ -211,12 +211,9 @@ function drawLabels(ctx, contourResult, style) {
                 // Mark this position as used
                 usedPositions.push(labelPos);
 
-                // For closed paths, mark the opposite side as used to maintain spacing
-                if (closed) {
-                    var midLen = len / 2;
-                    var oppositeLen = (usedPositions[usedPositions.length - 2] ?
-                        (pathLength(path) / 2 + midLen) % len : midLen);
-                }
+                // (Previously contained a closed-path mark-opposite block here
+                // that computed `oppositeLen` and then never used it — dead
+                // code, removed for clarity.)
             }
         }
     }
@@ -234,7 +231,17 @@ function drawLabels(ctx, contourResult, style) {
         // Draw label
         ctx.save();
         ctx.translate(scaled.x, scaled.y);
-        ctx.rotate(label.pos.theta || 0);
+
+        // Normalize label angle so the text reads left→right: any tangent
+        // angle outside [-π/2, π/2] is rotated by π, which flips the text
+        // upright without changing its position (it's drawn around the
+        // translate origin). Without this, contour paths running right-to-
+        // left produced upside-down labels that were hard to scan.
+        var theta = label.pos.theta || 0;
+        if (Math.abs(theta) > Math.PI / 2) {
+            theta -= Math.sign(theta) * Math.PI;
+        }
+        ctx.rotate(theta);
 
         // Draw label background (optional, for readability)
         if (style.labelBackground) {

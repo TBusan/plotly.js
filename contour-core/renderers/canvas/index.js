@@ -420,6 +420,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             if (newAspectRatio !== currentAspectRatio) {
                 currentAspectRatio = newAspectRatio;
                 drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+                _drawingArea = drawingArea;
             }
 
             render();
@@ -447,6 +448,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
 
             // Recalculate adjusted drawing area
             drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
 
             render();
         },
@@ -472,7 +474,7 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
                 // Create renderer-like object for the new overlay system
                 var rendererLike = {
                     _fullRange: _fullRange,
-                    _drawingArea: drawingArea,
+                    _drawingArea: function() { return _drawingArea; },
                     getViewManager: function() { return viewManager; },
                     refresh: render
                 };
@@ -610,6 +612,10 @@ function createInteractiveRenderer(canvas, contourResult, style, interactionConf
             pathInfo = contourResult.pathinfo && contourResult.pathinfo[0];
             fullRange = getFullRange(pathInfo);
             _fullRange = fullRange;
+
+            // 重新计算绘图区域（fullRange 可能已变化）
+            drawingArea = calculateAspectRatioDrawingArea(baseDrawingArea, fullRange, currentAspectRatio);
+            _drawingArea = drawingArea;
 
             // 更新 currentStyle
             currentStyle.smoothing = _computeOptions.smoothing;

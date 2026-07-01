@@ -320,6 +320,17 @@ function joinAllPaths(pathInfo, perimeter, style) {
  * Interpolate between two hex colors
  */
 function interpolateColor(color1, color2, t) {
+    // Validate hex (#RRGGBB) input. Non-hex strings (rgb(), named colors,
+    // undefined) feed parseInt(... ,16) with garbage, yielding NaN that
+    // propagates into a corrupt '#NaNNaNNaN' fillStyle. Fall back to a
+    // neutral gray so the user sees the issue but the canvas keeps painting.
+    if (typeof color1 !== 'string' || color1[0] !== '#' || color1.length < 7) {
+        return (typeof color2 === 'string' && color2[0] === '#') ? color2 : '#888888';
+    }
+    if (typeof color2 !== 'string' || color2[0] !== '#' || color2.length < 7) {
+        return color1;
+    }
+
     // Parse hex colors
     var r1 = parseInt(color1.slice(1, 3), 16);
     var g1 = parseInt(color1.slice(3, 5), 16);
@@ -329,7 +340,8 @@ function interpolateColor(color1, color2, t) {
     var g2 = parseInt(color2.slice(3, 5), 16);
     var b2 = parseInt(color2.slice(5, 7), 16);
 
-    // Clamp t to [0, 1]
+    // Clamp t to [0, 1]. Note: NaN passes Math.min/max untouched, so the
+    // callers must validate t first (see getColorForValue / getColorForLevel).
     t = Math.max(0, Math.min(1, t));
 
     // Interpolate
@@ -359,7 +371,11 @@ function getColorForValue(value, colorScale) {
     // Find interpolation interval
     for (var i = 0; i < n - 1; i++) {
         if (value >= colorScale[i][0] && value <= colorScale[i + 1][0]) {
-            var t = (value - colorScale[i][0]) / (colorScale[i + 1][0] - colorScale[i][0]);
+            // Guard against adjacent equal levels — `0/0 = NaN`. NaN passes
+            // the clamp inside interpolateColor untouched and yields
+            // #NaNNaNNaN fillStyle, so catch it here at the source.
+            var denom = colorScale[i + 1][0] - colorScale[i][0];
+            var t = (denom === 0) ? 0 : (value - colorScale[i][0]) / denom;
             return interpolateColor(colorScale[i][1], colorScale[i + 1][1], t);
         }
     }
@@ -563,9 +579,16 @@ function drawFilledPaths(ctx, contourResult, style) {
             var minVal = levels[0];
             var maxVal = levels[levels.length - 1];
             var range = maxVal - minVal;
-            var normalizedBg = (bgValue - minVal) / range;
-            normalizedBg = Math.max(0, Math.min(1, normalizedBg));
-            bgColor = getColorForValue(normalizedBg, colorScale);
+            // Guard zero range (e.g. all custom levels numerically equal):
+            // NaN passes Math.max/min untouched, then interpolateColor emits
+            // #NaNNaNNaN. Fall all the way back to the first color stop.
+            if (range === 0) {
+                bgColor = colorScale[0][1];
+            } else {
+                var normalizedBg = (bgValue - minVal) / range;
+                normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+                bgColor = getColorForValue(normalizedBg, colorScale);
+            }
         } else {
             bgColor = getColorForLevel(levels[0], 0, levels, colorScale, true, stepSize, null);
         }
@@ -574,9 +597,13 @@ function drawFilledPaths(ctx, contourResult, style) {
         var minVal = levels[0];
         var maxVal = levels[levels.length - 1];
         var range = maxVal - minVal;
-        var normalizedBg = (bgValue - minVal) / range;
-        normalizedBg = Math.max(0, Math.min(1, normalizedBg));
-        bgColor = getColorForValue(normalizedBg, colorScale);
+        if (range === 0) {
+            bgColor = colorScale[0][1];
+        } else {
+            var normalizedBg = (bgValue - minVal) / range;
+            normalizedBg = Math.max(0, Math.min(1, normalizedBg));
+            bgColor = getColorForValue(normalizedBg, colorScale);
+        }
     }
 
     // NOTE: Background layer is now handled at a higher level (in renderContourLayer)
@@ -882,7 +909,30 @@ function parseSVGPath(pathStr) {
 
     while ((match = regex.exec(pathStr)) !== null) {
         var type = match[1];
-        var coords = match[2].trim().split(/[\s,]+/).map(Number).filter(function(n) { return !isNaN(n); });
+        var coordStrs = match[2].trim().split(/[\s,]+/);
+        // Convert coords; if any single coordinate fails to parse to a
+        // finite number, reject the whole command and skip it. The previous
+        // behaviour filtered NaN coordinates individually, which decrypted
+        // the x/y pairing and shifted every subsequent command by one slot,
+        // corrupting the entire remaining path.
+        var coords = [];
+        var cmdValid = true;
+        for (var ci = 0; ci < coordStrs.length; ci++) {
+            var n = Number(coordStrs[ci]);
+            if (!isFinite(n)) { cmdValid = false; break; }
+            coords.push(n);
+        }
+        if (!cmdValid || coords.length === 0) {
+            // preserve last "current point" through a no-op moveTo so the
+            // path state machine doesn't lose track of position
+            if (commands.length > 0) {
+                var lastCmd = commands[commands.length - 1];
+                if (lastCmd.type === 'M' || lastCmd.type === 'L') {
+                    commands.push({ type: 'L', x: lastCmd.x, y: lastCmd.y });
+                }
+            }
+            continue;
+        }
 
         switch (type) {
             case 'M':

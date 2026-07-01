@@ -21,7 +21,10 @@ function formatTickValue(value, format) {
     // Parse format string
     const precisionMatch = format.match(/^\.(\d+)([fse%])?$/i);
     if (precisionMatch) {
-        const precision = parseInt(precisionMatch[1], 10);
+        // Clamp precision to [0, 100] — Number.prototype.toFixed throws
+        // RangeError for precision > 100, and we don't want a malicious or
+        // typo'd format string (e.g. '.150f') to take down rendering.
+        const precision = Math.max(0, Math.min(100, parseInt(precisionMatch[1], 10)));
         const type = (precisionMatch[2] || 'f').toLowerCase();
 
         switch (type) {
@@ -166,10 +169,16 @@ function computeTicks(colorbar, options) {
         // Use explicit tick values
         const tickValues = options.tickvals || [];
         const tickText = options.ticktext || [];
+        // Denominator guard: when zmax === zmin the array-mode ticks should
+        // ALL be colinear at center; the clamp below then maps NaN
+        // (0 * Infinity) — wait, NaN is never caught by clamp. Use the
+        // explicit GuardZero helper instead so NaN becomes 0.5.
+        const rangeDenom = (colorbar.zmax - colorbar.zmin) || 1;
 
         for (let i = 0; i < tickValues.length; i++) {
             const val = tickValues[i];
-            const t = (val - colorbar.zmin) / (colorbar.zmax - colorbar.zmin);
+            let t = (val - colorbar.zmin) / rangeDenom;
+            if (!isFinite(t)) t = 0.5;
 
             ticks.push({
                 position: Math.max(0, Math.min(1, t)),
@@ -180,10 +189,16 @@ function computeTicks(colorbar, options) {
     } else if (tickMode === 'auto') {
         // Auto mode - use nice ticks
         const smartTicks = computeSmartTicks(colorbar.zmin, colorbar.zmax, tickCount);
+        // Same zero-range guard as array mode, but here smartTicks already
+        // returns [start] for degenerate range — the only failure mode
+        // remaining is zmax === zmin but computeSmartTicks returned early,
+        // in which case position would be 0/0. Defensively clamp NaN.
+        const rangeDenom = (colorbar.zmax - colorbar.zmin) || 1;
 
         for (let i = 0; i < smartTicks.values.length; i++) {
             const value = smartTicks.values[i];
-            const position = (value - colorbar.zmin) / (colorbar.zmax - colorbar.zmin);
+            let position = (value - colorbar.zmin) / rangeDenom;
+            if (!isFinite(position)) position = 0.5;
 
             ticks.push({
                 position: Math.max(0, Math.min(1, position)),
@@ -208,7 +223,9 @@ function computeTicks(colorbar, options) {
 function computeSmartTicks(start, end, nTicks) {
     const range = end - start;
 
-    if (range <= 0 || nTicks <= 0) {
+    if (range <= 0 || nTicks <= 1) {
+        // Note: guard must include nTicks === 1 — `range / (nTicks - 1)` is
+        // a div-by-zero otherwise and produces an empty tick set.
         return {
             values: [start],
             positions: [0.5]

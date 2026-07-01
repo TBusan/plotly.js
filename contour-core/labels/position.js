@@ -57,6 +57,15 @@ function getPointAtLength(path, targetLen) {
         var dy = path[i][1] - path[i - 1][1];
         var segLen = Math.sqrt(dx * dx + dy * dy);
 
+        // Skip zero-length segments (duplicate consecutive points, which
+        // simplifyPath can produce) without returning early — this preserves
+        // the distance-accumulation invariant so callers requesting
+        // targetLen=N at a point N units into the route see a point consistent
+        // with that distance. Previously a 0 segLen caused div-by-zero (NaN).
+        if (segLen === 0) {
+            continue;
+        }
+
         if (accumulated + segLen >= targetLen) {
             var t = (targetLen - accumulated) / segLen;
             return {
