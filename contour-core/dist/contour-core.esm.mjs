@@ -2254,6 +2254,7 @@ var require_paths = __commonJS({
   "renderers/canvas/paths.js"(exports, module) {
     "use strict";
     var smooth = require_smooth();
+    var colors = require_colors();
     function normalizePadding(padding, defaultVal) {
       defaultVal = defaultVal || 30;
       if (typeof padding === "number") {
@@ -2334,7 +2335,7 @@ var require_paths = __commonJS({
       ];
     }
     function joinAllPaths(pathInfo, perimeter, style) {
-      var fullpath = "";
+      var fullpathParts = [];
       var edgepaths = pathInfo.edgepaths || [];
       if (!perimeter || !Array.isArray(perimeter) || perimeter.length < 4) {
         return "";
@@ -2420,7 +2421,7 @@ var require_paths = __commonJS({
         }
         var smoothingValue = style.smoothing !== void 0 ? style.smoothing : pathInfo.smoothing || 0;
         addpath = smooth.smoothopen(scaledPath, smoothingValue);
-        fullpath += newloop ? addpath : addpath.replace(/^M/, "L");
+        fullpathParts.push(newloop ? addpath : addpath.replace(/^M/, "L"));
         startsleft.splice(startsleft.indexOf(i), 1);
         endptData = currentPath[currentPath.length - 1];
         nexti = -1;
@@ -2467,7 +2468,7 @@ var require_paths = __commonJS({
             break;
           var canvasPt = scalePoint(style, newendptData);
           if (canvasPt && !isNaN(canvasPt[0]) && !isNaN(canvasPt[1])) {
-            fullpath += "L" + canvasPt[0] + " " + canvasPt[1];
+            fullpathParts.push("L" + canvasPt[0] + " " + canvasPt[1]);
           }
         }
         if (nexti === edgepaths.length || nexti < 0)
@@ -2478,7 +2479,7 @@ var require_paths = __commonJS({
           if (startsleft.length > 0) {
             i = startsleft[0];
           }
-          fullpath += "Z";
+          fullpathParts.push("Z");
         }
       }
       for (i = 0; i < pathInfo.paths.length; i++) {
@@ -2494,10 +2495,10 @@ var require_paths = __commonJS({
         });
         if (scaledPath.length >= 3) {
           var smoothingValue = style.smoothing !== void 0 ? style.smoothing : pathInfo.smoothing || 0;
-          fullpath += smooth.smoothclosed(scaledPath, smoothingValue);
+          fullpathParts.push(smooth.smoothclosed(scaledPath, smoothingValue));
         }
       }
-      return fullpath;
+      return fullpathParts.join("");
     }
     function interpolateColor(color1, color2, t) {
       if (typeof color1 !== "string" || color1[0] !== "#" || color1.length < 7) {
@@ -2637,7 +2638,6 @@ var require_paths = __commonJS({
       var valueColorMap = style.valueColorMap;
       if (!colorScale) {
         if (typeof style.colorscale === "string") {
-          var colors = require_colors();
           colorScale = colors.parseColorscale(style.colorscale);
         } else {
           colorScale = [[0, "blue"], [1, "red"]];
@@ -2676,9 +2676,21 @@ var require_paths = __commonJS({
           bgColor = getColorForValue(normalizedBg, colorScale);
         }
       }
+      var colorMap = {};
+      for (var li = 0; li < paths.length; li++) {
+        colorMap[paths[li].level] = getColorForLevel(
+          paths[li].level,
+          li,
+          levels,
+          colorScale,
+          hasCustomLevels,
+          stepSize,
+          valueColorMap
+        );
+      }
       for (var i = 0; i < paths.length; i++) {
         var pathInfo = paths[i];
-        var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
+        var fillColor = colorMap[pathInfo.level];
         ctx.fillStyle = fillColor;
         var dataPerimeter = createDataPerimeter(style);
         var boundaryPath = "M" + dataPerimeter.map(function(pt) {
