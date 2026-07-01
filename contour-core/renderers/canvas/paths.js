@@ -5,6 +5,7 @@
  */
 
 var smooth = require('../../smooth');
+var colors = require('../../colorbar/colors');
 
 /**
  * Normalize padding to support both number and object formats
@@ -118,7 +119,7 @@ function createDataPerimeter(style) {
  * Uses DATA coordinates for boundary checking, CANVAS coordinates for rendering
  */
 function joinAllPaths(pathInfo, perimeter, style) {
-    var fullpath = '';
+    var fullpathParts = [];
     var edgepaths = pathInfo.edgepaths || [];
 
     // Validate perimeter
@@ -215,7 +216,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
         // Use style.smoothing if provided, otherwise fall back to pathInfo.smoothing
         var smoothingValue = style.smoothing !== undefined ? style.smoothing : (pathInfo.smoothing || 0);
         addpath = smooth.smoothopen(scaledPath, smoothingValue);
-        fullpath += newloop ? addpath : addpath.replace(/^M/, 'L');
+        fullpathParts.push(newloop ? addpath : addpath.replace(/^M/, 'L'));
         startsleft.splice(startsleft.indexOf(i), 1);
 
         // Use DATA coordinate for boundary checking
@@ -276,7 +277,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
 
             var canvasPt = scalePoint(style, newendptData);
             if (canvasPt && !isNaN(canvasPt[0]) && !isNaN(canvasPt[1])) {
-                fullpath += 'L' + canvasPt[0] + ' ' + canvasPt[1];
+                fullpathParts.push('L' + canvasPt[0] + ' ' + canvasPt[1]);
             }
         }
 
@@ -288,7 +289,7 @@ function joinAllPaths(pathInfo, perimeter, style) {
             if (startsleft.length > 0) {
                 i = startsleft[0];
             }
-            fullpath += 'Z';
+            fullpathParts.push('Z');
         }
     }
 
@@ -309,11 +310,11 @@ function joinAllPaths(pathInfo, perimeter, style) {
         if (scaledPath.length >= 3) {
             // Use style.smoothing if provided, otherwise fall back to pathInfo.smoothing
             var smoothingValue = style.smoothing !== undefined ? style.smoothing : (pathInfo.smoothing || 0);
-            fullpath += smooth.smoothclosed(scaledPath, smoothingValue);
+            fullpathParts.push(smooth.smoothclosed(scaledPath, smoothingValue));
         }
     }
 
-    return fullpath;
+    return fullpathParts.join('');
 }
 
 /**
@@ -560,7 +561,6 @@ function drawFilledPaths(ctx, contourResult, style) {
     var valueColorMap = style.valueColorMap; // Segmented color mapping [[value, color], ...]
     if (!colorScale) {
         if (typeof style.colorscale === 'string') {
-            var colors = require('../../colorbar/colors');
             colorScale = colors.parseColorscale(style.colorscale);
         } else {
             colorScale = [[0, 'blue'], [1, 'red']];
@@ -610,6 +610,14 @@ function drawFilledPaths(ctx, contourResult, style) {
     // to ensure proper coordinate transformation during zoom/pan operations.
     // Do NOT draw background here as it would use fixed canvas coordinates.
 
+    // Precompute color for each level to avoid repeated getColorForLevel calls
+    var colorMap = {};
+    for (var li = 0; li < paths.length; li++) {
+        colorMap[paths[li].level] = getColorForLevel(
+            paths[li].level, li, levels, colorScale, hasCustomLevels, stepSize, valueColorMap
+        );
+    }
+
     // Draw each contour fill layer (LOWEST to HIGHEST)
     // Key insight: Each layer fills from boundary (or previous contour) to current contour
     // Layer 0 (prefixBoundary=true): fills boundary -> contour 0 with color 0
@@ -625,7 +633,7 @@ function drawFilledPaths(ctx, contourResult, style) {
 
         // All levels use their normal colors from colorScale
         // Null regions are handled by clip mask, not by changing fill colors
-        var fillColor = getColorForLevel(pathInfo.level, i, levels, colorScale, hasCustomLevels, stepSize, valueColorMap);
+        var fillColor = colorMap[pathInfo.level];
         ctx.fillStyle = fillColor;
 
         // Create boundary path using DATA coordinates, then transform to canvas coordinates
