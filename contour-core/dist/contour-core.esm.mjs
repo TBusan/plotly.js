@@ -9093,7 +9093,7 @@ var require_canvas = __commonJS({
       if (coloring === "fill" || coloring === "fill+lines" || coloring === "heatmap") {
         drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
       }
-      var shouldDrawLines = coloring === "lines" || coloring === "fill+lines";
+      var shouldDrawLines = (coloring === "lines" || coloring === "fill+lines") && showLines;
       if (shouldDrawLines) {
         drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
       }

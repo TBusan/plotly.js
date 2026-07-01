@@ -878,8 +878,8 @@ function renderContourLayer(ctx, drawArea, visibleRange, fullRange, contourResul
         drawPaths.drawFilledPaths(ctx, contourResult, renderStyle);
     }
 
-    // Draw contour lines
-    var shouldDrawLines = (coloring === 'lines') || (coloring === 'fill+lines');
+    // Draw contour lines (respect showLines flag)
+    var shouldDrawLines = ((coloring === 'lines') || (coloring === 'fill+lines')) && showLines;
     if (shouldDrawLines) {
         drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
     }

@@ -228,33 +228,44 @@ export class PlotlContourChart {
     const zmin = contourConfig.zmin ?? this._currentData.zmin
     const zmax = contourConfig.zmax ?? this._currentData.zmax
 
+    debugger
+
     // 转换为 valueColorMap
     const valueColorMap = this._convertColorScale(colorScale, zmin, zmax)
 
-    // 更新颜色
+    // 更新颜色（会触发 render）
     this.controller.updateColorScale(valueColorMap)
-    // // 更新等值线配置
-    // if (contourConfig.showLines !== undefined || labelConfig.showLabels !== undefined) {
-    //   const newConfig = {
-    //     contours: {
-    //       showlines: contourConfig.showLines,
-    //       showlabels: labelConfig.showLabels,
-    //       labelfont: labelConfig.color ? { color: labelConfig.color, size: 12 } : undefined,
-    //     },
-    //     line: contourConfig.color ? { color: contourConfig.color } : undefined,
-    //   }
-    //   this.controller.updateContours(newConfig)
-    // }
 
-    // // 更新缓存
-    // this._currentStyle = {
-    //   ...this._currentStyle,
-    //   colorscale: colorScale,
-    //   showlines: contourConfig.showLines,
-    //   showLabels: labelConfig.showLabels,
-    //   lineColor: contourConfig.color,
-    //   labelColor: labelConfig.color,
-    // }
+    // 更新等值线样式（线条显示/隐藏、颜色，标注显示/隐藏、颜色）
+    var styleUpdates = {}
+    if (contourConfig.showLines !== undefined) {
+      styleUpdates.showLines = contourConfig.showLines
+      this._currentStyle.showlines = contourConfig.showLines
+    }
+    if (contourConfig.color !== undefined) {
+      styleUpdates.lineColor = contourConfig.color
+      this._currentStyle.lineColor = contourConfig.color
+    }
+
+    if(contourConfig.lineType !== undefined) {
+      styleUpdates.lineType = contourConfig.lineType
+      this._currentStyle.lineType = contourConfig.lineType
+    }
+
+    if (labelConfig.showLabels !== undefined) {
+      styleUpdates.showLabels = labelConfig.showLabels
+      this._currentStyle.showLabels = labelConfig.showLabels
+    }
+    if (labelConfig.color !== undefined) {
+      styleUpdates.labelColor = labelConfig.color
+      this._currentStyle.labelColor = labelConfig.color
+    }
+    if (Object.keys(styleUpdates).length > 0) {
+      this.controller.updateStyle(styleUpdates)
+    }
+
+    // 更新缓存中的色阶
+    this._currentStyle.colorscale = colorScale
   }
 
   /**
@@ -490,8 +501,13 @@ export class PlotlContourChart {
    * @param {object} options 配置选项
    */
   updateD3ColorBar(colorBars, options = {}) {
-    // 复用 addD3ColorBar 逻辑
-    this.addD3ColorBar(colorBars, options)
+    // 保留之前的 colorbar 配置（位置、宽度等），新 options 覆盖对应字段
+    var prevOptions = (this._colorBarConfig && this._colorBarConfig.options) || {}
+    var mergedOptions = {}
+    var key
+    for (key in prevOptions) mergedOptions[key] = prevOptions[key]
+    for (key in options) mergedOptions[key] = options[key]
+    this.addD3ColorBar(colorBars, mergedOptions)
   }
 
   /**

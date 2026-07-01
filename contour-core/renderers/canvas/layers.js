@@ -300,7 +300,7 @@ function createLayeredRenderer(canvas, config) {
         // - 'fill+lines' mode: ALWAYS draw lines on top of fills
         // - 'fill' mode: NO lines (just fill)
         // - 'heatmap' mode: NO lines (just heatmap + optional fill)
-        var shouldDrawLines = (coloring === 'lines') || (coloring === 'fill+lines');
+        var shouldDrawLines = ((coloring === 'lines') || (coloring === 'fill+lines')) && showLines;
         if (shouldDrawLines) {
             drawPaths.drawStrokePaths(ctx, contourResult, renderStyle);
         }
