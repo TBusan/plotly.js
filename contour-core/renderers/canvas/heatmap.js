@@ -161,6 +161,57 @@ function drawHeatmapBackground(ctx, grid, style) {
     ctx.restore();
 }
 
+// Offscreen heatmap canvas cache. The n×m canvas is view-independent: it maps
+// z through the colorscale once, and only the final drawImage scale depends on
+// the draw area / padding. Keyed on the z array reference (WeakMap) plus the
+// style factors that change the pixels (colorscale, reverse, zmin, zmax), so
+// zoom/pan frames reuse it instead of re-running the per-cell color mapping.
+var heatmapCanvasCache = new WeakMap();
+
+/**
+ * Build the n×m offscreen canvas holding one color per grid cell.
+ * Pure function of (z, zmin, zmax, colorscale, reverse).
+ * @private
+ */
+function buildHeatmapCanvas(z, m, n, zmin, zmax, colorscale, reverse) {
+    var canvas = createCanvasElement(n, m);
+    var ctx = canvas.getContext('2d');
+    var imageData = ctx.createImageData(n, m);
+
+    for (var i = 0; i < m; i++) {
+        for (var j = 0; j < n; j++) {
+            var value = z[i][j];
+            var pixelIndex = (i * n + j) * 4;
+
+            if (typeof value === 'number' && isFinite(value)) {
+                var color = colors.mapColors(
+                    value,
+                    zmin,
+                    zmax,
+                    colorscale,
+                    { reverse: reverse }
+                );
+
+                // Parse hex color
+                var r = parseInt(color.slice(1, 3), 16);
+                var g = parseInt(color.slice(3, 5), 16);
+                var b = parseInt(color.slice(5, 7), 16);
+
+                imageData.data[pixelIndex] = r;
+                imageData.data[pixelIndex + 1] = g;
+                imageData.data[pixelIndex + 2] = b;
+                imageData.data[pixelIndex + 3] = 255; // Alpha
+            } else {
+                // Transparent for null/NaN values
+                imageData.data[pixelIndex + 3] = 0;
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+
 /**
  * Draw heatmap with interpolated cells
  * More accurate but slower version that interpolates colors at cell centers
@@ -216,47 +267,22 @@ function drawInterpolatedHeatmap(ctx, grid, style) {
 
     var colorscale = style.colorscale || 'Viridis';
 
-    // Create an offscreen canvas for the heatmap (uses the SSR-safe factory
-    // configured at the top of this module — must NOT use document.createElement
-    // directly, otherwise drawInterpolatedHeatmap crashes in Node.js/SSR).
-    var heatmapCanvas = createCanvasElement(n, m);
-    var heatmapCtx = heatmapCanvas.getContext('2d');
-    var imageData = heatmapCtx.createImageData(n, m);
-
-    // Fill pixel data
-    for (var i = 0; i < m; i++) {
-        for (var j = 0; j < n; j++) {
-            var value = z[i][j];
-            var pixelIndex = (i * n + j) * 4;
-
-            if (typeof value === 'number' && isFinite(value)) {
-                var color = colors.mapColors(
-                    value,
-                    zmin,
-                    zmax,
-                    colorscale,
-                    {
-                        reverse: style.reverse
-                    }
-                );
-
-                // Parse hex color
-                var r = parseInt(color.slice(1, 3), 16);
-                var g = parseInt(color.slice(3, 5), 16);
-                var b = parseInt(color.slice(5, 7), 16);
-
-                imageData.data[pixelIndex] = r;
-                imageData.data[pixelIndex + 1] = g;
-                imageData.data[pixelIndex + 2] = b;
-                imageData.data[pixelIndex + 3] = 255; // Alpha
-            } else {
-                // Transparent for null/NaN values
-                imageData.data[pixelIndex + 3] = 0;
-            }
+    // Cache the view-independent offscreen canvas; only the drawImage below is
+    // draw-area dependent. String() on an array colorscale is deterministic for
+    // the same content, so the key is stable across frames.
+    var cacheKey = String(colorscale) + '|' + (style.reverse ? 1 : 0) + '|' + zmin + '|' + zmax;
+    var cacheMap = heatmapCanvasCache.get(z);
+    var heatmapCanvas;
+    if (cacheMap && cacheMap.has(cacheKey)) {
+        heatmapCanvas = cacheMap.get(cacheKey);
+    } else {
+        heatmapCanvas = buildHeatmapCanvas(z, m, n, zmin, zmax, colorscale, style.reverse);
+        if (!cacheMap) {
+            cacheMap = new Map();
+            heatmapCanvasCache.set(z, cacheMap);
         }
+        cacheMap.set(cacheKey, heatmapCanvas);
     }
-
-    heatmapCtx.putImageData(imageData, 0, 0);
 
     // Draw scaled to main canvas
     ctx.save();

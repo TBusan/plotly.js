@@ -65,118 +65,6 @@ var DEFAULT_SMOOTHING = 0.3;       // Catmull-Rom smoothing factor
 var DEFAULT_SIMPLIFY_TOLERANCE = 0.5; // Douglas-Peucker simplification tolerance
 
 /**
- * Calculate perpendicular distance from a point to a line segment
- * @param {Array} point - Point [x, y]
- * @param {Array} lineStart - Line start point [x, y]
- * @param {Array} lineEnd - Line end point [x, y]
- * @returns {Number} Perpendicular distance
- */
-function perpendicularDistance(point, lineStart, lineEnd) {
-    var dx = lineEnd[0] - lineStart[0];
-    var dy = lineEnd[1] - lineStart[1];
-
-    // Handle degenerate case where lineStart === lineEnd
-    var lineLengthSquared = dx * dx + dy * dy;
-    if (lineLengthSquared === 0) {
-        // Point to point distance
-        var ddx = point[0] - lineStart[0];
-        var ddy = point[1] - lineStart[1];
-        return Math.sqrt(ddx * ddx + ddy * ddy);
-    }
-
-    // Calculate perpendicular distance
-    var t = ((point[0] - lineStart[0]) * dx + (point[1] - lineStart[1]) * dy) / lineLengthSquared;
-
-    // Clamp t to [0, 1] to get distance to line segment (not infinite line)
-    t = Math.max(0, Math.min(1, t));
-
-    var closestX = lineStart[0] + t * dx;
-    var closestY = lineStart[1] + t * dy;
-
-    var distX = point[0] - closestX;
-    var distY = point[1] - closestY;
-
-    return Math.sqrt(distX * distX + distY * distY);
-}
-
-/**
- * Douglas-Peucker path simplification algorithm
- * Reduces the number of points in a path while preserving its overall shape
- *
- * @param {Array} points - Array of [x, y] points
- * @param {Number} tolerance - Simplification tolerance (higher = fewer points)
- * @returns {Array} Simplified array of [x, y] points
- */
-function simplifyPathDouglasPeucker(points, tolerance) {
-    if (!points || points.length <= 2) return points;
-
-    // Find the point with maximum distance from the line connecting first and last
-    var maxDistance = 0;
-    var maxIndex = 0;
-
-    var first = points[0];
-    var last = points[points.length - 1];
-
-    for (var i = 1; i < points.length - 1; i++) {
-        var distance = perpendicularDistance(points[i], first, last);
-        if (distance > maxDistance) {
-            maxDistance = distance;
-            maxIndex = i;
-        }
-    }
-
-    // If max distance is greater than tolerance, recursively simplify
-    if (maxDistance > tolerance) {
-        // Recursive call
-        var left = simplifyPathDouglasPeucker(points.slice(0, maxIndex + 1), tolerance);
-        var right = simplifyPathDouglasPeucker(points.slice(maxIndex), tolerance);
-
-        // Concatenate results (avoid duplicating the middle point)
-        return left.slice(0, -1).concat(right);
-    } else {
-        // All points between first and last can be removed
-        return [first, last];
-    }
-}
-
-/**
- * Simplify all paths in pathInfo using Douglas-Peucker algorithm
- * @param {Object} pathInfo - Path info from marching squares
- * @param {Number} tolerance - Simplification tolerance
- * @returns {Object} Path info with simplified paths
- */
-function simplifyPaths(pathInfo, tolerance) {
-    if (!pathInfo || tolerance <= 0) return pathInfo;
-
-    var result = {
-        level: pathInfo.level,
-        crossings: pathInfo.crossings,
-        smoothing: pathInfo.smoothing
-    };
-
-    // Simplify edge paths
-    if (pathInfo.edgepaths && pathInfo.edgepaths.length > 0) {
-        result.edgepaths = pathInfo.edgepaths.map(function(path) {
-            return simplifyPathDouglasPeucker(path, tolerance);
-        });
-    } else {
-        result.edgepaths = [];
-    }
-
-    // Simplify interior paths
-    if (pathInfo.paths && pathInfo.paths.length > 0) {
-        result.paths = pathInfo.paths.map(function(path) {
-            return simplifyPathDouglasPeucker(path, tolerance);
-        });
-    } else {
-        result.paths = [];
-    }
-
-    return result;
-}
-var DEFAULT_SIMPLIFY_TOLERANCE = 0.5; // Douglas-Peucker simplification tolerance
-
-/**
  * Calculate perpendicular distance from point to line segment
  * @param {Array} point - Point [x, y]
  * @param {Array} lineStart - Line start point [x, y]
@@ -409,8 +297,60 @@ function upsampleMask(mask, scale) {
  * @param {String} options.smoothingMethod - 'upsample' or 'direct' (default: 'direct')
  * @returns {String} SVG path data string for the clip region
  */
+/**
+ * Build a cache key covering every option that affects generateClipPath output.
+ * The clip path is view-independent (data coordinates for interactive mode), so
+ * zoom/pan frames can reuse it instead of re-running a full second
+ * marching-squares pipeline on every render.
+ */
+function buildClipCacheKey(options) {
+    var dx = options.dataX;
+    var dy = options.dataY;
+    var dxKey = dx ? (dx.length + ':' + dx[0] + ':' + dx[dx.length - 1]) : 'none';
+    var dyKey = dy ? (dy.length + ':' + dy[0] + ':' + dy[dy.length - 1]) : 'none';
+    var padding = options.padding;
+    var padKey = 'n';
+    if (typeof padding === 'number') padKey = String(padding);
+    else if (padding && typeof padding === 'object') {
+        padKey = [padding.top, padding.right, padding.bottom, padding.left].join(',');
+    }
+    return [
+        options.useDataCoordinates ? 1 : 0,
+        dxKey, dyKey,
+        options.clipLevel !== undefined ? options.clipLevel : DEFAULT_CLIP_LEVEL,
+        options.clipSmoothing !== undefined ? options.clipSmoothing : DEFAULT_SMOOTHING,
+        options.smoothingMethod || 'direct',
+        options.upsampleScale !== undefined ? options.upsampleScale : DEFAULT_UPSAMPLE_SCALE,
+        options.simplifyTolerance !== undefined ? options.simplifyTolerance : DEFAULT_SIMPLIFY_TOLERANCE,
+        options.width !== undefined ? options.width : 500,
+        options.height !== undefined ? options.height : 400,
+        padKey
+    ].join('|');
+}
+
 function generateClipPath(contourResult, options) {
     options = options || {};
+
+    // Cache on the contourResult object: output is a pure function of
+    // (nullMask, options) and is view-independent, so all frames of a zoom/pan
+    // sequence reuse it. A fresh computeContours() produces a fresh result
+    // object, which naturally invalidates the cache when data changes.
+    var cache = null;
+    if (contourResult && typeof contourResult === 'object') {
+        cache = contourResult.__clipPathCache;
+        if (!cache) {
+            try {
+                cache = contourResult.__clipPathCache = {};
+            } catch (e) {
+                cache = null; // frozen/sealed result object: skip caching
+            }
+        }
+    }
+    var cacheKey = null;
+    if (cache) {
+        cacheKey = buildClipCacheKey(options);
+        if (cache[cacheKey] !== undefined) return cache[cacheKey];
+    }
 
     var nullMask = contourResult.nullMask;
     if (!nullMask || contourResult.nullCount === 0) {
@@ -543,15 +483,19 @@ function generateClipPath(contourResult, options) {
 
     // For interactive mode, return path in data coordinates
     // The renderer will convert to canvas coordinates based on visibleRange
+    var result;
     if (options.useDataCoordinates) {
-        return createClipPathDataCoords(clipPathInfo, m, n);
+        result = createClipPathDataCoords(clipPathInfo, m, n);
+    } else {
+        // For static mode, convert to canvas coordinates
+        var width = options.width || 500;
+        var height = options.height || 400;
+        var padding = normalizePadding(options.padding, 30);
+        result = createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
     }
 
-    // For static mode, convert to canvas coordinates
-    var width = options.width || 500;
-    var height = options.height || 400;
-    var padding = normalizePadding(options.padding, 30);
-    return createClipPathSVG(clipPathInfo, width, height, padding, originalM, originalN);
+    if (cache && cacheKey) cache[cacheKey] = result;
+    return result;
 }
 
 /**
