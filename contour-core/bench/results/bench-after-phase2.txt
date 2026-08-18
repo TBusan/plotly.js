@@ -1,0 +1,118 @@
+contour-core benchmark — 2026-08-18T08:54:15.472Z
+node v22.22.2, napi-rs/canvas
+
+============== grid 50x50, nulls 0% ==============
+computeContours (full)  : 2.46ms
+  normalize             : 0.06ms
+  findEmpties           : 0.00ms
+  interp2d              : 0.00ms
+  setContours           : 0.12ms
+  makeCrossings         : 0.54ms
+  findAllPaths          : 0.67ms
+  closeBoundaries       : 0.01ms
+  [sub-stage sum]       : 1.40ms (57% of full compute)
+  levels=15 paths=36 labelable=34
+render lines  (no lab)  : 0.52ms
+render lines  (labels)  : 1.16ms  (label cost ~ 0.64ms)
+render fill     : 3.83ms
+render heatmap  : 3.32ms
+SSR svg string (fill)  : 7.89ms
+SSR toGeoJSON (lines)  : 0.08ms
+SSR toFilledGeoJSON    : 0.61ms
+
+============== grid 50x50, nulls 10% ==============
+computeContours (full)  : 1.79ms
+  normalize             : 0.05ms
+  findEmpties           : 0.13ms
+  interp2d              : 0.16ms
+  setContours           : 0.10ms
+  makeCrossings         : 0.30ms
+  findAllPaths          : 0.81ms
+  closeBoundaries       : 0.01ms
+  [sub-stage sum]       : 1.56ms (87% of full compute)
+  levels=15 paths=37 labelable=36
+render lines  (no lab)  : 0.46ms
+render lines  (labels)  : 1.10ms  (label cost ~ 0.64ms)
+render fill     : 3.42ms
+render heatmap  : 3.38ms
+SSR svg string (fill)  : 7.06ms
+SSR toGeoJSON (lines)  : 0.02ms
+SSR toFilledGeoJSON    : 0.41ms
+
+============== grid 200x200, nulls 0% ==============
+computeContours (full)  : 4.31ms
+  normalize             : 0.30ms
+  findEmpties           : 0.05ms
+  interp2d              : 0.00ms
+  setContours           : 0.10ms
+  makeCrossings         : 2.69ms
+  findAllPaths          : 1.56ms
+  closeBoundaries       : 0.04ms
+  [sub-stage sum]       : 4.75ms (110% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 0.70ms
+render lines  (labels)  : 1.72ms  (label cost ~ 1.03ms)
+render fill     : 10.24ms
+render heatmap  : 9.72ms
+SSR svg string (fill)  : 8.36ms
+SSR toGeoJSON (lines)  : 0.04ms
+SSR toFilledGeoJSON    : 1.21ms
+
+============== grid 200x200, nulls 10% ==============
+computeContours (full)  : 8.44ms
+  normalize             : 0.24ms
+  findEmpties           : 1.72ms
+  interp2d              : 2.59ms
+  setContours           : 0.13ms
+  makeCrossings         : 2.74ms
+  findAllPaths          : 1.17ms
+  closeBoundaries       : 0.04ms
+  [sub-stage sum]       : 8.62ms (102% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 0.86ms
+render lines  (labels)  : 1.92ms  (label cost ~ 1.06ms)
+render fill     : 9.91ms
+render heatmap  : 9.88ms
+SSR svg string (fill)  : 8.19ms
+SSR toGeoJSON (lines)  : 0.03ms
+SSR toFilledGeoJSON    : 0.90ms
+
+============== grid 500x500, nulls 0% ==============
+computeContours (full)  : 21.51ms
+  normalize             : 2.08ms
+  findEmpties           : 0.26ms
+  interp2d              : 0.00ms
+  setContours           : 0.76ms
+  makeCrossings         : 12.10ms
+  findAllPaths          : 3.70ms
+  closeBoundaries       : 0.10ms
+  [sub-stage sum]       : 19.00ms (88% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 1.37ms
+render lines  (labels)  : 2.85ms  (label cost ~ 1.48ms)
+render fill     : 19.71ms
+render heatmap  : 20.28ms
+SSR svg string (fill)  : 9.98ms
+SSR toGeoJSON (lines)  : 0.11ms
+SSR toFilledGeoJSON    : 3.04ms
+
+============== grid 500x500, nulls 10% ==============
+computeContours (full)  : 54.93ms
+  normalize             : 2.41ms
+  findEmpties           : 15.91ms
+  interp2d              : 21.53ms
+  setContours           : 0.91ms
+  makeCrossings         : 11.87ms
+  findAllPaths          : 3.83ms
+  closeBoundaries       : 0.04ms
+  [sub-stage sum]       : 56.48ms (103% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 1.76ms
+render lines  (labels)  : 2.96ms  (label cost ~ 1.20ms)
+render fill     : 18.64ms
+render heatmap  : 20.14ms
+SSR svg string (fill)  : 11.31ms
+SSR toGeoJSON (lines)  : 0.07ms
+SSR toFilledGeoJSON    : 2.74ms
+
+benchmark complete

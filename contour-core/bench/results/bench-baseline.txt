@@ -1,0 +1,118 @@
+contour-core benchmark — 2026-08-18T08:29:28.972Z
+node v22.22.2, napi-rs/canvas
+
+============== grid 50x50, nulls 0% ==============
+computeContours (full)  : 1.90ms
+  normalize             : 0.02ms
+  findEmpties           : 0.00ms
+  interp2d              : 0.00ms
+  setContours           : 0.12ms
+  makeCrossings         : 1.04ms
+  findAllPaths          : 0.69ms
+  closeBoundaries       : 0.02ms
+  [sub-stage sum]       : 1.89ms (100% of full compute)
+  levels=15 paths=36 labelable=34
+render lines  (no lab)  : 0.60ms
+render lines  (labels)  : 1.24ms  (label cost ~ 0.64ms)
+render fill     : 4.09ms
+render heatmap  : 5.06ms
+SSR svg string (fill)  : 7.49ms
+SSR toGeoJSON (lines)  : 0.07ms
+SSR toFilledGeoJSON    : 0.83ms
+
+============== grid 50x50, nulls 10% ==============
+computeContours (full)  : 1.57ms
+  normalize             : 0.03ms
+  findEmpties           : 0.12ms
+  interp2d              : 0.20ms
+  setContours           : 0.09ms
+  makeCrossings         : 0.30ms
+  findAllPaths          : 0.80ms
+  closeBoundaries       : 0.01ms
+  [sub-stage sum]       : 1.56ms (99% of full compute)
+  levels=15 paths=37 labelable=36
+render lines  (no lab)  : 1.72ms
+render lines  (labels)  : 1.72ms  (label cost ~ 0.00ms)
+render fill     : 3.87ms
+render heatmap  : 5.96ms
+SSR svg string (fill)  : 7.42ms
+SSR toGeoJSON (lines)  : 0.01ms
+SSR toFilledGeoJSON    : 0.45ms
+
+============== grid 200x200, nulls 0% ==============
+computeContours (full)  : 4.40ms
+  normalize             : 0.36ms
+  findEmpties           : 0.04ms
+  interp2d              : 0.00ms
+  setContours           : 0.10ms
+  makeCrossings         : 2.32ms
+  findAllPaths          : 1.22ms
+  closeBoundaries       : 0.04ms
+  [sub-stage sum]       : 4.07ms (93% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 0.72ms
+render lines  (labels)  : 1.56ms  (label cost ~ 0.84ms)
+render fill     : 10.64ms
+render heatmap  : 31.39ms
+SSR svg string (fill)  : 8.64ms
+SSR toGeoJSON (lines)  : 0.04ms
+SSR toFilledGeoJSON    : 1.19ms
+
+============== grid 200x200, nulls 10% ==============
+computeContours (full)  : 9.11ms
+  normalize             : 0.32ms
+  findEmpties           : 1.78ms
+  interp2d              : 2.42ms
+  setContours           : 0.12ms
+  makeCrossings         : 2.93ms
+  findAllPaths          : 1.31ms
+  closeBoundaries       : 0.05ms
+  [sub-stage sum]       : 8.94ms (98% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 5.44ms
+render lines  (labels)  : 7.12ms  (label cost ~ 1.68ms)
+render fill     : 14.84ms
+render heatmap  : 35.82ms
+SSR svg string (fill)  : 12.78ms
+SSR toGeoJSON (lines)  : 0.04ms
+SSR toFilledGeoJSON    : 0.97ms
+
+============== grid 500x500, nulls 0% ==============
+computeContours (full)  : 19.57ms
+  normalize             : 2.38ms
+  findEmpties           : 0.26ms
+  interp2d              : 0.00ms
+  setContours           : 0.75ms
+  makeCrossings         : 11.80ms
+  findAllPaths          : 3.68ms
+  closeBoundaries       : 0.16ms
+  [sub-stage sum]       : 19.02ms (97% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 1.41ms
+render lines  (labels)  : 2.88ms  (label cost ~ 1.47ms)
+render fill     : 20.09ms
+render heatmap  : 148.98ms
+SSR svg string (fill)  : 10.89ms
+SSR toGeoJSON (lines)  : 0.09ms
+SSR toFilledGeoJSON    : 3.20ms
+
+============== grid 500x500, nulls 10% ==============
+computeContours (full)  : 53.49ms
+  normalize             : 2.91ms
+  findEmpties           : 15.13ms
+  interp2d              : 22.99ms
+  setContours           : 0.86ms
+  makeCrossings         : 12.59ms
+  findAllPaths          : 4.20ms
+  closeBoundaries       : 0.08ms
+  [sub-stage sum]       : 58.75ms (110% of full compute)
+  levels=15 paths=39 labelable=39
+render lines  (no lab)  : 37.43ms
+render lines  (labels)  : 41.22ms  (label cost ~ 3.79ms)
+render fill     : 56.23ms
+render heatmap  : 191.27ms
+SSR svg string (fill)  : 46.00ms
+SSR toGeoJSON (lines)  : 0.07ms
+SSR toFilledGeoJSON    : 3.16ms
+
+benchmark complete
