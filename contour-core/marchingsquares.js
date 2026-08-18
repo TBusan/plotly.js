@@ -21,6 +21,37 @@ function makeCrossings(pathinfo) {
     var twoWide = m === 2 || n === 2;
     var xi, yi, startIndices, ystartIndices, label, corners, mi, pi, i;
 
+    // pathinfo is level-sorted ascending (setContours → uniqueSorted), so per
+    // cell we can binary-search the subrange of levels that can cross it and
+    // skip the rest: O(cells × levels) → O(cells × log levels). A level can
+    // cross a cell iff min(corners) <= level < max(corners); a level equal to
+    // cellMax yields mi 0 and is skipped downstream, so it's harmless to
+    // include it in the upper-bound search.
+    var levels = new Array(pathinfo.length);
+    for (i = 0; i < pathinfo.length; i++) {
+        levels[i] = pathinfo[i].level;
+    }
+
+    function lowerBound(arr, x) {
+        var lo = 0, hi = arr.length;
+        while (lo < hi) {
+            var mid = (lo + hi) >>> 1;
+            if (arr[mid] < x) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
+    function upperBound(arr, x) {
+        var lo = 0, hi = arr.length;
+        while (lo < hi) {
+            var mid = (lo + hi) >>> 1;
+            if (arr[mid] <= x) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
     for (yi = 0; yi < m - 1; yi++) {
         ystartIndices = [];
         if (yi === 0) ystartIndices = ystartIndices.concat(constants.BOTTOMSTART);
@@ -32,12 +63,16 @@ function makeCrossings(pathinfo) {
             if (xi === n - 2) startIndices = startIndices.concat(constants.RIGHTSTART);
 
             // Get corner values for this cell
-            corners = [[z[yi][xi], z[yi][xi + 1]],
-                       [z[yi + 1][xi], z[yi + 1][xi + 1]]];
+            var c00 = z[yi][xi], c01 = z[yi][xi + 1];
+            var c10 = z[yi + 1][xi], c11 = z[yi + 1][xi + 1];
+            corners = [[c00, c01], [c10, c11]];
+
+            var levelLo = lowerBound(levels, Math.min(c00, c01, c10, c11));
+            var levelHi = upperBound(levels, Math.max(c00, c01, c10, c11));
 
             label = xi + ',' + yi;
 
-            for (i = 0; i < pathinfo.length; i++) {
+            for (i = levelLo; i < levelHi; i++) {
                 pi = pathinfo[i];
                 mi = getMarchingIndex(pi.level, corners);
                 if (!mi) continue;

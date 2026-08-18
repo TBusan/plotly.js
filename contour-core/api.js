@@ -169,7 +169,39 @@ function render(canvas, config) {
         smoothing: options.smoothing
     };
 
-    // Draw contours
+    // If interaction is enabled, use the interactive renderer and return its
+    // controller. This MUST be the only draw call — the interactive renderer
+    // manages its own layers (grid / content / axes / colorbar), and drawing
+    // statically first (then again here) would be wiped by the interactive
+    // renderer's clearRect. The `interaction` key is also what makes the
+    // canvas renderer dispatch to the interactive path at all: without it this
+    // block always fell through to static mode and returned null, so
+    // onZoom/onPan/onReset never fired.
+    if (config.interaction) {
+        var interactiveStyle = {
+            width: width,
+            height: height,
+            x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
+            y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
+            z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
+            padding: 30,
+            coloring: contourType,
+            showLines: contourType === 'lines' || contourType === 'heatmap',
+            lineWidth: 1.5,
+            lineColor: contourType === 'lines' ? '#666' : 'rgba(255,255,255,0.5)',
+            colorScale: colorScale,
+            valueColorMap: valueColorMap,
+            smoothing: options.smoothing,
+            colorbar: config.colorbar,
+            axes: config.axes,
+            aspectRatio: config.aspectRatio,
+            interaction: config.interaction
+        };
+
+        return canvasRenderer.drawContours(ctx, result, interactiveStyle);
+    }
+
+    // Draw contours (static mode)
     canvasRenderer.drawContours(ctx, result, style);
 
     // Draw null regions if present
@@ -199,28 +231,6 @@ function render(canvas, config) {
     // Draw colorbar if requested
     if (config.colorbar && config.colorbar.show !== false && contourType !== 'lines') {
         drawColorbar(ctx, result, colors, config.colorbar, width, height);
-    }
-
-    // If interaction is enabled, use interactive renderer and return controller
-    if (config.interaction) {
-        var interactiveStyle = {
-            width: width,
-            height: height,
-            x: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].x : config.x,
-            y: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].y : config.y,
-            z: result.pathinfo && result.pathinfo[0] ? result.pathinfo[0].z : config.z,
-            padding: 30,
-            coloring: contourType,
-            showLines: contourType === 'lines' || contourType === 'heatmap',
-            colorScale: colorScale,
-            valueColorMap: valueColorMap,
-            smoothing: options.smoothing,
-            colorbar: config.colorbar,
-            axes: config.axes,
-            aspectRatio: config.aspectRatio
-        };
-
-        return canvasRenderer.drawContours(ctx, result, interactiveStyle);
     }
 
     return result;

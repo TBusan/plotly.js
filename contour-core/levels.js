@@ -68,27 +68,31 @@ function setContours(options, vals) {
 
     // Auto-generate contour levels
     if (options.autocontour) {
-        // Flatten array manually to avoid stack overflow with large arrays
-        // (Array.flat() may use recursive implementation in some JS engines)
-        var flatVals = [];
+        // Compute min/max in a single pass over the grid. Do NOT flatten into
+        // a buffer and Math.min.apply/Math.max.apply it: apply() spreads the
+        // whole array on the call stack and throws RangeError on large grids
+        // (>~350×350, 12万+ elements). Same class of stack overflow the manual
+        // walk below already avoids — and this skips the flat copy entirely.
+        var zmin = Infinity;
+        var zmax = -Infinity;
+        var nValid = 0;
         for (var rowIdx = 0; rowIdx < vals.length; rowIdx++) {
             var row = vals[rowIdx];
             if (row) {
                 for (var colIdx = 0; colIdx < row.length; colIdx++) {
                     var v = row[colIdx];
                     if (typeof v === 'number' && !isNaN(v) && isFinite(v)) {
-                        flatVals.push(v);
+                        if (v < zmin) zmin = v;
+                        if (v > zmax) zmax = v;
+                        nValid++;
                     }
                 }
             }
         }
 
-        if (flatVals.length === 0) {
+        if (nValid === 0) {
             return [];  // No valid data
         }
-
-        var zmin = Math.min.apply(Math, flatVals);
-        var zmax = Math.max.apply(Math, flatVals);
 
         var start, end;
 
@@ -135,8 +139,14 @@ function setContours(options, vals) {
         }
 
         // Generate levels
+        // Guard against floating-point accumulation stalls: when `size` is
+        // tiny relative to `start`'s magnitude, `val += size` never changes
+        // `val` and the loop would run forever (e.g. start=1e308, size=1e-308).
+        var maxLevels = 1000000;
+        var iter = 0;
         for (var val = start; val <= end + size * 0.0001; val += size) {
             levels.push(Math.round(val * 10000) / 10000);
+            if (++iter >= maxLevels) break;
         }
 
         // Remove duplicates and sort
@@ -265,12 +275,15 @@ function roundToPrecision(value, precision) {
  * Remove duplicates and sort array
  */
 function uniqueSorted(arr) {
-    var seen = {};
+    // Use a Set, not a plain object: object keys are strings, so numeric keys
+    // like 1e-7 vs 0.0000001 collide on the string '1e-7', and values could
+    // shadow Object.prototype properties. Set handles numbers exactly.
+    var seen = new Set();
     var out = [];
     for (var i = 0; i < arr.length; i++) {
         var val = arr[i];
-        if (!seen[val]) {
-            seen[val] = true;
+        if (!seen.has(val)) {
+            seen.add(val);
             out.push(val);
         }
     }

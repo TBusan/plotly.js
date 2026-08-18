@@ -272,17 +272,33 @@ function createLayeredRenderer(canvas, config) {
             connectgaps: connectGaps  // Pass connectgaps to drawFilledPaths for correct background color
         });
 
-        // Apply clip path for null handling (if needed)
+        // Apply clip path for null handling (if needed).
+        // Must request DATA coordinates (like the index.js main path): without
+        // useDataCoordinates, generateClipPath returns the STATIC canvas-space
+        // path, and applyCanvasClipPath would map those canvas coords through
+        // visibleRange AGAIN — double-mapping the mask away from the contours
+        // during zoom/pan.
         if (needsClip && style.useClipMask !== false) {
-            var clipPathData = nullHandling.generateClipPath(contourResult, renderStyle);
+            var clipPathData = nullHandling.generateClipPath(contourResult, {
+                useDataCoordinates: true,
+                dataX: pathInfo ? pathInfo.x : null,
+                dataY: pathInfo ? pathInfo.y : null,
+                smoothingMethod: style.smoothingMethod,
+                upsampleScale: style.upsampleScale,
+                clipLevel: style.clipLevel,
+                clipSmoothing: style.clipSmoothing,
+                simplifyTolerance: style.simplifyTolerance
+            });
             if (clipPathData) {
-                // Parse and apply clip path
+                // Parse and apply clip path (data coords → canvas via visibleRange)
                 applyCanvasClipPath(ctx, clipPathData, renderStyle);
             }
         }
 
         // Draw heatmap background if coloring mode is 'heatmap'
-        if (coloring === 'heatmap') {
+        // Guard pathInfo — computeContours returns {levels:[], paths:[]} with
+        // NO pathinfo for empty data, and pathInfo.z would TypeError.
+        if (coloring === 'heatmap' && pathInfo) {
             drawHeatmap.drawInterpolatedHeatmap(ctx, {
                 z: pathInfo.z,
                 x: pathInfo.x,

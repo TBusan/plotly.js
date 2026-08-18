@@ -5,38 +5,8 @@
  * Based on Plotly's contour filling algorithm
  */
 
-/**
- * Normalize padding to support both number and object formats
- * @param {number|Object} padding - Padding value or object
- * @param {number} [defaultVal] - Default padding value (default: 30)
- * @returns {Object} Normalized padding object { top, right, bottom, left }
- */
-function normalizePadding(padding, defaultVal) {
-    defaultVal = defaultVal || 30;
-    if (typeof padding === 'number') {
-        return {
-            top: padding,
-            right: padding,
-            bottom: padding,
-            left: padding
-        };
-    }
-    if (typeof padding === 'object' && padding !== null) {
-        return {
-            top: padding.top !== undefined ? padding.top : defaultVal,
-            right: padding.right !== undefined ? padding.right : defaultVal,
-            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
-            left: padding.left !== undefined ? padding.left : defaultVal
-        };
-    }
-    // Default case
-    return {
-        top: defaultVal,
-        right: defaultVal,
-        bottom: defaultVal,
-        left: defaultVal
-    };
-}
+var scale = require('./scale');
+var normalizePadding = scale.normalizePadding;
 
 /**
  * Convert path array to SVG path string
@@ -100,32 +70,31 @@ function createPerimeter(options) {
 }
 
 /**
- * Scale path from grid space to canvas space
+ * Scale a path from DATA space to canvas space.
+ * Points are mapped through the grid's x[]/y[] data ranges — not treated as
+ * grid indices (that broke non-uniform coordinates by up to tens of thousands
+ * of pixels). Falls back to index space when no x/y arrays exist, which is
+ * identical for index-based data.
  */
 function scalePath(path, options) {
     if (!path || !Array.isArray(path) || path.length === 0) {
         return path;
     }
 
+    // Memoize the transform on the options object: joinAllPaths calls scalePath
+    // once per edge path per possible continuation (O(E²) calls), all with the
+    // same options. Keyed by pathinfo identity so a reused options object with
+    // different data still gets a fresh transform.
     var pathinfo = options.pathinfo || options.paths;
-    var m = 10, n = 10;
-    if (pathinfo && pathinfo[0] && pathinfo[0].z) {
-        m = pathinfo[0].z.length;
-        n = pathinfo[0].z[0].length;
+    var key = pathinfo && pathinfo[0];
+    if (!options.__scaleTransform || options.__scaleTransform.__key !== key) {
+        options.__scaleTransform = scale.createTransform(options);
+        options.__scaleTransform.__key = key;
     }
-
-    var width = options.width || 500;
-    var height = options.height || 400;
-    var padding = normalizePadding(options.padding, 30);
-
-    var scaleX = (width - padding.left - padding.right) / (n - 1);
-    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
+    var t = options.__scaleTransform;
 
     return path.map(function(pt) {
-        return [
-            padding.left + pt[0] * scaleX,
-            padding.top + (m - 1 - pt[1]) * scaleY
-        ];
+        return [t.x(pt[0]), t.y(pt[1])];
     });
 }
 
@@ -235,7 +204,10 @@ function joinAllPaths(pathInfo, perimeter, options) {
             fullpath += 'L' + newendpt[0] + ' ' + newendpt[1];
         }
 
-        if (nexti === edgepaths.length || nexti < 0) break;
+        // Match Plotly: only the (unreachable) "unclosed perimeter" sentinel
+        // breaks; nexti < 0 falls through to close the loop with 'Z' and start
+        // the next remaining edge path instead of dropping them all.
+        if (nexti === edgepaths.length) break;
 
         i = nexti;
         newloop = (startsleft.indexOf(i) === -1);
@@ -258,8 +230,10 @@ function joinAllPaths(pathInfo, perimeter, options) {
 
 /**
  * Create SVG filled paths
- * Using even-odd fill rule with prefixBoundary
- * This matches Plotly's original makeFills logic
+ * Uses the SVG default nonzero fill rule with prefixBoundary, matching
+ * Plotly's original makeFills logic (Plotly never overrides fill-rule).
+ * evenodd would XOR nested same-level regions (island-in-hole-in-island)
+ * into spurious holes.
  */
 function createFilledPaths(contourResult, options) {
     options = options || {};
@@ -308,11 +282,11 @@ function createFilledPaths(contourResult, options) {
             fullpath = joinedPaths;
         }
 
-        // Draw the path with even-odd fill rule
+        // Draw the path with the SVG default nonzero fill rule (as Plotly does)
         if (fullpath) {
             svgParts.push(svgPathElement(fullpath, {
                 fill: color,
-                'fill-rule': 'evenodd',
+                'fill-rule': 'nonzero',
                 stroke: 'none',
                 'stroke-width': 0
             }));

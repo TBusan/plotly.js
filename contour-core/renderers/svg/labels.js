@@ -12,38 +12,8 @@ var calculateMaxLabels = labels.calculateMaxLabels;
 var pathLength = labels.pathLength;
 var isPathClosed = labels.isPathClosed;
 
-/**
- * Normalize padding to support both number and object formats
- * @param {number|Object} padding - Padding value or object
- * @param {number} [defaultVal] - Default padding value (default: 30)
- * @returns {Object} Normalized padding object { top, right, bottom, left }
- */
-function normalizePadding(padding, defaultVal) {
-    defaultVal = defaultVal || 30;
-    if (typeof padding === 'number') {
-        return {
-            top: padding,
-            right: padding,
-            bottom: padding,
-            left: padding
-        };
-    }
-    if (typeof padding === 'object' && padding !== null) {
-        return {
-            top: padding.top !== undefined ? padding.top : defaultVal,
-            right: padding.right !== undefined ? padding.right : defaultVal,
-            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
-            left: padding.left !== undefined ? padding.left : defaultVal
-        };
-    }
-    // Default case
-    return {
-        top: defaultVal,
-        right: defaultVal,
-        bottom: defaultVal,
-        left: defaultVal
-    };
-}
+var scale = require('./scale');
+var normalizePadding = scale.normalizePadding;
 
 /**
  * Create SVG label elements
@@ -63,7 +33,11 @@ function createLabels(contourResult, options) {
 
     var svgParts = [];
 
-    // Get grid dimensions for coordinate system
+    // Paths are in DATA space; build the data→pixel transform and use the data
+    // range as plot bounds for label placement. For index-based data (x/y =
+    // 0..n-1 / 0..m-1) these coincide with the old grid math, so behavior is
+    // unchanged for the common case while non-uniform grids now place labels
+    // correctly instead of off-canvas.
     var m = 10, n = 10;
     var pathinfo = contourResult.pathinfo || contourResult.paths;
     if (pathinfo && pathinfo[0] && pathinfo[0].z) {
@@ -71,23 +45,30 @@ function createLabels(contourResult, options) {
         n = pathinfo[0].z[0].length;
     }
 
-    // Calculate plot bounds in GRID COORDINATES
+    var r = scale.getDataRange(pathinfo, m, n);
     var plotBounds = {
-        left: 0,
-        right: n - 1,
-        top: 0,
-        bottom: m - 1,
-        center: (n - 1) / 2,
-        middle: (m - 1) / 2
+        left: r.xMin,
+        right: r.xMax,
+        top: r.yMin,
+        bottom: r.yMax,
+        center: (r.xMin + r.xMax) / 2,
+        middle: (r.yMin + r.yMax) / 2
     };
 
-    // Calculate canvas dimensions for scaling
-    var width = options.width || 500;
-    var height = options.height || 400;
-    var padding = normalizePadding(options.padding, 30);
-    var scaleX = (width - padding.left - padding.right) / (n - 1);
-    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
-    var plotDiagonal = Math.sqrt((n - 1) * (n - 1) + (m - 1) * (m - 1));
+    // Calculate canvas dimensions for scaling. Pass pathinfo explicitly — the
+    // render options object does not carry it, and createTransform would
+    // otherwise fall back to a 10×10 default range (scaleX inflated ~4×,
+    // placing labels hundreds of px off-canvas).
+    var t = scale.createTransform({
+        width: options.width,
+        height: options.height,
+        padding: options.padding,
+        pathinfo: pathinfo
+    });
+    var scaleX = t.scaleX;
+    var scaleY = t.scaleY;
+    var plotDiagonal = Math.sqrt(plotBounds.right * plotBounds.right +
+                                 plotBounds.bottom * plotBounds.bottom);
 
     // Track existing labels in GRID COORDINATES
     var existingLabels = [];
@@ -158,10 +139,10 @@ function createLabels(contourResult, options) {
 
                 if (tooClose) break;
 
-                // Scale position to canvas coordinates
+                // Scale position to canvas coordinates (data space → pixels)
                 var scaled = {
-                    x: padding.left + labelPos.x * scaleX,
-                    y: padding.top + (m - 1 - labelPos.y) * scaleY
+                    x: t.x(labelPos.x),
+                    y: t.y(labelPos.y)
                 };
 
                 // Create SVG text element

@@ -73,6 +73,24 @@ function createColorbar(contourResult, options) {
 
     // Draw tick labels
     var tickCount = Math.min(5, levels.length);
+
+    // Degenerate single-tick or single-level case. Without this guard
+    // `Math.floor(i * (levels.length-1) / (tickCount-1))` evaluates to
+    // `Math.floor(0 * 0 / 0) = NaN`, so `levels[NaN]` is undefined and
+    // `.toFixed()` throws. Mirrors the canvas colorbar guard.
+    if (tickCount <= 1) {
+        var onlyLevel = levels[0];
+        var onlyTickY = y + barHeight / 2;
+        svgParts.push(
+            '<text x="' + (x + thickness + 5) + '" y="' + onlyTickY + '" ' +
+            'font-family="Arial" font-size="10" fill="#666" ' +
+            'text-anchor="start" dominant-baseline="middle">' +
+            Number(onlyLevel).toFixed(1) +
+            '</text>'
+        );
+        return svgParts.join('\n');
+    }
+
     for (i = 0; i < tickCount; i++) {
         var idx = Math.floor(i * (levels.length - 1) / (tickCount - 1));
         var level = levels[idx];

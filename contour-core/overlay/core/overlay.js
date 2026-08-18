@@ -298,7 +298,9 @@ Overlay.prototype = {
      */
     getVisible: function() {
         var self = this;
-        return this._items.values().filter(function(item) {
+        // Map.prototype.values() returns an iterator, not an array — wrap it
+        // in Array.from before .filter (TypeError otherwise).
+        return Array.from(this._items.values()).filter(function(item) {
             return !self._hidden.has(item.id);
         });
     },

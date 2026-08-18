@@ -5,38 +5,7 @@
  * Highlights areas with null/missing data
  */
 
-/**
- * Normalize padding to support both number and object formats
- * @param {number|Object} padding - Padding value or object
- * @param {number} [defaultVal] - Default padding value (default: 30)
- * @returns {Object} Normalized padding object { top, right, bottom, left }
- */
-function normalizePadding(padding, defaultVal) {
-    defaultVal = defaultVal || 30;
-    if (typeof padding === 'number') {
-        return {
-            top: padding,
-            right: padding,
-            bottom: padding,
-            left: padding
-        };
-    }
-    if (typeof padding === 'object' && padding !== null) {
-        return {
-            top: padding.top !== undefined ? padding.top : defaultVal,
-            right: padding.right !== undefined ? padding.right : defaultVal,
-            bottom: padding.bottom !== undefined ? padding.bottom : defaultVal,
-            left: padding.left !== undefined ? padding.left : defaultVal
-        };
-    }
-    // Default case
-    return {
-        top: defaultVal,
-        right: defaultVal,
-        bottom: defaultVal,
-        left: defaultVal
-    };
-}
+var scale = require('./scale');
 
 /**
  * Create SVG null regions
@@ -56,12 +25,20 @@ function createNullRegions(contourResult, options) {
     var m = nullMask.length;
     var n = nullMask[0].length;
 
-    var width = options.width || 500;
-    var height = options.height || 400;
-    var padding = normalizePadding(options.padding, 30);
-
-    var scaleX = (width - padding.left - padding.right) / (n - 1);
-    var scaleY = (height - padding.top - padding.bottom) / (m - 1);
+    // Place each null cell at its DATA position (x[j], y[i]) rather than at
+    // uniform grid spacing — otherwise non-uniform grids draw the mask in the
+    // wrong place. Falls back to index spacing when coordinates are absent.
+    var pathinfo = contourResult.pathinfo || contourResult.paths;
+    var xArr = pathinfo && pathinfo[0] ? pathinfo[0].x : null;
+    var yArr = pathinfo && pathinfo[0] ? pathinfo[0].y : null;
+    // Pass pathinfo explicitly — the render options object does not carry it,
+    // and createTransform would otherwise fall back to a 10×10 default range.
+    var t = scale.createTransform({
+        width: options.width,
+        height: options.height,
+        padding: options.padding,
+        pathinfo: pathinfo
+    });
 
     var fill = nullRegion.fill || '#ffffff';
     var stroke = nullRegion.stroke || '#cccccc';
@@ -72,10 +49,10 @@ function createNullRegions(contourResult, options) {
     for (var i = 0; i < m; i++) {
         for (var j = 0; j < n; j++) {
             if (nullMask[i][j]) {
-                var x = padding.left + j * scaleX;
-                var y = padding.top + (m - 1 - i) * scaleY;
-                var sizeX = scaleX + 1;
-                var sizeY = scaleY + 1;
+                var x = t.x(xArr ? xArr[j] : j);
+                var y = t.y(yArr ? yArr[i] : i);
+                var sizeX = t.scaleX + 1;
+                var sizeY = t.scaleY + 1;
 
                 svgParts.push(
                     '<rect x="' + (x - sizeX / 2) + '" y="' + (y - sizeY / 2) + '" ' +

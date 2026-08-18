@@ -145,8 +145,13 @@ function joinAllPaths(pathInfo, perimeter, style) {
     var y = style.y || [];
 
     // 确保有有效的坐标数组
-    if (!x || x.length === 0) x = createIndexArray(style.z ? style.z.length : 10, 1);
-    if (!y || y.length === 0) y = createIndexArray(style.z ? style.z[0].length : 10, 1);
+    // NOTE: z.length is the ROW count (→ y), z[0].length is the COLUMN count (→ x).
+    // These were swapped before, producing wrong boundary detection when the
+    // style has no x/y arrays (index fallback path). Offset 0 matches the
+    // compute layer's index arrays — offset 1 put the rightmost path point a
+    // full unit away from dataXMax and broke boundary detection on small grids.
+    if (!x || x.length === 0) x = createIndexArray(style.z && style.z[0] ? style.z[0].length : 10, 0);
+    if (!y || y.length === 0) y = createIndexArray(style.z ? style.z.length : 10, 0);
 
     var dataXMin = Math.min.apply(Math, x);
     var dataXMax = Math.max.apply(Math, x);
@@ -281,7 +286,12 @@ function joinAllPaths(pathInfo, perimeter, style) {
             }
         }
 
-        if (nexti === edgepaths.length || nexti < 0) break;
+        // Only break on the (effectively unreachable) "unclosed perimeter"
+        // sentinel, matching Plotly. A nexti < 0 (no continuation found on this
+        // edge) falls through to close the current loop with 'Z' and continue
+        // with the next remaining edge path — breaking here would silently drop
+        // every remaining edge path for this level.
+        if (nexti === edgepaths.length) break;
 
         i = nexti;
         newloop = (startsleft.indexOf(i) === -1);
@@ -825,6 +835,22 @@ function drawPathStroke(ctx, path, smoothing, isClosed, style) {
  * Supports visibleRange for zoom/pan functionality
  * Supports drawArea for aspect ratio adjustment
  */
+/**
+ * Single-pass min/max over a numeric array.
+ * Replaces Math.min.apply / Math.max.apply, which throw RangeError on very
+ * large arrays (stack overflow).
+ * @private
+ */
+function minMax(arr) {
+    var min = Infinity, max = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+        var v = arr[i];
+        if (v < min) min = v;
+        if (v > max) max = v;
+    }
+    return { min: min, max: max };
+}
+
 function scalePoint(style, pt) {
     // Validate inputs
     if (!pt || !Array.isArray(pt) || pt.length < 2) {
@@ -850,11 +876,27 @@ function scalePoint(style, pt) {
         yMin = style.visibleRange.yMin;
         yMax = style.visibleRange.yMax;
     } else {
-        // Get data range
-        xMin = (x && x.length > 0) ? Math.min.apply(Math, x) : 0;
-        xMax = (x && x.length > 0) ? Math.max.apply(Math, x) : 10;
-        yMin = (y && y.length > 0) ? Math.min.apply(Math, y) : 0;
-        yMax = (y && y.length > 0) ? Math.max.apply(Math, y) : 10;
+        // Get data range via cached single-pass scan. Math.min.apply / max.apply
+        // blow the stack on large coordinate arrays (RangeError past ~200k),
+        // and re-scanning x/y per point made rendering O(totalPoints × n).
+        // The cache is keyed on array identity so a reused style object (the
+        // renderer's normal case — one scalePoint call per path point) scans
+        // the arrays exactly once.
+        var rangeCache = style.__dataRangeCache;
+        if (!rangeCache || rangeCache.x !== x || rangeCache.y !== y) {
+            var xmm = (x && x.length > 0) ? minMax(x) : { min: 0, max: 10 };
+            var ymm = (y && y.length > 0) ? minMax(y) : { min: 0, max: 10 };
+            rangeCache = {
+                x: x, y: y,
+                xMin: xmm.min, xMax: xmm.max,
+                yMin: ymm.min, yMax: ymm.max
+            };
+            style.__dataRangeCache = rangeCache;
+        }
+        xMin = rangeCache.xMin;
+        xMax = rangeCache.xMax;
+        yMin = rangeCache.yMin;
+        yMax = rangeCache.yMax;
     }
 
     // Avoid division by zero

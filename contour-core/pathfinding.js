@@ -25,12 +25,31 @@ function findAllPaths(pathinfo, xtol, ytol) {
             makePath(pi, startLoc, 'edge', xtol, ytol);
         }
 
-        // Process all interior paths
+        // Process all interior paths.
+        // Build the crossing key list ONCE per level (insertion order, same as
+        // Object.keys order) instead of re-running Object.keys() at every path
+        // — that rebuilt the whole array each iteration, O(remaining²) overall,
+        // which hangs on noise grids with thousands of tiny loops. makePath
+        // deletes crossings as it consumes them (or overwrites a saddle with
+        // its remainder at the SAME key), so we only advance past a key once
+        // pi.crossings[key] is gone — mirroring the original
+        // "first remaining crossing in insertion order" selection exactly.
+        var crossingKeys = Object.keys(pi.crossings);
+        var keyIdx = 0;
         cnt = 0;
-        while (Object.keys(pi.crossings).length && cnt < 10000) {
-            cnt++;
-            startLoc = Object.keys(pi.crossings)[0].split(',').map(Number);
-            makePath(pi, startLoc, undefined, xtol, ytol);
+        while (keyIdx < crossingKeys.length && cnt < 10000) {
+            var key = crossingKeys[keyIdx];
+            if (pi.crossings[key] !== undefined) {
+                cnt++;
+                startLoc = key.split(',').map(Number);
+                makePath(pi, startLoc, undefined, xtol, ytol);
+                // do NOT advance: a saddle remainder may still live at this key
+            } else {
+                // crossing already consumed by an earlier path; skip without
+                // consuming the path-attempt budget (mirrors the original
+                // "first remaining crossing" loop, which only counts attempts)
+                keyIdx++;
+            }
         }
         if (cnt === 10000) {
             console.warn('Infinite loop in contour calculation');

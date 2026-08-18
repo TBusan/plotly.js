@@ -27,7 +27,14 @@ var DEFAULT_AXIS_CONFIG = {
     tickwidth: 1,
     side: 'bottom',  // for x-axis: 'bottom' | 'top', for y-axis: 'left' | 'right'
     title: '',
-    exponentformat: 'auto'  // 'auto' | 'none' | 'e' | 'E' | 'power' | 'SI'
+    exponentformat: 'auto',  // 'auto' | 'none' | 'e' | 'E' | 'power' | 'SI'
+    // The following are consumed by calcTicks but were silently stripped by
+    // normalizeAxisConfig's whitelist (only keys in DEFAULT_AXIS_CONFIG are
+    // copied through). Without them the axis always fell back to [0,10] and
+    // axes/index.js's inferRangeFromData became dead code.
+    range: undefined,
+    data: undefined,
+    precision: undefined
 };
 
 /**
